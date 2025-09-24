@@ -382,7 +382,7 @@ const StudentDashboard = () => {
               >
                 <Icon name="User" size={24} className="text-primary mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Mon Profil
+                  Mon profil
                 </span>
               </Link>
               
@@ -390,39 +390,51 @@ const StudentDashboard = () => {
                 to="/grade-management-system"
                 className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group"
               >
-                <Icon name="BookOpen" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
+                <Icon name="FileBarChart" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Mes Notes
+                  Notes et devoirs
                 </span>
               </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group">
+              <Link
+                to="/student-dashboard?tab=schedule"
+                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
+              >
                 <Icon name="Calendar" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Emploi du Temps
+                  Emploi du temps
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group">
+              <Link
+                to="/student-dashboard?tab=messages"
+                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
+              >
                 <Icon name="MessageSquare" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Messages
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group">
+              <Link
+                to="/document-management-hub"
+                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
+              >
+                <Icon name="Library" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
+                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
+                  Bibliothèque
+                </span>
+              </Link>
+
+              <Link
+                to="/student-dashboard?tab=help"
+                className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
+              >
                 <Icon name="HelpCircle" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Aide
                 </span>
-              </button>
-
-              <button className="flex flex-col items-center p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-micro group">
-                <Icon name="Settings" size={24} className="text-muted-foreground mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Paramètres
-                </span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>

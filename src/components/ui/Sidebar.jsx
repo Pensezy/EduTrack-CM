@@ -8,35 +8,65 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
 
   const navigationItems = {
     student: [
-      { label: 'Dashboard', path: '/student-dashboard', icon: 'Home', description: 'Overview and quick actions' },
-      { label: 'My Profile', path: '/student-profile-management', icon: 'User', description: 'Personal information' },
-      { label: 'My Grades', path: '/grade-management-system', icon: 'BookOpen', description: 'Academic performance' },
+      { label: 'Dashboard', path: '/student-dashboard', icon: 'Home', description: 'Aperçu et actions rapides' },
+      { label: 'Mon Profil', path: '/student-profile-management', icon: 'User', description: 'Informations personnelles' },
+      { label: 'Mes Notes', path: '/grade-management-system', icon: 'BookOpen', description: 'Performance académique' },
+      { label: 'Documents', path: '/document-management-hub', icon: 'FileText', description: 'Documents et ressources' }
+    ],
+    teacher: [
+      { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home', description: 'Aperçu des classes' },
+      { label: 'Devoirs & Notes', path: '/teacher-assignment-system', icon: 'FileText', description: 'Gestion des devoirs' },
+      { label: 'Mon Compte', path: '/teacher-account-management', icon: 'User', description: 'Gestion du compte' },
+      { label: 'Documents', path: '/document-management-hub', icon: 'Files', description: 'Ressources pédagogiques' }
     ],
     secretary: [
-      { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home', description: 'Administrative overview' },
-      { label: 'Student Management', path: '/student-profile-management', icon: 'Users', description: 'Manage student records' },
-      { label: 'Grade Management', path: '/grade-management-system', icon: 'BookOpen', description: 'Academic records' },
+      { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home', description: 'Aperçu administratif' },
+      { label: 'Centre Documents', path: '/document-management-center', icon: 'FileText', description: 'Gestion documentaire' },
+      { label: 'Gestion Étudiants', path: '/student-profile-management', icon: 'Users', description: 'Dossiers étudiants' },
+      { label: 'Bulletins & Notes', path: '/grade-management-system', icon: 'BookOpen', description: 'Gestion des notes' }
     ],
     principal: [
-      { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home', description: 'Executive overview' },
-      { label: 'Student Analytics', path: '/student-profile-management', icon: 'Users', description: 'Student insights' },
-      { label: 'Academic Analytics', path: '/grade-management-system', icon: 'BarChart3', description: 'Performance metrics' },
+      { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home', description: 'Vue d\'ensemble' },
+      { label: 'Analytics', path: '/grade-management-system', icon: 'BarChart3', description: 'Statistiques école' },
+      { label: 'Documents', path: '/document-management-hub', icon: 'FileText', description: 'Gestion documents' },
+      { label: 'Enseignants', path: '/teacher-account-management', icon: 'Users', description: 'Gestion enseignants' }
+    ],
+    admin: [
+      { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home', description: 'Aperçu système' },
+      { label: 'Système', path: '/admin-dashboard', icon: 'Settings', description: 'Configuration système' },
+      { label: 'Utilisateurs', path: '/admin-dashboard', icon: 'Users', description: 'Gestion utilisateurs' },
+      { label: 'Analytics', path: '/admin-dashboard', icon: 'BarChart3', description: 'Statistiques globales' }
     ]
   };
 
   const quickActions = {
     student: [
-      { label: 'View Assignments', icon: 'FileText', action: () => console.log('View assignments') },
-      { label: 'Check Attendance', icon: 'Calendar', action: () => console.log('Check attendance') },
+      { label: 'Voir les devoirs', icon: 'FileText', action: () => console.log('View assignments') },
+      { label: 'Présences', icon: 'Calendar', action: () => console.log('Check attendance') },
+      { label: 'Bulletins', icon: 'FileBarChart', action: () => console.log('View grades') },
+    ],
+    teacher: [
+      { label: 'Nouvelle note', icon: 'Plus', action: () => console.log('Add grade') },
+      { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
+      { label: 'Emploi du temps', icon: 'Calendar', action: () => console.log('View schedule') },
     ],
     secretary: [
-      { label: 'Add Student', icon: 'UserPlus', action: () => console.log('Add student') },
-      { label: 'Generate Report', icon: 'FileBarChart', action: () => console.log('Generate report') },
-      { label: 'Send Notice', icon: 'Mail', action: () => console.log('Send notice') },
+      { label: 'Nouvel élève', icon: 'UserPlus', action: () => console.log('Add student') },
+      { label: 'Rapports', icon: 'FileBarChart', action: () => console.log('Generate report') },
+      { label: 'Notifications', icon: 'Mail', action: () => console.log('Send notice') },
+      { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
     ],
     principal: [
-      { label: 'View Reports', icon: 'FileBarChart', action: () => console.log('View reports') },
-      { label: 'School Analytics', icon: 'TrendingUp', action: () => console.log('School analytics') },
+      { label: 'Rapports', icon: 'FileBarChart', action: () => console.log('View reports') },
+      { label: 'Statistiques', icon: 'TrendingUp', action: () => console.log('School analytics') },
+      { label: 'Enseignants', icon: 'Users', action: () => console.log('Manage teachers') },
+      { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
+    ],
+    admin: [
+      { label: 'Système', icon: 'Settings', action: () => console.log('System settings') },
+      { label: 'Sécurité', icon: 'Shield', action: () => console.log('Security settings') },
+      { label: 'Backups', icon: 'Database', action: () => console.log('Manage backups') },
+      { label: 'Logs', icon: 'FileText', action: () => console.log('View logs') },
     ]
   };
 

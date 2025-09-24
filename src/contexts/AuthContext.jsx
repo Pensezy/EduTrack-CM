@@ -34,21 +34,6 @@ const demoAccounts = {
       }
     ]
   },
-  '123456789': {
-    id: 'demo-parent-2', 
-    phone: '123456789',
-    role: 'parent',
-    full_name: 'Parent Mobile',
-    pin: '123456',
-    children: [
-      {
-        id: 'demo-student-3',
-        full_name: 'Student Mobile',
-        class_name: '3e A',
-        school_id: 'demo-school-1'
-      }
-    ]
-  },
 
   // Élèves
   'student@demo.com': {

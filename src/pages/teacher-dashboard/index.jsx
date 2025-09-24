@@ -375,7 +375,7 @@ const TeacherDashboard = () => {
               >
                 <Icon name="BookOpen" size={24} className="text-primary mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Saisie Notes
+                  Notes et évaluations
                 </span>
               </Link>
               
@@ -385,37 +385,49 @@ const TeacherDashboard = () => {
               >
                 <Icon name="FileText" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Documents
+                  Documents de cours
                 </span>
               </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group">
+              <Link
+                to="/teacher-dashboard?tab=attendance"
+                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
+              >
                 <Icon name="Calendar" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Présences
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group">
-                <Icon name="MessageSquare" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
+              <Link
+                to="/teacher-dashboard?tab=schedule"
+                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
+              >
+                <Icon name="Clock" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Messages
+                  Planning des cours
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group">
-                <Icon name="BarChart3" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
+              <Link
+                to="/teacher-dashboard?tab=communication"
+                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
+              >
+                <Icon name="MessageSquare" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Statistiques
+                  Communication
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-muted/50 hover:bg-muted/80 transition-micro group">
-                <Icon name="Settings" size={24} className="text-muted-foreground mb-2 group-hover:scale-110 transition-transform" />
+              <Link
+                to="/teacher-dashboard?tab=reports"
+                className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
+              >
+                <Icon name="FileBarChart" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Paramètres
+                  Rapports
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>

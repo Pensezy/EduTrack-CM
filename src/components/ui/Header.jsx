@@ -14,15 +14,28 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
       { label: 'Profile', path: '/student-profile-management', icon: 'User' },
       { label: 'Grades', path: '/grade-management-system', icon: 'BookOpen' },
     ],
+    teacher: [
+      { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home' },
+      { label: 'Assignments', path: '/teacher-assignment-system', icon: 'FileText' },
+      { label: 'Account', path: '/teacher-account-management', icon: 'User' },
+    ],
     secretary: [
       { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home' },
+      { label: 'Document Center', path: '/document-management-center', icon: 'FileText' },
       { label: 'Students', path: '/student-profile-management', icon: 'Users' },
-      { label: 'Grades', path: '/grade-management-system', icon: 'BookOpen' },
+      { label: 'Grade Reports', path: '/grade-management-system', icon: 'BookOpen' },
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },
-      { label: 'Students', path: '/student-profile-management', icon: 'Users' },
-      { label: 'Analytics', path: '/grade-management-system', icon: 'BarChart3' },
+      { label: 'School Analytics', path: '/grade-management-system', icon: 'BarChart3' },
+      { label: 'Documents', path: '/document-management-hub', icon: 'FileText' },
+      { label: 'Teacher Management', path: '/teacher-account-management', icon: 'Users' },
+    ],
+    admin: [
+      { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home' },
+      { label: 'System Management', path: '/admin-dashboard', icon: 'Settings' },
+      { label: 'User Management', path: '/admin-dashboard', icon: 'Users' },
+      { label: 'Analytics', path: '/admin-dashboard', icon: 'BarChart3' },
     ]
   };
 

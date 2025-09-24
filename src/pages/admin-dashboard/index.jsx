@@ -7,12 +7,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 // Admin Dashboard Components
 
-
-
-
-
-
-
 const AdminDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
@@ -653,33 +647,45 @@ const AdminDashboard = () => {
                 </span>
               </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group">
+              <Link
+                to="/admin-dashboard?tab=system"
+                className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group"
+              >
                 <Icon name="Database" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Base de Données
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group">
+              <Link
+                to="/admin-dashboard?tab=security"
+                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
+              >
                 <Icon name="Shield" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Sécurité
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group">
+              <Link
+                to="/admin-dashboard?tab=settings"
+                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
+              >
                 <Icon name="Settings" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Configuration
                 </span>
-              </button>
+              </Link>
 
-              <button className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group">
+              <Link
+                to="/admin-dashboard?tab=alerts"
+                className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
+              >
                 <Icon name="AlertTriangle" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Alertes Système
                 </span>
-              </button>
+              </Link>
             </div>
           </div>
         </div>
