@@ -18,14 +18,36 @@ const demoAccounts = {
     email: 'parent@demo.com',
     role: 'parent',
     full_name: 'Parent Demo',
-    pin: '123456'
+    pin: '123456',
+    children: [
+      {
+        id: 'demo-student-1',
+        full_name: 'Student Demo',
+        class_name: '6e A',
+        school_id: 'demo-school-1'
+      },
+      {
+        id: 'demo-student-2',
+        full_name: 'Student Demo 2',
+        class_name: '4e B',
+        school_id: 'demo-school-1'
+      }
+    ]
   },
   '123456789': {
     id: 'demo-parent-2', 
     phone: '123456789',
     role: 'parent',
     full_name: 'Parent Mobile',
-    pin: '123456'
+    pin: '123456',
+    children: [
+      {
+        id: 'demo-student-3',
+        full_name: 'Student Mobile',
+        class_name: '3e A',
+        school_id: 'demo-school-1'
+      }
+    ]
   },
 
   // Élèves
@@ -34,7 +56,12 @@ const demoAccounts = {
     email: 'student@demo.com', 
     role: 'student',
     full_name: 'Student Demo',
-    pin: '123456'
+    pin: '123456',
+    current_school_id: 'demo-school-1',
+    class_name: '6e A',
+    photo: '/assets/images/no_image.png',
+    student_id: 'STU2024001',
+    current_year: '2024-2025'
   },
 
   // Enseignants  
@@ -43,7 +70,13 @@ const demoAccounts = {
     email: 'teacher@demo.com',
     role: 'teacher', 
     full_name: 'Teacher Demo',
-    pin: '123456'
+    pin: '123456',
+    current_school_id: 'demo-school-1',
+    specialty: 'Mathématiques',
+    subject: 'Mathématiques',
+    assigned_classes: ['6e A', '6e B', '5e A'],
+    teacher_id: 'TCH2024001',
+    photo: '/assets/images/no_image.png'
   },
 
   // Administration
@@ -52,21 +85,32 @@ const demoAccounts = {
     email: 'admin@demo.com',
     role: 'admin',
     full_name: 'Admin Demo',
-    pin: '123456' 
+    pin: '123456',
+    photo: '/assets/images/no_image.png',
+    admin_id: 'ADM2024001',
+    permissions: ['all']
   },
   'principal@demo.com': {
     id: 'demo-principal-1', 
     email: 'principal@demo.com',
     role: 'principal',
     full_name: 'Principal Demo',
-    pin: '123456'
+    pin: '123456',
+    current_school_id: 'demo-school-1',
+    photo: '/assets/images/no_image.png',
+    principal_id: 'PRI2024001',
+    school_name: 'École Démo'
   },
   'secretary@demo.com': {
     id: 'demo-secretary-1',
     email: 'secretary@demo.com', 
     role: 'secretary',
     full_name: 'Secretary Demo',
-    pin: '123456'
+    pin: '123456',
+    current_school_id: 'demo-school-1',
+    photo: '/assets/images/no_image.png',
+    secretary_id: 'SEC2024001',
+    school_name: 'École Démo'
   }
 };
 
@@ -120,7 +164,18 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Identifiant ou code PIN incorrect');
       }
 
-      const authenticatedUser = data[0];
+      // Transformer les données reçues dans le format attendu
+      const authenticatedUser = {
+        id: data[0].user_id,
+        full_name: data[0].user_full_name,
+        role: data[0].user_role,
+        phone: data[0].user_phone,
+        email: data[0].user_email
+      };
+
+      // Sauvegarder les données complètes dans le localStorage
+      localStorage.setItem('edutrack-user', JSON.stringify(authenticatedUser));
+      
       setUser(authenticatedUser);
       setUserProfile(authenticatedUser);
       return { user: authenticatedUser, error: null };
