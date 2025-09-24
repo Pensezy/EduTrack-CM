@@ -18,20 +18,45 @@ const LoginAuthentication = () => {
   const [authMethod, setAuthMethod] = useState('pin');
   const [showDemoAccounts, setShowDemoAccounts] = useState(true);
 
-  // Comptes de démo dynamiques depuis Supabase
-  const [demoAccounts, setDemoAccounts] = useState([]);
-  useEffect(() => {
-    const fetchDemoAccounts = async () => {
-      const { data, error } = await supabase
-        .from('app_users')
-        .select('*')
-        .in('role', ['parent', 'student', 'teacher', 'secretary', 'principal', 'admin']);
-      if (!error && data) {
-        setDemoAccounts(data);
-      }
-    };
-    fetchDemoAccounts();
-  }, []);
+  // Utiliser les comptes de démo définis dans AuthContext
+  const demoAccountsList = [
+    {
+      email: 'admin@demo.com',
+      full_name: 'Admin Demo',
+      role: 'admin',
+      phone: null
+    },
+    {
+      email: 'principal@demo.com',
+      full_name: 'Principal Demo',
+      role: 'principal',
+      phone: null
+    },
+    {
+      email: 'secretary@demo.com',
+      full_name: 'Secretary Demo',
+      role: 'secretary',
+      phone: null
+    },
+    {
+      email: 'teacher@demo.com',
+      full_name: 'Teacher Demo',
+      role: 'teacher',
+      phone: null
+    },
+    {
+      email: 'student@demo.com',
+      full_name: 'Student Demo',
+      role: 'student',
+      phone: null
+    },
+    {
+      email: 'parent@demo.com',
+      full_name: 'Parent Demo',
+      role: 'parent',
+      phone: null
+    }
+  ];
 
   useEffect(() => {
     // Clear any existing session
@@ -253,7 +278,7 @@ const LoginAuthentication = () => {
             </div>
 
             <div className="space-y-4">
-              {demoAccounts?.map((account, index) => (
+              {demoAccountsList.map((account, index) => (
                 <div
                   key={index}
                   onClick={() => handleDemoAccountClick(account)}
@@ -262,27 +287,34 @@ const LoginAuthentication = () => {
                   <div className="flex items-start space-x-3">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
                       <span className="text-primary font-heading font-heading-semibold">
-                        {account?.name?.split(' ')?.map(n => n?.[0])?.join('')}
+                        {account.full_name.split(' ').map(n => n[0]).join('')}
                       </span>
                     </div>
                     <div className="flex-1 min-w-0">
                       <h4 className="font-body font-body-semibold text-sm text-card-foreground group-hover:text-primary">
-                        {account?.full_name || account?.name}
+                        {account.full_name}
                       </h4>
                       <p className="text-xs text-muted-foreground capitalize mb-2">
-                        {account?.role === 'parent' ? 'Parent' : 
-                         account?.role === 'student' ? 'Étudiant' : account?.role}
+                        {account.role === 'parent' ? 'Parent' : 
+                         account.role === 'student' ? 'Étudiant' :
+                         account.role === 'teacher' ? 'Enseignant' :
+                         account.role === 'secretary' ? 'Secrétaire' :
+                         account.role === 'principal' ? 'Proviseur' :
+                         account.role === 'admin' ? 'Administrateur' : account.role}
                       </p>
-                      {account?.email && (
+                      {account.email && (
                         <p className="text-xs text-muted-foreground">
                           <strong>Email:</strong> {account.email}
                         </p>
                       )}
-                      {account?.phone && (
+                      {account.phone && (
                         <p className="text-xs text-muted-foreground">
                           <strong>Téléphone:</strong> {account.phone}
                         </p>
                       )}
+                      <p className="text-xs text-muted-foreground mt-2">
+                        <strong>Code PIN:</strong> 123456
+                      </p>
                     </div>
                   </div>
                   
@@ -301,8 +333,9 @@ const LoginAuthentication = () => {
                 Mode Démonstration
               </h4>
               <p className="text-xs text-muted-foreground">
-                Ces comptes utilisent de vraies données de la base Supabase pour démontrer 
-                toutes les fonctionnalités d'EduTrack CM.
+                Ces comptes de démonstration vous permettent de tester toutes les fonctionnalités 
+                d'EduTrack CM sans avoir besoin de créer un compte. Les données sont fictives 
+                et réinitialisées régulièrement.
               </p>
             </div>
           </div>
@@ -315,7 +348,7 @@ const LoginAuthentication = () => {
           © {new Date()?.getFullYear()} EduTrack CM. Tous droits réservés.
         </p>
         <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
-          Plateforme sécurisée avec données réelles Supabase
+          Version de démonstration - Les données sont fictives
         </p>
       </footer>
     </div>
