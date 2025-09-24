@@ -4,8 +4,6 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
-import { useAuth } from '../../contexts/AuthContext';
-import { analyticsService, userService, studentService, schoolService } from '../../services/edutrackService';
 
 // Admin Dashboard Components
 
@@ -16,38 +14,88 @@ import { analyticsService, userService, studentService, schoolService } from '..
 
 
 const AdminDashboard = () => {
-  const { userProfile } = useAuth();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
-  const [adminData, setAdminData] = useState(null);
-  const [systemMetrics, setSystemMetrics] = useState(null);
-  const [analyticsData, setAnalyticsData] = useState(null);
-  const [securityData, setSecurityData] = useState(null);
-  const [auditTrail, setAuditTrail] = useState([]);
-  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (!userProfile?.id || userProfile?.role !== 'admin') return;
-    setLoading(true);
-    const fetchData = async () => {
-      // Admin info
-      const { data: admin } = await userService.getUserProfile(userProfile.id);
-      setAdminData(admin);
-      // System metrics
-      const { data: metrics } = await analyticsService.getDashboardStats();
-      setSystemMetrics(metrics);
-      // Analytics (simulate for now)
-      setAnalyticsData({ userGrowth: [], schoolActivity: [], platformUsage: [] }); // TODO: Replace with real fetch
-      // Security (simulate for now)
-      setSecurityData({ recentAlerts: [], systemStatus: {} }); // TODO: Replace with real fetch
-      // Audit trail (simulate for now)
-      setAuditTrail([]); // TODO: Replace with real fetch
-      setLoading(false);
-    };
-    fetchData();
-    // eslint-disable-next-line
-  }, [userProfile]);
+  // Mock admin data
+  const adminData = {
+    id: "admin-001",
+    name: "Administrateur Système", 
+    email: "admin@edutrack.cm",
+    role: "super_admin",
+    permissions: ["system_admin", "user_management", "security_monitoring", "analytics_access"]
+  };
+
+  // Mock system metrics
+  const systemMetrics = {
+    totalUsers: 2847,
+    totalStudents: 1856,
+    totalTeachers: 234,
+    totalParents: 1234,
+    activeSchools: 15,
+    systemUptime: 99.8,
+    databaseHealth: 100,
+    storageUsage: 68.5,
+    dailyActiveUsers: 1456,
+    weeklySignups: 87,
+    criticalAlerts: 3,
+    pendingApprovals: 12
+  };
+
+  // Mock analytics data
+  const analyticsData = {
+    userGrowth: [
+      { month: 'Jan', users: 1200, students: 800, teachers: 45, parents: 355 },
+      { month: 'Feb', users: 1350, students: 890, teachers: 52, parents: 408 },
+      { month: 'Mar', users: 1580, students: 1020, students: 1020, teachers: 68, parents: 492 },
+      { month: 'Apr', users: 1820, students: 1180, teachers: 85, parents: 555 },
+      { month: 'May', users: 2100, students: 1350, teachers: 102, parents: 648 },
+      { month: 'Jun', users: 2380, students: 1520, teachers: 125, parents: 735 },
+      { month: 'Jul', users: 2650, students: 1690, teachers: 148, parents: 812 },
+      { month: 'Aug', users: 2847, students: 1856, teachers: 234, parents: 1234 }
+    ],
+    schoolActivity: [
+      { name: 'Lycée Bilingue Biyem-Assi', students: 456, teachers: 28, activity: 95 },
+      { name: 'Collège La Rochelle Douala', students: 387, teachers: 24, activity: 92 },
+      { name: 'Lycée de Bonamoussadi', students: 298, teachers: 19, activity: 87 },
+      { name: 'Collège Vogt Yaoundé', students: 234, teachers: 15, activity: 84 },
+      { name: 'Lycée Général Leclerc', students: 187, teachers: 12, activity: 78 }
+    ],
+    platformUsage: [
+      { feature: 'Grades Management', usage: 89, users: 1245 },
+      { feature: 'Attendance Tracking', usage: 76, users: 987 },
+      { feature: 'Payment Processing', usage: 65, users: 756 },
+      { feature: 'Document Sharing', usage: 58, users: 623 },
+      { feature: 'Communication', usage: 72, users: 834 },
+      { feature: 'Analytics', usage: 34, users: 298 }
+    ]
+  };
+
+  // Mock security data
+  const securityData = {
+    recentAlerts: [
+      { id: 1, type: 'failed_login', severity: 'medium', message: 'Multiple failed login attempts', user: 'unknown', time: '2 min ago', location: 'Douala' },
+      { id: 2, type: 'suspicious_activity', severity: 'high', message: 'Unusual grade modification pattern', user: 'teacher.math@demo.cm', time: '15 min ago', location: 'Yaoundé' },
+      { id: 3, type: 'data_access', severity: 'low', message: 'Bulk student data export', user: 'admin@demo.cm', time: '1 hour ago', location: 'Bafoussam' }
+    ],
+    systemStatus: {
+      firewall: 'active',
+      authentication: 'secure',
+      dataEncryption: 'enabled',
+      backupStatus: 'completed',
+      lastSecurityScan: '2024-11-19T02:30:00Z'
+    }
+  };
+
+  // Mock audit trail
+  const auditTrail = [
+    { id: 1, action: 'User Created', actor: 'admin@demo.cm', target: 'student.new@demo.cm', timestamp: '2024-11-19T10:30:00Z', details: 'New student account created' },
+    { id: 2, action: 'Grade Modified', actor: 'teacher.math@demo.cm', target: 'Paul Kamga', timestamp: '2024-11-19T09:45:00Z', details: 'Mathematics grade updated: 15/20' },
+    { id: 3, action: 'Payment Processed', actor: 'system', target: 'Payment #PAY-001', timestamp: '2024-11-19T08:20:00Z', details: 'MTN Mobile Money - 150,000 FCFA' },
+    { id: 4, action: 'User Login', actor: 'parent@demo.cm', target: 'System', timestamp: '2024-11-19T07:15:00Z', details: 'Successful login from mobile app' },
+    { id: 5, action: 'Settings Updated', actor: 'admin@demo.cm', target: 'System Configuration', timestamp: '2024-11-18T16:30:00Z', details: 'Notification settings modified' }
+  ];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -489,9 +537,9 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header
-        userRole="admin"
-        userName={adminData?.full_name || adminData?.name}
+      <Header 
+        userRole="admin" 
+        userName={adminData?.name}
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <Sidebar 
@@ -508,7 +556,7 @@ const AdminDashboard = () => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
-                  {getGreeting()}, {adminData?.full_name?.split(' ')?.[0] || adminData?.name?.split(' ')?.[0]} ! 🔧
+                  {getGreeting()}, {adminData?.name?.split(' ')?.[0]} ! 🔧
                 </h1>
                 <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
                   Surveillance et gestion globale de la plateforme EduTrack CM. Toutes les écoles, tous les utilisateurs.
@@ -516,17 +564,17 @@ const AdminDashboard = () => {
                 <div className="flex flex-wrap items-center gap-4 mt-3">
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
-                      {systemMetrics ? formatNumber(systemMetrics?.totalStudents) : '...'} élèves
+                      {formatNumber(systemMetrics?.totalUsers)} utilisateurs
                     </span>
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
-                      {systemMetrics ? systemMetrics?.pendingTransfers : '...'} transferts en attente
+                      {systemMetrics?.activeSchools} écoles actives
                     </span>
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
-                      {systemMetrics ? formatCurrency(systemMetrics?.totalRevenue) : '...'} encaissés ce mois
+                      Uptime {systemMetrics?.systemUptime}%
                     </span>
                   </div>
                 </div>
@@ -534,16 +582,16 @@ const AdminDashboard = () => {
               <div className="flex items-center space-x-4">
                 <div className="text-center">
                   <div className="font-heading font-heading-bold text-xl">
-                    {currentTime?.toLocaleDateString('fr-FR', {
+                    {currentTime?.toLocaleDateString('fr-FR', { 
                       weekday: 'short',
                       day: 'numeric',
-                      month: 'short',
+                      month: 'short'
                     })}
                   </div>
                   <div className="font-caption font-caption-normal text-sm text-white/80">
-                    {currentTime?.toLocaleTimeString('fr-FR', {
+                    {currentTime?.toLocaleTimeString('fr-FR', { 
                       hour: '2-digit',
-                      minute: '2-digit',
+                      minute: '2-digit'
                     })}
                   </div>
                 </div>

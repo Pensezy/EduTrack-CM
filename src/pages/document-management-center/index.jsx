@@ -1,12 +1,76 @@
-import { documentService } from '../../services/documentService';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
+import { Upload, Download, FileText, Eye, Filter, Calendar, User, BookOpen } from 'lucide-react';
+
+// Demo data that loads even without Supabase
+const DEMO_DOCUMENTS = [
+  {
+    id: '1',
+    title: 'Q1 Report Card.pdf',
+    subject: 'Académique',
+    class_name: '3ème A',
+    uploaded_by: 'Mr. Nkem',
+    uploaded_at: '2025-01-15T10:30:00Z',
+    file_size: '245 KB',
+    visibility: 'student',
+    student_id: 'amina-tchatchoua',
+    description: 'Bulletin de notes du premier trimestre pour Amina Tchatchoua'
+  },
+  {
+    id: '2',
+    title: 'Parent Meeting Convocation.pdf',
+    subject: 'Administration',
+    class_name: '4A',
+    uploaded_by: 'Secrétaire',
+    uploaded_at: '2025-01-18T14:15:00Z',
+    file_size: '156 KB',
+    visibility: 'class',
+    class_id: 'class-4a',
+    description: 'Convocation pour la réunion des parents d\'élèves de la classe 4A'
+  },
+  {
+    id: '3',
+    title: 'Payment Receipt.pdf',
+    subject: 'Finance',
+    class_name: 'Terminale D',
+    uploaded_by: 'Système',
+    uploaded_at: '2025-01-20T09:45:00Z',
+    file_size: '89 KB',
+    visibility: 'parent',
+    parent_id: 'jean-kouam',
+    description: 'Reçu de paiement des frais de scolarité pour Jean Kouam'
+  },
+  {
+    id: '4',
+    title: 'Mathematics Assignment.pdf',
+    subject: 'Mathématiques',
+    class_name: '3ème A',
+    uploaded_by: 'Mr. Nkem',
+    uploaded_at: '2025-01-22T08:20:00Z',
+    file_size: '324 KB',
+    visibility: 'student',
+    description: 'Devoir de mathématiques - Chapitre Géométrie'
+  },
+  {
+    id: '5',
+    title: 'English Literature Notes.docx',
+    subject: 'Anglais',
+    class_name: '4A',
+    uploaded_by: 'Mrs. Fatima',
+    uploaded_at: '2025-01-25T11:10:00Z',
+    file_size: '567 KB',
+    visibility: 'class',
+    description: 'Notes de cours - Littérature anglaise moderne'
+  }
+];
+
+const DEMO_CLASSES = ['3ème A', '4A', 'Terminale D', '6ème B', '5ème C'];
+const DEMO_SUBJECTS = ['Mathématiques', 'Anglais', 'Français', 'Sciences', 'Histoire', 'Administration', 'Finance'];
 
 const DocumentManagementCenter = () => {
-
   const { user, userProfile } = useAuth();
-  const [documents, setDocuments] = useState([]);
-  const [classes, setClasses] = useState([]);
-  const [subjects, setSubjects] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [documents, setDocuments] = useState(DEMO_DOCUMENTS);
+  const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [filters, setFilters] = useState({
     class_name: '',
@@ -14,6 +78,8 @@ const DocumentManagementCenter = () => {
     search: '',
     uploaded_by: ''
   });
+  
+  // File upload state
   const [showUploadForm, setShowUploadForm] = useState(false);
   const [uploadData, setUploadData] = useState({
     title: '',
@@ -23,20 +89,6 @@ const DocumentManagementCenter = () => {
     visibility: 'student'
   });
 
-  // Fetch documents, classes, subjects
-  useEffect(() => {
-    setLoading(true);
-    const fetchData = async () => {
-      const { data: docs } = await documentService.getDocuments();
-      setDocuments(docs || []);
-      const { data: classSubj } = await documentService.getClassesAndSubjects();
-      setClasses(classSubj?.classes || []);
-      setSubjects(classSubj?.subjects || []);
-      setLoading(false);
-    };
-    fetchData();
-  }, []);
-
   useEffect(() => {
     // Simulate loading
     setLoading(true);
@@ -45,8 +97,24 @@ const DocumentManagementCenter = () => {
     }, 800);
   }, []);
 
-  // Filter documents based on filters (role-based filtering can be added as needed)
+  // Filter documents based on role and filters
   const filteredDocuments = documents?.filter(doc => {
+    // Role-based filtering
+    if (userProfile?.role === 'student') {
+      // Students see documents for their class or specifically for them
+      if (doc?.visibility === 'class' && doc?.class_name !== userProfile?.current_class) return false;
+      if (doc?.visibility === 'student' && doc?.student_id !== userProfile?.id) return false;
+      if (doc?.visibility === 'parent') return false;
+    } else if (userProfile?.role === 'parent') {
+      // Parents see documents for their children or general parent documents
+      if (doc?.visibility === 'student' && !userProfile?.children?.includes(doc?.student_id)) return false;
+      if (doc?.visibility === 'class' && !userProfile?.children_classes?.includes(doc?.class_name)) return false;
+    } else if (userProfile?.role === 'teacher') {
+      // Teachers see documents they uploaded or for classes they teach
+      if (doc?.uploaded_by !== userProfile?.full_name && !userProfile?.assigned_classes?.includes(doc?.class_name)) return false;
+    }
+
+    // Apply filters
     if (filters?.class_name && doc?.class_name !== filters?.class_name) return false;
     if (filters?.subject && doc?.subject !== filters?.subject) return false;
     if (filters?.uploaded_by && doc?.uploaded_by !== filters?.uploaded_by) return false;
@@ -55,17 +123,31 @@ const DocumentManagementCenter = () => {
       if (!doc?.title?.toLowerCase()?.includes(searchLower) &&
           !doc?.description?.toLowerCase()?.includes(searchLower)) return false;
     }
+
     return true;
   }) || [];
 
   const handleFileUpload = async (e) => {
     e?.preventDefault();
     if (!uploadData?.title || !uploadData?.subject) return;
+
     setUploading(true);
-    // TODO: Gérer l'upload de fichier réel si besoin
-    const { data, error } = await documentService.uploadDocument(uploadData, null);
-    if (!error && data) {
-      setDocuments(prev => [data, ...prev]);
+    
+    // Simulate upload process
+    setTimeout(() => {
+      const newDocument = {
+        id: Date.now()?.toString(),
+        title: uploadData?.title,
+        subject: uploadData?.subject,
+        class_name: uploadData?.class_name,
+        uploaded_by: userProfile?.full_name || 'Utilisateur',
+        uploaded_at: new Date()?.toISOString(),
+        file_size: '152 KB',
+        visibility: uploadData?.visibility,
+        description: uploadData?.description
+      };
+
+      setDocuments(prev => [newDocument, ...prev]);
       setUploadData({
         title: '',
         subject: '',
@@ -74,8 +156,10 @@ const DocumentManagementCenter = () => {
         visibility: 'student'
       });
       setShowUploadForm(false);
-    }
-    setUploading(false);
+      setUploading(false);
+      
+      // Success message could be added here
+    }, 2000);
   };
 
   const handleDownload = (document) => {
@@ -167,7 +251,7 @@ const DocumentManagementCenter = () => {
                         required
                       >
                         <option value="">Sélectionner une matière</option>
-                        {subjects?.map(subject => (
+                        {DEMO_SUBJECTS?.map(subject => (
                           <option key={subject} value={subject}>{subject}</option>
                         ))}
                       </select>
@@ -185,7 +269,7 @@ const DocumentManagementCenter = () => {
                         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       >
                         <option value="">Sélectionner une classe</option>
-                        {classes?.map(className => (
+                        {DEMO_CLASSES?.map(className => (
                           <option key={className} value={className}>{className}</option>
                         ))}
                       </select>
@@ -271,7 +355,7 @@ const DocumentManagementCenter = () => {
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Toutes les classes</option>
-                {classes?.map(className => (
+                {DEMO_CLASSES?.map(className => (
                   <option key={className} value={className}>{className}</option>
                 ))}
               </select>
@@ -282,7 +366,7 @@ const DocumentManagementCenter = () => {
                 className="px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="">Toutes les matières</option>
-                {subjects?.map(subject => (
+                {DEMO_SUBJECTS?.map(subject => (
                   <option key={subject} value={subject}>{subject}</option>
                 ))}
               </select>

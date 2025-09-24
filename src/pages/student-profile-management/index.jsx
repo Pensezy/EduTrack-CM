@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../lib/supabase';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../../contexts/AuthContext';
+import { useLocation } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import StudentProfileHeader from './components/StudentProfileHeader';
@@ -15,91 +13,55 @@ import Button from '../../components/ui/Button';
 
 const StudentProfileManagement = () => {
   const location = useLocation();
-  const navigate = useNavigate();
-  const { userProfile } = useAuth();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [currentUserRole, setCurrentUserRole] = useState('secretary');
   const [selectedStudentId, setSelectedStudentId] = useState('STU-2024-001');
   const [activeTab, setActiveTab] = useState('profile');
 
-  // Liste et données élèves dynamiques depuis Supabase
-  const [studentsList, setStudentsList] = useState([]);
-  const [studentData, setStudentData] = useState(null);
+  // Mock student data
+  const [studentData, setStudentData] = useState({
+    studentId: 'STU-2024-001',
+    firstName: 'Marie',
+    lastName: 'Dubois',
+    dateOfBirth: '15/03/2010',
+    gender: 'female',
+    class: '4ème B',
+    section: 'Générale',
+    status: 'active',
+    hasSpecialNeeds: false,
+    photo: 'https://images.unsplash.com/photo-1494790108755-2616b612b786?w=400&h=400&fit=crop&crop=face',
+    address: '123 Rue de la République',
+    city: 'Paris',
+    postalCode: '75011',
+    phone: '01.23.45.67.89',
+    email: 'marie.dubois@email.com',
+    emergencyContact: 'Pierre Dubois',
+    emergencyPhone: '06.12.34.56.78',
+    medicalInfo: 'Allergie aux arachides - PAI en cours',
+    allergies: 'Arachides, fruits à coque',
+    parentName: 'Pierre et Sophie Dubois',
+    parentEmail: 'parents.dubois@email.com',
+    parentPhone: '06.12.34.56.78',
+    attendance: 92,
+    averageGrade: 15.4,
+    behaviorScore: 18,
+    parentMeetings: 3
+  });
 
-  // Charger la liste des élèves au montage
-  useEffect(() => {
-    const fetchStudents = async () => {
-      const { data, error } = await supabase
-        .from('students')
-        .select('id, matricule, class_id, user_id');
-      if (!error && data) {
-        // Charger aussi les infos utilisateur associées
-        const userIds = data.map(s => s.user_id);
-        const { data: users } = await supabase
-          .from('app_users')
-          .select('id, full_name, role')
-          .in('id', userIds);
-        // Fusionner les infos
-        const students = data.map(s => ({
-          id: s.id,
-          matricule: s.matricule,
-          class: s.class_id,
-          user_id: s.user_id,
-          name: users?.find(u => u.id === s.user_id)?.full_name || '',
-          role: users?.find(u => u.id === s.user_id)?.role || ''
-        }));
-        setStudentsList(students);
-        // Charger le premier élève par défaut
-        if (students.length > 0) {
-          setSelectedStudentId(students[0].id);
-        }
-      }
-    };
-    fetchStudents();
-  }, []);
-
-  // Charger les données détaillées de l'élève sélectionné
-  useEffect(() => {
-    if (!selectedStudentId) return;
-    const fetchStudentData = async () => {
-      const { data: student, error } = await supabase
-        .from('students')
-        .select('*')
-        .eq('id', selectedStudentId)
-        .single();
-      if (!error && student) {
-        // Charger aussi les infos utilisateur associées
-        const { data: user } = await supabase
-          .from('app_users')
-          .select('full_name, email, phone, avatar_url, role')
-          .eq('id', student.user_id)
-          .single();
-        setStudentData({ ...student, ...user });
-      }
-    };
-    fetchStudentData();
-  }, [selectedStudentId]);
+  // Mock students list for navigation
+  const studentsList = [
+    { id: 'STU-2024-001', name: 'Marie Dubois', class: '4ème B' },
+    { id: 'STU-2024-002', name: 'Thomas Martin', class: '4ème B' },
+    { id: 'STU-2024-003', name: 'Emma Rousseau', class: '4ème A' },
+    { id: 'STU-2024-004', name: 'Lucas Bernard', class: '3ème C' }
+  ];
 
   useEffect(() => {
-    // Déterminer le rôle à partir du profil utilisateur connecté
-    if (userProfile?.role) {
-      setCurrentUserRole(userProfile.role);
-      // Si étudiant, forcer l'affichage de son propre profil uniquement
-      if (userProfile.role === 'student') {
-        setSelectedStudentId(userProfile.id || 'STU-2024-001');
-      }
-      // Si parent, afficher seulement les enfants associés (à adapter selon structure réelle)
-      if (userProfile.role === 'parent') {
-        // Ici, on pourrait filtrer la liste des étudiants selon les enfants du parent
-        // Pour la démo, on laisse la liste complète
-      }
-    } else {
-      // Par défaut, garder le comportement existant
-      const role = location?.state?.userRole || 'secretary';
-      setCurrentUserRole(role);
-    }
-  }, [location, userProfile]);
+    // Determine user role based on route or context
+    const role = location?.state?.userRole || 'secretary';
+    setCurrentUserRole(role);
+  }, [location]);
 
   const handleToggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -129,12 +91,19 @@ const StudentProfileManagement = () => {
   };
 
   const handleStudentSelect = (studentId) => {
-    // Contrôle d'accès : un étudiant ne peut voir que son propre profil
-    if (userProfile?.role === 'student' && studentId !== userProfile.id) {
-      alert("Vous n'avez pas accès à ce profil.");
-      return;
-    }
     setSelectedStudentId(studentId);
+    // In a real app, this would fetch the student data
+    const selectedStudent = studentsList?.find(s => s?.id === studentId);
+    if (selectedStudent) {
+      // Mock data update - in real app, fetch from API
+      setStudentData(prev => ({
+        ...prev,
+        studentId: selectedStudent?.id,
+        firstName: selectedStudent?.name?.split(' ')?.[0],
+        lastName: selectedStudent?.name?.split(' ')?.[1],
+        class: selectedStudent?.class
+      }));
+    }
   };
 
   const handleExportData = () => {
@@ -194,7 +163,7 @@ const StudentProfileManagement = () => {
               >
                 {studentsList?.map(student => (
                   <option key={student?.id} value={student?.id}>
-                    {student?.name} - {student?.matricule}
+                    {student?.name} - {student?.class}
                   </option>
                 ))}
               </select>

@@ -1,11 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-
-import { useAuth } from '../../contexts/AuthContext';
-import { studentService, absenceService, paymentService, notificationService } from '../../services/edutrackService';
 
 // Import all tab components
 import StudentManagementTab from './components/StudentManagementTab';
@@ -16,43 +13,8 @@ import NotificationCenter from './components/NotificationCenter';
 import TransferWorkflow from './components/TransferWorkflow';
 
 const SecretaryDashboard = () => {
-  const { userProfile } = useAuth();
   const [activeTab, setActiveTab] = useState('students');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
-  const [quickStats, setQuickStats] = useState([
-    { label: 'Élèves actifs', value: '...', icon: 'Users', color: 'text-success', bgColor: 'bg-success/10' },
-    { label: 'Absences aujourd\'hui', value: '...', icon: 'AlertTriangle', color: 'text-warning', bgColor: 'bg-warning/10' },
-    { label: 'Paiements en attente', value: '...', icon: 'Clock', color: 'text-error', bgColor: 'bg-error/10' },
-    { label: 'Messages envoyés', value: '...', icon: 'MessageSquare', color: 'text-primary', bgColor: 'bg-primary/10' }
-  ]);
-  const [loadingStats, setLoadingStats] = useState(true);
-
-  useEffect(() => {
-    const fetchStats = async () => {
-      setLoadingStats(true);
-      // 1. Élèves actifs
-      const { data: students } = await studentService.getStudents();
-      // 2. Absences aujourd'hui
-      const today = new Date().toISOString().split('T')[0];
-      const { data: absences } = await absenceService.getAbsencesByStudent(null); // get all absences
-      const absToday = absences?.filter(a => a.date_absence === today)?.length || 0;
-      // 3. Paiements en attente
-      const { data: payments } = await paymentService.getPaymentsByStudent(null); // get all payments
-      const pendingPayments = payments?.filter(p => p.status === 'pending')?.length || 0;
-      // 4. Messages envoyés (notifications)
-      const { data: notifications } = await notificationService.getNotificationsByUser(null); // get all notifications
-      const sentMessages = notifications?.length || 0;
-      setQuickStats([
-        { label: 'Élèves actifs', value: students?.length || 0, icon: 'Users', color: 'text-success', bgColor: 'bg-success/10' },
-        { label: 'Absences aujourd\'hui', value: absToday, icon: 'AlertTriangle', color: 'text-warning', bgColor: 'bg-warning/10' },
-        { label: 'Paiements en attente', value: pendingPayments, icon: 'Clock', color: 'text-error', bgColor: 'bg-error/10' },
-        { label: 'Messages envoyés', value: sentMessages, icon: 'MessageSquare', color: 'text-primary', bgColor: 'bg-primary/10' }
-      ]);
-      setLoadingStats(false);
-    };
-    fetchStats();
-    // eslint-disable-next-line
-  }, [userProfile]);
 
   const tabs = [
     {
@@ -102,7 +64,36 @@ const SecretaryDashboard = () => {
   const currentTab = tabs?.find(tab => tab?.id === activeTab);
   const ActiveComponent = currentTab?.component;
 
-  // ...removed hardcoded quickStats...
+  const quickStats = [
+    {
+      label: 'Élèves actifs',
+      value: '127',
+      icon: 'Users',
+      color: 'text-success',
+      bgColor: 'bg-success/10'
+    },
+    {
+      label: 'Absences aujourd\'hui',
+      value: '8',
+      icon: 'AlertTriangle',
+      color: 'text-warning',
+      bgColor: 'bg-warning/10'
+    },
+    {
+      label: 'Paiements en attente',
+      value: '23',
+      icon: 'Clock',
+      color: 'text-error',
+      bgColor: 'bg-error/10'
+    },
+    {
+      label: 'Messages envoyés',
+      value: '45',
+      icon: 'MessageSquare',
+      color: 'text-primary',
+      bgColor: 'bg-primary/10'
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-background">
@@ -162,7 +153,7 @@ const SecretaryDashboard = () => {
                   </div>
                   <div>
                     <p className="font-heading font-heading-bold text-2xl text-text-primary">
-                      {loadingStats ? <span className="animate-pulse">...</span> : stat?.value}
+                      {stat?.value}
                     </p>
                     <p className="font-caption font-caption-normal text-sm text-text-secondary">
                       {stat?.label}
