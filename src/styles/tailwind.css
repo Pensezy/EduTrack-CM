@@ -1,0 +1,105 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Core System Colors */
+    --color-background: #F5F5F5; /* gray-100 */
+    --color-foreground: #2C3E50; /* slate-700 */
+    --color-border: rgba(42, 92, 170, 0.1); /* primary with opacity */
+    --color-input: #FFFFFF; /* white */
+    --color-ring: #2A5CAA; /* blue-600 */
+    --color-card: #FFFFFF; /* white */
+    --color-card-foreground: #2C3E50; /* slate-700 */
+    --color-popover: #FFFFFF; /* white */
+    --color-popover-foreground: #2C3E50; /* slate-700 */
+    --color-muted: #F5F5F5; /* gray-100 */
+    --color-muted-foreground: #7F8C8D; /* gray-500 */
+
+    /* Brand Colors */
+    --color-primary: #2A5CAA; /* blue-600 */
+    --color-primary-foreground: #FFFFFF; /* white */
+    --color-secondary: #1B3B5F; /* blue-900 */
+    --color-secondary-foreground: #FFFFFF; /* white */
+    --color-accent: #F4C430; /* yellow-400 */
+    --color-accent-foreground: #2C3E50; /* slate-700 */
+
+    /* Status Colors */
+    --color-success: #27AE60; /* green-600 */
+    --color-success-foreground: #FFFFFF; /* white */
+    --color-warning: #F39C12; /* orange-500 */
+    --color-warning-foreground: #FFFFFF; /* white */
+    --color-error: #E74C3C; /* red-500 */
+    --color-error-foreground: #FFFFFF; /* white */
+    --color-destructive: #E74C3C; /* red-500 */
+    --color-destructive-foreground: #FFFFFF; /* white */
+
+    /* Surface Colors */
+    --color-surface: #FFFFFF; /* white */
+    --color-text-primary: #2C3E50; /* slate-700 */
+    --color-text-secondary: #7F8C8D; /* gray-500 */
+
+    /* Shadow Variables */
+    --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.2);
+
+    /* Animation Variables */
+    --transition-fast: 0.2s ease-out;
+    --transition-medium: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-slow: 0.5s ease-in-out;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Open Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+  }
+
+  .font-caption {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-mono {
+    font-family: 'JetBrains Mono', monospace;
+  }
+}
+
+@layer components {
+  .shadow-card {
+    box-shadow: var(--shadow-sm);
+  }
+
+  .shadow-modal {
+    box-shadow: var(--shadow-md);
+  }
+
+  .shadow-overlay {
+    box-shadow: var(--shadow-lg);
+  }
+
+  .transition-micro {
+    transition: var(--transition-fast);
+  }
+
+  .transition-state {
+    transition: var(--transition-medium);
+  }
+
+  .transition-page {
+    transition: var(--transition-slow);
+  }
+}
