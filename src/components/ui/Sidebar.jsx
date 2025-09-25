@@ -31,7 +31,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Actions', path: '/principal-dashboard?tab=actions', icon: 'Zap', description: 'Actions rapides' },
       { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration système' },
       { label: 'Documents', path: '/document-management-hub', icon: 'FileText', description: 'Gestion documents' },
-      { label: 'Enseignants', path: '/teacher-account-management', icon: 'Users', description: 'Gestion enseignants' }
+      { label: 'Enseignants', path: '/principal-dashboard?tab=teachers', icon: 'Users', description: 'Gestion enseignants' }
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home', description: 'Aperçu système' },

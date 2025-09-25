@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Search, Plus, Edit3, UserCheck, UserX, Mail, Phone, Calendar, FileText, GraduationCap } from 'lucide-react';
-import { teacherService } from '../../services/teacherService';
 import { useAuth } from '../../contexts/AuthContext';
+import Header from '../../components/ui/Header';
+import Sidebar from '../../components/ui/Sidebar';
 
 const TeacherAccountManagement = () => {
   const { user } = useAuth();
@@ -11,6 +12,7 @@ const TeacherAccountManagement = () => {
   const [selectedTeacher, setSelectedTeacher] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [formData, setFormData] = useState({
     full_name: '',
     email: '',
@@ -28,11 +30,86 @@ const TeacherAccountManagement = () => {
   const loadTeachers = async () => {
     setLoading(true);
     try {
-      const result = await teacherService?.getSchoolTeachers(user?.current_school_id);
-      if (result?.success) {
-        setTeachers(result?.data || []);
+      // Vérifier si l'utilisateur est connecté
+      if (!user) {
+        setError('Utilisateur non connecté');
+        setLoading(false);
+        return;
+      }
+
+      // Vérifier si l'utilisateur a les permissions nécessaires
+      const allowedRoles = ['admin', 'principal', 'secretary'];
+      if (!allowedRoles.includes(user?.role)) {
+        setError('Accès non autorisé pour ce rôle');
+        setLoading(false);
+        return;
+      }
+
+      // Vérifier si c'est un compte de démo
+      if (user?.email?.includes('@demo.com') || user?.id?.includes('demo-')) {
+        // Données de démo pour les enseignants
+        const demoTeachers = [
+          {
+            id: 'demo-teacher-1',
+            full_name: 'Mme. Nkomo Marie',
+            email: 'marie.nkomo@ecole.cm',
+            phone: '+237 670 123 456',
+            pin_code: '1234',
+            created_at: '2024-09-01T08:00:00Z',
+            teacher_assignments: [
+              { id: 1, class_name: '6e A', subject: 'Mathématiques', is_active: true },
+              { id: 2, class_name: '6e B', subject: 'Mathématiques', is_active: true }
+            ]
+          },
+          {
+            id: 'demo-teacher-2',
+            full_name: 'M. Kamdem Paul',
+            email: 'paul.kamdem@ecole.cm',
+            phone: '+237 680 234 567',
+            pin_code: '5678',
+            created_at: '2024-09-02T09:00:00Z',
+            teacher_assignments: [
+              { id: 3, class_name: '5e A', subject: 'Français', is_active: true },
+              { id: 4, class_name: '4e A', subject: 'Français', is_active: true }
+            ]
+          },
+          {
+            id: 'demo-teacher-3',
+            full_name: 'Mme. Fotso Jeanne',
+            email: 'jeanne.fotso@ecole.cm',
+            phone: '+237 690 345 678',
+            pin_code: '9012',
+            created_at: '2024-09-03T10:00:00Z',
+            teacher_assignments: [
+              { id: 5, class_name: '3e A', subject: 'Sciences Physiques', is_active: true }
+            ]
+          },
+          {
+            id: 'demo-teacher-4',
+            full_name: 'M. Biya Emmanuel',
+            email: 'emmanuel.biya@ecole.cm',
+            phone: '+237 650 456 789',
+            pin_code: '3456',
+            created_at: '2024-09-04T11:00:00Z',
+            teacher_assignments: []
+          }
+        ];
+        setTeachers(demoTeachers);
       } else {
-        setError('Erreur lors du chargement des enseignants');
+        // Données réelles via Supabase
+        try {
+          // Import dynamique du service seulement pour les comptes non-démo
+          const { teacherService } = await import('../../services/teacherService');
+          const result = await teacherService?.getSchoolTeachers(user?.current_school_id);
+          if (result?.success) {
+            setTeachers(result?.data || []);
+          } else {
+            setError('Erreur lors du chargement des enseignants');
+          }
+        } catch (supabaseError) {
+          console.error('Erreur Supabase:', supabaseError);
+          setError('Erreur de connexion à la base de données');
+        }
       }
     } catch (error) {
       setError('Erreur de connexion');
@@ -47,21 +124,48 @@ const TeacherAccountManagement = () => {
     setSuccess('');
 
     try {
-      const teacherData = {
-        ...formData,
-        school_id: user?.current_school_id,
-        pin_code: formData?.pin_code || Math.floor(1000 + Math.random() * 9000)?.toString()
-      };
-
-      const result = await teacherService?.createTeacherAccount(teacherData);
-      
-      if (result?.success) {
-        setSuccess('Compte enseignant créé avec succès');
+      // Vérifier si c'est un compte de démo
+      if (user?.email?.includes('@demo.com')) {
+        // Simulation de création pour la démo
+        const newTeacher = {
+          id: `demo-teacher-${Date.now()}`,
+          full_name: formData?.full_name,
+          email: formData?.email,
+          phone: formData?.phone,
+          pin_code: formData?.pin_code || Math.floor(1000 + Math.random() * 9000)?.toString(),
+          created_at: new Date().toISOString(),
+          teacher_assignments: []
+        };
+        
+        // Ajouter à la liste locale (pour la démo)
+        setTeachers(prev => [...prev, newTeacher]);
+        setSuccess('Compte enseignant créé avec succès (Mode Démo)');
         setShowCreateModal(false);
         resetForm();
-        loadTeachers();
       } else {
-        setError(result?.error || 'Erreur lors de la création du compte');
+        // Création réelle via Supabase
+        try {
+          const { teacherService } = await import('../../services/teacherService');
+          const teacherData = {
+            ...formData,
+            school_id: user?.current_school_id,
+            pin_code: formData?.pin_code || Math.floor(1000 + Math.random() * 9000)?.toString()
+          };
+
+          const result = await teacherService?.createTeacherAccount(teacherData);
+          
+          if (result?.success) {
+            setSuccess('Compte enseignant créé avec succès');
+            setShowCreateModal(false);
+            resetForm();
+            loadTeachers();
+          } else {
+            setError(result?.error || 'Erreur lors de la création du compte');
+          }
+        } catch (supabaseError) {
+          console.error('Erreur Supabase:', supabaseError);
+          setError('Erreur de création du compte');
+        }
       }
     } catch (error) {
       setError('Erreur de création du compte');
@@ -74,20 +178,46 @@ const TeacherAccountManagement = () => {
     setSuccess('');
 
     try {
-      const result = await teacherService?.updateTeacherProfile(selectedTeacher?.id, {
-        full_name: formData?.full_name,
-        email: formData?.email,
-        phone: formData?.phone
-      });
-      
-      if (result?.success) {
-        setSuccess('Profil enseignant mis à jour avec succès');
+      // Vérifier si c'est un compte de démo
+      if (user?.email?.includes('@demo.com')) {
+        // Simulation de modification pour la démo
+        setTeachers(prev => prev.map(teacher => 
+          teacher.id === selectedTeacher?.id 
+            ? { 
+                ...teacher, 
+                full_name: formData?.full_name,
+                email: formData?.email,
+                phone: formData?.phone
+              }
+            : teacher
+        ));
+        setSuccess('Profil enseignant mis à jour avec succès (Mode Démo)');
         setShowEditModal(false);
         setSelectedTeacher(null);
         resetForm();
-        loadTeachers();
       } else {
-        setError(result?.error || 'Erreur lors de la mise à jour');
+        // Modification réelle via Supabase
+        try {
+          const { teacherService } = await import('../../services/teacherService');
+          const result = await teacherService?.updateTeacherProfile(selectedTeacher?.id, {
+            full_name: formData?.full_name,
+            email: formData?.email,
+            phone: formData?.phone
+          });
+          
+          if (result?.success) {
+            setSuccess('Profil enseignant mis à jour avec succès');
+            setShowEditModal(false);
+            setSelectedTeacher(null);
+            resetForm();
+            loadTeachers();
+          } else {
+            setError(result?.error || 'Erreur lors de la mise à jour');
+          }
+        } catch (supabaseError) {
+          console.error('Erreur Supabase:', supabaseError);
+          setError('Erreur de mise à jour du profil');
+        }
       }
     } catch (error) {
       setError('Erreur de mise à jour du profil');
@@ -140,6 +270,39 @@ const TeacherAccountManagement = () => {
     teacher?.phone?.includes(searchTerm)
   ) || [];
 
+  // Vérifier si l'utilisateur est connecté et autorisé (mais permettre le chargement)
+  const allowedRoles = ['admin', 'principal', 'secretary'];
+  
+  if (user && !allowedRoles.includes(user?.role)) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Header 
+          onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+          user={user}
+        />
+        
+        <div className="flex">
+          <Sidebar 
+            isOpen={sidebarOpen}
+            onClose={() => setSidebarOpen(false)}
+            userRole={user?.role}
+          />
+          
+          <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'} p-4`}>
+            <div className="max-w-7xl mx-auto">
+              <div className="flex items-center justify-center h-64">
+                <div className="text-center">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-2">Accès restreint</h2>
+                  <p className="text-gray-600">Cette page est réservée aux administrateurs, principaux et secrétaires.</p>
+                </div>
+              </div>
+            </div>
+          </main>
+        </div>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
@@ -153,48 +316,61 @@ const TeacherAccountManagement = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <button 
-                onClick={() => window.history?.back()}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900">
-                  Gestion des Comptes Enseignants
-                </h1>
-                <p className="text-gray-600">
-                  Créer et gérer les comptes des enseignants
-                </p>
+    <div className="min-h-screen bg-gray-50">
+      <Header 
+        onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
+        user={user}
+      />
+      
+      <div className="flex">
+        <Sidebar 
+          isOpen={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          userRole={user?.role}
+        />
+        
+        <main className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'} p-4`}>
+          <div className="max-w-7xl mx-auto">
+            {/* Page Header */}
+            <div className="bg-white rounded-lg shadow-sm border p-6 mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <button 
+                    onClick={() => window.history?.back()}
+                    className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                  >
+                    <ChevronLeft className="w-5 h-5" />
+                  </button>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900">
+                      Gestion des Comptes Enseignants
+                    </h1>
+                    <p className="text-gray-600">
+                      Créer et gérer les comptes des enseignants
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setShowCreateModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Nouvel Enseignant</span>
+                </button>
+              </div>
+
+              {/* Search Bar */}
+              <div className="mt-6 relative">
+                <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Rechercher par nom, email ou téléphone..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e?.target?.value)}
+                  className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                />
               </div>
             </div>
-            <button
-              onClick={() => setShowCreateModal(true)}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-            >
-              <Plus className="w-4 h-4" />
-              <span>Nouvel Enseignant</span>
-            </button>
-          </div>
-
-          {/* Search Bar */}
-          <div className="mt-6 relative">
-            <Search className="w-5 h-5 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Rechercher par nom, email ou téléphone..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e?.target?.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-        </div>
 
         {/* Error/Success Messages */}
         {error && (
@@ -497,6 +673,8 @@ const TeacherAccountManagement = () => {
             </div>
           </div>
         )}
+          </div>
+        </main>
       </div>
     </div>
   );
