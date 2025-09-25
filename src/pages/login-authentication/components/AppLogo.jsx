@@ -13,10 +13,10 @@ const AppLogo = ({ className = '' }) => {
       />
       {/* App Name */}
       <div className="text-center">
-        <h1 className="font-heading font-heading-bold text-3xl text-primary mb-2">
+        <h1 className="font-heading font-heading-bold text-3xl text-primary mb-2 whitespace-nowrap">
           EduTrack CM
         </h1>
-        <p className="font-body font-body-normal text-sm text-text-secondary">
+        <p className="font-body font-body-normal text-sm text-text-secondary whitespace-nowrap">
           Plateforme de gestion éducative sécurisée
         </p>
       </div>
