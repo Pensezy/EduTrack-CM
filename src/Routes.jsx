@@ -15,6 +15,7 @@ import DocumentManagementCenter from "./pages/document-management-center";
 import ParentDashboard from "./pages/parent-dashboard";
 import TeacherDashboard from "./pages/teacher-dashboard";
 import AdminDashboard from "./pages/admin-dashboard";
+import SchoolManagement from "./pages/school-management";
 
 const Routes = () => {
   return (
@@ -34,6 +35,7 @@ const Routes = () => {
           <Route path="/grade-management-system" element={<GradeManagementSystem />} />
           <Route path="/document-management-hub" element={<DocumentManagementHub />} />
           <Route path="/document-management-center" element={<DocumentManagementCenter />} />
+          <Route path="/school-management" element={<SchoolManagement />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>
