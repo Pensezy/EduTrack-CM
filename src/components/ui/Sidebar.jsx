@@ -107,7 +107,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
               <Link
                 key={item?.path}
                 to={item?.path}
-                className={`flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-body font-body-normal transition-micro group ${
+                className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2 rounded-lg text-sm font-body font-body-normal transition-micro group ${
                   location?.pathname === item?.path
                     ? 'bg-primary text-primary-foreground'
                     : 'text-card-foreground hover:bg-muted hover:text-primary'
@@ -122,7 +122,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                   }`}
                 />
                 {!isCollapsed && (
-                  <div className="flex-1 min-w-0">
+                  <div className="flex-1 min-w-0 ml-3">
                     <div className="font-body font-body-semibold">{item?.label}</div>
                     <div className="font-caption font-caption-normal text-xs text-muted-foreground group-hover:text-primary/70">
                       {item?.description}
@@ -145,11 +145,11 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                 <button
                   key={index}
                   onClick={action?.action}
-                  className="flex items-center space-x-3 px-3 py-2 rounded-lg text-sm font-body font-body-normal text-card-foreground hover:bg-muted hover:text-primary transition-micro w-full text-left"
+                  className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2 rounded-lg text-sm font-body font-body-normal text-card-foreground hover:bg-muted hover:text-primary transition-micro w-full text-left`}
                   title={isCollapsed ? action?.label : ''}
                 >
                   <Icon name={action?.icon} size={20} className="flex-shrink-0" />
-                  {!isCollapsed && <span>{action?.label}</span>}
+                  {!isCollapsed && <span className="ml-3">{action?.label}</span>}
                 </button>
               ))}
             </div>
