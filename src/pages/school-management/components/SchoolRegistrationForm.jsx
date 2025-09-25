@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import Input from '../../../components/ui/Input';
+import Select from '../../../components/ui/Select';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
@@ -15,9 +16,69 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
     phone: '',
     address: '',
     schoolType: '',
+    country: '',
     city: ''
   });
   const [error, setError] = useState(null);
+
+  // Données des pays et villes
+  const countryData = {
+    'cameroon': {
+      label: 'Cameroun',
+      cities: [
+        { value: 'yaounde', label: 'Yaoundé' },
+        { value: 'douala', label: 'Douala' },
+        { value: 'bamenda', label: 'Bamenda' },
+        { value: 'bafoussam', label: 'Bafoussam' },
+        { value: 'garoua', label: 'Garoua' },
+        { value: 'maroua', label: 'Maroua' },
+        { value: 'ngaoundere', label: 'Ngaoundéré' },
+        { value: 'bertoua', label: 'Bertoua' },
+        { value: 'ebolowa', label: 'Ebolowa' },
+        { value: 'kumba', label: 'Kumba' }
+      ]
+    },
+    'france': {
+      label: 'France',
+      cities: [
+        { value: 'paris', label: 'Paris' },
+        { value: 'marseille', label: 'Marseille' },
+        { value: 'lyon', label: 'Lyon' },
+        { value: 'toulouse', label: 'Toulouse' },
+        { value: 'nice', label: 'Nice' },
+        { value: 'nantes', label: 'Nantes' },
+        { value: 'strasbourg', label: 'Strasbourg' },
+        { value: 'montpellier', label: 'Montpellier' },
+        { value: 'bordeaux', label: 'Bordeaux' },
+        { value: 'lille', label: 'Lille' }
+      ]
+    },
+    'senegal': {
+      label: 'Sénégal',
+      cities: [
+        { value: 'dakar', label: 'Dakar' },
+        { value: 'thies', label: 'Thiès' },
+        { value: 'kaolack', label: 'Kaolack' },
+        { value: 'ziguinchor', label: 'Ziguinchor' },
+        { value: 'saint_louis', label: 'Saint-Louis' },
+        { value: 'tambacounda', label: 'Tambacounda' },
+        { value: 'mbour', label: 'Mbour' },
+        { value: 'diourbel', label: 'Diourbel' }
+      ]
+    }
+  };
+
+  const countryOptions = Object.keys(countryData).map(key => ({
+    value: key,
+    label: countryData[key].label
+  }));
+
+  const getCityOptions = () => {
+    if (!formData.country || !countryData[formData.country]) {
+      return [];
+    }
+    return countryData[formData.country].cities;
+  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -31,7 +92,7 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
   const validateForm = () => {
     if (!formData.schoolName || !formData.directorName || !formData.email || 
         !formData.password || !formData.phone || !formData.address || 
-        !formData.schoolType || !formData.city) {
+        !formData.schoolType || !formData.country || !formData.city) {
       setError('Veuillez remplir tous les champs obligatoires');
       return false;
     }
@@ -78,6 +139,7 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
             phone: formData.phone,
             address: formData.address,
             type: formData.schoolType,
+            country: formData.country,
             city: formData.city,
             user_id: authData.user.id,
             status: 'pending'
@@ -150,28 +212,42 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
           required
         />
 
-        <Input
+        <Select
           label="Type d'établissement"
           name="schoolType"
           value={formData.schoolType}
-          onChange={handleChange}
+          onChange={(value) => setFormData(prev => ({ ...prev, schoolType: value }))}
+          placeholder="Sélectionner un type"
           required
-          as="select"
           options={[
-            { value: '', label: 'Sélectionner un type' },
             { value: 'primary', label: 'École Primaire' },
             { value: 'secondary', label: 'Établissement Secondaire' },
+            { value: 'college', label: 'Collège' },
             { value: 'high_school', label: 'Lycée' },
-            { value: 'college', label: 'Collège' }
+            { value: 'institut', label: 'Institut' },
+            { value: 'university', label: 'Université' }
           ]}
         />
 
-        <Input
+        <Select
+          label="Pays"
+          name="country"
+          value={formData.country}
+          onChange={(value) => setFormData(prev => ({ ...prev, country: value, city: '' }))}
+          placeholder="Sélectionner un pays"
+          required
+          options={countryOptions}
+        />
+
+        <Select
           label="Ville"
           name="city"
           value={formData.city}
-          onChange={handleChange}
+          onChange={(value) => setFormData(prev => ({ ...prev, city: value }))}
+          placeholder={formData.country ? "Sélectionner une ville" : "Sélectionnez d'abord un pays"}
+          disabled={!formData.country}
           required
+          options={getCityOptions()}
         />
 
         <div className="md:col-span-2">
