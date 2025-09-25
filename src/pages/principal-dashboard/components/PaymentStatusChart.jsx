@@ -244,13 +244,13 @@ const PaymentStatusChart = () => {
           <div className="flex items-center space-x-2">
             <Icon name="Euro" size={14} className="text-success" />
             <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-              Montant collecté: 68 400€
+              Montant collecté: 680 400FCFA
             </span>
           </div>
           <div className="flex items-center space-x-2">
             <Icon name="AlertTriangle" size={14} className="text-error" />
             <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-              Montant en attente: 11 600€
+              Montant en attente: 110 600FCFA
             </span>
           </div>
         </div>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
@@ -74,6 +74,36 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
   const currentNavItems = navigationItems?.[userRole] || navigationItems?.student;
   const currentQuickActions = quickActions?.[userRole] || quickActions?.student;
 
+  // Ajouter le CSS pour la scrollbar personnalisée
+  useEffect(() => {
+    const style = document.createElement('style');
+    style.textContent = `
+      .sidebar-scroll::-webkit-scrollbar {
+        width: 6px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-track {
+        background: #f1f5f9;
+        border-radius: 3px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+      }
+      .sidebar-scroll::-webkit-scrollbar-thumb:hover {
+        background: #94a3b8;
+      }
+      .sidebar-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 #f1f5f9;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   return (
     <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-card border-r border-border z-navigation transition-all duration-state ${
       isCollapsed ? 'w-16' : 'w-64'
@@ -96,9 +126,16 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
           </Button>
         </div>
 
-        {/* Navigation Items */}
-        <nav className="flex-1 p-4 space-y-2">
-          <div className="space-y-1">
+        {/* Navigation Items - Scrollable */}
+        <nav 
+          className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll" 
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: '#cbd5e1 #f1f5f9'
+          }}
+        >
+          <div className="p-4 space-y-2">
+            <div className="space-y-1">
             {!isCollapsed && (
               <h3 className="font-caption font-caption-normal text-xs text-muted-foreground uppercase tracking-wider mb-3">
                 Main Menu
@@ -134,26 +171,48 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
             ))}
           </div>
 
-          {/* Quick Actions */}
-          <div className="pt-6">
+          {/* Quick Actions - Améliorées */}
+          <div className="pt-6 border-t border-gray-200">
             {!isCollapsed && (
-              <h3 className="font-caption font-caption-normal text-xs text-muted-foreground uppercase tracking-wider mb-3">
-                Quick Actions
-              </h3>
+              <div className="mb-4 pt-4">
+                <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
+                  Actions Rapides
+                </h3>
+                <p className="text-xs text-gray-500">Outils de gestion</p>
+              </div>
             )}
-            <div className="space-y-1">
-              {currentQuickActions?.map((action, index) => (
-                <button
-                  key={index}
-                  onClick={action?.action}
-                  className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2 rounded-lg text-sm font-body font-body-normal text-card-foreground hover:bg-muted hover:text-primary transition-micro w-full text-left`}
-                  title={isCollapsed ? action?.label : ''}
-                >
-                  <Icon name={action?.icon} size={20} className="flex-shrink-0" />
-                  {!isCollapsed && <span className="ml-3">{action?.label}</span>}
-                </button>
-              ))}
+            <div className="space-y-2">
+              {currentQuickActions?.map((action, index) => {
+                // Définir des couleurs spécifiques pour chaque type d'action
+                const getActionStyle = (actionLabel) => {
+                  switch (actionLabel) {
+                    case 'Nouveau message':
+                      return 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300';
+                    case 'Exporter données':
+                      return 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300';
+                    case 'Créer rapport':
+                      return 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 hover:border-purple-300';
+                    case 'Sauvegarde':
+                      return 'bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 hover:border-orange-300';
+                    default:
+                      return 'bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-700 border-gray-200 hover:border-blue-200';
+                  }
+                };
+
+                return (
+                  <button
+                    key={index}
+                    onClick={action?.action}
+                    className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 w-full text-left shadow-sm hover:shadow-md ${getActionStyle(action?.label)}`}
+                    title={isCollapsed ? action?.label : ''}
+                  >
+                    <Icon name={action?.icon} size={18} className="flex-shrink-0" />
+                    {!isCollapsed && <span className="ml-2 font-medium">{action?.label}</span>}
+                  </button>
+                );
+              })}
             </div>
+          </div>
           </div>
         </nav>
 
