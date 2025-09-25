@@ -12,6 +12,7 @@ import PaymentStatusChart from './components/PaymentStatusChart';
 import QuickActions from './components/QuickActions';
 import SystemStatus from './components/SystemStatus';
 import TeacherManagement from './components/TeacherManagement';
+import PersonnelManagement from './components/PersonnelManagement';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
@@ -26,7 +27,7 @@ const PrincipalDashboard = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'analytics', 'teachers', 'actions', 'system'].includes(tabParam)) {
+    if (tabParam && ['overview', 'analytics', 'teachers', 'personnel', 'actions', 'system'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else {
       setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
@@ -96,6 +97,7 @@ const PrincipalDashboard = () => {
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'analytics', label: 'Analyses', icon: 'TrendingUp' },
     { id: 'teachers', label: 'Enseignants', icon: 'Users' },
+    { id: 'personnel', label: 'Personnel', icon: 'UserPlus' },
     { id: 'actions', label: 'Actions', icon: 'Zap' },
     { id: 'system', label: 'Système', icon: 'Settings' }
   ];
@@ -186,6 +188,8 @@ const PrincipalDashboard = () => {
         );
       case 'teachers':
         return <TeacherManagement />;
+      case 'personnel':
+        return <PersonnelManagement />;
       case 'actions':
         return (
           <div className="bg-white rounded-xl border border-gray-200 p-6">

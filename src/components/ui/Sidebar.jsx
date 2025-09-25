@@ -59,8 +59,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Documents', icon: 'FileText', path: '/document-management-center' },
     ],
     principal: [
+      { label: 'Nouveau secrétaire', icon: 'UserPlus', path: '/principal-dashboard?tab=personnel' },
       { label: 'Nouveau message', icon: 'Mail', path: '/notification-management' },
-      { label: 'Exporter données', icon: 'Download', path: '/data-backup' },
       { label: 'Créer rapport', icon: 'FileBarChart', path: '/report-generation' },
       { label: 'Sauvegarde', icon: 'Database', path: '/data-backup' },
     ],
@@ -187,10 +187,10 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                 // Définir des couleurs spécifiques pour chaque type d'action
                 const getActionStyle = (actionLabel) => {
                   switch (actionLabel) {
+                    case 'Nouveau secrétaire':
+                      return 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 hover:border-emerald-300';
                     case 'Nouveau message':
                       return 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300';
-                    case 'Exporter données':
-                      return 'bg-green-50 hover:bg-green-100 text-green-700 border-green-200 hover:border-green-300';
                     case 'Créer rapport':
                       return 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 hover:border-purple-300';
                     case 'Sauvegarde':

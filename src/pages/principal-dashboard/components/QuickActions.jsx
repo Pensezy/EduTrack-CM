@@ -9,6 +9,14 @@ const QuickActions = () => {
 
   const quickActions = [
     {
+      id: 'personnel',
+      title: 'Créer compte secrétaire',
+      description: 'Ajouter un nouveau secrétaire',
+      icon: 'UserPlus',
+      color: 'bg-blue-500',
+      path: '/principal-dashboard?tab=personnel'
+    },
+    {
       id: 'notifications',
       title: 'Envoyer une notification',
       description: 'Diffuser un message à toute l\'école',
@@ -47,14 +55,6 @@ const QuickActions = () => {
       icon: 'Calendar',
       color: 'bg-accent',
       path: '/school-calendar'
-    },
-    {
-      id: 'backup',
-      title: 'Sauvegarde données',
-      description: 'Exporter et sauvegarder',
-      icon: 'Download',
-      color: 'bg-muted',
-      path: '/data-backup'
     }
   ];
 
