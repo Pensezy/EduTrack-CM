@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../AppIcon';
 import Button from './Button';
 
 const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
   const location = useLocation();
+  const navigate = useNavigate();
 
   const navigationItems = {
     student: [
@@ -42,32 +43,32 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
 
   const quickActions = {
     student: [
-      { label: 'Voir les devoirs', icon: 'FileText', action: () => console.log('View assignments') },
-      { label: 'Présences', icon: 'Calendar', action: () => console.log('Check attendance') },
-      { label: 'Bulletins', icon: 'FileBarChart', action: () => console.log('View grades') },
+      { label: 'Voir les devoirs', icon: 'FileText', path: '/grade-management-system' },
+      { label: 'Présences', icon: 'Calendar', path: '/student-dashboard' },
+      { label: 'Bulletins', icon: 'FileBarChart', path: '/grade-management-system' },
     ],
     teacher: [
-      { label: 'Nouvelle note', icon: 'Plus', action: () => console.log('Add grade') },
-      { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
-      { label: 'Emploi du temps', icon: 'Calendar', action: () => console.log('View schedule') },
+      { label: 'Nouvelle note', icon: 'Plus', path: '/grade-management-system' },
+      { label: 'Documents', icon: 'FileText', path: '/document-management-hub' },
+      { label: 'Emploi du temps', icon: 'Calendar', path: '/teacher-dashboard' },
     ],
     secretary: [
-      { label: 'Nouvel élève', icon: 'UserPlus', action: () => console.log('Add student') },
-      { label: 'Rapports', icon: 'FileBarChart', action: () => console.log('Generate report') },
-      { label: 'Notifications', icon: 'Mail', action: () => console.log('Send notice') },
-      { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
+      { label: 'Nouvel élève', icon: 'UserPlus', path: '/student-profile-management' },
+      { label: 'Rapports', icon: 'FileBarChart', path: '/report-generation' },
+      { label: 'Notifications', icon: 'Mail', path: '/notification-management' },
+      { label: 'Documents', icon: 'FileText', path: '/document-management-center' },
     ],
     principal: [
-      { label: 'Nouveau message', icon: 'Mail', action: () => console.log('Send announcement') },
-      { label: 'Exporter données', icon: 'Download', action: () => console.log('Export data') },
-      { label: 'Créer rapport', icon: 'FileBarChart', action: () => console.log('Generate report') },
-      { label: 'Sauvegarde', icon: 'Database', action: () => console.log('Backup data') },
+      { label: 'Nouveau message', icon: 'Mail', path: '/notification-management' },
+      { label: 'Exporter données', icon: 'Download', path: '/data-backup' },
+      { label: 'Créer rapport', icon: 'FileBarChart', path: '/report-generation' },
+      { label: 'Sauvegarde', icon: 'Database', path: '/data-backup' },
     ],
     admin: [
-      { label: 'Système', icon: 'Settings', action: () => console.log('System settings') },
-      { label: 'Sécurité', icon: 'Shield', action: () => console.log('Security settings') },
-      { label: 'Backups', icon: 'Database', action: () => console.log('Manage backups') },
-      { label: 'Logs', icon: 'FileText', action: () => console.log('View logs') },
+      { label: 'Système', icon: 'Settings', path: '/admin-dashboard' },
+      { label: 'Sécurité', icon: 'Shield', path: '/admin-dashboard' },
+      { label: 'Backups', icon: 'Database', path: '/data-backup' },
+      { label: 'Logs', icon: 'FileText', path: '/admin-dashboard' },
     ]
   };
 
@@ -202,7 +203,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                 return (
                   <button
                     key={index}
-                    onClick={action?.action}
+                    onClick={() => navigate(action?.path)}
                     className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 w-full text-left shadow-sm hover:shadow-md ${getActionStyle(action?.label)}`}
                     title={isCollapsed ? action?.label : ''}
                   >

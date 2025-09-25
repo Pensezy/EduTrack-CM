@@ -16,6 +16,12 @@ import ParentDashboard from "./pages/parent-dashboard";
 import TeacherDashboard from "./pages/teacher-dashboard";
 import AdminDashboard from "./pages/admin-dashboard";
 import SchoolManagement from "./pages/school-management";
+import NotificationManagement from "./pages/notification-management";
+import ReportGeneration from "./pages/report-generation";
+import StaffManagement from "./pages/staff-management";
+import SchoolSettings from "./pages/school-settings";
+import SchoolCalendar from "./pages/school-calendar";
+import DataBackup from "./pages/data-backup";
 
 const Routes = () => {
   return (
@@ -36,6 +42,12 @@ const Routes = () => {
           <Route path="/document-management-hub" element={<DocumentManagementHub />} />
           <Route path="/document-management-center" element={<DocumentManagementCenter />} />
           <Route path="/school-management" element={<SchoolManagement />} />
+          <Route path="/notification-management" element={<NotificationManagement />} />
+          <Route path="/report-generation" element={<ReportGeneration />} />
+          <Route path="/staff-management" element={<StaffManagement />} />
+          <Route path="/school-settings" element={<SchoolSettings />} />
+          <Route path="/school-calendar" element={<SchoolCalendar />} />
+          <Route path="/data-backup" element={<DataBackup />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

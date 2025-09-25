@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 
 const QuickActions = () => {
   const [activeAction, setActiveAction] = useState(null);
+  const navigate = useNavigate();
 
   const quickActions = [
     {
@@ -12,7 +14,7 @@ const QuickActions = () => {
       description: 'Diffuser un message à toute l\'école',
       icon: 'Bell',
       color: 'bg-primary',
-      action: () => setActiveAction('notifications')
+      path: '/notification-management'
     },
     {
       id: 'reports',
@@ -20,7 +22,7 @@ const QuickActions = () => {
       description: 'Créer des rapports personnalisés',
       icon: 'FileBarChart',
       color: 'bg-success',
-      action: () => setActiveAction('reports')
+      path: '/report-generation'
     },
     {
       id: 'staff',
@@ -28,7 +30,7 @@ const QuickActions = () => {
       description: 'Accéder aux profils du personnel',
       icon: 'Users',
       color: 'bg-warning',
-      action: () => setActiveAction('staff')
+      path: '/staff-management'
     },
     {
       id: 'settings',
@@ -36,7 +38,7 @@ const QuickActions = () => {
       description: 'Configurer les paramètres généraux',
       icon: 'Settings',
       color: 'bg-secondary',
-      action: () => setActiveAction('settings')
+      path: '/school-settings'
     },
     {
       id: 'calendar',
@@ -44,7 +46,7 @@ const QuickActions = () => {
       description: 'Gérer les événements et vacances',
       icon: 'Calendar',
       color: 'bg-accent',
-      action: () => setActiveAction('calendar')
+      path: '/school-calendar'
     },
     {
       id: 'backup',
@@ -52,7 +54,7 @@ const QuickActions = () => {
       description: 'Exporter et sauvegarder',
       icon: 'Download',
       color: 'bg-muted',
-      action: () => setActiveAction('backup')
+      path: '/data-backup'
     }
   ];
 
@@ -141,10 +143,8 @@ const QuickActions = () => {
           {quickActions?.map((action) => (
             <button
               key={action?.id}
-              onClick={action?.action}
-              className={`p-4 rounded-lg border border-border hover:border-primary transition-micro text-left group ${
-                activeAction === action?.id ? 'border-primary bg-primary/5' : 'hover:bg-muted/50'
-              }`}
+              onClick={() => navigate(action?.path)}
+              className={`p-4 rounded-lg border border-border hover:border-primary transition-micro text-left group hover:bg-muted/50`}
             >
               <div className="flex items-start space-x-3">
                 <div className={`w-10 h-10 ${action?.color}/10 rounded-lg flex items-center justify-center group-hover:${action?.color}/20 transition-micro`}>
