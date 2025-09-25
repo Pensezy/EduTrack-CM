@@ -14,7 +14,7 @@ const SchoolManagement = () => {
   };
 
   const handleRegistrationSuccess = () => {
-    // Show success message and switch to login
+    // Show success message and switch to login || <Icon name="School" size={64} className="mb-8" />
     alert('Inscription réussie ! Veuillez attendre la validation de votre compte par l\'administrateur.');
     setMode('login');
   };
@@ -24,7 +24,11 @@ const SchoolManagement = () => {
       {/* Left Side - Image */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-secondary items-center justify-center p-12">
         <div className="max-w-xl text-white">
-          <Icon name="School" size={64} className="mb-8" />
+          <img
+                src="/assets/images/mon_logo.png"
+                alt="Logo EduTrack CM"
+                className="w-20 h-20 object-contain rounded-2xl shadow-lg"
+            />
           <h1 className="text-4xl font-heading font-heading-bold mb-6">
             Bienvenue sur EduTrack CM
           </h1>
@@ -98,14 +102,14 @@ const SchoolManagement = () => {
             </p>
           </div>
 
-          {/* Back Link */}
-          <div className="text-center mt-8">
+          {/* Demo Button */}
+          <div className="fixed top-4 right-4">
             <Link 
-              to="/"
-              className="text-muted-foreground hover:text-primary inline-flex items-center gap-2 text-sm"
+              to="/demo"
+              className="bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2 rounded-full font-body font-body-semibold inline-flex items-center gap-2 transition-colors"
             >
-              <Icon name="ChevronLeft" size={16} />
-              Retour à l'accueil
+              <Icon name="Laptop" size={16} />
+              Accès Démo
             </Link>
           </div>
         </div>

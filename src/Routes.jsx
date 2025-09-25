@@ -23,8 +23,8 @@ const Routes = () => {
       <ErrorBoundary>
         <ScrollToTop />
         <RouterRoutes>
-          <Route path="/" element={<LoginAuthentication />} />
-          <Route path="/login-authentication" element={<LoginAuthentication />} />
+          <Route path="/" element={<SchoolManagement />} />
+          <Route path="/demo" element={<LoginAuthentication />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/parent-dashboard" element={<ParentDashboard />} />
           <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
