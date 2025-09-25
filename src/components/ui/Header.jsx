@@ -27,9 +27,9 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },
-      { label: 'School Analytics', path: '/grade-management-system', icon: 'BarChart3' },
-      { label: 'Documents', path: '/document-management-hub', icon: 'FileText' },
-      { label: 'Teacher Management', path: '/teacher-account-management', icon: 'Users' },
+      { label: 'Analytics', path: '/principal-dashboard?tab=analytics', icon: 'BarChart3' },
+      { label: 'Actions', path: '/principal-dashboard?tab=actions', icon: 'Zap' },
+      { label: 'System', path: '/principal-dashboard?tab=system', icon: 'Settings' },
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home' },
@@ -93,20 +93,34 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
 
           {/* Desktop Navigation */}
           <nav className="hidden lg:flex items-center space-x-1">
-            {currentNavItems?.slice(0, 4)?.map((item) => (
-              <Link
-                key={item?.path}
-                to={item?.path}
-                className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-body font-body-normal transition-micro ${
-                  location?.pathname === item?.path
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-text-primary hover:bg-muted hover:text-primary'
-                }`}
-              >
-                <AppIcon name={item?.icon} size={16} />
-                <span>{item?.label}</span>
-              </Link>
-            ))}
+            {currentNavItems?.slice(0, 4)?.map((item) => {
+              // Logique pour déterminer si le lien est actif
+              const isActive = () => {
+                if (item?.path?.includes('?')) {
+                  // Pour les liens avec paramètres (ex: /principal-dashboard?tab=analytics)
+                  const [pathname, search] = item?.path?.split('?');
+                  return location?.pathname === pathname && location?.search === `?${search}`;
+                } else {
+                  // Pour les liens simples
+                  return location?.pathname === item?.path;
+                }
+              };
+
+              return (
+                <Link
+                  key={item?.path}
+                  to={item?.path}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-body font-body-normal transition-micro ${
+                    isActive()
+                      ? 'bg-primary text-primary-foreground'
+                      : 'text-text-primary hover:bg-muted hover:text-primary'
+                  }`}
+                >
+                  <AppIcon name={item?.icon} size={16} />
+                  <span>{item?.label}</span>
+                </Link>
+              );
+            })}
           </nav>
         </div>
 

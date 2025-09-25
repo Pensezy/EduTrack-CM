@@ -27,7 +27,9 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home', description: 'Vue d\'ensemble' },
-      { label: 'Analytics', path: '/grade-management-system', icon: 'BarChart3', description: 'Statistiques école' },
+      { label: 'Analytics', path: '/principal-dashboard?tab=analytics', icon: 'BarChart3', description: 'Statistiques école' },
+      { label: 'Actions', path: '/principal-dashboard?tab=actions', icon: 'Zap', description: 'Actions rapides' },
+      { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration système' },
       { label: 'Documents', path: '/document-management-hub', icon: 'FileText', description: 'Gestion documents' },
       { label: 'Enseignants', path: '/teacher-account-management', icon: 'Users', description: 'Gestion enseignants' }
     ],

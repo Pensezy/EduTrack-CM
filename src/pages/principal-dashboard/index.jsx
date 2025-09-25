@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useLocation, useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import NotificationCenter from '../../components/ui/NotificationCenter';
@@ -14,9 +15,22 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
 const PrincipalDashboard = () => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
+
+  // Gérer les paramètres URL pour la navigation directe vers un onglet
+  useEffect(() => {
+    const urlParams = new URLSearchParams(location.search);
+    const tabParam = urlParams.get('tab');
+    if (tabParam && ['overview', 'analytics', 'actions', 'system'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    } else {
+      setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
+    }
+  }, [location.search]); // Se déclenche à chaque changement d'URL
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -28,6 +42,14 @@ const PrincipalDashboard = () => {
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
+  };
+
+  const handleTabChange = (tabId) => {
+    if (tabId === 'overview') {
+      navigate('/principal-dashboard');
+    } else {
+      navigate(`/principal-dashboard?tab=${tabId}`);
+    }
   };
 
   const keyMetrics = [
@@ -208,7 +230,7 @@ const PrincipalDashboard = () => {
                 {tabOptions?.map((tab) => (
                   <button
                     key={tab?.id}
-                    onClick={() => setActiveTab(tab?.id)}
+                    onClick={() => handleTabChange(tab?.id)}
                     className={`flex items-center space-x-2 px-6 py-4 text-sm font-body font-body-normal whitespace-nowrap transition-micro border-b-2 ${
                       activeTab === tab?.id
                         ? 'border-primary text-primary bg-primary/5' :'border-transparent text-muted-foreground hover:text-card-foreground hover:bg-muted/50'
