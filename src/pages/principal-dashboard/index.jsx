@@ -115,10 +115,10 @@ const PrincipalDashboard = () => {
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-6">
-            {/* Key Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-              {keyMetrics?.map((metric, index) => (
+          <div className="space-y-8">
+            {/* Key Metrics - Réduit à 3 métriques principales */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {keyMetrics?.slice(0, 3)?.map((metric, index) => (
                 <MetricCard
                   key={index}
                   title={metric?.title}
@@ -131,46 +131,75 @@ const PrincipalDashboard = () => {
                 />
               ))}
             </div>
-            {/* Charts Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-              <ClassAverageChart />
-              <AttendanceChart />
-            </div>
-            <PaymentStatusChart />
-          </div>
-        );
-      case 'analytics':
-        return (
-          <div className="space-y-6">
-            <div className="bg-card border border-border rounded-lg p-6 shadow-card">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name="TrendingUp" size={20} className="text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-heading font-heading-semibold text-lg text-card-foreground">
-                    Analyses détaillées
-                  </h2>
-                  <p className="font-caption font-caption-normal text-sm text-muted-foreground">
-                    Rapports et tendances approfondis
-                  </p>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            
+            {/* Charts Section */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Aperçu des performances</h3>
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
                 <ClassAverageChart />
                 <AttendanceChart />
               </div>
             </div>
-            <PaymentStatusChart />
+            
+            {/* Payment Status - Plus compact */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">État des paiements</h3>
+              <PaymentStatusChart />
+            </div>
+          </div>
+        );
+      case 'analytics':
+        return (
+          <div className="space-y-8">
+            {/* Header Section */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                  <Icon name="TrendingUp" size={24} className="text-blue-600" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">
+                    Analyses Détaillées
+                  </h2>
+                  <p className="text-gray-600">
+                    Rapports et tendances de performance scolaire
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Charts Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <ClassAverageChart />
+              </div>
+              <div className="bg-white rounded-xl border border-gray-200 p-6">
+                <AttendanceChart />
+              </div>
+            </div>
+            
+            {/* Payment Analytics */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <PaymentStatusChart />
+            </div>
           </div>
         );
       case 'teachers':
         return <TeacherManagement />;
       case 'actions':
-        return <QuickActions />;
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">Actions Rapides</h3>
+            <QuickActions />
+          </div>
+        );
       case 'system':
-        return <SystemStatus />;
+        return (
+          <div className="bg-white rounded-xl border border-gray-200 p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-6">État du Système</h3>
+            <SystemStatus />
+          </div>
+        );
       default:
         return null;
     }
@@ -202,49 +231,44 @@ const PrincipalDashboard = () => {
         <main className={`pt-16 transition-all duration-state ${
           isSidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
         }`}>
-          <div className="p-6">
-            {/* Page Header */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between mb-8">
-              <div className="mb-4 lg:mb-0">
-                <h1 className="font-heading font-heading-bold text-3xl text-foreground mb-2">
-                  Tableau de bord Principal
+          <div className="p-4 lg:p-6 max-w-7xl mx-auto">
+            {/* Page Header - Simplifié */}
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                  Dashboard Principal
                 </h1>
-                <p className="font-body font-body-normal text-text-secondary">
-                  {formatDateTime(currentTime)}
+                <p className="text-sm text-gray-500">
+                  {new Date().toLocaleDateString('fr-FR', { 
+                    weekday: 'long', 
+                    day: 'numeric', 
+                    month: 'long' 
+                  })}
                 </p>
               </div>
               
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-2">
                 <NotificationCenter userRole="principal" />
                 <AccessibilityControls />
-                <Button variant="outline" size="sm">
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Exporter
-                </Button>
-                <Button variant="default" size="sm">
-                  <Icon name="Plus" size={16} className="mr-2" />
-                  Nouvelle action
-                </Button>
               </div>
             </div>
 
-            {/* Tab Navigation */}
-            <div className="bg-card border border-border rounded-lg mb-6 shadow-card">
-              <div className="flex overflow-x-auto">
-                {tabOptions?.map((tab) => (
-                  <button
-                    key={tab?.id}
-                    onClick={() => handleTabChange(tab?.id)}
-                    className={`flex items-center space-x-2 px-6 py-4 text-sm font-body font-body-normal whitespace-nowrap transition-micro border-b-2 ${
-                      activeTab === tab?.id
-                        ? 'border-primary text-primary bg-primary/5' :'border-transparent text-muted-foreground hover:text-card-foreground hover:bg-muted/50'
-                    }`}
-                  >
-                    <Icon name={tab?.icon} size={16} />
-                    <span>{tab?.label}</span>
-                  </button>
-                ))}
-              </div>
+            {/* Tab Navigation - Simplifié */}
+            <div className="flex space-x-1 mb-8 bg-gray-100 p-1 rounded-lg w-fit">
+              {tabOptions?.map((tab) => (
+                <button
+                  key={tab?.id}
+                  onClick={() => handleTabChange(tab?.id)}
+                  className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-md transition-all duration-200 ${
+                    activeTab === tab?.id
+                      ? 'bg-white text-blue-600 shadow-sm font-medium' 
+                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon name={tab?.icon} size={16} />
+                  <span>{tab?.label}</span>
+                </button>
+              ))}
             </div>
 
             {/* Tab Content */}

@@ -26,12 +26,11 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Bulletins & Notes', path: '/grade-management-system', icon: 'BookOpen', description: 'Gestion des notes' }
     ],
     principal: [
-      { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home', description: 'Vue d\'ensemble' },
-      { label: 'Analytics', path: '/principal-dashboard?tab=analytics', icon: 'BarChart3', description: 'Statistiques école' },
-      { label: 'Actions', path: '/principal-dashboard?tab=actions', icon: 'Zap', description: 'Actions rapides' },
-      { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration système' },
-      { label: 'Documents', path: '/document-management-hub', icon: 'FileText', description: 'Gestion documents' },
-      { label: 'Enseignants', path: '/principal-dashboard?tab=teachers', icon: 'Users', description: 'Gestion enseignants' }
+      { label: 'Vue d\'ensemble', path: '/principal-dashboard', icon: 'Home', description: 'Dashboard principal' },
+      { label: 'Analyses', path: '/principal-dashboard?tab=analytics', icon: 'TrendingUp', description: 'Rapports & tendances' },
+      { label: 'Enseignants', path: '/principal-dashboard?tab=teachers', icon: 'Users', description: 'Gestion équipe' },
+      { label: 'Actions Rapides', path: '/principal-dashboard?tab=actions', icon: 'Zap', description: 'Outils de gestion' },
+      { label: 'Paramètres', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration' }
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home', description: 'Aperçu système' },
@@ -59,10 +58,10 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
     ],
     principal: [
-      { label: 'Rapports', icon: 'FileBarChart', action: () => console.log('View reports') },
-      { label: 'Statistiques', icon: 'TrendingUp', action: () => console.log('School analytics') },
-      { label: 'Enseignants', icon: 'Users', action: () => console.log('Manage teachers') },
-      { label: 'Documents', icon: 'FileText', action: () => console.log('Manage documents') },
+      { label: 'Nouveau message', icon: 'Mail', action: () => console.log('Send announcement') },
+      { label: 'Exporter données', icon: 'Download', action: () => console.log('Export data') },
+      { label: 'Créer rapport', icon: 'FileBarChart', action: () => console.log('Generate report') },
+      { label: 'Sauvegarde', icon: 'Database', action: () => console.log('Backup data') },
     ],
     admin: [
       { label: 'Système', icon: 'Settings', action: () => console.log('System settings') },

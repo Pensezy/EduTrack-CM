@@ -27,9 +27,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },
-      { label: 'Analytics', path: '/principal-dashboard?tab=analytics', icon: 'BarChart3' },
-      { label: 'Actions', path: '/principal-dashboard?tab=actions', icon: 'Zap' },
-      { label: 'System', path: '/principal-dashboard?tab=system', icon: 'Settings' },
+      { label: 'Documents', path: '/document-management-hub', icon: 'FileText' },
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home' },
@@ -125,22 +123,38 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
         </div>
 
         {/* Right Section - Actions and Profile */}
-        <div className="flex items-center space-x-2">
-          {/* Notifications */}
-          <div className="relative">
+        <div className="flex items-center space-x-3">
+          {/* Notifications - Simplifié pour Principal */}
+          {userRole === 'principal' ? (
             <Button
               variant="ghost"
               size="icon"
               onClick={handleNotificationClick}
               className="relative"
+              title="Notifications"
             >
-              <AppIcon name="Bell" size={20} />
+              <AppIcon name="Bell" size={18} />
               {notifications?.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-caption font-caption-normal">
+                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
                   {notifications?.length}
                 </span>
               )}
             </Button>
+          ) : (
+            <div className="relative">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleNotificationClick}
+                className="relative"
+              >
+                <AppIcon name="Bell" size={20} />
+                {notifications?.length > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-accent text-accent-foreground text-xs rounded-full w-5 h-5 flex items-center justify-center font-caption font-caption-normal">
+                    {notifications?.length}
+                  </span>
+                )}
+              </Button>
 
             {/* Notification Dropdown */}
             {isNotificationOpen && (
@@ -183,7 +197,8 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                 </div>
               </div>
             )}
-          </div>
+            </div>
+          )}
 
           {/* User Profile */}
           <div className="relative">
@@ -201,39 +216,54 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
               <AppIcon name="ChevronDown" size={16} className="hidden md:block" />
             </Button>
 
-            {/* Profile Dropdown */}
+            {/* Profile Dropdown - Simplifié pour Principal */}
             {isProfileOpen && (
-              <div className="absolute right-0 top-12 w-48 bg-popover border border-border rounded-lg shadow-modal z-notification">
-                <div className="p-2">
-                  <div className="px-3 py-2 border-b border-border">
-                    <p className="font-body font-body-semibold text-sm text-popover-foreground">
+              <div className="absolute right-0 top-12 w-48 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                <div className="p-3">
+                  <div className="px-3 py-2 border-b border-gray-100 mb-2">
+                    <p className="font-semibold text-sm text-gray-900">
                       {userName}
                     </p>
-                    <p className="font-caption font-caption-normal text-xs text-muted-foreground capitalize">
+                    <p className="text-xs text-gray-500 capitalize">
                       {userRole}
                     </p>
                   </div>
-                  <Link
-                    to="/student-profile-management"
-                    className="flex items-center space-x-2 px-3 py-2 text-sm text-popover-foreground hover:bg-muted rounded-md transition-micro"
-                  >
-                    <AppIcon name="Settings" size={16} />
-                    <span>Settings</span>
-                  </Link>
-                  <Link
-                    to="/help"
-                    className="flex items-center space-x-2 px-3 py-2 text-sm text-popover-foreground hover:bg-muted rounded-md transition-micro"
-                  >
-                    <AppIcon name="HelpCircle" size={16} />
-                    <span>Help</span>
-                  </Link>
-                  <button
-                    onClick={handleLogout}
-                    className="flex items-center space-x-2 px-3 py-2 text-sm text-error hover:bg-muted rounded-md transition-micro w-full text-left"
-                  >
-                    <AppIcon name="LogOut" size={16} />
-                    <span>Sign out</span>
-                  </button>
+                  
+                  {userRole === 'principal' ? (
+                    // Version simplifiée pour Principal
+                    <button
+                      onClick={handleLogout}
+                      className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors w-full text-left"
+                    >
+                      <AppIcon name="LogOut" size={16} />
+                      <span>Se déconnecter</span>
+                    </button>
+                  ) : (
+                    // Version complète pour autres rôles
+                    <>
+                      <Link
+                        to="/student-profile-management"
+                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      >
+                        <AppIcon name="Settings" size={16} />
+                        <span>Settings</span>
+                      </Link>
+                      <Link
+                        to="/help"
+                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                      >
+                        <AppIcon name="HelpCircle" size={16} />
+                        <span>Help</span>
+                      </Link>
+                      <button
+                        onClick={handleLogout}
+                        className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors w-full text-left"
+                      >
+                        <AppIcon name="LogOut" size={16} />
+                        <span>Sign out</span>
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             )}
