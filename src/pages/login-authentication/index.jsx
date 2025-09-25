@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 import AppLogo from './components/AppLogo';
 import LanguageToggle from './components/LanguageToggle';
@@ -105,6 +105,15 @@ const LoginAuthentication = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header Controls */}
+      <div className="absolute top-4 left-4 flex items-center space-x-4 z-10">
+        <Link 
+          to="/"
+          className="bg-primary/10 text-primary px-4 py-2 rounded-lg font-body-medium inline-flex items-center gap-2 hover:bg-primary/20 transition-colors"
+        >
+          <span className="text-base">←</span>
+          Retour direction
+        </Link>
+      </div>
       <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
         <LanguageToggle />
         <AccessibilityToggle />
@@ -112,12 +121,12 @@ const LoginAuthentication = () => {
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* App Logo and Demo Title */}
-        <div className="text-center mb-12">
-          <AppLogo className="mb-6" />
-          <h1 className="text-4xl font-heading font-heading-bold text-foreground mb-4">
+        <div className="text-center mb-8">
+          <AppLogo className="mb-4 w-32 mx-auto" />
+          <h1 className="text-2xl font-heading font-heading-bold text-foreground mb-3">
             Mode Démonstration
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-base text-muted-foreground max-w-xl mx-auto">
             Explorez toutes les fonctionnalités d'EduTrack CM avec nos comptes de démonstration.
             Chaque compte vous donne accès à un rôle différent dans l'écosystème scolaire.
           </p>
@@ -141,14 +150,14 @@ const LoginAuthentication = () => {
               onClick={() => handleDemoAccountClick(account)}
               className="bg-card border border-border rounded-xl p-6 hover:bg-accent/5 transition-colors cursor-pointer group"
             >
-              <div className="flex items-center space-x-4 mb-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-primary text-xl font-heading font-heading-semibold">
+              <div className="flex items-center space-x-3 mb-3">
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                  <span className="text-primary text-base font-heading font-heading-semibold">
                     {account.full_name.split(' ').map(n => n[0]).join('')}
                   </span>
                 </div>
                 <div>
-                  <h3 className="text-xl font-heading font-heading-semibold text-foreground group-hover:text-primary">
+                  <h3 className="text-base font-heading font-heading-semibold text-foreground group-hover:text-primary">
                     {account.role === 'parent' ? 'Parent' : 
                      account.role === 'student' ? 'Étudiant' :
                      account.role === 'teacher' ? 'Enseignant' :
@@ -156,7 +165,7 @@ const LoginAuthentication = () => {
                      account.role === 'principal' ? 'Proviseur' :
                      account.role === 'admin' ? 'Administrateur' : account.role}
                   </h3>
-                  <p className="text-muted-foreground">
+                  <p className="text-sm text-muted-foreground">
                     {account.full_name}
                   </p>
                 </div>
@@ -177,12 +186,12 @@ const LoginAuthentication = () => {
         </div>
 
         {/* Demo Description Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
-          <div className="bg-primary/5 border border-primary/20 rounded-xl p-6">
-            <h3 className="font-heading font-heading-semibold text-lg text-primary mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
+          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+            <h3 className="font-heading font-heading-semibold text-sm text-primary mb-2">
               À propos du mode démonstration
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Ce mode vous permet d'explorer toutes les fonctionnalités d'EduTrack CM 
               avec des données fictives. Chaque compte démo donne accès à une interface 
               différente selon le rôle, vous permettant de comprendre comment le système 
@@ -190,11 +199,11 @@ const LoginAuthentication = () => {
             </p>
           </div>
 
-          <div className="bg-secondary/5 border border-secondary/20 rounded-xl p-6">
-            <h3 className="font-heading font-heading-semibold text-lg text-secondary mb-3">
+          <div className="bg-secondary/5 border border-secondary/20 rounded-lg p-4">
+            <h3 className="font-heading font-heading-semibold text-sm text-secondary mb-2">
               Données de test
             </h3>
-            <p className="text-muted-foreground">
+            <p className="text-sm text-muted-foreground">
               Les données présentées sont purement fictives et sont réinitialisées 
               régulièrement. Vous pouvez tester toutes les fonctionnalités sans 
               crainte, car aucune modification ne sera permanente.
