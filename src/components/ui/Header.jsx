@@ -124,23 +124,8 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
 
         {/* Right Section - Actions and Profile */}
         <div className="flex items-center space-x-3">
-          {/* Notifications - Simplifié pour Principal */}
-          {userRole === 'principal' ? (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleNotificationClick}
-              className="relative"
-              title="Notifications"
-            >
-              <AppIcon name="Bell" size={18} />
-              {notifications?.length > 0 && (
-                <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">
-                  {notifications?.length}
-                </span>
-              )}
-            </Button>
-          ) : (
+          {/* Notifications - Masqué pour Principal (notifications dans le dashboard) */}
+          {userRole !== 'principal' && (
             <div className="relative">
               <Button
                 variant="ghost"
@@ -156,47 +141,47 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                 )}
               </Button>
 
-            {/* Notification Dropdown */}
-            {isNotificationOpen && (
-              <div className="absolute right-0 top-12 w-80 bg-popover border border-border rounded-lg shadow-modal z-notification">
-                <div className="p-4 border-b border-border">
-                  <h3 className="font-heading font-heading-semibold text-sm text-popover-foreground">
-                    Notifications
-                  </h3>
-                </div>
-                <div className="max-h-64 overflow-y-auto">
-                  {notifications?.map((notification) => (
-                    <div
-                      key={notification?.id}
-                      className="p-4 border-b border-border last:border-b-0 hover:bg-muted transition-micro cursor-pointer"
-                    >
-                      <div className="flex items-start space-x-3">
-                        <div className={`w-2 h-2 rounded-full mt-2 ${
-                          notification?.type === 'success' ? 'bg-success' :
-                          notification?.type === 'warning' ? 'bg-warning' : 'bg-primary'
-                        }`} />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-body font-body-semibold text-sm text-popover-foreground">
-                            {notification?.title}
-                          </p>
-                          <p className="font-body font-body-normal text-sm text-muted-foreground mt-1">
-                            {notification?.message}
-                          </p>
-                          <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
-                            {notification?.time}
-                          </p>
+              {/* Notification Dropdown */}
+              {isNotificationOpen && (
+                <div className="absolute right-0 top-12 w-80 bg-popover border border-border rounded-lg shadow-modal z-notification">
+                  <div className="p-4 border-b border-border">
+                    <h3 className="font-heading font-heading-semibold text-sm text-popover-foreground">
+                      Notifications
+                    </h3>
+                  </div>
+                  <div className="max-h-64 overflow-y-auto">
+                    {notifications?.map((notification) => (
+                      <div
+                        key={notification?.id}
+                        className="p-4 border-b border-border last:border-b-0 hover:bg-muted transition-micro cursor-pointer"
+                      >
+                        <div className="flex items-start space-x-3">
+                          <div className={`w-2 h-2 rounded-full mt-2 ${
+                            notification?.type === 'success' ? 'bg-success' :
+                            notification?.type === 'warning' ? 'bg-warning' : 'bg-primary'
+                          }`} />
+                          <div className="flex-1 min-w-0">
+                            <p className="font-body font-body-semibold text-sm text-popover-foreground">
+                              {notification?.title}
+                            </p>
+                            <p className="font-body font-body-normal text-sm text-muted-foreground mt-1">
+                              {notification?.message}
+                            </p>
+                            <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
+                              {notification?.time}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
+                  <div className="p-3 border-t border-border">
+                    <Button variant="ghost" size="sm" className="w-full">
+                      View all notifications
+                    </Button>
+                  </div>
                 </div>
-                <div className="p-3 border-t border-border">
-                  <Button variant="ghost" size="sm" className="w-full">
-                    View all notifications
-                  </Button>
-                </div>
-              </div>
-            )}
+              )}
             </div>
           )}
 
