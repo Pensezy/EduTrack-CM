@@ -12,8 +12,10 @@ import PaymentStatusChart from './components/PaymentStatusChart';
 import QuickActions from './components/QuickActions';
 import SystemStatus from './components/SystemStatus';
 import PersonnelManagement from './components/PersonnelManagement';
+import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import useDashboardData from '../../hooks/useDashboardData';
 
 const PrincipalDashboard = () => {
   const location = useLocation();
@@ -21,6 +23,18 @@ const PrincipalDashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // Hook pour les données avec switch automatique démo/production
+  const { 
+    data, 
+    loading, 
+    errors, 
+    dataMode, 
+    isDemo, 
+    isProduction, 
+    modeLoading,
+    refresh 
+  } = useDashboardData();
 
   // Gérer les paramètres URL pour la navigation directe vers un onglet
   useEffect(() => {
@@ -53,51 +67,16 @@ const PrincipalDashboard = () => {
     }
   };
 
-  const keyMetrics = [
-    {
-      title: 'Élèves inscrits',
-      value: '400',
-      change: 2.5,
-      changeType: 'positive',
-      icon: 'Users',
-      description: 'Total des inscriptions',
-      trend: 85
-    },
-    {
-      title: 'Taux de présence',
-      value: '94.2%',
-      change: 1.2,
-      changeType: 'positive',
-      icon: 'UserCheck',
-      description: 'Moyenne hebdomadaire',
-      trend: 94
-    },
-    {
-      title: 'Moyenne générale',
-      value: '84.7/100',
-      change: -0.8,
-      changeType: 'negative',
-      icon: 'BookOpen',
-      description: 'Performance académique',
-      trend: 85
-    },
-    {
-      title: 'Paiements à jour',
-      value: '85.5%',
-      change: 3.2,
-      changeType: 'positive',
-      icon: 'CreditCard',
-      description: 'Frais de scolarité',
-      trend: 86
-    }
-  ];
+  // Les métriques proviennent maintenant du hook qui switch automatiquement
+  const keyMetrics = data.metrics || [];
 
     const tabOptions = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'analytics', label: 'Analyses', icon: 'TrendingUp' },
     { id: 'personnel', label: 'Personnel', icon: 'Users' },
     { id: 'actions', label: 'Actions', icon: 'Zap' },
-    { id: 'system', label: 'Système', icon: 'Settings' }
+    { id: 'system', label: 'Système', icon: 'Settings' },
+    { id: 'debug', label: 'Debug DB', icon: 'Bug' }
   ];
 
   const formatDateTime = (date) => {
@@ -251,6 +230,8 @@ const PrincipalDashboard = () => {
             <SystemStatus />
           </div>
         );
+      case 'debug':
+        return <DatabaseDiagnostic />;
       default:
         return null;
     }
@@ -311,9 +292,33 @@ const PrincipalDashboard = () => {
                 </div>
                 
                 <div className="flex items-center space-x-3">
+                  {/* Indicateur du mode de données */}
+                  <div className={`hidden md:flex items-center space-x-2 backdrop-blur-sm rounded-lg px-3 py-2 ${
+                    isDemo 
+                      ? 'bg-orange-50 border border-orange-200' 
+                      : 'bg-green-50 border border-green-200'
+                  }`}>
+                    <div className={`w-2 h-2 rounded-full ${
+                      isDemo ? 'bg-orange-500 animate-pulse' : 'bg-green-500'
+                    }`} />
+                    <span className={`text-sm font-medium ${
+                      isDemo ? 'text-orange-700' : 'text-green-700'
+                    }`}>
+                      {modeLoading ? 'Chargement...' : (isDemo ? 'Mode Démo' : 'Données Réelles')}
+                    </span>
+                    {isDemo && (
+                      <Icon name="TestTube" size={14} className="text-orange-600" />
+                    )}
+                    {isProduction && (
+                      <Icon name="Database" size={14} className="text-green-600" />
+                    )}
+                  </div>
+                  
                   <div className="hidden md:flex items-center space-x-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2">
                     <Icon name="Users" size={16} className="text-blue-600" />
-                    <span className="text-sm font-medium text-gray-700">400 élèves</span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {data.schoolStats?.totalStudents || (isDemo ? '400' : '0')} élèves
+                    </span>
                   </div>
                   <NotificationCenter userRole="principal" />
                   <AccessibilityControls />
@@ -353,6 +358,41 @@ const PrincipalDashboard = () => {
                 );
               })}
             </div>
+
+            {/* Notification mode démo */}
+            {isDemo && (
+              <div className="mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-400 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <div className="flex-shrink-0">
+                    <Icon name="AlertTriangle" size={20} className="text-orange-400" />
+                  </div>
+                  <div className="ml-3">
+                    <p className="text-sm text-orange-700">
+                      <strong>Mode Démonstration :</strong> Vous visualisez des données fictives à des fins de test.
+                      Connectez-vous avec un compte réel pour accéder aux vraies données de votre école.
+                    </p>
+                  </div>
+                  <div className="ml-auto flex-shrink-0">
+                    <button
+                      onClick={() => navigate('/school-management')}
+                      className="text-sm text-orange-600 hover:text-orange-800 font-medium underline"
+                    >
+                      Se connecter
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Indicateur de chargement */}
+            {modeLoading && (
+              <div className="mb-6 bg-blue-50 border border-blue-200 p-4 rounded-lg">
+                <div className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                  <span className="ml-2 text-sm text-blue-700">Détection du mode de données en cours...</span>
+                </div>
+              </div>
+            )}
 
             {/* Tab Content */}
             <div className="transition-all duration-state">

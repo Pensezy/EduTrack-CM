@@ -1,28 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
+import useDashboardData from '../../../hooks/useDashboardData';
 
 const AttendanceChart = () => {
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('week');
+  
+  // Hook pour les données avec switch automatique démo/production
+  const { data, loading, isDemo, loadAttendance } = useDashboardData();
 
-  const mockWeeklyData = [
-    { period: 'Lun 04/09', overall: 94, '6ème': 96, '5ème': 93, '4ème': 92, '3ème': 95 },
-    { period: 'Mar 05/09', overall: 92, '6ème': 94, '5ème': 91, '4ème': 90, '3ème': 93 },
-    { period: 'Mer 06/09', overall: 96, '6ème': 98, '5ème': 95, '4ème': 94, '3ème': 97 },
-    { period: 'Jeu 07/09', overall: 93, '6ème': 95, '5ème': 92, '4ème': 91, '3ème': 94 },
-    { period: 'Ven 08/09', overall: 89, '6ème': 91, '5ème': 88, '4ème': 87, '3ème': 90 },
-    { period: 'Lun 11/09', overall: 95, '6ème': 97, '5ème': 94, '4ème': 93, '3ème': 96 }
-  ];
+  // Recharger les données quand la période change
+  useEffect(() => {
+    loadAttendance(selectedPeriod);
+  }, [selectedPeriod]);
 
-  const mockMonthlyData = [
-    { period: 'Semaine 1', overall: 93, '6ème': 95, '5ème': 92, '4ème': 91, '3ème': 94 },
-    { period: 'Semaine 2', overall: 94, '6ème': 96, '5ème': 93, '4ème': 92, '3ème': 95 },
-    { period: 'Semaine 3', overall: 92, '6ème': 94, '5ème': 91, '4ème': 90, '3ème': 93 },
-    { period: 'Semaine 4', overall: 95, '6ème': 97, '5ème': 94, '4ème': 93, '3ème': 96 }
-  ];
+  // Utiliser les données du hook - format converti pour le graphique
+  const convertAttendanceData = (rawData) => {
+    if (!rawData || rawData.length === 0) return [];
+    
+    // Convertir le format des données pour le graphique de ligne
+    return rawData.map((item, index) => ({
+      period: item.day,
+      overall: Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100),
+      '6ème': Math.round(Math.random() * 10 + 90), // TODO: Calculer par classe
+      '5ème': Math.round(Math.random() * 10 + 90),
+      '4ème': Math.round(Math.random() * 10 + 90),
+      '3ème': Math.round(Math.random() * 10 + 90)
+    }));
+  };
+
+  const chartData = convertAttendanceData(data.attendance || []);
 
   const classOptions = [
     { value: 'all', label: 'Toutes les classes' },
@@ -39,7 +49,7 @@ const AttendanceChart = () => {
   ];
 
   const getData = () => {
-    return selectedPeriod === 'week' ? mockWeeklyData : mockMonthlyData;
+    return chartData;
   };
 
   const getDisplayLines = () => {

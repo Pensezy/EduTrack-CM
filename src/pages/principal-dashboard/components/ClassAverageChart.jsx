@@ -1,24 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
+import useDashboardData from '../../../hooks/useDashboardData';
 
 const ClassAverageChart = () => {
   const [selectedSubject, setSelectedSubject] = useState('all');
   const [selectedGrade, setSelectedGrade] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('current');
+  
+  // Hook pour les données avec switch automatique démo/production
+  const { data, loading, isDemo, loadClassAverages } = useDashboardData();
 
-  const mockData = [
-    { class: '6ème A', mathematics: 85, french: 78, science: 82, history: 76, average: 80.25 },
-    { class: '6ème B', mathematics: 79, french: 84, science: 77, history: 81, average: 80.25 },
-    { class: '5ème A', mathematics: 88, french: 82, science: 85, history: 79, average: 83.5 },
-    { class: '5ème B', mathematics: 83, french: 79, science: 81, history: 77, average: 80 },
-    { class: '4ème A', mathematics: 91, french: 86, science: 89, history: 84, average: 87.5 },
-    { class: '4ème B', mathematics: 87, french: 83, science: 85, history: 82, average: 84.25 },
-    { class: '3ème A', mathematics: 93, french: 89, science: 91, history: 87, average: 90 },
-    { class: '3ème B', mathematics: 89, french: 85, science: 87, history: 83, average: 86 }
-  ];
+  // Recharger les données quand les filtres changent
+  useEffect(() => {
+    loadClassAverages({
+      subject: selectedSubject,
+      grade: selectedGrade,
+      period: selectedPeriod
+    });
+  }, [selectedSubject, selectedGrade, selectedPeriod]);
+
+  // Utiliser les données du hook
+  const chartData = data.classAverages || [];
 
   const subjectOptions = [
     { value: 'all', label: 'Toutes les matières' },
@@ -43,7 +48,7 @@ const ClassAverageChart = () => {
   ];
 
   const getFilteredData = () => {
-    let filteredData = mockData;
+    let filteredData = chartData;
     
     if (selectedGrade !== 'all') {
       filteredData = filteredData?.filter(item => item?.class?.includes(selectedGrade + 'ème'));

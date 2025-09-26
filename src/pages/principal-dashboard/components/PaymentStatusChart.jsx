@@ -1,19 +1,36 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Select from '../../../components/ui/Select';
+import useDashboardData from '../../../hooks/useDashboardData';
 
 const PaymentStatusChart = () => {
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   const [viewType, setViewType] = useState('pie');
+  
+  // Hook pour les données avec switch automatique démo/production
+  const { data, loading, isDemo, loadPayments } = useDashboardData();
 
-  const mockPaymentData = [
-    { name: 'Payé', value: 342, percentage: 85.5, color: 'var(--color-success)' },
-    { name: 'En retard', value: 38, percentage: 9.5, color: 'var(--color-warning)' },
-    { name: 'Impayé', value: 20, percentage: 5.0, color: 'var(--color-error)' }
-  ];
+  // Recharger les données quand nécessaire
+  useEffect(() => {
+    loadPayments();
+  }, [selectedClass, selectedPeriod]);
+
+  // Convertir les données pour le format attendu par le graphique
+  const convertPaymentData = (rawData) => {
+    if (!rawData || rawData.length === 0) return [];
+    
+    return rawData.map(item => ({
+      name: item.status,
+      value: item.count,
+      percentage: item.percentage,
+      color: item.color
+    }));
+  };
+
+  const paymentData = convertPaymentData(data.payments || []);
 
   const mockClassPaymentData = [
     { class: '6ème A', paid: 28, late: 2, unpaid: 1, total: 31, rate: 90.3 },
@@ -166,7 +183,7 @@ const PaymentStatusChart = () => {
           {viewType === 'pie' ? (
             <PieChart>
               <Pie
-                data={mockPaymentData}
+                data={paymentData}
                 cx="50%"
                 cy="50%"
                 innerRadius={60}
@@ -174,7 +191,7 @@ const PaymentStatusChart = () => {
                 paddingAngle={2}
                 dataKey="value"
               >
-                {mockPaymentData?.map((entry, index) => (
+                {paymentData?.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry?.color} />
                 ))}
               </Pie>

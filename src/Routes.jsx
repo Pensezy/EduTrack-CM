@@ -32,6 +32,7 @@ const Routes = () => {
         <RouterRoutes>
           <Route path="/" element={<SchoolManagement />} />
           <Route path="/demo" element={<LoginAuthentication />} />
+          <Route path="/login-authentication" element={<LoginAuthentication />} />
           <Route path="/staff-login" element={<StaffLogin />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/parent-dashboard" element={<ParentDashboard />} />

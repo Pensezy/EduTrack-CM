@@ -1,12 +1,18 @@
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import React, { useState, useRef, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
+import useDataMode from '../../hooks/useDataMode';
 import AppIcon from '../AppIcon';
 import Button from './Button';
+import AccessibilityControls from './AccessibilityControls';
 
 const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, onToggleSidebar }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
   const location = useLocation();
+  
+  // Hook pour détecter le mode de données
+  const { isDemo, isProduction, user } = useDataMode();
 
   const navigationItems = {
     student: [
@@ -55,9 +61,18 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     setIsNotificationOpen(false);
   };
 
-  const handleLogout = () => {
-    // Handle logout logic
-    window.location.href = '/login-authentication';
+  const handleLogout = async () => {
+    try {
+      // Déconnecter de Supabase si connecté
+      if (isProduction) {
+        await supabase.auth.signOut();
+      }
+    } catch (error) {
+      console.log('Erreur lors de la déconnexion:', error.message);
+    }
+    
+    // Rediriger vers school-management dans tous les cas
+    window.location.href = '/school-management';
   };
 
   return (
@@ -221,7 +236,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                       className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors w-full text-left"
                     >
                       <AppIcon name="LogOut" size={16} />
-                      <span>Se déconnecter</span>
+                      <span>{isProduction ? 'Se déconnecter' : 'Quitter la démo'}</span>
                     </button>
                   ) : (
                     // Version complète pour autres rôles
@@ -245,7 +260,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                         className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors w-full text-left"
                       >
                         <AppIcon name="LogOut" size={16} />
-                        <span>Sign out</span>
+                        <span>{isProduction ? 'Se déconnecter' : 'Quitter la démo'}</span>
                       </button>
                     </>
                   )}
