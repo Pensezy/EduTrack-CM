@@ -16,10 +16,193 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
     phone: '',
     address: '',
     schoolType: '',
-    country: '',
     city: '',
+    country: 'Cameroun', // Valeur par défaut
     availableClasses: []
   });
+
+  // Villes disponibles par pays
+  const getCitiesByCountry = (country) => {
+    const citiesMap = {
+      // Pays africains
+      'Cameroun': [
+        { value: 'Yaoundé', label: 'Yaoundé' },
+        { value: 'Douala', label: 'Douala' },
+        { value: 'Bafoussam', label: 'Bafoussam' },
+        { value: 'Bamenda', label: 'Bamenda' },
+        { value: 'Garoua', label: 'Garoua' },
+        { value: 'Maroua', label: 'Maroua' },
+        { value: 'Ngaoundéré', label: 'Ngaoundéré' },
+        { value: 'Bertoua', label: 'Bertoua' },
+        { value: 'Ebolowa', label: 'Ebolowa' },
+        { value: 'Kribi', label: 'Kribi' }
+      ],
+      'Gabon': [
+        { value: 'Libreville', label: 'Libreville' },
+        { value: 'Port-Gentil', label: 'Port-Gentil' },
+        { value: 'Franceville', label: 'Franceville' },
+        { value: 'Oyem', label: 'Oyem' },
+        { value: 'Moanda', label: 'Moanda' }
+      ],
+      'République Centrafricaine': [
+        { value: 'Bangui', label: 'Bangui' },
+        { value: 'Berbérati', label: 'Berbérati' },
+        { value: 'Carnot', label: 'Carnot' },
+        { value: 'Bambari', label: 'Bambari' }
+      ],
+      'Tchad': [
+        { value: 'N\'Djamena', label: 'N\'Djamena' },
+        { value: 'Moundou', label: 'Moundou' },
+        { value: 'Sarh', label: 'Sarh' },
+        { value: 'Abéché', label: 'Abéché' }
+      ],
+      'Guinée Équatoriale': [
+        { value: 'Malabo', label: 'Malabo' },
+        { value: 'Bata', label: 'Bata' },
+        { value: 'Ebebiyin', label: 'Ebebiyin' }
+      ],
+      'Congo': [
+        { value: 'Brazzaville', label: 'Brazzaville' },
+        { value: 'Pointe-Noire', label: 'Pointe-Noire' },
+        { value: 'Dolisie', label: 'Dolisie' }
+      ],
+      'République Démocratique du Congo': [
+        { value: 'Kinshasa', label: 'Kinshasa' },
+        { value: 'Lubumbashi', label: 'Lubumbashi' },
+        { value: 'Mbuji-Mayi', label: 'Mbuji-Mayi' },
+        { value: 'Kisangani', label: 'Kisangani' }
+      ],
+      'Sénégal': [
+        { value: 'Dakar', label: 'Dakar' },
+        { value: 'Thiès', label: 'Thiès' },
+        { value: 'Kaolack', label: 'Kaolack' },
+        { value: 'Saint-Louis', label: 'Saint-Louis' }
+      ],
+      'Mali': [
+        { value: 'Bamako', label: 'Bamako' },
+        { value: 'Sikasso', label: 'Sikasso' },
+        { value: 'Mopti', label: 'Mopti' },
+        { value: 'Koutiala', label: 'Koutiala' }
+      ],
+      'Burkina Faso': [
+        { value: 'Ouagadougou', label: 'Ouagadougou' },
+        { value: 'Bobo-Dioulasso', label: 'Bobo-Dioulasso' },
+        { value: 'Koudougou', label: 'Koudougou' }
+      ],
+      'Niger': [
+        { value: 'Niamey', label: 'Niamey' },
+        { value: 'Zinder', label: 'Zinder' },
+        { value: 'Maradi', label: 'Maradi' }
+      ],
+      'Côte d\'Ivoire': [
+        { value: 'Abidjan', label: 'Abidjan' },
+        { value: 'Yamoussoukro', label: 'Yamoussoukro' },
+        { value: 'Bouaké', label: 'Bouaké' },
+        { value: 'Daloa', label: 'Daloa' }
+      ],
+      // Pays européens
+      'France': [
+        { value: 'Paris', label: 'Paris' },
+        { value: 'Lyon', label: 'Lyon' },
+        { value: 'Marseille', label: 'Marseille' },
+        { value: 'Toulouse', label: 'Toulouse' },
+        { value: 'Nice', label: 'Nice' },
+        { value: 'Nantes', label: 'Nantes' },
+        { value: 'Strasbourg', label: 'Strasbourg' },
+        { value: 'Montpellier', label: 'Montpellier' },
+        { value: 'Bordeaux', label: 'Bordeaux' },
+        { value: 'Lille', label: 'Lille' }
+      ],
+      'Allemagne': [
+        { value: 'Berlin', label: 'Berlin' },
+        { value: 'Munich', label: 'Munich' },
+        { value: 'Hambourg', label: 'Hambourg' },
+        { value: 'Cologne', label: 'Cologne' },
+        { value: 'Francfort', label: 'Francfort' },
+        { value: 'Stuttgart', label: 'Stuttgart' },
+        { value: 'Düsseldorf', label: 'Düsseldorf' },
+        { value: 'Dortmund', label: 'Dortmund' }
+      ],
+      'Espagne': [
+        { value: 'Madrid', label: 'Madrid' },
+        { value: 'Barcelone', label: 'Barcelone' },
+        { value: 'Valence', label: 'Valence' },
+        { value: 'Séville', label: 'Séville' },
+        { value: 'Saragosse', label: 'Saragosse' },
+        { value: 'Málaga', label: 'Málaga' },
+        { value: 'Murcie', label: 'Murcie' },
+        { value: 'Palma', label: 'Palma' }
+      ],
+      'Italie': [
+        { value: 'Rome', label: 'Rome' },
+        { value: 'Milan', label: 'Milan' },
+        { value: 'Naples', label: 'Naples' },
+        { value: 'Turin', label: 'Turin' },
+        { value: 'Palerme', label: 'Palerme' },
+        { value: 'Gênes', label: 'Gênes' },
+        { value: 'Bologne', label: 'Bologne' },
+        { value: 'Florence', label: 'Florence' }
+      ],
+      'Royaume-Uni': [
+        { value: 'Londres', label: 'Londres' },
+        { value: 'Birmingham', label: 'Birmingham' },
+        { value: 'Manchester', label: 'Manchester' },
+        { value: 'Liverpool', label: 'Liverpool' },
+        { value: 'Sheffield', label: 'Sheffield' },
+        { value: 'Bristol', label: 'Bristol' },
+        { value: 'Glasgow', label: 'Glasgow' },
+        { value: 'Édimbourg', label: 'Édimbourg' }
+      ],
+      'Belgique': [
+        { value: 'Bruxelles', label: 'Bruxelles' },
+        { value: 'Anvers', label: 'Anvers' },
+        { value: 'Gand', label: 'Gand' },
+        { value: 'Charleroi', label: 'Charleroi' },
+        { value: 'Liège', label: 'Liège' },
+        { value: 'Bruges', label: 'Bruges' },
+        { value: 'Namur', label: 'Namur' }
+      ],
+      'Suisse': [
+        { value: 'Zurich', label: 'Zurich' },
+        { value: 'Genève', label: 'Genève' },
+        { value: 'Bâle', label: 'Bâle' },
+        { value: 'Lausanne', label: 'Lausanne' },
+        { value: 'Berne', label: 'Berne' },
+        { value: 'Winterthour', label: 'Winterthour' }
+      ],
+      'Pays-Bas': [
+        { value: 'Amsterdam', label: 'Amsterdam' },
+        { value: 'Rotterdam', label: 'Rotterdam' },
+        { value: 'La Haye', label: 'La Haye' },
+        { value: 'Utrecht', label: 'Utrecht' },
+        { value: 'Eindhoven', label: 'Eindhoven' },
+        { value: 'Tilburg', label: 'Tilburg' }
+      ],
+      'Portugal': [
+        { value: 'Lisbonne', label: 'Lisbonne' },
+        { value: 'Porto', label: 'Porto' },
+        { value: 'Braga', label: 'Braga' },
+        { value: 'Coimbra', label: 'Coimbra' },
+        { value: 'Funchal', label: 'Funchal' }
+      ],
+      'Autriche': [
+        { value: 'Vienne', label: 'Vienne' },
+        { value: 'Graz', label: 'Graz' },
+        { value: 'Linz', label: 'Linz' },
+        { value: 'Salzburg', label: 'Salzburg' },
+        { value: 'Innsbruck', label: 'Innsbruck' }
+      ]
+    };
+    return citiesMap[country] || [{ value: 'Autre', label: 'Autre ville' }];
+  };
+
+  const handleCountryChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      country: value,
+      city: '' // Reset city when country changes
+    }));
+  };
 
   const handleSchoolTypeChange = (value) => {
     console.log('School type changed:', value);
@@ -32,10 +215,15 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   // Classes disponibles selon le type d'établissement
   const getAvailableClassesByType = (schoolType) => {
     switch (schoolType) {
-      case 'primary':
+      case 'maternelle':
         return [
-          { value: 'CP1', label: 'CP1 (Cours Préparatoire 1)', category: 'primaire' },
-          { value: 'CP2', label: 'CP2 (Cours Préparatoire 2)', category: 'primaire' },
+          { value: 'Petite Section', label: 'Petite Section', category: 'maternelle' },
+          { value: 'Moyenne Section', label: 'Moyenne Section', category: 'maternelle' },
+          { value: 'Grande Section', label: 'Grande Section', category: 'maternelle' }
+        ];
+      case 'primaire':
+        return [
+          { value: 'CP', label: 'CP (Cours Préparatoire)', category: 'primaire' },
           { value: 'CE1', label: 'CE1 (Cours Élémentaire 1)', category: 'primaire' },
           { value: 'CE2', label: 'CE2 (Cours Élémentaire 2)', category: 'primaire' },
           { value: 'CM1', label: 'CM1 (Cours Moyen 1)', category: 'primaire' },
@@ -48,14 +236,27 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
           { value: '4ème', label: '4ème', category: 'collège' },
           { value: '3ème', label: '3ème', category: 'collège' }
         ];
-      case 'high_school':
+      case 'lycee':
         return [
           { value: '2nd', label: '2nd (Seconde)', category: 'lycée' },
           { value: '1ère', label: '1ère (Première)', category: 'lycée' },
           { value: 'Terminale', label: 'Terminale', category: 'lycée' }
         ];
-      case 'secondary':
+      case 'technique':
         return [
+          { value: '2nd Tech', label: '2nd Technique', category: 'technique' },
+          { value: '1ère Tech', label: '1ère Technique', category: 'technique' },
+          { value: 'Terminale Tech', label: 'Terminale Technique', category: 'technique' }
+        ];
+      case 'prive':
+      case 'public':
+        // Pour les établissements privés/publics, proposer toutes les classes
+        return [
+          { value: 'CP', label: 'CP (Cours Préparatoire)', category: 'primaire' },
+          { value: 'CE1', label: 'CE1 (Cours Élémentaire 1)', category: 'primaire' },
+          { value: 'CE2', label: 'CE2 (Cours Élémentaire 2)', category: 'primaire' },
+          { value: 'CM1', label: 'CM1 (Cours Moyen 1)', category: 'primaire' },
+          { value: 'CM2', label: 'CM2 (Cours Moyen 2)', category: 'primaire' },
           { value: '6ème', label: '6ème', category: 'collège' },
           { value: '5ème', label: '5ème', category: 'collège' },
           { value: '4ème', label: '4ème', category: 'collège' },
@@ -132,7 +333,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   const validateForm = () => {
     if (!formData.schoolName || !formData.directorName || !formData.email || 
         !formData.password || !formData.phone || !formData.address || 
-        !formData.schoolType) {
+        !formData.schoolType || !formData.city || !formData.country) {
       setError('Veuillez remplir tous les champs obligatoires');
       return false;
     }
@@ -159,40 +360,46 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
     setError(null);
 
     try {
-      // Create auth user
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.password,
-        options: {
-          data: {
-            role: 'school_director',
-          }
-        }
-      });
-
-      if (authError) throw authError;
-
-      // Create school profile
+      // Préparer les classes sélectionnées
       const selectedClasses = formData.availableClasses && formData.availableClasses.length > 0
         ? formData.availableClasses.filter(cls => cls.isActive).map(cls => cls.level)
         : [];
 
-      const { error: profileError } = await supabase
-        .from('schools')
-        .insert([
-          {
-            name: formData.schoolName,
-            director_name: formData.directorName,
-            type: formData.schoolType,
-            phone: formData.phone,
-            address: formData.address,
-            available_classes: selectedClasses,
-            director_user_id: authData.user?.id,
-            status: 'pending_validation'
-          }
-        ]);
+      // Appeler la fonction de création de compte principal
+      const { data, error: createError } = await supabase.rpc('create_principal_account', {
+        director_name: formData.directorName,
+        email_input: formData.email,
+        phone_input: formData.phone,
+        password_input: formData.password,
+        school_name: formData.schoolName,
+        school_type: formData.schoolType,
+        school_address: formData.address,
+        school_city: formData.city || 'Yaoundé',
+        school_country: formData.country || 'Cameroun',
+        available_classes: selectedClasses
+      });
 
-      if (profileError) throw profileError;
+      if (createError) {
+        console.error('Creation error:', createError);
+        throw new Error(createError.message || 'Erreur lors de la création du compte');
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Aucune réponse du serveur');
+      }
+
+      const result = data[0];
+      if (!result.success) {
+        throw new Error(result.message || 'Échec de la création du compte');
+      }
+
+      // Succès - afficher un message et rediriger
+      alert(`Compte créé avec succès ! 
+École: ${formData.schoolName}
+Directeur: ${formData.directorName}
+Email: ${formData.email}
+
+Vous pouvez maintenant vous connecter avec vos identifiants.`);
 
       onSuccess?.();
     } catch (error) {
@@ -204,60 +411,181 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <SimpleInput
-            label="Nom de l'établissement"
-            value={formData.schoolName}
-            onChange={(e) => setFormData(prev => ({ ...prev, schoolName: e.target.value }))}
-            required
-          />
+    <form onSubmit={handleSubmit} className="space-y-8">
+        {/* Section 1: Informations de l'établissement */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            📚 Informations de l'établissement
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SimpleInput
+              label="Nom de l'établissement"
+              value={formData.schoolName}
+              onChange={(e) => setFormData(prev => ({ ...prev, schoolName: e.target.value }))}
+              placeholder="Ex: Lycée Bilingue de Yaoundé"
+              required
+            />
+            
+            <SimpleSelect
+              label="Type d'établissement"
+              value={formData.schoolType}
+              onChange={handleSchoolTypeChange}
+              options={[
+                { value: 'maternelle', label: 'École Maternelle' },
+                { value: 'primaire', label: 'École Primaire' },
+                { value: 'college', label: 'Collège' },
+                { value: 'lycee', label: 'Lycée' },
+                { value: 'technique', label: 'Lycée Technique' },
+                { value: 'prive', label: 'Établissement Privé' },
+                { value: 'public', label: 'Établissement Public' }
+              ]}
+              placeholder="Sélectionner un type"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Section 2: Localisation */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            📍 Localisation
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SimpleSelect
+              label="Pays"
+              value={formData.country}
+              onChange={handleCountryChange}
+              options={[
+                // Pays africains francophones
+                { value: 'Cameroun', label: '🇨🇲 Cameroun' },
+                { value: 'Gabon', label: '🇬🇦 Gabon' },
+                { value: 'République Centrafricaine', label: '🇨🇫 République Centrafricaine' },
+                { value: 'Tchad', label: '🇹🇩 Tchad' },
+                { value: 'Guinée Équatoriale', label: '🇬🇶 Guinée Équatoriale' },
+                { value: 'Congo', label: '🇨🇬 Congo' },
+                { value: 'République Démocratique du Congo', label: '🇨🇩 RD Congo' },
+                { value: 'Sénégal', label: '🇸🇳 Sénégal' },
+                { value: 'Mali', label: '🇲🇱 Mali' },
+                { value: 'Burkina Faso', label: '🇧🇫 Burkina Faso' },
+                { value: 'Niger', label: '🇳🇪 Niger' },
+                { value: 'Côte d\'Ivoire', label: '🇨🇮 Côte d\'Ivoire' },
+                // Pays européens
+                { value: 'France', label: '🇫🇷 France' },
+                { value: 'Allemagne', label: '🇩🇪 Allemagne' },
+                { value: 'Espagne', label: '🇪🇸 Espagne' },
+                { value: 'Italie', label: '🇮🇹 Italie' },
+                { value: 'Royaume-Uni', label: '🇬🇧 Royaume-Uni' },
+                { value: 'Belgique', label: '🇧🇪 Belgique' },
+                { value: 'Suisse', label: '🇨🇭 Suisse' },
+                { value: 'Pays-Bas', label: '🇳🇱 Pays-Bas' },
+                { value: 'Portugal', label: '🇵🇹 Portugal' },
+                { value: 'Autriche', label: '🇦🇹 Autriche' },
+                // Autre
+                { value: 'Autre', label: '🌍 Autre pays' }
+              ]}
+              required
+            />
+            
+            <SimpleSelect
+              label="Ville"
+              value={formData.city}
+              onChange={(value) => setFormData(prev => ({ ...prev, city: value }))}
+              options={getCitiesByCountry(formData.country)}
+              placeholder="Sélectionner une ville"
+              required
+            />
+          </div>
           
           <SimpleInput
-            label="Nom du directeur"
-            value={formData.directorName}
-            onChange={(e) => setFormData(prev => ({ ...prev, directorName: e.target.value }))}
-            required
-          />
-
-          <SimpleInput
-            label="Email"
-            type="email"
-            value={formData.email}
-            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
-            required
-          />
-
-          <SimpleInput
-            label="Téléphone"
-            type="tel"
-            value={formData.phone}
-            onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            label="Adresse complète"
+            name="address"
+            value={formData.address}
+            onChange={handleChange}
+            placeholder="Ex: Quartier Nlongkak, Rue 1.234"
             required
           />
         </div>
 
-        <SimpleSelect
-          label="Type d'établissement"
-          value={formData.schoolType}
-          onChange={handleSchoolTypeChange}
-          options={[
-            { value: 'primary', label: 'École Primaire' },
-            { value: 'secondary', label: 'Établissement Secondaire' },
-            { value: 'college', label: 'Collège' },
-            { value: 'high_school', label: 'Lycée' }
-          ]}
-          placeholder="Sélectionner un type"
-          required
-        />
+        {/* Section 3: Informations du directeur */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            👤 Informations du directeur
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SimpleInput
+              label="Nom complet du directeur"
+              value={formData.directorName}
+              onChange={(e) => setFormData(prev => ({ ...prev, directorName: e.target.value }))}
+              placeholder="Ex: Dr. Jean MBALLA"
+              required
+            />
+            
+            <SimpleInput
+              label="Téléphone"
+              type="tel"
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+              placeholder="Ex: +237 6XX XXX XXX"
+              required
+            />
+          </div>
+          
+          <SimpleInput
+            label="Email professionnel"
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
+            placeholder="Ex: directeur@monecole.edu.cm"
+            required
+          />
+        </div>
 
+        {/* Section 4: Sécurité */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+            🔒 Sécurité du compte
+          </h3>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <SimpleInput
+              label="Mot de passe"
+              type="password"
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              placeholder="Minimum 8 caractères"
+              required
+            />
+
+            <SimpleInput
+              label="Confirmer le mot de passe"
+              type="password"
+              name="confirmPassword"
+              value={formData.confirmPassword}
+              onChange={handleChange}
+              placeholder="Retapez le mot de passe"
+              required
+            />
+          </div>
+        </div>
+
+        {/* Section 5: Classes disponibles */}
         {categorizedClasses && categorizedClasses.length > 0 && (
-          <div>
-            <h3 className="font-medium mb-2">Classes disponibles:</h3>
-            <div className="space-y-4">
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
+              🎓 Classes disponibles
+            </h3>
+            <p className="text-sm text-gray-600 mb-4">
+              Sélectionnez les classes que votre établissement propose
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {categorizedClasses.map(({ category, classes }) => (
-                <div key={`category-${category}`}>
-                  <h4 className="font-medium text-gray-900 mb-3 capitalize">
+                <div key={`category-${category}`} className="bg-gray-50 rounded-lg p-4">
+                  <h4 className="font-medium text-gray-900 mb-3 capitalize text-center">
                     Classes {category}
                   </h4>
                   <div className="space-y-2">
@@ -267,16 +595,23 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
                       <button
                         key={`class-${classItem.category}-${classItem.level}`}
                         type="button"
-                        className={`p-2 border rounded w-full text-left ${
-                          classItem.isActive ? 'bg-blue-50 border-blue-300' : 'bg-gray-50 border-gray-300'
+                        className={`p-3 border rounded-lg w-full text-left transition-all duration-200 ${
+                          classItem.isActive 
+                            ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm' 
+                            : 'bg-white border-gray-300 hover:border-blue-300 hover:bg-blue-50'
                         }`}
                         onClick={() => handleClassToggle(classItem.level)}
                       >
-                        <span className="mr-2">{classItem.isActive ? '✓' : '+'}</span>
-                        {classItem?.level || 'Classe inconnue'} - {classItem?.label || 'Libellé non disponible'}
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium">{classItem?.level}</span>
+                          <span className="text-lg">{classItem.isActive ? '✓' : '+'}</span>
+                        </div>
+                        <span className="text-xs text-gray-600">{classItem?.label}</span>
                       </button>
                     )) : (
-                      <p className="text-gray-500 text-sm">Aucune classe disponible dans cette catégorie</p>
+                      <p className="text-gray-500 text-sm text-center py-4">
+                        Aucune classe disponible
+                      </p>
                     )}
                   </div>
                 </div>
@@ -285,49 +620,27 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
           </div>
         )}
 
-        {/* Champs manquants */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <SimpleInput
-            label="Mot de passe"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
-
-          <SimpleInput
-            label="Confirmer le mot de passe"
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
-        </div>
-
-        <SimpleInput
-          label="Adresse complète"
-          name="address"
-          value={formData.address}
-          onChange={handleChange}
-          required
-        />
-
+        {/* Messages d'erreur */}
         {error && (
-          <div className="bg-red-50 text-red-600 p-3 rounded-lg flex items-center gap-2">
-            <span>⚠️</span>
-            <span className="text-sm">{error}</span>
+          <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-lg flex items-start gap-3">
+            <span className="text-xl">⚠️</span>
+            <div>
+              <p className="font-medium">Erreur</p>
+              <p className="text-sm">{error}</p>
+            </div>
           </div>
         )}
 
-        <SimpleButton 
-          type="submit" 
-          className="w-full"
-          loading={loading}
-        >
-          Inscrire l'établissement
-        </SimpleButton>
+        {/* Bouton de soumission */}
+        <div className="pt-6 border-t">
+          <SimpleButton 
+            type="submit" 
+            className="w-full py-4 text-lg"
+            loading={loading}
+          >
+            {loading ? 'Création en cours...' : '🚀 Créer mon établissement'}
+          </SimpleButton>
+        </div>
       </form>
   );
 };
