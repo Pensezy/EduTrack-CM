@@ -104,14 +104,21 @@ const SchoolManagement = () => {
             </p>
           </div>
 
-          {/* Demo Button */}
-          <div className="fixed top-4 right-4">
+          {/* Action Buttons */}
+          <div className="fixed top-4 right-4 flex gap-2">
+            <Link 
+              to="/staff-login"
+              className="bg-primary/10 hover:bg-primary/20 text-primary px-4 py-2 rounded-full font-body font-body-semibold inline-flex items-center gap-2 transition-colors"
+            >
+              <Icon name="Users" size={16} />
+              Personnel
+            </Link>
             <Link 
               to="/demo"
               className="bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2 rounded-full font-body font-body-semibold inline-flex items-center gap-2 transition-colors"
             >
               <Icon name="Laptop" size={16} />
-              Accès Démo
+              Démo
             </Link>
           </div>
         </div>

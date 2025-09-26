@@ -10,51 +10,16 @@ const LoginAuthentication = () => {
   const navigate = useNavigate();
   const { error, setError } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
-
-  // Utiliser les comptes de démo définis dans AuthContext
-  const demoAccountsList = [
-    {
-      id: 'demo-admin',
-      email: 'admin@demo.com',
-      full_name: 'Admin Demo',
-      role: 'admin',
-      phone: null
-    },
-    {
-      id: 'demo-principal',
-      email: 'principal@demo.com',
-      full_name: 'Principal Demo',
-      role: 'principal',
-      phone: null
-    },
-    {
-      id: 'demo-secretary',
-      email: 'secretary@demo.com',
-      full_name: 'Secretary Demo',
-      role: 'secretary',
-      phone: null
-    },
-    {
-      id: 'demo-teacher',
-      email: 'teacher@demo.com',
-      full_name: 'Teacher Demo',
-      role: 'teacher',
-      phone: null
-    },
-    {
-      id: 'demo-student',
-      email: 'student@demo.com',
-      full_name: 'Student Demo',
-      role: 'student',
-      phone: null
-    },
-    {
-      id: 'demo-parent',
-      email: 'parent@demo.com',
-      full_name: 'Parent Demo',
-      role: 'parent',
-      phone: null
-    }
+  const [selectedAccount, setSelectedAccount] = useState(null);
+  
+  // Comptes de démonstration simplifiés
+  const demoAccounts = [
+    { id: 1, name: 'Directeur', role: 'principal', route: '/principal-dashboard', avatar: '👨‍💼' },
+    { id: 2, name: 'Enseignant', role: 'teacher', route: '/teacher-dashboard', avatar: '👩‍🏫' },
+    { id: 3, name: 'Étudiant', role: 'student', route: '/student-dashboard', avatar: '👨‍🎓' },
+    { id: 4, name: 'Parent', role: 'parent', route: '/parent-dashboard', avatar: '👩‍👦' },
+    { id: 5, name: 'Secrétaire', role: 'secretary', route: '/secretary-dashboard', avatar: '👩‍💻' },
+    { id: 6, name: 'Admin', role: 'admin', route: '/admin-dashboard', avatar: '⚙️' }
   ];
 
   useEffect(() => {
@@ -64,39 +29,35 @@ const LoginAuthentication = () => {
     setError(null);
   }, [setError]);
 
-  const handleDemoAccountClick = async (account) => {
+  const handleAccountSelect = async (account) => {
+    setSelectedAccount(account);
     setError(null);
     setIsLoading(true);
-
+    
     try {
-      // Créer directement la session avec les informations du compte démo
-      localStorage.setItem('edutrack-user', JSON.stringify({
+      // Simulate loading
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Create demo session
+      const userSession = {
         id: account.id,
         role: account.role,
-        name: account.full_name,
+        name: account.name,
         loginTime: new Date().toISOString(),
         sessionId: Math.random().toString(36).substr(2, 9),
         demoAccount: true
-      }));
-
-      // Redirection vers le dashboard approprié
-      const roleRoutes = {
-        parent: '/parent-dashboard',
-        student: '/student-dashboard',
-        secretary: '/secretary-dashboard',
-        principal: '/principal-dashboard',
-        teacher: '/teacher-dashboard',
-        admin: '/admin-dashboard'
       };
 
-      const route = roleRoutes[account.role] || '/student-dashboard';
-      navigate(route);
+      localStorage.setItem('edutrack-user', JSON.stringify(userSession));
+      navigate(account.route);
+      
     } catch (error) {
-      setError('Erreur lors de la connexion avec le compte de démonstration.');
-    } finally {
+      setError('Erreur de connexion. Veuillez réessayer.');
       setIsLoading(false);
     }
   };
+
+
 
   const handleDismissError = () => {
     setError(null);
@@ -111,7 +72,7 @@ const LoginAuthentication = () => {
           className="bg-primary/10 text-primary px-4 py-2 rounded-lg font-body-medium inline-flex items-center gap-2 hover:bg-primary/20 transition-colors"
         >
           <span className="text-base">←</span>
-          Retour direction
+          Retour accueil
         </Link>
       </div>
       <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
@@ -119,102 +80,78 @@ const LoginAuthentication = () => {
         <AccessibilityToggle />
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-7xl">
-        {/* App Logo and Demo Title */}
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* App Logo and Title */}
         <div className="text-center mb-8">
           <AppLogo className="mb-4 w-32 mx-auto" />
-          <h1 className="text-2xl font-heading font-heading-bold text-foreground mb-3">
+          <h1 className="text-3xl font-heading font-heading-bold text-foreground mb-3">
             Mode Démonstration
           </h1>
           <p className="text-base text-muted-foreground max-w-xl mx-auto">
-            Explorez toutes les fonctionnalités d'EduTrack CM avec nos comptes de démonstration.
-            Chaque compte vous donne accès à un rôle différent dans l'écosystème scolaire.
+            Explorez EduTrack CM avec nos comptes de démonstration. Cliquez simplement sur un rôle pour accéder au tableau de bord.
           </p>
         </div>
 
         {/* Error Message */}
         {error && (
-          <ErrorMessage
-            message={error}
-            type="error"
+          <ErrorMessage 
+            message={error} 
+            type="error" 
             onDismiss={handleDismissError}
-            className="animate-in slide-in-from-top-2 duration-300 max-w-2xl mx-auto mb-8"
+            className="animate-in slide-in-from-top-2 duration-300 max-w-lg mx-auto mb-8"
           />
         )}
 
         {/* Demo Accounts Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-            {demoAccountsList.map((account, index) => (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          {demoAccounts.map((account) => (
             <div
-              key={index}
-              onClick={() => handleDemoAccountClick(account)}
-              className="bg-card border border-border rounded-xl p-6 hover:bg-accent/5 transition-colors cursor-pointer group"
+              key={account.id}
+              onClick={() => handleAccountSelect(account)}
+              className="relative bg-card border border-border rounded-xl p-6 cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary hover:bg-primary/5"
             >
-              <div className="flex items-center space-x-3 mb-3">
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-                  <span className="text-primary text-base font-heading font-heading-semibold">
-                    {account.full_name.split(' ').map(n => n[0]).join('')}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="text-base font-heading font-heading-semibold text-foreground group-hover:text-primary">
-                    {account.role === 'parent' ? 'Parent' : 
-                     account.role === 'student' ? 'Étudiant' :
-                     account.role === 'teacher' ? 'Enseignant' :
-                     account.role === 'secretary' ? 'Secrétaire' :
-                     account.role === 'principal' ? 'Proviseur' :
-                     account.role === 'admin' ? 'Administrateur' : account.role}
-                  </h3>
-                  <p className="text-sm text-muted-foreground">
-                    {account.full_name}
-                  </p>
-                </div>
-              </div>
 
-              <div className="space-y-2 text-sm text-muted-foreground">
-                <p><strong>Email:</strong> {account.email}</p>
-                <p><strong>Code PIN:</strong> 123456</p>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-border">
-                <p className="text-sm text-center text-primary font-body-medium group-hover:text-primary/80">
-                  Cliquer pour tester ce compte →
+              
+              <div className="text-center">
+                <div className="text-4xl mb-3">{account.avatar}</div>
+                <h3 className="text-lg font-heading font-heading-semibold text-foreground mb-1">
+                  {account.name}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Cliquez pour vous connecter
                 </p>
+                <div className="text-xs text-primary font-medium">
+                  {account.route.replace('/', '').replace('-', ' ').toUpperCase()}
+                </div>
               </div>
             </div>
           ))}
         </div>
 
-        {/* Demo Description Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-3xl mx-auto">
-          <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-            <h3 className="font-heading font-heading-semibold text-sm text-primary mb-2">
-              À propos du mode démonstration
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Ce mode vous permet d'explorer toutes les fonctionnalités d'EduTrack CM 
-              avec des données fictives. Chaque compte démo donne accès à une interface 
-              différente selon le rôle, vous permettant de comprendre comment le système 
-              s'adapte aux besoins de chaque utilisateur.
-            </p>
+        {/* Loading State */}
+        {isLoading && selectedAccount && (
+          <div className="max-w-md mx-auto">
+            <div className="bg-card border border-border rounded-xl p-8 shadow-sm">
+              <div className="text-center">
+                <div className="text-3xl mb-4">{selectedAccount.avatar}</div>
+                <h2 className="text-xl font-heading font-heading-semibold text-foreground mb-2">
+                  Connexion en cours...
+                </h2>
+                <p className="text-sm text-muted-foreground mb-6">
+                  Chargement du tableau de bord {selectedAccount.name}
+                </p>
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+              </div>
+            </div>
           </div>
-
-          <div className="bg-secondary/5 border border-secondary/20 rounded-lg p-4">
-            <h3 className="font-heading font-heading-semibold text-sm text-secondary mb-2">
-              Données de test
-            </h3>
-            <p className="text-sm text-muted-foreground">
-              Les données présentées sont purement fictives et sont réinitialisées 
-              régulièrement. Vous pouvez tester toutes les fonctionnalités sans 
-              crainte, car aucune modification ne sera permanente.
-            </p>
-          </div>
-        </div>
+        )}
 
         {/* Footer */}
         <footer className="mt-12 text-center">
           <p className="font-caption text-sm text-muted-foreground">
-            © {new Date().getFullYear()} EduTrack CM • Version de démonstration
+            © {new Date().getFullYear()} EduTrack CM • Système de gestion scolaire
           </p>
         </footer>
       </div>

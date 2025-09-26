@@ -9,9 +9,17 @@ const QuickActions = () => {
 
   const quickActions = [
     {
+      id: 'staff-login',
+      title: 'Connexion Personnel',
+      description: 'Accès pour enseignants, élèves et parents',
+      icon: 'LogIn',
+      color: 'bg-primary',
+      path: '/staff-login'
+    },
+    {
       id: 'personnel',
-      title: 'Créer compte personnel',
-      description: 'Ajouter enseignant ou secrétaire',
+      title: 'Créer compte secrétaire',
+      description: 'Ajouter un nouveau secrétaire',
       icon: 'UserPlus',
       color: 'bg-blue-500',
       path: '/principal-dashboard?tab=personnel'
@@ -21,7 +29,7 @@ const QuickActions = () => {
       title: 'Envoyer une notification',
       description: 'Diffuser un message à toute l\'école',
       icon: 'Bell',
-      color: 'bg-primary',
+      color: 'bg-secondary',
       path: '/notification-management'
     },
     {

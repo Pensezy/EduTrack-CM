@@ -16,6 +16,7 @@ import ParentDashboard from "./pages/parent-dashboard";
 import TeacherDashboard from "./pages/teacher-dashboard";
 import AdminDashboard from "./pages/admin-dashboard";
 import SchoolManagement from "./pages/school-management";
+import StaffLogin from "./pages/staff-login";
 import NotificationManagement from "./pages/notification-management";
 import ReportGeneration from "./pages/report-generation";
 import StaffManagement from "./pages/staff-management";
@@ -31,6 +32,7 @@ const Routes = () => {
         <RouterRoutes>
           <Route path="/" element={<SchoolManagement />} />
           <Route path="/demo" element={<LoginAuthentication />} />
+          <Route path="/staff-login" element={<StaffLogin />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
           <Route path="/parent-dashboard" element={<ParentDashboard />} />
           <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
