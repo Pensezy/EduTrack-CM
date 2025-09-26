@@ -1,15 +1,5 @@
--- Migration: Fonction pour créer un compte principal avec école        ) VALUES (
-            school_name,
-            school_code,
-            school_type,
-            director_name,
-            phone_input,
-            school_address,
-            school_city,
-            school_country,
-            available_classes,
-            'active'
-        )25-09-26
+-- Migration: Fonction pour créer un compte principal avec école
+-- Date: 2025-09-26
 -- Description: Fonction pour créer un directeur d'école et son établissement
 
 -- Assurer que l'extension pgcrypto est activée pour le hachage des mots de passe
@@ -44,7 +34,7 @@ DECLARE
 BEGIN
     -- Vérifier si l'email existe déjà
     IF EXISTS (SELECT 1 FROM public.users WHERE email = email_input) THEN
-        RETURN QUERY SELECT FALSE, 'Cette adresse email est déjà utilisée', NULL::UUID, NULL::UUID;
+        RETURN QUERY SELECT FALSE, 'Cette adresse email est déjà utilisée'::TEXT, NULL::UUID, NULL::UUID;
         RETURN;
     END IF;
 
@@ -81,7 +71,7 @@ BEGIN
             phone_input,
             school_address,
             school_city,
-            'Cameroun',
+            school_country,
             available_classes,
             'active'
         )
@@ -113,12 +103,12 @@ BEGIN
         WHERE id = new_school_id;
 
         -- Retourner le succès
-        RETURN QUERY SELECT TRUE, 'Compte principal créé avec succès', new_user_id, new_school_id;
+        RETURN QUERY SELECT TRUE, 'Compte principal créé avec succès'::TEXT, new_user_id, new_school_id;
 
     EXCEPTION WHEN OTHERS THEN
         -- En cas d'erreur, faire un rollback et retourner l'erreur
         RAISE WARNING 'Erreur lors de la création du compte: %', SQLERRM;
-        RETURN QUERY SELECT FALSE, 'Erreur lors de la création: ' || SQLERRM, NULL::UUID, NULL::UUID;
+        RETURN QUERY SELECT FALSE, ('Erreur lors de la création: ' || SQLERRM)::TEXT, NULL::UUID, NULL::UUID;
     END;
 END;
 $$;
