@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import SimpleSelect from '../../../components/ui/SimpleSelect';
-import SimpleButton from '../../../components/ui/SimpleButton';
+import Button from '../../../components/ui/Button';
 
 const TestForm = ({ onSuccess }) => {
   const [schoolType, setSchoolType] = useState('');
@@ -40,9 +40,9 @@ const TestForm = ({ onSuccess }) => {
         </div>
       )}
       
-      <SimpleButton onClick={() => onSuccess?.()}>
+      <Button onClick={() => onSuccess?.()}>
         Test Submit
-      </SimpleButton>
+      </Button>
     </div>
   );
 };

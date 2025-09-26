@@ -2,11 +2,13 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import SimpleInput from '../../../components/ui/SimpleInput';
 import SimpleSelect from '../../../components/ui/SimpleSelect';
-import SimpleButton from '../../../components/ui/SimpleButton';
+import Button from '../../../components/ui/Button';
 
 const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
+  const [successData, setSuccessData] = useState(null);
   const [formData, setFormData] = useState({
     schoolName: '',
     directorName: '',
@@ -248,22 +250,26 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
           { value: '1ère Tech', label: '1ère Technique', category: 'technique' },
           { value: 'Terminale Tech', label: 'Terminale Technique', category: 'technique' }
         ];
-      case 'prive':
-      case 'public':
-        // Pour les établissements privés/publics, proposer toutes les classes
+      case 'universite':
+        // Pour les universités
         return [
-          { value: 'CP', label: 'CP (Cours Préparatoire)', category: 'primaire' },
-          { value: 'CE1', label: 'CE1 (Cours Élémentaire 1)', category: 'primaire' },
-          { value: 'CE2', label: 'CE2 (Cours Élémentaire 2)', category: 'primaire' },
-          { value: 'CM1', label: 'CM1 (Cours Moyen 1)', category: 'primaire' },
-          { value: 'CM2', label: 'CM2 (Cours Moyen 2)', category: 'primaire' },
-          { value: '6ème', label: '6ème', category: 'collège' },
-          { value: '5ème', label: '5ème', category: 'collège' },
-          { value: '4ème', label: '4ème', category: 'collège' },
-          { value: '3ème', label: '3ème', category: 'collège' },
-          { value: '2nd', label: '2nd (Seconde)', category: 'lycée' },
-          { value: '1ère', label: '1ère (Première)', category: 'lycée' },
-          { value: 'Terminale', label: 'Terminale', category: 'lycée' }
+          { value: 'L1', label: 'Licence 1', category: 'université' },
+          { value: 'L2', label: 'Licence 2', category: 'université' },
+          { value: 'L3', label: 'Licence 3', category: 'université' },
+          { value: 'M1', label: 'Master 1', category: 'université' },
+          { value: 'M2', label: 'Master 2', category: 'université' },
+          { value: 'Doctorat', label: 'Doctorat', category: 'université' }
+        ];
+      case 'formation_professionnelle':
+        // Pour les formations professionnelles
+        return [
+          { value: 'CAP1', label: 'CAP Première Année', category: 'professionnel' },
+          { value: 'CAP2', label: 'CAP Deuxième Année', category: 'professionnel' },
+          { value: 'BEP1', label: 'BEP Première Année', category: 'professionnel' },
+          { value: 'BEP2', label: 'BEP Deuxième Année', category: 'professionnel' },
+          { value: 'BAC_PRO1', label: 'Bac Pro Première Année', category: 'professionnel' },
+          { value: 'BAC_PRO2', label: 'Bac Pro Deuxième Année', category: 'professionnel' },
+          { value: 'BAC_PRO3', label: 'Bac Pro Troisième Année', category: 'professionnel' }
         ];
       default:
         return [];
@@ -374,7 +380,8 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
             full_name: formData.directorName,
             phone: formData.phone,
             role: 'principal'
-          }
+          },
+          emailRedirectTo: `${window.location.origin}/staff-login`
         }
       });
 
@@ -410,16 +417,34 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         throw new Error(result?.message || 'Échec de la création du compte');
       }
 
-      // Succès - rediriger vers la page de connexion
-      alert(`Compte créé avec succès ! 
-École: ${formData.schoolName}
-Directeur: ${formData.directorName}
-Email: ${formData.email}
+      // Vérifier si l'utilisateur est automatiquement connecté
+      let needsConfirmation = !authData.session;
+      
+      // Si pas de session, essayer de se connecter directement
+      if (!authData.session) {
+        try {
+          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+            email: formData.email,
+            password: formData.password
+          });
+          
+          if (!signInError && signInData.session) {
+            needsConfirmation = false;
+            console.log('Connexion automatique réussie après inscription');
+          }
+        } catch (signInErr) {
+          console.log('Connexion automatique échouée, confirmation email nécessaire');
+        }
+      }
 
-Veuillez vérifier votre email pour confirmer votre compte, puis vous pourrez vous connecter.`);
-
-      // Redirection vers la page de connexion
-      window.location.href = '/staff-login';
+      // Succès - afficher la page de succès
+      setSuccessData({
+        schoolName: formData.schoolName,
+        directorName: formData.directorName,
+        email: formData.email,
+        needsEmailConfirmation: needsConfirmation
+      });
+      setSuccess(true);
       
     } catch (error) {
       console.error('Error during registration:', error);
@@ -428,6 +453,88 @@ Veuillez vérifier votre email pour confirmer votre compte, puis vous pourrez vo
       setLoading(false);
     }
   };
+
+  // Si succès, afficher la page de confirmation
+  if (success && successData) {
+    return (
+      <div className="max-w-2xl mx-auto p-8 bg-white rounded-lg shadow-lg">
+        <div className="text-center">
+          <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+            <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"></path>
+            </svg>
+          </div>
+          
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            🎉 Compte créé avec succès !
+          </h2>
+          
+          <div className="bg-gray-50 rounded-lg p-6 mb-6 text-left">
+            <h3 className="font-semibold text-gray-900 mb-3">Informations du compte :</h3>
+            <div className="space-y-2 text-gray-700">
+              <p><span className="font-medium">École :</span> {successData.schoolName}</p>
+              <p><span className="font-medium">Directeur :</span> {successData.directorName}</p>
+              <p><span className="font-medium">Email :</span> {successData.email}</p>
+            </div>
+          </div>
+          
+          {successData.needsEmailConfirmation ? (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+              <div className="flex items-start">
+                <svg className="w-5 h-5 text-blue-600 mt-0.5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <div className="text-left">
+                  <h4 className="font-medium text-blue-900 mb-1">Confirmation d'email requise</h4>
+                  <p className="text-blue-700 text-sm">
+                    Un email de confirmation a été envoyé à <strong>{successData.email}</strong>. 
+                    Veuillez cliquer sur le lien dans l'email pour activer votre compte avant de vous connecter.
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+              <p className="text-green-700">
+                Votre compte est activé ! Vous pouvez maintenant vous connecter.
+              </p>
+            </div>
+          )}
+          
+          <div className="flex gap-4 justify-center">
+            <button
+              onClick={() => window.location.href = '/staff-login'}
+              className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Aller à la connexion
+            </button>
+            <button
+              onClick={() => {
+                setSuccess(false);
+                setSuccessData(null);
+                setFormData({
+                  schoolName: '',
+                  directorName: '',
+                  email: '',
+                  password: '',
+                  confirmPassword: '',
+                  phone: '',
+                  address: '',
+                  schoolType: '',
+                  city: '',
+                  country: 'Cameroun',
+                  availableClasses: []
+                });
+              }}
+              className="px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+            >
+              Créer un autre compte
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
@@ -455,9 +562,8 @@ Veuillez vérifier votre email pour confirmer votre compte, puis vous pourrez vo
                 { value: 'primaire', label: 'École Primaire' },
                 { value: 'college', label: 'Collège' },
                 { value: 'lycee', label: 'Lycée' },
-                { value: 'technique', label: 'Lycée Technique' },
-                { value: 'prive', label: 'Établissement Privé' },
-                { value: 'public', label: 'Établissement Public' }
+                { value: 'universite', label: 'Université' },
+                { value: 'formation_professionnelle', label: 'Formation Professionnelle' }
               ]}
               placeholder="Sélectionner un type"
               required
@@ -652,13 +758,14 @@ Veuillez vérifier votre email pour confirmer votre compte, puis vous pourrez vo
 
         {/* Bouton de soumission */}
         <div className="pt-6 border-t">
-          <SimpleButton 
+          <Button 
             type="submit" 
             className="w-full py-4 text-lg"
             loading={loading}
+            size="lg"
           >
             {loading ? 'Création en cours...' : '🚀 Créer mon établissement'}
-          </SimpleButton>
+          </Button>
         </div>
       </form>
   );

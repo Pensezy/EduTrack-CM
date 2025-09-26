@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
 import SimpleInput from '../../../components/ui/SimpleInput';
 import SimpleSelect from '../../../components/ui/SimpleSelect';
-import SimpleButton from '../../../components/ui/SimpleButton';
+import Button from '../../../components/ui/Button';
 
 const SchoolRegistrationForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -546,13 +546,13 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
         </div>
       )}
 
-      <SimpleButton
+      <Button
         type="submit"
         className="w-full"
         loading={loading}
       >
         Inscrire l'établissement
-      </SimpleButton>
+      </Button>
     </form>
   );
 };
