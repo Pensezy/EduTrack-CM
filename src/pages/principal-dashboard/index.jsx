@@ -116,9 +116,9 @@ const PrincipalDashboard = () => {
       case 'overview':
         return (
           <div className="space-y-8">
-            {/* Key Metrics - Réduit à 3 métriques principales */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {keyMetrics?.slice(0, 3)?.map((metric, index) => (
+            {/* Key Metrics - Toutes les métriques importantes */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+              {keyMetrics?.map((metric, index) => (
                 <MetricCard
                   key={index}
                   title={metric?.title}
@@ -188,9 +188,60 @@ const PrincipalDashboard = () => {
         return <PersonnelManagement />;
       case 'actions':
         return (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">Actions Rapides</h3>
-            <QuickActions />
+          <div className="space-y-6">
+            {/* Raccourcis directs */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <button
+                onClick={() => navigate('/principal-dashboard?tab=personnel')}
+                className="p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-left group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <Icon name="UserPlus" size={20} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-blue-900">Créer Personnel</h3>
+                    <p className="text-sm text-blue-700">Ajouter enseignant/secrétaire</p>
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => navigate('/notification-management')}
+                className="p-4 bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 text-left group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <Icon name="Bell" size={20} className="text-green-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-green-900">Notification</h3>
+                    <p className="text-sm text-green-700">Message à l'école</p>
+                  </div>
+                </div>
+              </button>
+              
+              <button
+                onClick={() => navigate('/report-generation')}
+                className="p-4 bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 rounded-xl transition-all duration-200 text-left group"
+              >
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                    <Icon name="FileBarChart" size={20} className="text-purple-600" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-purple-900">Rapport</h3>
+                    <p className="text-sm text-purple-700">Générer analyse</p>
+                  </div>
+                </div>
+              </button>
+            </div>
+            
+            {/* Section complète */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Toutes les Actions</h3>
+              <QuickActions />
+            </div>
           </div>
         );
       case 'system':
@@ -232,43 +283,75 @@ const PrincipalDashboard = () => {
           isSidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
         }`}>
           <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-            {/* Page Header - Simplifié */}
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                  Dashboard Principal
-                </h1>
-                <p className="text-sm text-gray-500">
-                  {new Date().toLocaleDateString('fr-FR', { 
-                    weekday: 'long', 
-                    day: 'numeric', 
-                    month: 'long' 
-                  })}
-                </p>
-              </div>
-              
-              <div className="flex items-center space-x-2">
-                <NotificationCenter userRole="principal" />
-                <AccessibilityControls />
+            {/* Page Header - Amélioré */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                    <Icon name="BarChart3" size={24} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
+                      Dashboard Principal
+                    </h1>
+                    <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      <span>
+                        📅 {new Date().toLocaleDateString('fr-FR', { 
+                          weekday: 'long', 
+                          day: 'numeric', 
+                          month: 'long' 
+                        })}
+                      </span>
+                      <div className="flex items-center space-x-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                        <span>Système opérationnel</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3">
+                  <div className="hidden md:flex items-center space-x-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2">
+                    <Icon name="Users" size={16} className="text-blue-600" />
+                    <span className="text-sm font-medium text-gray-700">400 élèves</span>
+                  </div>
+                  <NotificationCenter userRole="principal" />
+                  <AccessibilityControls />
+                </div>
               </div>
             </div>
 
-            {/* Tab Navigation - Simplifié */}
+            {/* Tab Navigation - Avec indicateurs */}
             <div className="flex space-x-1 mb-8 bg-gray-100 p-1 rounded-lg w-fit">
-              {tabOptions?.map((tab) => (
-                <button
-                  key={tab?.id}
-                  onClick={() => handleTabChange(tab?.id)}
-                  className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-md transition-all duration-200 ${
-                    activeTab === tab?.id
-                      ? 'bg-white text-blue-600 shadow-sm font-medium' 
-                      : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                  }`}
-                >
-                  <Icon name={tab?.icon} size={16} />
-                  <span>{tab?.label}</span>
-                </button>
-              ))}
+              {tabOptions?.map((tab) => {
+                // Ajouter des indicateurs contextuels
+                const getTabBadge = (tabId) => {
+                  switch (tabId) {
+                    case 'personnel':
+                      return <div className="w-2 h-2 bg-green-500 rounded-full ml-1" title="25 membres actifs" />;
+                    case 'system':
+                      return <div className="w-2 h-2 bg-yellow-500 rounded-full ml-1" title="1 alerte mineure" />;
+                    default:
+                      return null;
+                  }
+                };
+                
+                return (
+                  <button
+                    key={tab?.id}
+                    onClick={() => handleTabChange(tab?.id)}
+                    className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-md transition-all duration-200 relative ${
+                      activeTab === tab?.id
+                        ? 'bg-white text-blue-600 shadow-sm font-medium' 
+                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                    }`}
+                  >
+                    <Icon name={tab?.icon} size={16} />
+                    <span>{tab?.label}</span>
+                    {getTabBadge(tab?.id)}
+                  </button>
+                );
+              })}
             </div>
 
             {/* Tab Content */}
@@ -276,26 +359,42 @@ const PrincipalDashboard = () => {
               {renderTabContent()}
             </div>
 
-            {/* Footer Info */}
+            {/* Footer Info - Amélioré */}
             <div className="mt-12 pt-6 border-t border-border">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between text-sm text-muted-foreground">
-                <div className="flex items-center space-x-4 mb-4 md:mb-0">
-                  <div className="flex items-center space-x-2">
-                    <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                    <span>Système opérationnel</span>
+              <div className="bg-gray-50 rounded-xl p-4">
+                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-4 mb-4 lg:mb-0">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
+                      <span className="font-medium">Système opérationnel</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Icon name="Users" size={14} className="text-blue-600" />
+                      <span>400 élèves actifs</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Icon name="GraduationCap" size={14} className="text-green-600" />
+                      <span>25 enseignants</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Icon name="Shield" size={14} className="text-purple-600" />
+                      <span>Sécurisé SSL</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Icon name="Database" size={14} className="text-orange-600" />
+                      <span>99.9% uptime</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Icon name="Users" size={14} />
-                    <span>400 élèves actifs</span>
+                  <div className="flex items-center space-x-4">
+                    <div className="flex items-center space-x-2">
+                      <Icon name="Activity" size={14} className="text-green-500" />
+                      <span>Données en temps réel</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Icon name="Clock" size={14} />
+                      <span>Sync: {currentTime?.toLocaleTimeString('fr-FR')}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <Icon name="Shield" size={14} />
-                    <span>Sécurisé</span>
-                  </div>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Icon name="Clock" size={14} />
-                  <span>Dernière synchronisation: {currentTime?.toLocaleTimeString('fr-FR')}</span>
                 </div>
               </div>
             </div>
