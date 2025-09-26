@@ -1,9 +1,9 @@
--- Migration: Fonction pour créer un compte principal avec école
+-- Migration: Mise à jour de la fonction de création de compte principal
 -- Date: 2025-09-26
--- Description: Fonction pour créer un directeur d'école et son établissement
+-- Description: Adapter la fonction pour travailler avec Supabase Auth
 
--- Assurer que l'extension pgcrypto est activée pour le hachage des mots de passe
-CREATE EXTENSION IF NOT EXISTS pgcrypto;
+-- Supprimer l'ancienne fonction
+DROP FUNCTION IF EXISTS create_principal_account;
 
 -- Fonction pour créer une école et lier au directeur
 CREATE OR REPLACE FUNCTION create_principal_school(
@@ -124,4 +124,4 @@ END;
 $$;
 
 -- Commentaire sur la fonction
-COMMENT ON FUNCTION create_principal_account IS 'Crée un compte directeur avec son établissement scolaire';
+COMMENT ON FUNCTION create_principal_school IS 'Crée une école et la lie à un directeur existant dans Supabase Auth';

@@ -365,12 +365,33 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         ? formData.availableClasses.filter(cls => cls.isActive).map(cls => cls.level)
         : [];
 
-      // Appeler la fonction de création de compte principal
-      const { data, error: createError } = await supabase.rpc('create_principal_account', {
+      // 1. Créer d'abord l'utilisateur dans Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: formData.email,
+        password: formData.password,
+        options: {
+          data: {
+            full_name: formData.directorName,
+            phone: formData.phone,
+            role: 'principal'
+          }
+        }
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error(authError.message || 'Erreur lors de la création du compte d\'authentification');
+      }
+
+      if (!authData.user) {
+        throw new Error('Erreur lors de la création de l\'utilisateur');
+      }
+
+      // 2. Créer l'école et lier les données
+      const { data, error: createError } = await supabase.rpc('create_principal_school', {
         director_name: formData.directorName,
         email_input: formData.email,
         phone_input: formData.phone,
-        password_input: formData.password,
         school_name: formData.schoolName,
         school_type: formData.schoolType,
         school_address: formData.address,
@@ -381,27 +402,25 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
 
       if (createError) {
         console.error('Creation error:', createError);
-        throw new Error(createError.message || 'Erreur lors de la création du compte');
+        throw new Error(createError.message || 'Erreur lors de la création des données de l\'école');
       }
 
-      if (!data || data.length === 0) {
-        throw new Error('Aucune réponse du serveur');
+      const result = data?.[0];
+      if (!result?.success) {
+        throw new Error(result?.message || 'Échec de la création du compte');
       }
 
-      const result = data[0];
-      if (!result.success) {
-        throw new Error(result.message || 'Échec de la création du compte');
-      }
-
-      // Succès - afficher un message et rediriger
+      // Succès - rediriger vers la page de connexion
       alert(`Compte créé avec succès ! 
 École: ${formData.schoolName}
 Directeur: ${formData.directorName}
 Email: ${formData.email}
 
-Vous pouvez maintenant vous connecter avec vos identifiants.`);
+Veuillez vérifier votre email pour confirmer votre compte, puis vous pourrez vous connecter.`);
 
-      onSuccess?.();
+      // Redirection vers la page de connexion
+      window.location.href = '/staff-login';
+      
     } catch (error) {
       console.error('Error during registration:', error);
       setError(error.message || 'Une erreur est survenue lors de l\'inscription');
