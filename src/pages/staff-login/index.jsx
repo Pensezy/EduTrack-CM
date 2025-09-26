@@ -32,51 +32,70 @@ const StaffLogin = () => {
     setError(null);
   };
 
+  const handleSelectChange = (value) => {
+    setFormData(prev => ({
+      ...prev,
+      userType: value
+    }));
+    setError(null);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      // Connexion avec Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
-
-      if (authError) throw authError;
-
-      // Vérifier le type d'utilisateur dans la base de données
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id, role, status, school_id')
-        .eq('id', authData.user.id)
-        .single();
-
-      if (userError) throw userError;
-
-      if (!userData) {
-        throw new Error('Utilisateur non trouvé');
+      // Validation des champs
+      if (!formData.email || !formData.password) {
+        throw new Error('Veuillez remplir tous les champs');
       }
 
-      if (userData.status !== 'active') {
-        throw new Error('Votre compte n\'est pas activé. Contactez votre direction.');
+      // Authentification avec notre fonction personnalisée
+      const { data, error: authError } = await supabase.rpc('authenticate_user', {
+        email_input: formData.email,
+        password_input: formData.password
+      });
+
+      if (authError) {
+        console.error('Auth error:', authError);
+        throw new Error('Erreur de connexion: ' + authError.message);
+      }
+
+      if (!data || data.length === 0) {
+        throw new Error('Aucune réponse du serveur');
+      }
+
+      const authResult = data[0];
+
+      if (!authResult.user_id) {
+        throw new Error(authResult.message || 'Identifiants incorrects');
       }
 
       // Vérifier que le rôle correspond au type sélectionné
       const expectedRole = formData.userType;
-      if (userData.role !== expectedRole) {
-        throw new Error(`Ce compte n'est pas un compte ${userTypes.find(t => t.value === expectedRole)?.label}`);
+      if (authResult.role !== expectedRole) {
+        const selectedTypeLabel = userTypes.find(t => t.value === expectedRole)?.label;
+        throw new Error(`Ce compte n'est pas un compte ${selectedTypeLabel}. Il s'agit d'un compte ${authResult.role === 'principal' ? 'Directeur' : authResult.role === 'teacher' ? 'Enseignant' : authResult.role === 'student' ? 'Élève' : authResult.role === 'parent' ? 'Parent' : authResult.role === 'secretary' ? 'Secrétaire' : authResult.role}`);
       }
+
+      // Créer la session utilisateur
+      const userSession = {
+        id: authResult.user_id,
+        role: authResult.role,
+        name: authResult.full_name,
+        email: formData.email,
+        schoolId: authResult.school_id,
+        loginTime: new Date().toISOString(),
+        sessionId: Math.random().toString(36).substr(2, 9),
+        demoAccount: false
+      };
+
+      localStorage.setItem('edutrack-user', JSON.stringify(userSession));
 
       // Rediriger vers le dashboard approprié
       const dashboardRoute = userTypes.find(t => t.value === expectedRole)?.dashboard;
-      navigate(dashboardRoute, { 
-        state: { 
-          user: userData,
-          schoolId: userData.school_id
-        } 
-      });
+      navigate(dashboardRoute);
 
     } catch (error) {
       console.error('Login error:', error.message);
@@ -138,7 +157,7 @@ const StaffLogin = () => {
                 label="Type de compte"
                 name="userType"
                 value={formData.userType}
-                onChange={handleChange}
+                onChange={handleSelectChange}
                 options={userTypes}
                 required
               />
