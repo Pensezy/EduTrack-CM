@@ -173,7 +173,7 @@ const DataBackup = () => {
       <div className="min-h-screen bg-background">
         <Header 
           userRole="principal" 
-          userName="Principal Admin"
+          userName="M. Directeur"
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
