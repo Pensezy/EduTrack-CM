@@ -12,7 +12,7 @@ const SchoolManagement = () => {
 
   const handleLoginSuccess = (schoolData) => {
     // Navigate to school dashboard with school data
-    navigate('/school-dashboard', { state: { school: schoolData } });
+    navigate('/school-dashboard', { state: { school: schoolData } }); 
   };
 
   const handleRegistrationSuccess = () => {
