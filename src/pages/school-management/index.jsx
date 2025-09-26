@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import SchoolRegistrationForm from './components/SchoolRegistrationForm';
+import TestForm from './components/TestForm';
+import WorkingSchoolRegistrationForm from './components/MinimalTest';
 import SchoolLoginForm from './components/SchoolLoginForm';
 
 const SchoolManagement = () => {
@@ -71,7 +73,7 @@ const SchoolManagement = () => {
             {mode === 'login' ? (
               <SchoolLoginForm onSuccess={handleLoginSuccess} />
             ) : (
-              <SchoolRegistrationForm onSuccess={handleRegistrationSuccess} />
+              <WorkingSchoolRegistrationForm onSuccess={handleRegistrationSuccess} />
             )}
           </div>
 

@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import SchoolSettings from './SchoolSettings';
 
 const SystemStatus = () => {
   const [systemHealth, setSystemHealth] = useState('excellent');
   const [lastUpdate, setLastUpdate] = useState(new Date());
+  const [activeTab, setActiveTab] = useState('system');
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -171,10 +173,21 @@ const SystemStatus = () => {
     });
   };
 
-  return (
-    <div className="space-y-6">
-      {/* System Health Overview */}
-      <div className="bg-card border border-border rounded-lg p-6 shadow-card">
+  const tabs = [
+    { id: 'system', label: 'État du système', icon: 'Activity' },
+    { id: 'school', label: 'Paramètres école', icon: 'School' }
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'school':
+        return <SchoolSettings />;
+      case 'system':
+      default:
+        return (
+          <div className="space-y-6">
+            {/* System Health Overview */}
+            <div className="bg-card border border-border rounded-lg p-6 shadow-card">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
@@ -345,6 +358,33 @@ const SystemStatus = () => {
           </div>
         </div>
       </div>
+    </div>
+        );
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Navigation par onglets */}
+      <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-md transition-all duration-200 ${
+              activeTab === tab.id
+                ? 'bg-white text-blue-600 shadow-sm font-medium' 
+                : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+            }`}
+          >
+            <Icon name={tab.icon} size={16} />
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Contenu de l'onglet */}
+      {renderTabContent()}
     </div>
   );
 };
