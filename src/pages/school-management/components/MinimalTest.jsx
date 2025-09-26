@@ -417,25 +417,11 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         throw new Error(result?.message || 'Échec de la création du compte');
       }
 
-      // Vérifier si l'utilisateur est automatiquement connecté
-      let needsConfirmation = !authData.session;
+      // La confirmation email est toujours requise dans notre configuration
+      // Pas besoin de tester une connexion automatique qui échouera forcément
+      let needsConfirmation = true;
       
-      // Si pas de session, essayer de se connecter directement
-      if (!authData.session) {
-        try {
-          const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-            email: formData.email,
-            password: formData.password
-          });
-          
-          if (!signInError && signInData.session) {
-            needsConfirmation = false;
-            console.log('Connexion automatique réussie après inscription');
-          }
-        } catch (signInErr) {
-          console.log('Connexion automatique échouée, confirmation email nécessaire');
-        }
-      }
+      console.log('Compte créé avec succès. Email de confirmation envoyé à:', formData.email);
 
       // Succès - afficher la page de succès
       setSuccessData({
@@ -537,7 +523,8 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-8">
+    <div className="w-full max-w-none">
+      <form onSubmit={handleSubmit} className="space-y-8">
         {/* Section 1: Informations de l'établissement */}
         <div className="space-y-4">
           <h3 className="text-lg font-semibold text-gray-900 border-b pb-2">
@@ -707,20 +694,20 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
               Sélectionnez les classes que votre établissement propose
             </p>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            <div className="space-y-6">
               {categorizedClasses.map(({ category, classes }) => (
-                <div key={`category-${category}`} className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 mb-3 capitalize text-center">
+                <div key={`category-${category}`} className="bg-gray-50 rounded-lg p-6">
+                  <h4 className="font-medium text-gray-900 mb-4 capitalize text-center text-lg">
                     Classes {category}
                   </h4>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3">
                     {classes && classes.length > 0 ? classes
                       .filter(classItem => classItem && classItem.level && classItem.category)
                       .map((classItem) => (
                       <button
                         key={`class-${classItem.category}-${classItem.level}`}
                         type="button"
-                        className={`p-3 border rounded-lg w-full text-left transition-all duration-200 ${
+                        className={`p-3 border rounded-lg text-left transition-all duration-200 ${
                           classItem.isActive 
                             ? 'bg-blue-100 border-blue-400 text-blue-800 shadow-sm' 
                             : 'bg-white border-gray-300 hover:border-blue-300 hover:bg-blue-50'
@@ -728,10 +715,10 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
                         onClick={() => handleClassToggle(classItem.level)}
                       >
                         <div className="flex items-center justify-between">
-                          <span className="font-medium">{classItem?.level}</span>
+                          <span className="font-medium text-sm">{classItem?.level}</span>
                           <span className="text-lg">{classItem.isActive ? '✓' : '+'}</span>
                         </div>
-                        <span className="text-xs text-gray-600">{classItem?.label}</span>
+                        <span className="text-xs text-gray-600 mt-1 block">{classItem?.label}</span>
                       </button>
                     )) : (
                       <p className="text-gray-500 text-sm text-center py-4">
@@ -768,6 +755,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
           </Button>
         </div>
       </form>
+    </div>
   );
 };
 

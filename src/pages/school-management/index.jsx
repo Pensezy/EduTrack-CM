@@ -22,10 +22,10 @@ const SchoolManagement = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-background flex flex-col lg:flex-row">
       {/* Left Side - Image */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-secondary items-center justify-center p-12">
-        <div className="max-w-xl text-white">
+      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-secondary p-12 sticky top-0 h-screen overflow-auto">
+        <div className="max-w-xl text-white flex flex-col justify-center">
           <img
                 src="/assets/images/mon_logo.png"
                 alt="Logo EduTrack CM"
@@ -38,7 +38,7 @@ const SchoolManagement = () => {
             Gérez votre établissement efficacement avec notre plateforme complète de gestion scolaire.
             Simplifiez l'administration, le suivi des élèves et la communication avec les parents.
           </p>
-          <div className="grid grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
             <div className="bg-white/10 rounded-lg p-4">
               <Icon name="Users" size={24} className="mb-2" />
               <h3 className="font-heading font-heading-semibold mb-2">Gestion des effectifs</h3>
@@ -54,8 +54,8 @@ const SchoolManagement = () => {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12">
-        <div className="w-full max-w-md">
+      <div className="w-full lg:w-1/2 flex items-start justify-center p-4 sm:p-6 lg:p-8 min-h-screen overflow-auto py-8 lg:py-12">
+        <div className={`w-full ${mode === 'register' ? 'max-w-4xl' : 'max-w-md'}`}>
           {/* Header */}
           <div className="text-center mb-8">
             <h2 className="text-2xl font-heading font-heading-bold text-foreground mb-2">

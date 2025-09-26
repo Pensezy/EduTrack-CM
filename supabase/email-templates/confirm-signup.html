@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmez votre compte EduTrack-CM</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            line-height: 1.6; 
+            color: #374151; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f3f4f6;
+        }
+        .email-container { 
+            max-width: 600px; 
+            margin: 20px auto; 
+            background: white; 
+            border-radius: 12px; 
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        .header { 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: white; 
+            padding: 30px 20px; 
+            text-align: center; 
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: bold;
+        }
+        .header p {
+            margin: 5px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .content { 
+            padding: 40px 30px; 
+        }
+        .welcome-badge {
+            background: #ecfdf5;
+            color: #047857;
+            padding: 10px 20px;
+            border-radius: 50px;
+            display: inline-block;
+            font-weight: 600;
+            margin-bottom: 20px;
+            border: 2px solid #10b981;
+        }
+        .confirm-button { 
+            display: inline-block; 
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); 
+            color: white; 
+            padding: 18px 40px; 
+            text-decoration: none; 
+            border-radius: 10px; 
+            font-weight: bold; 
+            font-size: 16px;
+            margin: 25px 0;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(37, 99, 235, 0.3);
+        }
+        .confirm-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.4);
+        }
+        .info-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info-box h3 {
+            margin-top: 0;
+            color: #1e293b;
+            font-size: 16px;
+        }
+        .info-list {
+            list-style: none;
+            padding: 0;
+        }
+        .info-list li {
+            padding: 8px 0;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .info-list li:last-child {
+            border-bottom: none;
+        }
+        .footer { 
+            background: #64748b; 
+            color: white; 
+            padding: 25px; 
+            text-align: center; 
+            font-size: 14px;
+        }
+        .footer p {
+            margin: 5px 0;
+        }
+        .security-notice {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 20px 0;
+            font-size: 14px;
+        }
+        .security-notice strong {
+            color: #92400e;
+        }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            .content {
+                padding: 30px 20px;
+            }
+            .confirm-button {
+                display: block;
+                text-align: center;
+                width: 100%;
+                box-sizing: border-box;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <div class="header">
+            <h1>🎓 EduTrack-CM</h1>
+            <p>Système de Gestion Scolaire Moderne</p>
+        </div>
+        
+        <div class="content">
+            <div class="welcome-badge">
+                🎉 Bienvenue sur EduTrack-CM !
+            </div>
+            
+            <h2 style="color: #1e293b; margin-bottom: 20px;">
+                Bonjour {{ .Name }},
+            </h2>
+            
+            <p>
+                Merci de vous être inscrit sur <strong>EduTrack-CM</strong>, la plateforme de gestion scolaire qui révolutionne l'administration de votre établissement.
+            </p>
+            
+            <p>
+                Votre compte de <strong>directeur d'établissement</strong> a été créé avec succès ! Pour finaliser votre inscription et accéder à votre tableau de bord personnalisé, il ne vous reste plus qu'à confirmer votre adresse email.
+            </p>
+            
+            <div style="text-align: center; margin: 30px 0;">
+                <a href="{{ .ConfirmationURL }}" class="confirm-button">
+                    ✅ Confirmer mon compte EduTrack-CM
+                </a>
+            </div>
+            
+            <div class="info-box">
+                <h3>📋 Récapitulatif de votre inscription :</h3>
+                <ul class="info-list">
+                    <li><strong>📧 Email :</strong> {{ .Email }}</li>
+                    <li><strong>👤 Rôle :</strong> Directeur d'établissement</li>
+                    <li><strong>🏫 Plateforme :</strong> EduTrack-CM</li>
+                    <li><strong>📅 Date d'inscription :</strong> {{ .CreatedAt }}</li>
+                </ul>
+            </div>
+            
+            <p>
+                <strong>Une fois votre compte confirmé, vous pourrez :</strong>
+            </p>
+            <ul>
+                <li>🏫 Gérer les informations de votre établissement</li>
+                <li>👥 Administrer les comptes enseignants et élèves</li>
+                <li>📊 Consulter les tableaux de bord et statistiques</li>
+                <li>📚 Superviser les cours et les notes</li>
+                <li>💰 Gérer les frais de scolarité et paiements</li>
+            </ul>
+            
+            <div class="security-notice">
+                <strong>🔒 Sécurité :</strong> Ce lien de confirmation est valide pendant <strong>24 heures</strong> et ne peut être utilisé qu'une seule fois. Si vous n'avez pas créé ce compte, vous pouvez ignorer cet email en toute sécurité.
+            </div>
+            
+            <p>
+                Besoin d'aide ? Notre équipe support est disponible pour vous accompagner dans la prise en main de votre nouvelle plateforme.
+            </p>
+            
+            <p style="margin-top: 30px;">
+                Cordialement,<br>
+                <strong>L'équipe EduTrack-CM</strong> 🚀
+            </p>
+        </div>
+        
+        <div class="footer">
+            <p><strong>© 2025 EduTrack-CM</strong> - Système de Gestion Scolaire</p>
+            <p>📧 Support : <a href="mailto:support@edutrack-cm.com" style="color: #bfdbfe;">support@edutrack-cm.com</a></p>
+            <p>🌐 Site web : <a href="{{ .SiteURL }}" style="color: #bfdbfe;">{{ .SiteURL }}</a></p>
+        </div>
+    </div>
+</body>
+</html>
