@@ -29,7 +29,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
     principal: [
       { label: 'Vue d\'ensemble', path: '/principal-dashboard', icon: 'Home', description: 'Dashboard principal' },
       { label: 'Analyses', path: '/principal-dashboard?tab=analytics', icon: 'TrendingUp', description: 'Rapports & tendances' },
-      { label: 'Enseignants', path: '/principal-dashboard?tab=teachers', icon: 'Users', description: 'Gestion équipe' },
+      { label: 'Personnel', path: '/principal-dashboard?tab=personnel', icon: 'Users', description: 'Gestion du personnel' },
       { label: 'Actions Rapides', path: '/principal-dashboard?tab=actions', icon: 'Zap', description: 'Outils de gestion' },
       { label: 'Paramètres', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration' }
     ],
