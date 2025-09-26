@@ -59,7 +59,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Documents', icon: 'FileText', path: '/document-management-center' },
     ],
     principal: [
-      { label: 'Nouveau secrétaire', icon: 'UserPlus', path: '/principal-dashboard?tab=personnel' },
+      { label: 'Créer compte personnel', icon: 'UserPlus', path: '/principal-dashboard?tab=personnel' },
       { label: 'Nouveau message', icon: 'Mail', path: '/notification-management' },
       { label: 'Créer rapport', icon: 'FileBarChart', path: '/report-generation' },
       { label: 'Sauvegarde', icon: 'Database', path: '/data-backup' },

@@ -10,8 +10,8 @@ const QuickActions = () => {
   const quickActions = [
     {
       id: 'personnel',
-      title: 'Créer compte secrétaire',
-      description: 'Ajouter un nouveau secrétaire',
+      title: 'Créer compte personnel',
+      description: 'Ajouter enseignant ou secrétaire',
       icon: 'UserPlus',
       color: 'bg-blue-500',
       path: '/principal-dashboard?tab=personnel'
