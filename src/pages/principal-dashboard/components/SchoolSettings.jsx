@@ -42,21 +42,27 @@ const SchoolSettings = () => {
   }, [schoolData.type]);
 
   const schoolTypes = [
-    { value: 'primary', label: 'École Primaire' },
-    { value: 'secondary', label: 'Établissement Secondaire' },
-    { value: 'college', label: 'Collège' },
-    { value: 'high_school', label: 'Lycée' },
-    { value: 'institut', label: 'Institut' },
-    { value: 'university', label: 'Université' }
+    { value: 'maternelle', label: 'École Maternelle' },
+    { value: 'primaire', label: 'École Primaire' },
+    { value: 'college', label: 'Collège (6ème - 3ème)' },
+    { value: 'lycee', label: 'Lycée (2nde - Terminale)' },
+    { value: 'college_lycee', label: 'Collège-Lycée (6ème - Terminale)' },
+    { value: 'universite', label: 'Université' },
+    { value: 'formation_professionnelle', label: 'Formation Professionnelle' }
   ];
 
   // Classes disponibles selon le type d'établissement
   const getAvailableClassesByType = (schoolType) => {
     switch (schoolType) {
-      case 'primary':
+      case 'maternelle':
         return [
-          { value: 'CP1', label: 'CP1 (Cours Préparatoire 1)', category: 'primaire' },
-          { value: 'CP2', label: 'CP2 (Cours Préparatoire 2)', category: 'primaire' },
+          { value: 'Petite Section', label: 'Petite Section', category: 'maternelle' },
+          { value: 'Moyenne Section', label: 'Moyenne Section', category: 'maternelle' },
+          { value: 'Grande Section', label: 'Grande Section', category: 'maternelle' }
+        ];
+      case 'primaire':
+        return [
+          { value: 'CP', label: 'CP (Cours Préparatoire)', category: 'primaire' },
           { value: 'CE1', label: 'CE1 (Cours Élémentaire 1)', category: 'primaire' },
           { value: 'CE2', label: 'CE2 (Cours Élémentaire 2)', category: 'primaire' },
           { value: 'CM1', label: 'CM1 (Cours Moyen 1)', category: 'primaire' },
@@ -69,31 +75,23 @@ const SchoolSettings = () => {
           { value: '4ème', label: '4ème', category: 'collège' },
           { value: '3ème', label: '3ème', category: 'collège' }
         ];
-      case 'high_school':
+      case 'lycee':
         return [
-          { value: '2nd', label: '2nd (Seconde)', category: 'lycée' },
+          { value: '2nde', label: '2nde (Seconde)', category: 'lycée' },
           { value: '1ère', label: '1ère (Première)', category: 'lycée' },
           { value: 'Terminale', label: 'Terminale', category: 'lycée' }
         ];
-      case 'secondary':
+      case 'college_lycee':
         return [
-          // Collège + Lycée
           { value: '6ème', label: '6ème', category: 'collège' },
           { value: '5ème', label: '5ème', category: 'collège' },
           { value: '4ème', label: '4ème', category: 'collège' },
           { value: '3ème', label: '3ème', category: 'collège' },
-          { value: '2nd', label: '2nd (Seconde)', category: 'lycée' },
+          { value: '2nde', label: '2nde (Seconde)', category: 'lycée' },
           { value: '1ère', label: '1ère (Première)', category: 'lycée' },
           { value: 'Terminale', label: 'Terminale', category: 'lycée' }
         ];
-      case 'institut':
-        return [
-          { value: 'BTS1', label: 'BTS 1ère année', category: 'supérieur' },
-          { value: 'BTS2', label: 'BTS 2ème année', category: 'supérieur' },
-          { value: 'DUT1', label: 'DUT 1ère année', category: 'supérieur' },
-          { value: 'DUT2', label: 'DUT 2ème année', category: 'supérieur' }
-        ];
-      case 'university':
+      case 'universite':
         return [
           { value: 'L1', label: 'Licence 1', category: 'université' },
           { value: 'L2', label: 'Licence 2', category: 'université' },
@@ -101,6 +99,16 @@ const SchoolSettings = () => {
           { value: 'M1', label: 'Master 1', category: 'université' },
           { value: 'M2', label: 'Master 2', category: 'université' },
           { value: 'Doctorat', label: 'Doctorat', category: 'université' }
+        ];
+      case 'formation_professionnelle':
+        return [
+          { value: 'CAP1', label: 'CAP Première Année', category: 'professionnel' },
+          { value: 'CAP2', label: 'CAP Deuxième Année', category: 'professionnel' },
+          { value: 'BEP1', label: 'BEP Première Année', category: 'professionnel' },
+          { value: 'BEP2', label: 'BEP Deuxième Année', category: 'professionnel' },
+          { value: 'BAC_PRO1', label: 'Bac Pro Première Année', category: 'professionnel' },
+          { value: 'BAC_PRO2', label: 'Bac Pro Deuxième Année', category: 'professionnel' },
+          { value: 'BAC_PRO3', label: 'Bac Pro Troisième Année', category: 'professionnel' }
         ];
       default:
         return [];
@@ -195,18 +203,20 @@ const SchoolSettings = () => {
 
   const getSchoolTypeDescription = (type) => {
     switch (type) {
-      case 'primary':
-        return 'École primaire : Classes de CP1 à CM2 pour les enfants de 6 à 11 ans.';
+      case 'maternelle':
+        return 'École maternelle : Petite, Moyenne et Grande Section pour les enfants de 3 à 6 ans.';
+      case 'primaire':
+        return 'École primaire : Classes de CP à CM2 pour les enfants de 6 à 11 ans.';
       case 'college':
-        return 'Collège : Classes de 6ème à 3ème pour le premier cycle du secondaire.';
-      case 'high_school':
-        return 'Lycée : Classes de 2nd à Terminale pour le second cycle du secondaire.';
-      case 'secondary':
-        return 'Établissement secondaire complet : Du collège au lycée (6ème à Terminale).';
-      case 'institut':
-        return 'Institut : Formation professionnelle et technique (BTS, DUT, formations spécialisées).';
-      case 'university':
+        return 'Collège : Classes de 6ème à 3ème pour le premier cycle du secondaire (Cameroun).';
+      case 'lycee':
+        return 'Lycée : Classes de 2nde à Terminale pour le second cycle du secondaire (Cameroun).';
+      case 'college_lycee':
+        return 'Collège-Lycée : Établissement complet de la 6ème à la Terminale (très courant au Cameroun).';
+      case 'universite':
         return 'Université : Enseignement supérieur (Licence, Master, Doctorat).';
+      case 'formation_professionnelle':
+        return 'Formation professionnelle : CAP, BEP, Bac Pro pour l\'apprentissage de métiers spécialisés.';
       default:
         return 'Sélectionnez un type d\'établissement pour voir les classes appropriées.';
     }

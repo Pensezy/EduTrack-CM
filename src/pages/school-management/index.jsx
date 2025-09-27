@@ -5,9 +5,10 @@ import SchoolRegistrationForm from './components/SchoolRegistrationForm';
 import TestForm from './components/TestForm';
 import WorkingSchoolRegistrationForm from './components/MinimalTest';
 import SchoolLoginForm from './components/SchoolLoginForm';
+import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 
 const SchoolManagement = () => {
-  const [mode, setMode] = useState('login'); // 'login' or 'register'
+  const [mode, setMode] = useState('login'); // 'login', 'register', or 'diagnostic'
   const navigate = useNavigate();
 
   const handleLoginSuccess = (schoolData) => {
@@ -72,8 +73,10 @@ const SchoolManagement = () => {
           <div className="bg-card rounded-lg border border-border p-6 shadow-card">
             {mode === 'login' ? (
               <SchoolLoginForm onSuccess={handleLoginSuccess} />
-            ) : (
+            ) : mode === 'register' ? (
               <WorkingSchoolRegistrationForm onSuccess={handleRegistrationSuccess} />
+            ) : (
+              <DatabaseDiagnostic />
             )}
           </div>
 
@@ -89,8 +92,15 @@ const SchoolManagement = () => {
                   >
                     Inscrire votre établissement
                   </button>
+                  {' | '}
+                  <button 
+                    onClick={() => setMode('diagnostic')}
+                    className="text-orange-600 hover:underline font-body font-body-semibold"
+                  >
+                    🔍 Diagnostic
+                  </button>
                 </>
-              ) : (
+              ) : mode === 'register' ? (
                 <>
                   Déjà inscrit ?{' '}
                   <button 
@@ -98,6 +108,22 @@ const SchoolManagement = () => {
                     className="text-primary hover:underline font-body font-body-semibold"
                   >
                     Se connecter
+                  </button>
+                  {' | '}
+                  <button 
+                    onClick={() => setMode('diagnostic')}
+                    className="text-orange-600 hover:underline font-body font-body-semibold"
+                  >
+                    🔍 Diagnostic
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={() => setMode('login')}
+                    className="text-primary hover:underline font-body font-body-semibold"
+                  >
+                    ← Retour à la connexion
                   </button>
                 </>
               )}

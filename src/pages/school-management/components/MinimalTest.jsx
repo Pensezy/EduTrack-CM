@@ -240,7 +240,17 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         ];
       case 'lycee':
         return [
-          { value: '2nd', label: '2nd (Seconde)', category: 'lycée' },
+          { value: '2nde', label: '2nde (Seconde)', category: 'lycée' },
+          { value: '1ère', label: '1ère (Première)', category: 'lycée' },
+          { value: 'Terminale', label: 'Terminale', category: 'lycée' }
+        ];
+      case 'college_lycee':
+        return [
+          { value: '6ème', label: '6ème', category: 'collège' },
+          { value: '5ème', label: '5ème', category: 'collège' },
+          { value: '4ème', label: '4ème', category: 'collège' },
+          { value: '3ème', label: '3ème', category: 'collège' },
+          { value: '2nde', label: '2nde (Seconde)', category: 'lycée' },
           { value: '1ère', label: '1ère (Première)', category: 'lycée' },
           { value: 'Terminale', label: 'Terminale', category: 'lycée' }
         ];
@@ -394,28 +404,44 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         throw new Error('Erreur lors de la création de l\'utilisateur');
       }
 
-      // 2. Créer l'école et lier les données
-      const { data, error: createError } = await supabase.rpc('create_principal_school', {
-        director_name: formData.directorName,
-        email_input: formData.email,
-        phone_input: formData.phone,
-        school_name: formData.schoolName,
-        school_type: formData.schoolType,
-        school_address: formData.address,
-        school_city: formData.city || 'Yaoundé',
-        school_country: formData.country || 'Cameroun',
-        available_classes: selectedClasses
+      console.log('✅ Compte Auth créé avec succès, ID utilisateur:', authData.user.id);
+
+      // 2. Créer l'école et lier les données avec Prisma
+      console.log('🏫 Création de l\'école avec Prisma, paramètres:', {
+        directorName: formData.directorName,
+        email: formData.email,
+        phone: formData.phone,
+        schoolName: formData.schoolName,
+        schoolType: formData.schoolType,
+        schoolAddress: formData.address,
+        schoolCity: formData.city || 'Yaoundé',
+        schoolCountry: formData.country || 'Cameroun',
+        availableClasses: selectedClasses
       });
 
-      if (createError) {
-        console.error('Creation error:', createError);
-        throw new Error(createError.message || 'Erreur lors de la création des données de l\'école');
+      // Import dynamique du service (pour éviter les problèmes SSR)
+      const { createPrincipalSchool } = await import('../../../services/schoolService.js');
+      
+      const result = await createPrincipalSchool({
+        directorName: formData.directorName,
+        email: formData.email,
+        phone: formData.phone,
+        schoolName: formData.schoolName,
+        schoolType: formData.schoolType,
+        schoolAddress: formData.address,
+        schoolCity: formData.city || 'Yaoundé',
+        schoolCountry: formData.country || 'Cameroun',
+        availableClasses: selectedClasses
+      });
+
+      console.log('📊 Réponse de createPrincipalSchool:', result);
+
+      if (!result.success) {
+        console.error('❌ Creation error détaillé:', result.message);
+        throw new Error(`Erreur lors de la création des données de l'école: ${result.message}`);
       }
 
-      const result = data?.[0];
-      if (!result?.success) {
-        throw new Error(result?.message || 'Échec de la création du compte');
-      }
+      console.log('📋 Résultat de la création:', result.data);
 
       // La confirmation email est toujours requise dans notre configuration
       // Pas besoin de tester une connexion automatique qui échouera forcément
@@ -547,8 +573,9 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
               options={[
                 { value: 'maternelle', label: 'École Maternelle' },
                 { value: 'primaire', label: 'École Primaire' },
-                { value: 'college', label: 'Collège' },
-                { value: 'lycee', label: 'Lycée' },
+                { value: 'college', label: 'Collège (6ème - 3ème)' },
+                { value: 'lycee', label: 'Lycée (2nde - Terminale)' },
+                { value: 'college_lycee', label: 'Collège-Lycée (6ème - Terminale)' },
                 { value: 'universite', label: 'Université' },
                 { value: 'formation_professionnelle', label: 'Formation Professionnelle' }
               ]}
