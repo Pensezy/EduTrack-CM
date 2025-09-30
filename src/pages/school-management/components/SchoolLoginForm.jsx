@@ -27,37 +27,26 @@ const SchoolLoginForm = ({ onSuccess }) => {
     setError(null);
 
     try {
-      const { data, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
+      // Utiliser le nouveau service d'authentification compatible Prisma
+      const { loginDirector } = await import('../../../services/authService.js');
+      
+      const result = await loginDirector(formData.email, formData.password);
+
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+
+      console.log('✅ Connexion réussie:', {
+        user: result.user.email,
+        school: result.school.name,
+        status: result.school.status
       });
 
-      if (authError) throw authError;
-
-      // Verify if user is a school director
-      const { data: schoolData, error: schoolError } = await supabase
-        .from('schools')
-        .select('*')
-        .eq('user_id', data.user.id)
-        .single();
-
-      if (schoolError) throw schoolError;
-
-      if (!schoolData) {
-        throw new Error('Compte direction non trouvé');
-      }
-
-      if (schoolData.status === 'pending') {
-        throw new Error('Votre compte est en attente de validation');
-      }
-
-      if (schoolData.status === 'suspended') {
-        throw new Error('Votre compte a été suspendu');
-      }
-
-      onSuccess?.(schoolData);
+      // Passer les données de l'école au composant parent
+      onSuccess?.(result.school);
+      
     } catch (error) {
-      console.error('Login error:', error.message);
+      console.error('Erreur de connexion:', error.message);
       setError(error.message || 'Une erreur est survenue lors de la connexion');
     } finally {
       setLoading(false);

@@ -23,26 +23,53 @@ const DatabaseDiagnostic = () => {
         error: connectionError?.message
       };
 
-      // 2. Vérifier si la fonction existe
-      const { data: functionTest, error: functionError } = await supabase.rpc('create_principal_school', {
-        director_name: 'Test',
-        email_input: 'test@example.com',
-        phone_input: '123456789',
-        school_name: 'École Test',
-        school_type: 'college_lycee',
-        school_address: 'Test Address',
-        school_city: 'Test City',
-        school_country: 'Test Country',
-        available_classes: ['6è']
-      });
+      // 2. Test complet de la compatibilité Prisma
+      let prismaCompatibilityTest = {};
+      try {
+        const { runPrismaCompatibilityTest } = await import('../../../services/diagnosticService.js');
+        const result = await runPrismaCompatibilityTest();
+        
+        prismaCompatibilityTest = {
+          success: result.success,
+          error: result.success ? null : result.message,
+          data: result.data,
+          type: 'prisma_compatibility'
+        };
+      } catch (error) {
+        prismaCompatibilityTest = {
+          success: false,
+          error: error.message,
+          data: null,
+          type: 'prisma_compatibility'
+        };
+      }
 
-      diagnostics.function = {
-        success: !functionError,
-        error: functionError?.message,
-        data: functionTest
-      };
+      diagnostics.prismaCompatibility = prismaCompatibilityTest;
 
-      // 3. Compter les enregistrements
+      // 3. Test du flux de création d'école
+      let schoolCreationTest = {};
+      try {
+        const { testSchoolCreationFlow } = await import('../../../services/diagnosticService.js');
+        const result = await testSchoolCreationFlow();
+        
+        schoolCreationTest = {
+          success: result.success,
+          error: result.success ? null : result.message,
+          data: result.data,
+          type: 'school_creation_flow'
+        };
+      } catch (error) {
+        schoolCreationTest = {
+          success: false,
+          error: error.message,
+          data: null,
+          type: 'school_creation_flow'
+        };
+      }
+
+      diagnostics.schoolCreationFlow = schoolCreationTest;
+
+      // 5. Compter les enregistrements
       const { data: schoolsCount, error: schoolsError } = await supabase
         .from('schools')
         .select('*', { count: 'exact' });
@@ -53,7 +80,7 @@ const DatabaseDiagnostic = () => {
         error: schoolsError?.message
       };
 
-      // 4. Vérifier les utilisateurs Auth récents
+      // 6. Vérifier les utilisateurs Auth récents
       const { data: authUsers, error: authError } = await supabase.auth.admin.listUsers();
 
       diagnostics.authUsers = {
@@ -100,12 +127,24 @@ const DatabaseDiagnostic = () => {
         </div>
       )}
 
-      <div className="mt-8 bg-yellow-50 border border-yellow-200 p-4 rounded-lg">
-        <h3 className="font-bold text-yellow-800 mb-2">⚠️ Instructions :</h3>
-        <ul className="text-yellow-700 space-y-1">
-          <li>• Ce diagnostic vérifie l'état de la base de données</li>
-          <li>• Il teste la connexion, les fonctions SQL, et les tables</li>
-          <li>• Utilisez ceci pour identifier les problèmes d'enregistrement</li>
+      <div className="mt-8 bg-blue-50 border border-blue-200 p-4 rounded-lg">
+        <h3 className="font-bold text-blue-800 mb-2">ℹ️ Informations :</h3>
+        <ul className="text-blue-700 space-y-1">
+          <li>• <strong>Connection</strong> : Test de connexion à Supabase</li>
+          <li>• <strong>PrismaCompatibility</strong> : Test des 12 tables créées par Prisma</li>
+          <li>• <strong>SchoolCreationFlow</strong> : Validation du processus de création d'école</li>
+          <li>• <strong>SchoolsCount</strong> : Nombre d'écoles dans la base</li>
+          <li>• <strong>AuthUsers</strong> : Utilisateurs authentifiés (nécessite admin)</li>
+        </ul>
+      </div>
+
+      <div className="mt-4 bg-green-50 border border-green-200 p-4 rounded-lg">
+        <h3 className="font-bold text-green-800 mb-2">✅ Architecture Actuelle :</h3>
+        <ul className="text-green-700 space-y-1">
+          <li>• <strong>ORM</strong> : Prisma (gestion des données)</li>
+          <li>• <strong>Auth</strong> : Supabase Auth (authentification)</li>
+          <li>• <strong>Database</strong> : PostgreSQL via Supabase</li>
+          <li>• <strong>Schema</strong> : Géré par Prisma (prisma/schema.prisma)</li>
         </ul>
       </div>
     </div>

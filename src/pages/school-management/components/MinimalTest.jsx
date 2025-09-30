@@ -305,6 +305,9 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   const handleClassToggle = useCallback((classLevel) => {
     console.log('Class toggle:', classLevel);
     
+    // Éviter les mises à jour pendant le loading pour prévenir les erreurs DOM
+    if (loading) return;
+    
     setFormData(prev => {
       if (!prev.availableClasses || prev.availableClasses.length === 0) {
         return prev;
@@ -319,7 +322,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         )
       };
     });
-  }, []);
+  }, [loading]);
 
   // Mémoriser le rendu des catégories
   const categorizedClasses = useMemo(() => {
@@ -347,6 +350,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
   };
 
   const validateForm = () => {
+    // 1. Validation des champs obligatoires
     if (!formData.schoolName || !formData.directorName || !formData.email || 
         !formData.password || !formData.phone || !formData.address || 
         !formData.schoolType || !formData.city || !formData.country) {
@@ -354,14 +358,49 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
       return false;
     }
 
+    // 2. Validation des mots de passe
     if (formData.password !== formData.confirmPassword) {
       setError('Les mots de passe ne correspondent pas');
       return false;
     }
 
+    // 3. Validation de la longueur du mot de passe
+    if (formData.password.length < 8) {
+      setError('Le mot de passe doit contenir au moins 8 caractères');
+      return false;
+    }
+
+    // 4. Validation du format email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setError('Format d\'email invalide');
+      return false;
+    }
+
+    // 5. Validation du type d'école (Prisma compatibility)
+    const validSchoolTypes = ['maternelle', 'primaire', 'college', 'lycee', 'college_lycee', 'universite', 'formation_professionnelle'];
+    if (!validSchoolTypes.includes(formData.schoolType)) {
+      setError('Type d\'établissement invalide');
+      return false;
+    }
+
+    // 6. Validation des classes sélectionnées
     const selectedClasses = formData.availableClasses ? formData.availableClasses.filter(cls => cls.isActive) : [];
     if (selectedClasses.length === 0) {
-      setError('Veuillez sélectionner au moins une classe');
+      setError('Veuillez sélectionner au moins une classe pour votre établissement');
+      return false;
+    }
+
+    // 7. Validation du nom de l'école (longueur)
+    if (formData.schoolName.length < 3) {
+      setError('Le nom de l\'établissement doit contenir au moins 3 caractères');
+      return false;
+    }
+
+    // 8. Validation du numéro de téléphone (format basique)
+    const phoneRegex = /^[\+]?[0-9\s\-\(\)]{10,}$/;
+    if (!phoneRegex.test(formData.phone)) {
+      setError('Format de numéro de téléphone invalide');
       return false;
     }
 
@@ -381,6 +420,14 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         ? formData.availableClasses.filter(cls => cls.isActive).map(cls => cls.level)
         : [];
 
+      console.log('🚀 Début du processus d\'inscription:', {
+        schoolName: formData.schoolName,
+        schoolType: formData.schoolType,
+        directorName: formData.directorName,
+        email: formData.email,
+        selectedClassesCount: selectedClasses.length
+      });
+
       // 1. Créer d'abord l'utilisateur dans Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -397,6 +444,20 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
 
       if (authError) {
         console.error('Auth error:', authError);
+        
+        // Gestion spécifique des erreurs courantes
+        if (authError.message?.includes('already_registered')) {
+          throw new Error('Cette adresse email est déjà utilisée. Essayez de vous connecter ou utilisez une autre adresse.');
+        }
+        
+        if (authError.message?.includes('invalid_email')) {
+          throw new Error('Format d\'email invalide. Vérifiez votre adresse email.');
+        }
+        
+        if (authError.message?.includes('weak_password')) {
+          throw new Error('Mot de passe trop faible. Utilisez au moins 8 caractères avec des lettres et des chiffres.');
+        }
+        
         throw new Error(authError.message || 'Erreur lors de la création du compte d\'authentification');
       }
 
@@ -405,6 +466,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
       }
 
       console.log('✅ Compte Auth créé avec succès, ID utilisateur:', authData.user.id);
+      setError(null); // Clear auth errors
 
       // 2. Créer l'école et lier les données avec Prisma
       console.log('🏫 Création de l\'école avec Prisma, paramètres:', {
@@ -428,26 +490,36 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         phone: formData.phone,
         schoolName: formData.schoolName,
         schoolType: formData.schoolType,
-        schoolAddress: formData.address,
-        schoolCity: formData.city || 'Yaoundé',
-        schoolCountry: formData.country || 'Cameroun',
-        availableClasses: selectedClasses
+        address: formData.address,
+        city: formData.city || 'Yaoundé',
+        country: formData.country || 'Cameroun',
+        availableClasses: selectedClasses,
+        userId: authData.user.id // Passer l'ID utilisateur créé
       });
 
       console.log('📊 Réponse de createPrincipalSchool:', result);
 
-      if (!result.success) {
-        console.error('❌ Creation error détaillé:', result.message);
-        throw new Error(`Erreur lors de la création des données de l'école: ${result.message}`);
+      if (!result || !result.success) {
+        const errorMsg = result?.message || 'Réponse invalide du service';
+        console.error('❌ Erreur de création détaillée:', errorMsg);
+        throw new Error(`Erreur lors de la création des données de l'école: ${errorMsg}`);
       }
 
       console.log('📋 Résultat de la création:', result.data);
+
+      // Vérifier que les données essentielles sont présentes
+      if (!result.data?.school?.id) {
+        console.error('❌ Données école manquantes:', result.data);
+        throw new Error('Erreur: données d\'école incomplètes');
+      }
 
       // La confirmation email est toujours requise dans notre configuration
       // Pas besoin de tester une connexion automatique qui échouera forcément
       let needsConfirmation = true;
       
-      console.log('Compte créé avec succès. Email de confirmation envoyé à:', formData.email);
+      console.log('✅ École et directeur créés avec succès !', result.data);
+      console.log('📧 Email de confirmation envoyé à:', formData.email);
+      setError(null); // Clear all errors on success
 
       // Succès - afficher la page de succès
       setSuccessData({
@@ -776,9 +848,11 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
             type="submit" 
             className="w-full py-4 text-lg"
             loading={loading}
+            disabled={loading}
             size="lg"
+            key="submit-button"
           >
-            {loading ? 'Création en cours...' : '🚀 Créer mon établissement'}
+            🚀 Créer mon établissement
           </Button>
         </div>
       </form>

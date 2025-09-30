@@ -1,12 +1,11 @@
-// Service principal pour l'authentification et la gestion des écoles avec Prisma
-// Remplace les fonctions SQL Supabase par des opérations Prisma
+// Service principal pour l'authentification et la gestion des écoles
+// Utilise Supabase pour les opérations côté client (Prisma ne fonctionne que côté serveur)
 
-import prisma from '../lib/prisma.js';
 import { supabase } from '../lib/supabase.js';
 
 /**
  * Service pour créer une école et lier un directeur
- * Remplace la fonction SQL create_principal_school
+ * Utilise Supabase directement (compatible côté client)
  */
 export const createPrincipalSchool = async ({
   directorName,
@@ -14,100 +13,172 @@ export const createPrincipalSchool = async ({
   phone,
   schoolName,
   schoolType,
-  schoolAddress,
-  schoolCity = 'Yaoundé',
-  schoolCountry = 'Cameroun',
-  availableClasses = []
+  address,
+  city = 'Yaoundé',
+  country = 'Cameroun',
+  availableClasses = [],
+  userId = null // ID utilisateur Supabase Auth
 }) => {
   try {
-    // 1. Vérifier que l'utilisateur existe dans Supabase Auth
-    const { data: authUser, error: authError } = await supabase.auth.admin.getUserById(email);
-    
-    if (authError || !authUser) {
-      throw new Error('Utilisateur non trouvé dans le système d\'authentification');
-    }
-
-    const userId = authUser.user.id;
-
-    // 2. Vérifier si l'utilisateur a déjà une école
-    const existingSchool = await prisma.school.findFirst({
-      where: { directorUserId: userId }
+    console.log('🏫 Service createPrincipalSchool appelé avec:', {
+      directorName,
+      email,
+      schoolName,
+      schoolType,
+      userId
     });
 
-    if (existingSchool) {
-      throw new Error('Cet utilisateur a déjà une école associée');
+    let authUserId = userId;
+    
+    // 1. Si pas d'userId fourni, récupérer l'utilisateur actuel connecté
+    if (!authUserId) {
+      const { data: currentUser, error: currentUserError } = await supabase.auth.getUser();
+      
+      if (currentUserError || !currentUser?.user) {
+        throw new Error('Aucun utilisateur connecté. Veuillez vous reconnecter.');
+      }
+      
+      authUserId = currentUser.user.id;
+    }
+
+    console.log('👤 Utilisation de l\'ID utilisateur:', authUserId);
+
+    // 2. Vérifier si l'utilisateur a déjà une école
+    const { data: existingSchools, error: checkError } = await supabase
+      .from('schools')
+      .select('id, name')
+      .eq('director_user_id', authUserId);
+
+    if (checkError) {
+      console.error('❌ Erreur vérification école existante:', checkError);
+      throw new Error('Erreur lors de la vérification des écoles existantes');
+    }
+
+    if (existingSchools && existingSchools.length > 0) {
+      throw new Error(`Cet utilisateur a déjà une école associée: ${existingSchools[0].name}`);
     }
 
     // 3. Générer un code unique pour l'école
     let schoolCode;
     let isUnique = false;
+    let attempts = 0;
+    const maxAttempts = 10;
     
-    while (!isUnique) {
+    while (!isUnique && attempts < maxAttempts) {
       const prefix = schoolName.replace(/\s+/g, '').substring(0, 3).toUpperCase();
       const year = new Date().getFullYear();
       const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
       schoolCode = `${prefix}-${year}-${random}`;
       
-      const existing = await prisma.school.findUnique({
-        where: { code: schoolCode }
-      });
+      const { data: existing } = await supabase
+        .from('schools')
+        .select('id')
+        .eq('code', schoolCode)
+        .single();
       
       isUnique = !existing;
+      attempts++;
     }
 
-    // 4. Créer l'école et l'utilisateur dans une transaction
-    const result = await prisma.$transaction(async (tx) => {
-      // Créer l'école
-      const school = await tx.school.create({
-        data: {
-          name: schoolName,
-          code: schoolCode,
-          type: schoolType,
-          directorName,
-          phone,
-          address: schoolAddress,
-          city: schoolCity,
-          country: schoolCountry,
-          availableClasses,
-          status: 'active',
-          directorUserId: userId
-        }
-      });
+    if (!isUnique) {
+      throw new Error('Impossible de générer un code unique pour l\'école');
+    }
 
-      // Créer ou mettre à jour l'utilisateur
-      const user = await tx.user.upsert({
-        where: { id: userId },
-        update: {
-          fullName: directorName,
-          phone,
-          role: 'principal',
-          currentSchoolId: school.id,
-          updatedAt: new Date()
-        },
-        create: {
-          id: userId,
-          email,
-          fullName: directorName,
-          phone,
-          role: 'principal',
-          currentSchoolId: school.id,
-          isActive: true
-        }
-      });
+    console.log('🔢 Code école généré:', schoolCode);
 
-      // Créer l'année académique par défaut
-      const academicYear = await tx.academicYear.create({
-        data: {
-          schoolId: school.id,
-          name: '2024-2025',
-          startDate: new Date('2024-09-01'),
-          endDate: new Date('2025-07-31'),
-          isCurrent: true
-        }
-      });
+    // 4. Créer l'utilisateur dans la table users
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .upsert({
+        id: authUserId,
+        email: email,
+        full_name: directorName,
+        phone: phone,
+        role: 'principal',
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
 
-      return { school, user, academicYear };
-    });
+    if (userError) {
+      console.error('❌ Erreur création utilisateur:', userError);
+      throw new Error(`Erreur lors de la création de l'utilisateur: ${userError.message}`);
+    }
+
+    console.log('✅ Utilisateur créé/mis à jour:', userData.id);
+
+    // 5. Créer l'école
+    const { data: schoolData, error: schoolError } = await supabase
+      .from('schools')
+      .insert({
+        name: schoolName,
+        code: schoolCode,
+        type: schoolType,
+        director_name: directorName,
+        phone: phone,
+        address: address,
+        city: city,
+        country: country,
+        available_classes: availableClasses,
+        status: 'active',
+        director_user_id: authUserId,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (schoolError) {
+      console.error('❌ Erreur création école:', schoolError);
+      throw new Error(`Erreur lors de la création de l'école: ${schoolError.message}`);
+    }
+
+    console.log('✅ École créée:', schoolData.id);
+
+    // 6. Mettre à jour l'utilisateur avec l'ID de l'école
+    const { error: updateUserError } = await supabase
+      .from('users')
+      .update({
+        current_school_id: schoolData.id,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', authUserId);
+
+    if (updateUserError) {
+      console.warn('⚠️ Impossible de lier l\'école à l\'utilisateur:', updateUserError.message);
+    }
+
+    // 7. Créer l'année académique par défaut
+    const { data: academicYearData, error: academicYearError } = await supabase
+      .from('academic_years')
+      .insert({
+        school_id: schoolData.id,
+        name: '2024-2025',
+        start_date: '2024-09-01',
+        end_date: '2025-07-31',
+        is_current: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (academicYearError) {
+      console.warn('⚠️ Impossible de créer l\'année académique:', academicYearError.message);
+    } else {
+      console.log('✅ Année académique créée:', academicYearData.id);
+    }
+
+    // 8. Retourner le résultat
+    const result = {
+      school: schoolData,
+      user: userData,
+      academicYear: academicYearData
+    };
+
+    console.log('🎉 Service terminé avec succès !', result);
 
     return {
       success: true,
@@ -116,7 +187,7 @@ export const createPrincipalSchool = async ({
     };
 
   } catch (error) {
-    console.error('Erreur lors de la création de l\'école:', error);
+    console.error('❌ Erreur dans createPrincipalSchool:', error);
     return {
       success: false,
       message: error.message || 'Erreur lors de la création de l\'école',
@@ -130,27 +201,24 @@ export const createPrincipalSchool = async ({
  */
 export const getSchoolByDirector = async (userId) => {
   try {
-    const school = await prisma.school.findFirst({
-      where: { directorUserId: userId },
-      include: {
-        director: true,
-        academicYears: {
-          where: { isCurrent: true },
-          take: 1
-        },
-        classes: true,
-        students: {
-          include: {
-            class: true
-          }
-        },
-        teachers: {
-          include: {
-            user: true
-          }
-        }
-      }
-    });
+    const { data: school, error } = await supabase
+      .from('schools')
+      .select(`
+        *,
+        director:users!director_user_id(*),
+        academic_years!inner(*),
+        classes(*),
+        students(*),
+        teachers(*)
+      `)
+      .eq('director_user_id', userId)
+      .eq('academic_years.is_current', true)
+      .single();
+
+    if (error) {
+      console.error('Erreur récupération école:', error);
+      return null;
+    }
 
     return school;
   } catch (error) {
@@ -164,17 +232,23 @@ export const getSchoolByDirector = async (userId) => {
  */
 export const updateSchool = async (schoolId, updateData) => {
   try {
-    const school = await prisma.school.update({
-      where: { id: schoolId },
-      data: {
+    const { data: school, error } = await supabase
+      .from('schools')
+      .update({
         ...updateData,
-        updatedAt: new Date()
-      },
-      include: {
-        director: true,
-        academicYears: true
-      }
-    });
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', schoolId)
+      .select(`
+        *,
+        director:users!director_user_id(*),
+        academic_years(*)
+      `)
+      .single();
+
+    if (error) {
+      throw error;
+    }
 
     return school;
   } catch (error) {
@@ -189,27 +263,22 @@ export const updateSchool = async (schoolId, updateData) => {
 export const getSchoolStats = async (schoolId) => {
   try {
     const [
-      studentsCount,
-      teachersCount,
-      classesCount,
-      paymentsCount
+      { count: studentsCount },
+      { count: teachersCount },
+      { count: classesCount },
+      { count: paymentsCount }
     ] = await Promise.all([
-      prisma.student.count({ where: { schoolId, isActive: true } }),
-      prisma.teacher.count({ where: { schoolId, isActive: true } }),
-      prisma.class.count({ where: { schoolId } }),
-      prisma.payment.count({ 
-        where: { 
-          schoolId, 
-          status: 'completed' 
-        } 
-      })
+      supabase.from('students').select('*', { count: 'exact' }).eq('school_id', schoolId).eq('is_active', true),
+      supabase.from('teachers').select('*', { count: 'exact' }).eq('school_id', schoolId).eq('is_active', true),
+      supabase.from('classes').select('*', { count: 'exact' }).eq('school_id', schoolId),
+      supabase.from('payments').select('*', { count: 'exact' }).eq('school_id', schoolId).eq('status', 'completed')
     ]);
 
     return {
-      students: studentsCount,
-      teachers: teachersCount,
-      classes: classesCount,
-      payments: paymentsCount
+      students: studentsCount || 0,
+      teachers: teachersCount || 0,
+      classes: classesCount || 0,
+      payments: paymentsCount || 0
     };
   } catch (error) {
     console.error('Erreur lors de la récupération des statistiques:', error);
