@@ -468,23 +468,8 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
       console.log('✅ Compte Auth créé avec succès, ID utilisateur:', authData.user.id);
       setError(null); // Clear auth errors
 
-      // 2. Créer l'école et lier les données avec Prisma
-      console.log('🏫 Création de l\'école avec Prisma, paramètres:', {
-        directorName: formData.directorName,
-        email: formData.email,
-        phone: formData.phone,
-        schoolName: formData.schoolName,
-        schoolType: formData.schoolType,
-        schoolAddress: formData.address,
-        schoolCity: formData.city || 'Yaoundé',
-        schoolCountry: formData.country || 'Cameroun',
-        availableClasses: selectedClasses
-      });
-
-      // Import dynamique du service (pour éviter les problèmes SSR)
-      const { createPrincipalSchool } = await import('../../../services/schoolService.js');
-      
-      const result = await createPrincipalSchool({
+      // 2. STOCKER LES DONNÉES TEMPORAIREMENT (pas dans la DB pour l'instant)
+      console.log('💾 Sauvegarde temporaire des données pour après confirmation:', {
         directorName: formData.directorName,
         email: formData.email,
         phone: formData.phone,
@@ -494,39 +479,37 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
         city: formData.city || 'Yaoundé',
         country: formData.country || 'Cameroun',
         availableClasses: selectedClasses,
-        userId: authData.user.id // Passer l'ID utilisateur créé
+        userId: authData.user.id
       });
 
-      console.log('📊 Réponse de createPrincipalSchool:', result);
+      // Sauvegarder dans le localStorage pour récupérer après confirmation
+      const pendingSchoolData = {
+        directorName: formData.directorName,
+        email: formData.email,
+        phone: formData.phone,
+        schoolName: formData.schoolName,
+        schoolType: formData.schoolType,
+        address: formData.address,
+        city: formData.city || 'Yaoundé',
+        country: formData.country || 'Cameroun',
+        availableClasses: selectedClasses,
+        userId: authData.user.id,
+        timestamp: new Date().toISOString()
+      };
 
-      if (!result || !result.success) {
-        const errorMsg = result?.message || 'Réponse invalide du service';
-        console.error('❌ Erreur de création détaillée:', errorMsg);
-        throw new Error(`Erreur lors de la création des données de l'école: ${errorMsg}`);
-      }
-
-      console.log('📋 Résultat de la création:', result.data);
-
-      // Vérifier que les données essentielles sont présentes
-      if (!result.data?.school?.id) {
-        console.error('❌ Données école manquantes:', result.data);
-        throw new Error('Erreur: données d\'école incomplètes');
-      }
-
-      // La confirmation email est toujours requise dans notre configuration
-      // Pas besoin de tester une connexion automatique qui échouera forcément
-      let needsConfirmation = true;
+      localStorage.setItem('pendingSchoolData', JSON.stringify(pendingSchoolData));
       
-      console.log('✅ École et directeur créés avec succès !', result.data);
+      console.log('✅ Données sauvegardées pour création après confirmation email');
       console.log('📧 Email de confirmation envoyé à:', formData.email);
       setError(null); // Clear all errors on success
 
-      // Succès - afficher la page de succès
+      // Succès - afficher la page de succès avec message de confirmation
       setSuccessData({
         schoolName: formData.schoolName,
         directorName: formData.directorName,
         email: formData.email,
-        needsEmailConfirmation: needsConfirmation
+        needsEmailConfirmation: true, // Toujours true maintenant
+        message: 'Compte créé avec succès ! Vérifiez votre email pour confirmer votre compte, puis connectez-vous pour finaliser la création de votre école.'
       });
       setSuccess(true);
       
@@ -569,11 +552,21 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
                 <div className="text-left">
-                  <h4 className="font-medium text-blue-900 mb-1">Confirmation d'email requise</h4>
-                  <p className="text-blue-700 text-sm">
-                    Un email de confirmation a été envoyé à <strong>{successData.email}</strong>. 
-                    Veuillez cliquer sur le lien dans l'email pour activer votre compte avant de vous connecter.
-                  </p>
+                  <h4 className="font-medium text-blue-900 mb-2">📧 Confirmation d'email requise</h4>
+                  <div className="text-blue-700 text-sm space-y-2">
+                    <p>
+                      <strong>Étape 1 :</strong> Un email de confirmation a été envoyé à <strong>{successData.email}</strong>
+                    </p>
+                    <p>
+                      <strong>Étape 2 :</strong> Cliquez sur le lien dans l'email pour confirmer votre compte
+                    </p>
+                    <p>
+                      <strong>Étape 3 :</strong> Revenez ici et connectez-vous pour finaliser la création de votre école
+                    </p>
+                  </div>
+                  <div className="mt-3 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                    💡 <strong>Important :</strong> Votre école sera créée automatiquement lors de votre première connexion après confirmation.
+                  </div>
                 </div>
               </div>
             </div>

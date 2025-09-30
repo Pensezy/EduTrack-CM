@@ -22,7 +22,28 @@ export const loginDirector = async (email, password) => {
       throw new Error('Erreur d\'authentification');
     }
 
-    // 2. Récupérer les données de l'école (structure Prisma)
+    console.log('✅ Connexion réussie pour:', authData.user.email);
+
+    // 2. Vérifier s'il y a des données d'école en attente de création
+    try {
+      const { hasPendingSchoolData, finalizeSchoolCreation } = await import('./schoolFinalizationService.js');
+      
+      if (hasPendingSchoolData()) {
+        console.log('🏫 Données d\'école en attente détectées, finalisation...');
+        
+        const finalizationResult = await finalizeSchoolCreation();
+        
+        if (finalizationResult.success) {
+          console.log('✅ École créée avec succès lors de la connexion !');
+        } else {
+          console.warn('⚠️ Impossible de finaliser la création d\'école:', finalizationResult.message);
+        }
+      }
+    } catch (finalizationError) {
+      console.warn('⚠️ Erreur lors de la finalisation d\'école:', finalizationError);
+    }
+
+    // 3. Récupérer les données de l'école (structure Prisma)
     const { data: schoolData, error: schoolError } = await supabase
       .from('schools')
       .select(`
