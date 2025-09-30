@@ -70,21 +70,46 @@ export const createPrincipalSchool = async ({
       const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
       schoolCode = `${prefix}-${year}-${random}`;
       
-      const { data: existing } = await supabase
-        .from('schools')
-        .select('id')
-        .eq('code', schoolCode)
-        .single();
+      console.log(`🔍 Tentative ${attempts + 1}: Vérification unicité du code ${schoolCode}`);
       
-      isUnique = !existing;
+      try {
+        const { data: existing, error: existingError } = await supabase
+          .from('schools')
+          .select('id')
+          .eq('code', schoolCode)
+          .maybeSingle();
+        
+        if (existingError) {
+          console.warn('⚠️ Erreur vérification code école:', existingError);
+          if (existingError.code === '406' || existingError.status === 406) {
+            console.log('💡 Erreur 406 détectée, on continue avec un autre code...');
+            isUnique = false;
+          } else {
+            // Pour les autres erreurs, on assume que le code est unique
+            isUnique = true;
+          }
+        } else {
+          isUnique = !existing;
+          console.log(`✅ Code ${schoolCode} ${isUnique ? 'disponible' : 'déjà utilisé'}`);
+        }
+      } catch (error) {
+        console.warn('⚠️ Exception lors de la vérification:', error);
+        // En cas d'exception, on assume que le code est unique
+        isUnique = true;
+      }
+      
       attempts++;
     }
 
     if (!isUnique) {
-      throw new Error('Impossible de générer un code unique pour l\'école');
+      // Générer un code de secours basé sur timestamp pour éviter les conflits
+      const timestamp = Date.now().toString().slice(-4);
+      const prefix = schoolName.replace(/\s+/g, '').substring(0, 3).toUpperCase();
+      schoolCode = `${prefix}-${new Date().getFullYear()}-${timestamp}`;
+      console.log('🔄 Code de secours généré:', schoolCode);
     }
 
-    console.log('🔢 Code école généré:', schoolCode);
+    console.log('🔢 Code école final:', schoolCode);
 
     // 4. Créer l'utilisateur dans la table users
     const { data: userData, error: userError } = await supabase

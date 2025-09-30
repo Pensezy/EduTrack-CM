@@ -438,7 +438,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
             phone: formData.phone,
             role: 'principal'
           },
-          emailRedirectTo: `${window.location.origin}/staff-login`
+          emailRedirectTo: `${window.location.origin}/school-management`
         }
       });
 
@@ -468,21 +468,52 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
       console.log('✅ Compte Auth créé avec succès, ID utilisateur:', authData.user.id);
       setError(null); // Clear auth errors
 
-      // 2. STOCKER LES DONNÉES TEMPORAIREMENT (pas dans la DB pour l'instant)
-      console.log('💾 Sauvegarde temporaire des données pour après confirmation:', {
-        directorName: formData.directorName,
-        email: formData.email,
-        phone: formData.phone,
-        schoolName: formData.schoolName,
-        schoolType: formData.schoolType,
-        address: formData.address,
-        city: formData.city || 'Yaoundé',
-        country: formData.country || 'Cameroun',
-        availableClasses: selectedClasses,
-        userId: authData.user.id
-      });
+      // 2. ESSAYER DE CRÉER L'ÉCOLE DIRECTEMENT (approche hybride)
+      console.log('🏫 Tentative de création directe de l\'école...');
+      
+      try {
+        // Import dynamique du service (pour éviter les problèmes SSR)
+        const { createPrincipalSchool } = await import('../../../services/schoolService.js');
+        
+        const result = await createPrincipalSchool({
+          directorName: formData.directorName,
+          email: formData.email,
+          phone: formData.phone,
+          schoolName: formData.schoolName,
+          schoolType: formData.schoolType,
+          address: formData.address,
+          city: formData.city || 'Yaoundé',
+          country: formData.country || 'Cameroun',
+          availableClasses: selectedClasses,
+          userId: authData.user.id
+        });
 
-      // Sauvegarder dans le localStorage pour récupérer après confirmation
+        if (result.success) {
+          console.log('✅ École créée directement avec succès !', result.data);
+          
+          // Succès - afficher la page de succès SANS confirmation email
+          setSuccessData({
+            schoolName: formData.schoolName,
+            directorName: formData.directorName,
+            email: formData.email,
+            needsEmailConfirmation: !!authData.user.email_confirmed_at === false,
+            schoolCreated: true,
+            message: 'École créée avec succès ! Vérifiez votre email pour confirmer votre compte, puis connectez-vous.'
+          });
+          setSuccess(true);
+          return; // Sortir ici si succès
+
+        } else {
+          console.warn('⚠️ Création directe échouée, passage au mode différé:', result.message);
+        }
+
+      } catch (creationError) {
+        console.warn('⚠️ Création directe impossible, passage au mode différé:', creationError.message);
+      }
+
+      // 3. SI CRÉATION DIRECTE ÉCHOUE, SAUVEGARDER TEMPORAIREMENT
+      console.log('💾 Sauvegarde temporaire des données pour création différée...');
+      
       const pendingSchoolData = {
         directorName: formData.directorName,
         email: formData.email,
