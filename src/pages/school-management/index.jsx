@@ -12,8 +12,8 @@ const SchoolManagement = () => {
   const navigate = useNavigate();
 
   const handleLoginSuccess = (schoolData) => {
-    // Navigate to school dashboard with school data
-    navigate('/school-dashboard', { state: { school: schoolData } }); 
+    // Navigate to principal dashboard with school data
+    navigate('/principal-dashboard', { state: { school: schoolData } }); 
   };
 
   const handleRegistrationSuccess = () => {

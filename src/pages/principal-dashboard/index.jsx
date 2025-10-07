@@ -24,6 +24,17 @@ const PrincipalDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  // Récupérer les données de l'école passées lors de la connexion
+  const schoolData = location.state?.school;
+  
+  useEffect(() => {
+    if (schoolData) {
+      console.log('✅ Données école reçues:', schoolData);
+      console.log('🏫 École:', schoolData.name);
+      console.log('📊 Statut:', schoolData.status);
+    }
+  }, [schoolData]);
+  
   // Hook pour les données avec switch automatique démo/production
   const { 
     data, 

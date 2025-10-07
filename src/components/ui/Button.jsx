@@ -63,17 +63,8 @@ const Button = React.forwardRef(({
 
     const calculatedIconSize = iconSize || iconSizeMap?.[size] || 16;
 
-    // Loading spinner ultra-simplifié pour éviter les erreurs DOM React
-    const loadingSpinner = loading ? (
-        <span 
-            key="spinner"
-            className="inline-block animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full"
-            style={{ display: 'inline-block' }}
-        />
-    ) : null;
-
     const renderIcon = () => {
-        if (!iconName) return null;
+        if (!iconName || loading) return null;
         try {
             return (
                 <Icon
@@ -90,74 +81,21 @@ const Button = React.forwardRef(({
         }
     };
 
-    const renderFallbackButton = () => (
-        <button
-            className={cn(
-                buttonVariants({ variant, size, className }),
-                fullWidth && "w-full"
-            )}
-            ref={ref}
-            disabled={disabled || loading}
-            {...props}
-        >
-            {loadingSpinner}
-            {loading 
-                ? (typeof children === 'string' ? children : 'Chargement...') 
-                : (
-                    <>
-                        {iconName && iconPosition === 'left' && renderIcon()}
-                        {children}
-                        {iconName && iconPosition === 'right' && renderIcon()}
-                    </>
-                )
-            }
-        </button>
+    // Contenu du bouton simplifié
+    const buttonContent = loading ? (
+        <>
+            <span className="inline-block animate-spin h-4 w-4 mr-2 border-2 border-current border-t-transparent rounded-full" />
+            {typeof children === 'string' ? children : 'Chargement...'}
+        </>
+    ) : (
+        <>
+            {iconName && iconPosition === 'left' && renderIcon()}
+            {children}
+            {iconName && iconPosition === 'right' && renderIcon()}
+        </>
     );
 
-    // When asChild is true, merge icons into the child element
-    if (asChild) {
-        try {
-            if (!children || React.Children?.count(children) !== 1) {
-                return renderFallbackButton();
-            }
-
-            const child = React.Children?.only(children);
-
-            if (!React.isValidElement(child)) {
-                return renderFallbackButton();
-            }
-            const content = (
-                <>
-                    {loadingSpinner}
-                    {loading 
-                        ? (typeof child?.props?.children === 'string' ? child?.props?.children : 'Chargement...') 
-                        : (
-                            <>
-                                {iconName && iconPosition === 'left' && renderIcon()}
-                                {child?.props?.children}
-                                {iconName && iconPosition === 'right' && renderIcon()}
-                            </>
-                        )
-                    }
-                </>
-            );
-
-            const clonedChild = React.cloneElement(child, {
-                className: cn(
-                    buttonVariants({ variant, size, className }),
-                    fullWidth && "w-full",
-                    child?.props?.className
-                ),
-                disabled: disabled || loading || child?.props?.disabled,
-                children: content,
-            });
-
-            return <Comp ref={ref} {...props}>{clonedChild}</Comp>;
-        } catch {
-            return renderFallbackButton();
-        }
-    }
-
+    // Rendu direct et simple pour éviter les erreurs DOM
     return (
         <Comp
             className={cn(
@@ -168,17 +106,7 @@ const Button = React.forwardRef(({
             disabled={disabled || loading}
             {...props}
         >
-            {loadingSpinner}
-            {loading 
-                ? (typeof children === 'string' ? children : 'Chargement...') 
-                : (
-                    <>
-                        {iconName && iconPosition === 'left' && renderIcon()}
-                        {children}
-                        {iconName && iconPosition === 'right' && renderIcon()}
-                    </>
-                )
-            }
+            {buttonContent}
         </Comp>
     );
 });
