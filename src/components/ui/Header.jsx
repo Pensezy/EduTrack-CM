@@ -33,7 +33,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },
-      { label: 'Documents', path: '/document-management-hub', icon: 'FileText' },
+      { label: 'Documents', path: '/document-management-hub?mode=principal', icon: 'FileText' },
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home' },
@@ -229,41 +229,38 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                     </p>
                   </div>
                   
-                  {userRole === 'principal' ? (
-                    // Version simplifiée pour Principal
+                  {/* Lien vers paramètres de profil pour tous les rôles */}
+                  <Link
+                    to="/profile-settings"
+                    className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <AppIcon name="Settings" size={16} />
+                    <span>Mon profil</span>
+                  </Link>
+
+                  {userRole !== 'principal' && (
+                    <>
+                      <Link
+                        to="/help"
+                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                        onClick={() => setIsProfileOpen(false)}
+                      >
+                        <AppIcon name="HelpCircle" size={16} />
+                        <span>Aide</span>
+                      </Link>
+                    </>
+                  )}
+
+                  <div className="border-t border-gray-100 mt-2 pt-2">
                     <button
                       onClick={handleLogout}
-                      className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors w-full text-left"
+                      className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors w-full text-left"
                     >
                       <AppIcon name="LogOut" size={16} />
                       <span>{isProduction ? 'Se déconnecter' : 'Quitter la démo'}</span>
                     </button>
-                  ) : (
-                    // Version complète pour autres rôles
-                    <>
-                      <Link
-                        to="/student-profile-management"
-                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-                      >
-                        <AppIcon name="Settings" size={16} />
-                        <span>Settings</span>
-                      </Link>
-                      <Link
-                        to="/help"
-                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-                      >
-                        <AppIcon name="HelpCircle" size={16} />
-                        <span>Help</span>
-                      </Link>
-                      <button
-                        onClick={handleLogout}
-                        className="flex items-center space-x-2 px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-md transition-colors w-full text-left"
-                      >
-                        <AppIcon name="LogOut" size={16} />
-                        <span>{isProduction ? 'Se déconnecter' : 'Quitter la démo'}</span>
-                      </button>
-                    </>
-                  )}
+                  </div>
                 </div>
               </div>
             )}

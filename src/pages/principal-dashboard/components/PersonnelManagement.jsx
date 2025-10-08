@@ -1,31 +1,14 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
 import useDashboardData from '../../../hooks/useDashboardData';
+import { useDataMode } from '../../../hooks/useDataMode';
 
 const PersonnelManagement = () => {
   const [activeSection, setActiveSection] = useState('overview');
-  const [showCreateForm, setShowCreateForm] = useState(false);
-  const [selectedPersonnelType, setSelectedPersonnelType] = useState('teacher');
+  const { data, loading, loadPersonnel } = useDashboardData();
+  const { dataMode, isDemo, isProduction } = useDataMode();
 
-  // Hook pour les données avec switch automatique démo/production
-  const { data, loading, isDemo, loadPersonnel } = useDashboardData();
-  const [newPersonnel, setNewPersonnel] = useState({
-    firstName: '',
-    lastName: '',
-    email: '',
-    phone: '',
-    type: 'teacher',
-    subject: '',
-    role: '',
-    permissions: []
-  });
-
-  // Récupérer les données du personnel selon le mode (démo/production)
-  const personnelData = data.personnel || [];
-  
-  // Données démo pour le mode démo uniquement
   const demoTeachers = [
     {
       id: 1,
@@ -64,81 +47,300 @@ const PersonnelManagement = () => {
       status: 'active',
       permissions: ['student_management', 'document_management', 'grade_access'],
       experience: '6 ans'
-    },
-    {
-      id: 4,
-      name: 'Marie Essomba',
-      email: 'marie.essomba@edutrack.cm',
-      phone: '237 6XX XXX XXX',
-      role: 'Secrétaire Adjointe',
-      type: 'secretary',
-      status: 'active',
-      permissions: ['student_management', 'attendance_management'],
-      experience: '3 ans'
     }
   ];
 
-  // Utiliser les données selon le mode
-  const teachers = isDemo ? demoTeachers : personnelData.filter(p => p.type === 'teacher');
-  const secretaries = isDemo ? demoSecretaries : personnelData.filter(p => p.type === 'secretary');
-  const allPersonnel = [...teachers, ...secretaries];
+  const getPersonnelData = () => {
+    if (isDemo) {
+      return {
+        teachers: demoTeachers,
+        secretaries: demoSecretaries,
+        allPersonnel: [...demoTeachers, ...demoSecretaries]
+      };
+    } else {
+      const personnelData = data.personnel || [];
+      return {
+        teachers: personnelData.filter(p => p.type === 'teacher'),
+        secretaries: personnelData.filter(p => p.type === 'secretary'),
+        allPersonnel: personnelData
+      };
+    }
+  };
 
-  const subjects = [
-    'Mathématiques', 'Français', 'Anglais', 'Histoire-Géographie', 
-    'Sciences Physiques', 'Sciences Naturelles', 'Éducation Physique', 
-    'Arts Plastiques', 'Musique'
-  ];
-
-  const secretaryRoles = [
-    'Secrétaire Standard', 'Secrétaire Principal(e)', 'Secrétaire Adjoint(e)'
-  ];
-
-  const availablePermissions = [
-    { id: 'student_management', label: 'Gestion des élèves' },
-    { id: 'document_management', label: 'Gestion des documents' },
-    { id: 'grade_access', label: 'Accès aux notes' },
-    { id: 'attendance_management', label: 'Gestion des absences' },
-    { id: 'parent_communication', label: 'Communication parents' },
-    { id: 'financial_records', label: 'Dossiers financiers' }
-  ];
+  const { teachers, secretaries, allPersonnel } = getPersonnelData();
 
   const sectionTabs = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'teachers', label: 'Enseignants', icon: 'GraduationCap' },
-    { id: 'secretaries', label: 'Secrétaires', icon: 'UserCheck' },
-    { id: 'create', label: 'Ajouter Personnel', icon: 'UserPlus' }
+    { id: 'secretaries', label: 'Secrétaires', icon: 'UserCheck' }
   ];
 
-  const handleInputChange = (field, value) => {
-    setNewPersonnel(prev => ({
-      ...prev,
-      [field]: value
-    }));
+  const generatePersonnelReportHTML = (personnel) => {
+    const currentDate = new Date().toLocaleDateString('fr-FR');
+    const totalPersonnel = personnel.length;
+    const activePersonnel = personnel.filter(p => p.status === 'active').length;
+    
+    return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rapport Personnel - EduTrack CM</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; }
+        .header { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 16px; }
+        .summary { background: #f8fafc; padding: 20px; border-radius: 8px; margin-bottom: 30px; }
+        .summary h2 { color: #2563eb; margin-top: 0; }
+        .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin: 20px 0; }
+        .stat-card { background: white; padding: 15px; border-radius: 8px; border-left: 4px solid #2563eb; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .stat-number { font-size: 24px; font-weight: bold; color: #2563eb; }
+        .stat-label { color: #666; font-size: 14px; }
+        .personnel-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .personnel-table th, .personnel-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e2e8f0; }
+        .personnel-table th { background: #f1f5f9; font-weight: 600; color: #475569; }
+        .personnel-table tr:hover { background: #f8fafc; }
+        .status-badge { padding: 4px 8px; border-radius: 12px; font-size: 12px; font-weight: 500; }
+        .status-active { background: #dcfce7; color: #166534; }
+        .status-inactive { background: #fee2e2; color: #dc2626; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #666; font-size: 14px; }
+        @media print { body { margin: 0; } .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">EduTrack CM</div>
+        <div class="subtitle">Rapport du Personnel</div>
+        <div style="margin-top: 10px; color: #666;">Généré le ${currentDate}</div>
+    </div>
+
+    <div class="summary">
+        <h2>Résumé Exécutif</h2>
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-number">${totalPersonnel}</div>
+                <div class="stat-label">Total Personnel</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${activePersonnel}</div>
+                <div class="stat-label">Personnel Actif</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${personnel.filter(p => p.type === 'teacher').length}</div>
+                <div class="stat-label">Enseignants</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number">${personnel.filter(p => p.type === 'secretary').length}</div>
+                <div class="stat-label">Secrétaires</div>
+            </div>
+        </div>
+    </div>
+
+    <h2>Détails du Personnel</h2>
+    <table class="personnel-table">
+        <thead>
+            <tr>
+                <th>Nom</th>
+                <th>Type</th>
+                <th>Fonction/Matière</th>
+                <th>Email</th>
+                <th>Téléphone</th>
+                <th>Expérience</th>
+                <th>Statut</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${personnel.map(person => `
+                <tr>
+                    <td><strong>${person.name}</strong></td>
+                    <td>${person.type === 'teacher' ? 'Enseignant' : 'Secrétaire'}</td>
+                    <td>${person.type === 'teacher' ? person.subject : person.role}</td>
+                    <td>${person.email}</td>
+                    <td>${person.phone}</td>
+                    <td>${person.experience}</td>
+                    <td><span class="status-badge status-${person.status}">${person.status === 'active' ? 'Actif' : 'Inactif'}</span></td>
+                </tr>
+            `).join('')}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        <p>Ce rapport a été généré automatiquement par EduTrack CM</p>
+        <p>Pour plus d'informations, contactez l'administration de l'établissement</p>
+    </div>
+</body>
+</html>`;
   };
 
-  const handlePermissionToggle = (permissionId) => {
-    setNewPersonnel(prev => ({
-      ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter(p => p !== permissionId)
-        : [...prev.permissions, permissionId]
-    }));
+  const generateScheduleHTML = (teachers) => {
+    const currentDate = new Date().toLocaleDateString('fr-FR');
+    
+    // Données d'exemple pour les emplois du temps
+    const sampleSchedules = {
+      'Marie Dubois': {
+        'Lundi': [
+          { time: '08:00-09:00', class: '6èmeA', subject: 'Mathématiques' },
+          { time: '10:00-11:00', class: '5èmeB', subject: 'Mathématiques' }
+        ],
+        'Mardi': [
+          { time: '09:00-10:00', class: '6èmeA', subject: 'Mathématiques' },
+          { time: '14:00-15:00', class: '5èmeB', subject: 'Mathématiques' }
+        ],
+        'Mercredi': [
+          { time: '08:00-09:00', class: '6èmeA', subject: 'Mathématiques' }
+        ],
+        'Jeudi': [
+          { time: '10:00-11:00', class: '5èmeB', subject: 'Mathématiques' },
+          { time: '15:00-16:00', class: '6èmeA', subject: 'Mathématiques' }
+        ],
+        'Vendredi': [
+          { time: '09:00-10:00', class: '6èmeA', subject: 'Mathématiques' },
+          { time: '11:00-12:00', class: '5èmeB', subject: 'Mathématiques' }
+        ]
+      },
+      'Jean Kamto': {
+        'Lundi': [
+          { time: '09:00-10:00', class: '4èmeA', subject: 'Français' },
+          { time: '14:00-15:00', class: '3èmeB', subject: 'Français' }
+        ],
+        'Mardi': [
+          { time: '08:00-09:00', class: '4èmeA', subject: 'Français' },
+          { time: '15:00-16:00', class: '3èmeB', subject: 'Français' }
+        ],
+        'Mercredi': [
+          { time: '10:00-11:00', class: '4èmeA', subject: 'Français' }
+        ],
+        'Jeudi': [
+          { time: '09:00-10:00', class: '3èmeB', subject: 'Français' },
+          { time: '11:00-12:00', class: '4èmeA', subject: 'Français' }
+        ],
+        'Vendredi': [
+          { time: '08:00-09:00', class: '3èmeB', subject: 'Français' },
+          { time: '10:00-11:00', class: '4èmeA', subject: 'Français' }
+        ]
+      }
+    };
+
+    const days = ['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi'];
+    
+    return `
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Emplois du Temps - EduTrack CM</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; color: #333; }
+        .header { text-align: center; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 30px; }
+        .logo { font-size: 28px; font-weight: bold; color: #2563eb; margin-bottom: 10px; }
+        .subtitle { color: #666; font-size: 16px; }
+        .teacher-schedule { margin-bottom: 40px; page-break-inside: avoid; }
+        .teacher-name { font-size: 20px; font-weight: bold; color: #2563eb; margin-bottom: 15px; padding: 10px; background: #f1f5f9; border-radius: 8px; }
+        .schedule-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+        .schedule-table th, .schedule-table td { padding: 8px 12px; border: 1px solid #e2e8f0; text-align: center; }
+        .schedule-table th { background: #2563eb; color: white; font-weight: 600; }
+        .schedule-table td { background: white; vertical-align: top; height: 60px; }
+        .class-slot { background: #dbeafe; color: #1e40af; padding: 4px 8px; border-radius: 4px; margin: 2px 0; font-size: 12px; }
+        .time-slot { font-weight: bold; color: #374151; }
+        .subject { font-style: italic; color: #6b7280; }
+        .empty-slot { color: #9ca3af; font-style: italic; }
+        .footer { margin-top: 40px; padding-top: 20px; border-top: 1px solid #e2e8f0; text-align: center; color: #666; font-size: 14px; }
+        @media print { body { margin: 0; } .no-print { display: none; } }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="logo">EduTrack CM</div>
+        <div class="subtitle">Emplois du Temps du Personnel</div>
+        <div style="margin-top: 10px; color: #666;">Généré le ${currentDate}</div>
+    </div>
+
+    ${teachers.map(teacher => {
+      const schedule = sampleSchedules[teacher.name] || {};
+      return `
+        <div class="teacher-schedule">
+            <div class="teacher-name">${teacher.name} - ${teacher.subject}</div>
+            <table class="schedule-table">
+                <thead>
+                    <tr>
+                        <th style="width: 100px;">Horaires</th>
+                        ${days.map(day => `<th>${day}</th>`).join('')}
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td class="time-slot">08:00-09:00</td>
+                        ${days.map(day => {
+                          const slot = schedule[day]?.find(s => s.time === '08:00-09:00');
+                          return `<td>${slot ? `<div class="class-slot">${slot.class}<br><span class="subject">${slot.subject}</span></div>` : '<span class="empty-slot">Libre</span>'}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="time-slot">09:00-10:00</td>
+                        ${days.map(day => {
+                          const slot = schedule[day]?.find(s => s.time === '09:00-10:00');
+                          return `<td>${slot ? `<div class="class-slot">${slot.class}<br><span class="subject">${slot.subject}</span></div>` : '<span class="empty-slot">Libre</span>'}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="time-slot">10:00-11:00</td>
+                        ${days.map(day => {
+                          const slot = schedule[day]?.find(s => s.time === '10:00-11:00');
+                          return `<td>${slot ? `<div class="class-slot">${slot.class}<br><span class="subject">${slot.subject}</span></div>` : '<span class="empty-slot">Libre</span>'}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="time-slot">11:00-12:00</td>
+                        ${days.map(day => {
+                          const slot = schedule[day]?.find(s => s.time === '11:00-12:00');
+                          return `<td>${slot ? `<div class="class-slot">${slot.class}<br><span class="subject">${slot.subject}</span></div>` : '<span class="empty-slot">Libre</span>'}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="time-slot">14:00-15:00</td>
+                        ${days.map(day => {
+                          const slot = schedule[day]?.find(s => s.time === '14:00-15:00');
+                          return `<td>${slot ? `<div class="class-slot">${slot.class}<br><span class="subject">${slot.subject}</span></div>` : '<span class="empty-slot">Libre</span>'}</td>`;
+                        }).join('')}
+                    </tr>
+                    <tr>
+                        <td class="time-slot">15:00-16:00</td>
+                        ${days.map(day => {
+                          const slot = schedule[day]?.find(s => s.time === '15:00-16:00');
+                          return `<td>${slot ? `<div class="class-slot">${slot.class}<br><span class="subject">${slot.subject}</span></div>` : '<span class="empty-slot">Libre</span>'}</td>`;
+                        }).join('')}
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+      `;
+    }).join('')}
+
+    <div class="footer">
+        <p>Emplois du temps générés automatiquement par EduTrack CM</p>
+        <p>Pour toute modification, contactez l'administration</p>
+    </div>
+</body>
+</html>`;
   };
 
-  const handleCreatePersonnel = () => {
-    console.log('Creating personnel:', newPersonnel);
-    alert(`Compte ${newPersonnel.type === 'teacher' ? 'enseignant' : 'secrétaire'} créé pour ${newPersonnel.firstName} ${newPersonnel.lastName}`);
-    setActiveSection('overview');
-    setNewPersonnel({
-      firstName: '',
-      lastName: '',
-      email: '',
-      phone: '',
-      type: 'teacher',
-      subject: '',
-      role: '',
-      permissions: []
-    });
+  const handleGeneratePersonnelReport = () => {
+    const reportHTML = generatePersonnelReportHTML(allPersonnel);
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(reportHTML);
+    newWindow.document.close();
+    newWindow.focus();
+  };
+
+  const handleViewSchedules = () => {
+    const scheduleHTML = generateScheduleHTML(teachers);
+    const newWindow = window.open('', '_blank');
+    newWindow.document.write(scheduleHTML);
+    newWindow.document.close();
+    newWindow.focus();
   };
 
   const getStatusBadge = (status) => {
@@ -147,145 +349,43 @@ const PersonnelManagement = () => {
         return <span className="px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">Actif</span>;
       case 'inactive':
         return <span className="px-2 py-1 text-xs bg-red-100 text-red-800 rounded-full">Inactif</span>;
-      case 'on_leave':
-        return <span className="px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">En congé</span>;
       default:
         return <span className="px-2 py-1 text-xs bg-gray-100 text-gray-800 rounded-full">Inconnu</span>;
     }
   };
 
-  const getPersonnelStats = () => {
-    if (isDemo) {
-      return [
-        {
-          title: 'Total Personnel',
-          value: allPersonnel.length.toString(),
-          change: '+2',
-          changeType: 'positive',
-          icon: 'Users',
-          description: 'Actifs'
-        },
-        {
-          title: 'Enseignants',
-          value: teachers.length.toString(),
-          change: '+1',
-          changeType: 'positive',
-          icon: 'GraduationCap',
-          description: 'Titulaires et contractuels'
-        },
-        {
-          title: 'Secrétaires',
-          value: secretaries.length.toString(),
-          change: '0',
-          changeType: 'neutral',
-          icon: 'UserCheck',
-          description: 'Personnel administratif'
-        },
-        {
-          title: 'Évaluations',
-          value: '4.7/5',
-          change: '+0.2',
-          changeType: 'positive',
-          icon: 'Star',
-          description: 'Moyenne générale'
-        }
-      ];
-    } else {
-      // Mode production : données réelles ou zéro
-      return [
-        {
-          title: 'Total Personnel',
-          value: allPersonnel.length.toString(),
-          change: '0',
-          changeType: 'neutral',
-          icon: 'Users',
-          description: allPersonnel.length > 0 ? 'Actifs' : 'Aucun personnel enregistré'
-        },
-        {
-          title: 'Enseignants',
-          value: teachers.length.toString(),
-          change: '0',
-          changeType: 'neutral',
-          icon: 'GraduationCap',
-          description: teachers.length > 0 ? 'Titulaires et contractuels' : 'Aucun enseignant'
-        },
-        {
-          title: 'Secrétaires',
-          value: secretaries.length.toString(),
-          change: '0',
-          changeType: 'neutral',
-          icon: 'UserCheck',
-          description: secretaries.length > 0 ? 'Personnel administratif' : 'Aucun secrétaire'
-        },
-        {
-          title: 'Évaluations',
-          value: allPersonnel.length > 0 ? 'N/A' : '0/5',
-          change: '0',
-          changeType: 'neutral',
-          icon: 'Star',
-          description: allPersonnel.length > 0 ? 'Pas encore évalué' : 'Aucune évaluation'
-        }
-      ];
-    }
-  };
-
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Statistiques */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {getPersonnelStats().map((stat, index) => (
-          <div key={index} className="bg-card border border-border rounded-lg p-6 shadow-card">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name={stat.icon} size={20} className="text-primary" />
-                </div>
-                <div>
-                  <p className="text-sm text-muted-foreground">{stat.title}</p>
-                  <p className="text-2xl font-bold text-foreground">{stat.value}</p>
-                </div>
-              </div>
-              <div className={`text-sm font-medium ${
-                stat.changeType === 'positive' ? 'text-green-600' : 
-                stat.changeType === 'negative' ? 'text-red-600' : 'text-gray-600'
-              }`}>
-                {stat.change}
-              </div>
-            </div>
-            <p className="text-xs text-muted-foreground mt-2">{stat.description}</p>
+      <div className={`p-4 rounded-lg border-l-4 ${isDemo ? 'bg-amber-50 border-amber-400' : 'bg-green-50 border-green-400'}`}>
+        <div className="flex items-center space-x-3">
+          <Icon name={isDemo ? 'Play' : 'Database'} size={20} className={isDemo ? 'text-amber-600' : 'text-green-600'} />
+          <div>
+            <p className={`font-medium ${isDemo ? 'text-amber-800' : 'text-green-800'}`}>
+              Mode {isDemo ? 'Démonstration' : 'Production'} activé
+            </p>
+            <p className={`text-sm ${isDemo ? 'text-amber-700' : 'text-green-700'}`}>
+              {isDemo ? 'Utilisation des données de démonstration' : 'Connexion aux données réelles'}
+            </p>
           </div>
-        ))}
+        </div>
       </div>
 
-      {/* Actions rapides */}
       <div className="bg-card border border-border rounded-lg p-6 shadow-card">
-        <h3 className="text-lg font-heading font-heading-semibold text-card-foreground mb-4">
-          Actions Rapides
-        </h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Button 
-            className="justify-start h-12"
-            onClick={() => setActiveSection('create')}
-          >
-            <Icon name="UserPlus" size={16} className="mr-2" />
-            Ajouter Personnel
-          </Button>
-          <Button variant="outline" className="justify-start h-12">
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Actions Rapides</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Button variant="outline" className="justify-start h-12" onClick={handleGeneratePersonnelReport}>
             <Icon name="FileText" size={16} className="mr-2" />
             Rapport Personnel
           </Button>
-          <Button variant="outline" className="justify-start h-12">
+          <Button variant="outline" className="justify-start h-12" onClick={handleViewSchedules}>
             <Icon name="Calendar" size={16} className="mr-2" />
             Emplois du Temps
           </Button>
         </div>
       </div>
 
-      {/* Personnel récent */}
       <div className="bg-card border border-border rounded-lg p-6 shadow-card">
-        <h3 className="text-lg font-heading font-heading-semibold text-card-foreground mb-4">
-          Personnel Récemment Ajouté
-        </h3>
+        <h3 className="text-lg font-semibold text-card-foreground mb-4">Personnel</h3>
         <div className="space-y-3">
           {allPersonnel.length > 0 ? (
             allPersonnel.slice(0, 3).map((person) => (
@@ -310,16 +410,6 @@ const PersonnelManagement = () => {
             <div className="text-center py-8">
               <Icon name="Users" size={48} className="text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">Aucun personnel enregistré</p>
-              <p className="text-sm text-muted-foreground mt-1">
-                Commencez par ajouter des enseignants ou des secrétaires
-              </p>
-              <Button 
-                className="mt-4" 
-                onClick={() => setActiveSection('create')}
-              >
-                <Icon name="UserPlus" size={16} className="mr-2" />
-                Ajouter Personnel
-              </Button>
             </div>
           )}
         </div>
@@ -333,16 +423,7 @@ const PersonnelManagement = () => {
     
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-heading font-heading-semibold text-card-foreground">
-            Liste des {title}
-          </h3>
-          <Button onClick={() => setActiveSection('create')}>
-            <Icon name="Plus" size={16} className="mr-2" />
-            Ajouter {type === 'teachers' ? 'Enseignant' : 'Secrétaire'}
-          </Button>
-        </div>
-        
+        <h3 className="text-lg font-semibold text-card-foreground">Liste des {title}</h3>
         <div className="space-y-4">
           {personnel.length > 0 ? (
             personnel.map((person) => (
@@ -360,53 +441,27 @@ const PersonnelManagement = () => {
                         {person.type === 'teacher' ? person.subject : person.role}
                       </p>
                       <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
-                        <span className="flex items-center">
-                          <Icon name="Mail" size={12} className="mr-1" />
-                          {person.email}
-                        </span>
-                        <span className="flex items-center">
-                          <Icon name="Phone" size={12} className="mr-1" />
-                          {person.phone}
-                        </span>
+                        <span>{person.email}</span>
+                        <span>{person.phone}</span>
                       </div>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-4">
-                    <div className="text-right">
-                      {getStatusBadge(person.status)}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Expérience: {person.experience}
-                      </p>
-                    </div>
-                    <div className="flex space-x-2">
-                      <Button variant="ghost" size="sm">
-                        <Icon name="Eye" size={14} />
-                      </Button>
-                      <Button variant="ghost" size="sm">
-                        <Icon name="Edit" size={14} />
-                      </Button>
-                    </div>
+                  <div className="text-right">
+                    {getStatusBadge(person.status)}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Expérience: {person.experience}
+                    </p>
                   </div>
                 </div>
               </div>
             ))
           ) : (
             <div className="text-center py-12">
-              <Icon 
-                name={type === 'teachers' ? 'GraduationCap' : 'UserCheck'} 
-                size={64} 
-                className="text-muted-foreground mx-auto mb-4" 
-              />
+              <Icon name={type === 'teachers' ? 'GraduationCap' : 'UserCheck'} size={64} className="text-muted-foreground mx-auto mb-4" />
               <h4 className="text-lg font-medium text-foreground mb-2">
                 Aucun {type === 'teachers' ? 'enseignant' : 'secrétaire'} enregistré
               </h4>
-              <p className="text-muted-foreground mb-4">
-                Commencez par ajouter {type === 'teachers' ? 'des enseignants' : 'des secrétaires'} à votre établissement
-              </p>
-              <Button onClick={() => setActiveSection('create')}>
-                <Icon name="Plus" size={16} className="mr-2" />
-                Ajouter {type === 'teachers' ? 'Enseignant' : 'Secrétaire'}
-              </Button>
+              <p className="text-muted-foreground">La gestion du personnel s'effectue depuis l'onglet "Comptes"</p>
             </div>
           )}
         </div>
@@ -414,212 +469,29 @@ const PersonnelManagement = () => {
     );
   };
 
-  const renderCreateForm = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-heading font-heading-semibold text-card-foreground">
-          Ajouter un Nouveau Membre du Personnel
-        </h3>
-        <Button variant="ghost" onClick={() => setActiveSection('overview')}>
-          <Icon name="X" size={16} />
-        </Button>
-      </div>
-
-      <div className="bg-card border border-border rounded-lg p-6 shadow-card">
-        <div className="space-y-6">
-          {/* Type de personnel */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-3">
-              Type de personnel
-            </label>
-            <div className="flex space-x-4">
-              <button
-                onClick={() => {
-                  setNewPersonnel(prev => ({ ...prev, type: 'teacher' }));
-                  setSelectedPersonnelType('teacher');
-                }}
-                className={`flex items-center space-x-2 p-3 border rounded-lg transition-colors ${
-                  newPersonnel.type === 'teacher' 
-                    ? 'border-primary bg-primary/5 text-primary' 
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <Icon name="GraduationCap" size={20} />
-                <span>Enseignant</span>
-              </button>
-              <button
-                onClick={() => {
-                  setNewPersonnel(prev => ({ ...prev, type: 'secretary' }));
-                  setSelectedPersonnelType('secretary');
-                }}
-                className={`flex items-center space-x-2 p-3 border rounded-lg transition-colors ${
-                  newPersonnel.type === 'secretary' 
-                    ? 'border-primary bg-primary/5 text-primary' 
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <Icon name="UserCheck" size={20} />
-                <span>Secrétaire</span>
-              </button>
-            </div>
-          </div>
-
-          {/* Informations personnelles */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Prénom *
-              </label>
-              <Input
-                value={newPersonnel.firstName}
-                onChange={(e) => handleInputChange('firstName', e.target.value)}
-                placeholder="Prénom"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Nom de famille *
-              </label>
-              <Input
-                value={newPersonnel.lastName}
-                onChange={(e) => handleInputChange('lastName', e.target.value)}
-                placeholder="Nom de famille"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Email professionnel *
-              </label>
-              <Input
-                type="email"
-                value={newPersonnel.email}
-                onChange={(e) => handleInputChange('email', e.target.value)}
-                placeholder="email@edutrack.cm"
-                required
-              />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Téléphone
-              </label>
-              <Input
-                type="tel"
-                value={newPersonnel.phone}
-                onChange={(e) => handleInputChange('phone', e.target.value)}
-                placeholder="+237 6XX XXX XXX"
-              />
-            </div>
-          </div>
-
-          {/* Champs spécifiques selon le type */}
-          {newPersonnel.type === 'teacher' ? (
-            <div>
-              <label className="block text-sm font-medium text-foreground mb-2">
-                Matière enseignée *
-              </label>
-              <select
-                value={newPersonnel.subject}
-                onChange={(e) => handleInputChange('subject', e.target.value)}
-                className="w-full p-3 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-              >
-                <option value="">Sélectionner une matière</option>
-                {subjects.map((subject) => (
-                  <option key={subject} value={subject}>{subject}</option>
-                ))}
-              </select>
-            </div>
-          ) : (
-            <>
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  Rôle de secrétaire
-                </label>
-                <select
-                  value={newPersonnel.role}
-                  onChange={(e) => handleInputChange('role', e.target.value)}
-                  className="w-full p-3 border border-input bg-background rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                >
-                  <option value="">Sélectionner un rôle</option>
-                  {secretaryRoles.map((role) => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-4">
-                  Permissions
-                </label>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {availablePermissions.map((permission) => (
-                    <div key={permission.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg">
-                      <input
-                        type="checkbox"
-                        id={permission.id}
-                        checked={newPersonnel.permissions.includes(permission.id)}
-                        onChange={() => handlePermissionToggle(permission.id)}
-                        className="h-4 w-4 text-primary border-border rounded focus:ring-primary"
-                      />
-                      <label htmlFor={permission.id} className="text-sm text-foreground cursor-pointer">
-                        {permission.label}
-                      </label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </>
-          )}
-
-          {/* Boutons d'action */}
-          <div className="flex justify-end space-x-4 pt-6 border-t border-border">
-            <Button 
-              variant="outline" 
-              onClick={() => setActiveSection('overview')}
-            >
-              Annuler
-            </Button>
-            <Button 
-              onClick={handleCreatePersonnel}
-              disabled={!newPersonnel.firstName || !newPersonnel.lastName || !newPersonnel.email || 
-                       (newPersonnel.type === 'teacher' && !newPersonnel.subject)}
-            >
-              <Icon name="UserPlus" size={16} className="mr-2" />
-              Créer le Compte
-            </Button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className="space-y-6">
-      {/* Navigation par onglets */}
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">
         {sectionTabs.map((tab) => (
           <button
             key={tab.id}
             onClick={() => setActiveSection(tab.id)}
-            className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-md transition-all duration-200 ${
+            className={`px-4 py-2 rounded-md flex items-center space-x-2 transition-all ${
               activeSection === tab.id
-                ? 'bg-white text-blue-600 shadow-sm font-medium' 
+                ? 'bg-white text-primary shadow-sm'
                 : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
             }`}
           >
             <Icon name={tab.icon} size={16} />
-            <span>{tab.label}</span>
+            <span className="text-sm font-medium">{tab.label}</span>
           </button>
         ))}
       </div>
 
-      {/* Contenu selon la section active */}
       <div className="transition-all duration-200">
         {activeSection === 'overview' && renderOverview()}
         {activeSection === 'teachers' && renderPersonnelList('teachers')}
         {activeSection === 'secretaries' && renderPersonnelList('secretaries')}
-        {activeSection === 'create' && renderCreateForm()}
       </div>
     </div>
   );

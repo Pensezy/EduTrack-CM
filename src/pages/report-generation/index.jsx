@@ -4,6 +4,7 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import useDashboardData from '../../hooks/useDashboardData';
 
 const ReportGeneration = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -14,6 +15,14 @@ const ReportGeneration = () => {
     subject: 'all',
     format: 'pdf'
   });
+
+  // Hook pour récupérer les données selon le mode (démo/production)
+  const { 
+    data, 
+    isDemo, 
+    isProduction, 
+    user 
+  } = useDashboardData();
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -70,41 +79,128 @@ const ReportGeneration = () => {
     }
   ];
 
-  const recentReports = [
+  // Rapports récents basés sur le mode de données
+  const recentReports = isDemo ? [
     {
       id: 1,
-      title: 'Rapport Académique - Septembre 2024',
+      title: 'Rapport Académique - Septembre 2024 (DÉMO)',
       type: 'academic',
       date: '2024-09-25',
       status: 'ready',
-      size: '2.4 MB'
+      size: '2.4 MB',
+      isDemo: true
     },
     {
       id: 2,
-      title: 'Rapport Présence - Semaine 38',
+      title: 'Rapport Présence - Semaine 38 (DÉMO)',
       type: 'attendance',
       date: '2024-09-20',
       status: 'ready',
-      size: '1.8 MB'
+      size: '1.8 MB',
+      isDemo: true
     },
     {
       id: 3,
-      title: 'Rapport Financier - Trimestre 1',
+      title: 'Rapport Financier - Trimestre 1 (DÉMO)',
       type: 'financial',
       date: '2024-09-15',
       status: 'generating',
-      size: '-'
+      size: '-',
+      isDemo: true
+    }
+  ] : [
+    {
+      id: 1,
+      title: `Configuration ${user?.schoolData?.name || 'École'} - ${new Date().toLocaleDateString('fr-FR')}`,
+      type: 'overall',
+      date: new Date().toISOString().split('T')[0],
+      status: 'ready',
+      size: '1.2 MB',
+      isDemo: false
+    },
+    {
+      id: 2,
+      title: `Classes configurées - ${user?.schoolData?.type || 'Établissement'}`,
+      type: 'academic',
+      date: new Date().toISOString().split('T')[0],
+      status: 'ready',
+      size: '0.8 MB',
+      isDemo: false
+    },
+    {
+      id: 3,
+      title: 'Rapport système - État opérationnel',
+      type: 'teacher',
+      date: new Date().toISOString().split('T')[0],
+      status: 'ready',
+      size: '0.5 MB',
+      isDemo: false
     }
   ];
 
   const handleGenerateReport = (reportType) => {
-    setSelectedReport(reportType);
-    console.log('Generating report:', reportType, reportFilters);
-    // Ici vous ajouteriez la logique de génération
-    setTimeout(() => {
-      alert(`Rapport ${reportType.title} généré avec succès !`);
-      setSelectedReport(null);
-    }, 2000);
+    if (isDemo) {
+      // Mode démo : simulation simple
+      setSelectedReport(reportType);
+      console.log('🔄 Génération rapport démo:', reportType.title);
+      
+      setTimeout(() => {
+        alert(`📄 Rapport démo "${reportType.title}" simulé avec succès !\n\nℹ️ En mode réel, un fichier ${reportFilters.format.toUpperCase()} serait téléchargé.`);
+        setSelectedReport(null);
+      }, 1500);
+      
+    } else {
+      // Mode production : génération réelle
+      setSelectedReport(reportType);
+      console.log('🏫 Génération rapport réel:', reportType.title, 'pour', user?.schoolData?.name);
+      console.log('📊 Filtres appliqués:', reportFilters);
+      
+      // Simulation d'une génération réelle avec les vraies données
+      setTimeout(() => {
+        // Créer les données du rapport basées sur l'école de l'utilisateur
+        const reportData = {
+          schoolName: user?.schoolData?.name || 'École',
+          schoolType: user?.schoolData?.type || 'Établissement',
+          classes: user?.schoolData?.available_classes || [],
+          reportType: reportType.title,
+          filters: reportFilters,
+          generatedAt: new Date().toLocaleString('fr-FR'),
+          format: reportFilters.format.toUpperCase()
+        };
+        
+        // Simuler la création d'un fichier
+        const blob = new Blob([
+          `RAPPORT: ${reportData.reportType}\n`,
+          `ÉCOLE: ${reportData.schoolName}\n`,
+          `TYPE: ${reportData.schoolType}\n`,
+          `CLASSES: ${reportData.classes.join(', ')}\n`,
+          `PÉRIODE: ${reportFilters.period}\n`,
+          `CLASSE SÉLECTIONNÉE: ${reportFilters.class}\n`,
+          `GÉNÉRÉ LE: ${reportData.generatedAt}\n`,
+          `\n--- DONNÉES DU RAPPORT ---\n`,
+          `Ce fichier contiendrait les vraies données de votre école.\n`,
+          `En version complète, il inclurait:\n`,
+          `- Statistiques détaillées par classe\n`,
+          `- Graphiques et analyses\n`,
+          `- Données de performance\n`,
+          `- Recommandations personnalisées\n`
+        ], { type: 'text/plain' });
+        
+        // Créer le lien de téléchargement
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${reportType.title.replace(/\s+/g, '_')}_${reportData.schoolName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        alert(`✅ Rapport "${reportType.title}" généré avec succès !\n\n📁 Fichier téléchargé: ${link.download}\n🏫 École: ${reportData.schoolName}\n📊 Format: ${reportData.format}`);
+        setSelectedReport(null);
+        
+      }, 2500); // Un peu plus long pour le mode réel
+    }
   };
 
   const handleFilterChange = (field, value) => {
@@ -150,7 +246,13 @@ const ReportGeneration = () => {
       <div className="min-h-screen bg-background">
         <Header 
           userRole="principal" 
-          userName="M. Directeur"
+          userName={
+            user?.schoolData?.director_name || 
+            user?.schoolData?.users?.full_name ||
+            user?.full_name ||
+            user?.email?.split('@')[0] || 
+            'Directeur'
+          }
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
@@ -166,18 +268,41 @@ const ReportGeneration = () => {
             isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
           } p-6`}>
             
+            {/* Indicateur de mode */}
+            {isDemo && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-3">
+                  <Icon name="AlertTriangle" size={20} className="text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-orange-800">Mode Démonstration</h3>
+                    <p className="text-sm text-orange-700">
+                      Les rapports affichés sont fictifs. Connectez-vous avec un compte réel pour générer vos vrais rapports.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Page Header */}
             <div className="mb-8">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name="FileBarChart" size={20} className="text-primary" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Icon name="FileBarChart" size={20} className="text-primary" />
+                  </div>
+                  <h1 className="text-2xl font-heading font-heading-bold text-foreground">
+                    Génération de Rapports
+                  </h1>
                 </div>
-                <h1 className="text-2xl font-heading font-heading-bold text-foreground">
-                  Génération de Rapports
-                </h1>
+                {isProduction && (
+                  <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-green-700">Mode réel</span>
+                  </div>
+                )}
               </div>
               <p className="text-muted-foreground">
-                Créer des rapports personnalisés et analyser les données
+                Créer des rapports personnalisés pour {isProduction ? user?.schoolData?.name || 'votre école' : 'l\'école (mode démo)'}
               </p>
             </div>
 
@@ -213,19 +338,25 @@ const ReportGeneration = () => {
                           onClick={() => handleGenerateReport(report)}
                           className="w-full"
                           disabled={selectedReport?.id === report.id}
+                          variant={isDemo ? "outline" : "default"}
                         >
                           {selectedReport?.id === report.id ? (
                             <>
                               <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
-                              Génération...
+                              {isDemo ? 'Simulation...' : 'Génération...'}
                             </>
                           ) : (
                             <>
-                              <Icon name="Download" size={16} className="mr-2" />
-                              Générer
+                              <Icon name={isDemo ? "TestTube" : "Download"} size={16} className="mr-2" />
+                              {isDemo ? 'Simuler' : 'Générer'}
                             </>
                           )}
                         </Button>
+                        {isDemo && (
+                          <div className="text-xs text-orange-600 mt-2 text-center">
+                            Mode démonstration - Simulation uniquement
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -266,11 +397,25 @@ const ReportGeneration = () => {
                         onChange={(e) => handleFilterChange('class', e.target.value)}
                         className="w-full p-2 border border-input bg-background rounded-md"
                       >
-                        <option value="all">Toutes les classes</option>
-                        <option value="6eme">6ème</option>
-                        <option value="5eme">5ème</option>
-                        <option value="4eme">4ème</option>
-                        <option value="3eme">3ème</option>
+                        <option value="all">
+                          {isDemo ? 'Toutes les classes (démo)' : 'Toutes les classes'}
+                        </option>
+                        {isDemo ? (
+                          // Options démo
+                          <>
+                            <option value="6eme">6ème (démo)</option>
+                            <option value="5eme">5ème (démo)</option>
+                            <option value="4eme">4ème (démo)</option>
+                            <option value="3eme">3ème (démo)</option>
+                          </>
+                        ) : (
+                          // Vraies classes de l'utilisateur
+                          user?.schoolData?.available_classes?.map((className, index) => (
+                            <option key={index} value={className}>
+                              {className}
+                            </option>
+                          )) || <option value="none">Aucune classe configurée</option>
+                        )}
                       </select>
                     </div>
 
@@ -306,12 +451,23 @@ const ReportGeneration = () => {
                     {recentReports.map((report) => (
                       <div
                         key={report.id}
-                        className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                        className={`p-3 border rounded-lg hover:bg-muted/50 transition-colors ${
+                          report.isDemo 
+                            ? 'border-orange-200 bg-orange-50/30' 
+                            : 'border-border'
+                        }`}
                       >
                         <div className="flex items-center justify-between mb-2">
-                          <h4 className="text-sm font-medium text-foreground">
-                            {report.title}
-                          </h4>
+                          <div className="flex items-center space-x-2">
+                            <h4 className="text-sm font-medium text-foreground">
+                              {report.title}
+                            </h4>
+                            {report.isDemo && (
+                              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                                DÉMO
+                              </span>
+                            )}
+                          </div>
                           <span className={`${getStatusColor(report.status)}`}>
                             <Icon name={getStatusIcon(report.status)} size={16} />
                           </span>
@@ -319,9 +475,14 @@ const ReportGeneration = () => {
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{report.date}</span>
                           {report.status === 'ready' && (
-                            <Button variant="ghost" size="sm">
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              disabled={report.isDemo}
+                              className={report.isDemo ? 'opacity-50' : ''}
+                            >
                               <Icon name="Download" size={12} className="mr-1" />
-                              {report.size}
+                              {report.isDemo ? 'Fictif' : report.size}
                             </Button>
                           )}
                         </div>

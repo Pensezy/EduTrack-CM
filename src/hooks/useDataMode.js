@@ -1,6 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 
+// Cache pour éviter les requêtes répétées
+let modeCache = null;
+let cacheTimestamp = null;
+const CACHE_DURATION = 60000; // 1 minute de cache
+
 /**
  * Hook personnalisé pour détecter le mode de données
  * - DEMO: Utilisateur non connecté ou compte de démonstration
@@ -18,6 +23,16 @@ export const useDataMode = () => {
       try {
         setIsLoading(true);
         
+        // Vérifier le cache d'abord
+        const now = Date.now();
+        if (modeCache && cacheTimestamp && (now - cacheTimestamp) < CACHE_DURATION) {
+          console.log('🚀 Utilisation du cache de mode');
+          setDataMode(modeCache.dataMode);
+          setUser(modeCache.user);
+          setIsLoading(false);
+          return;
+        }
+        
         // Vérifier si un utilisateur est connecté
         const { data: { user }, error } = await supabase.auth.getUser();
         
@@ -34,6 +49,10 @@ export const useDataMode = () => {
           // Pas d'utilisateur connecté = mode démo
           setDataMode('demo');
           setUser(null);
+          
+          // Mettre en cache
+          modeCache = { dataMode: 'demo', user: null };
+          cacheTimestamp = Date.now();
         } else {
           // Vérifier si c'est un compte démo ou un vrai compte
           const isDemoAccount = user.email?.includes('demo@') || 
@@ -42,26 +61,13 @@ export const useDataMode = () => {
 
           if (isDemoAccount) {
             setDataMode('demo');
+            setUser(user);
+            
+            // Mettre en cache
+            modeCache = { dataMode: 'demo', user: user };
+            cacheTimestamp = Date.now();
           } else {
-            // Vérifier directement si l'utilisateur a une école associée
-            console.log('🔍 Vérification des données école pour:', user.email);
-            console.log('👤 User ID:', user.id);
-            
-            // D'abord, vérifier toutes les écoles pour diagnostic
-            const { data: allSchools, error: allError } = await supabase
-              .from('schools')
-              .select('id, name, director_user_id, status')
-              .limit(10);
-            
-            console.log('📋 Toutes les écoles dans la base:', allSchools?.length || 0);
-            if (allSchools && allSchools.length > 0) {
-              allSchools.forEach(s => {
-                console.log(`  - ${s.name} (ID: ${s.id}, Directeur: ${s.director_user_id}, Statut: ${s.status})`);
-                console.log(`    Match avec user? ${s.director_user_id === user.id ? '✅ OUI' : '❌ NON'}`);
-              });
-            }
-            
-            // Maintenant chercher l'école de l'utilisateur
+            // Requête optimisée : une seule requête directe sans logs verbeux
             const { data: schoolData, error: schoolError } = await supabase
               .from('schools')
               .select(`
@@ -77,40 +83,35 @@ export const useDataMode = () => {
               .eq('director_user_id', user.id)
               .single();
 
-            console.log('🔍 Requête école spécifique:');
-            console.log('  - SQL where: director_user_id =', user.id);
-            console.log('  - Résultat:', schoolData ? `École "${schoolData.name}" trouvée` : 'Aucune école');
-            console.log('  - Erreur:', schoolError);
-
             if (schoolData && !schoolError) {
-              console.log('✅ École trouvée:', schoolData.name, '- Mode PRODUCTION activé');
-              console.log('📊 Données école complètes:');
-              console.log('  - ID:', schoolData.id);
-              console.log('  - Nom:', schoolData.name);
-              console.log('  - Type:', schoolData.type);
-              console.log('  - Adresse:', schoolData.address);
-              console.log('  - Ville:', schoolData.city);
-              console.log('  - Pays:', schoolData.country);
-              console.log('  - Classes:', schoolData.available_classes);
-              console.log('  - Directeur:', schoolData.users);
-              
               // École trouvée = mode production
-              setUser({ 
+              console.log('✅ Mode PRODUCTION:', schoolData.name);
+              
+              const userData = { 
                 ...user, 
                 schoolData: { 
                   ...schoolData, 
                   director_id: user.id,
                   user_id: user.id
                 }
-              });
-              setDataMode('production');
-            } else {
-              console.log('❌ Aucune école trouvée pour cet utilisateur - Mode DÉMO');
-              console.log('Erreur école:', schoolError);
-              console.log('User ID recherché:', user.id);
+              };
               
-              // Pas d'école = mode démo (même avec un compte authentifié)
+              setUser(userData);
+              setDataMode('production');
+              
+              // Mettre en cache
+              modeCache = { dataMode: 'production', user: userData };
+              cacheTimestamp = Date.now();
+              
+            } else {
+              // Pas d'école = mode démo
+              console.log('🔄 Mode DÉMO activé');
               setDataMode('demo');
+              setUser(user);
+              
+              // Mettre en cache
+              modeCache = { dataMode: 'demo', user: user };
+              cacheTimestamp = Date.now();
             }
           }
           
@@ -152,7 +153,13 @@ export const useDataMode = () => {
     isLoading,
     user,
     // Fonction utilitaire pour forcer le mode (utile pour les tests)
-    setMode: (mode) => setDataMode(mode)
+    setMode: (mode) => setDataMode(mode),
+    // Fonction pour vider le cache et forcer la re-détection
+    clearCache: () => {
+      modeCache = null;
+      cacheTimestamp = null;
+      checkDataMode();
+    }
   };
 };
 

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
+import Icon from '../../components/AppIcon';
 import AppLogo from './components/AppLogo';
 import LanguageToggle from './components/LanguageToggle';
 import AccessibilityToggle from './components/AccessibilityToggle';
@@ -147,6 +148,34 @@ const LoginAuthentication = () => {
             </div>
           </div>
         )}
+
+        {/* Production Login Link */}
+        <div className="mt-8 text-center">
+          <div className="bg-white/80 backdrop-blur-sm border border-border rounded-xl p-6 shadow-sm">
+            <h3 className="text-lg font-heading font-semibold text-foreground mb-3">
+              Compte personnel ?
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Si vous avez un compte avec email et mot de passe personnel
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <Link
+                to="/production-login"
+                className="inline-flex items-center justify-center px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-medium"
+              >
+                <Icon name="LogIn" size={16} className="mr-2" />
+                Connexion avec compte
+              </Link>
+              <Link
+                to="/password-recovery"
+                className="inline-flex items-center justify-center px-4 py-2 bg-secondary text-secondary-foreground rounded-lg hover:bg-secondary/80 transition-colors text-sm font-medium"
+              >
+                <Icon name="HelpCircle" size={16} className="mr-2" />
+                Mot de passe oublié ?
+              </Link>
+            </div>
+          </div>
+        </div>
 
         {/* Footer */}
         <footer className="mt-12 text-center">

@@ -1,9 +1,27 @@
 import React, { useState } from 'react';
 
-const AccessControlPanel = ({ userRole }) => {
+const AccessControlPanel = ({ userRole, isPrincipalMode = false, selectedAccount = null }) => {
   const [showInfo, setShowInfo] = useState(false);
 
   const getRolePermissions = (role) => {
+    // Mode principal avec supervision
+    if (isPrincipalMode && role === 'principal') {
+      return {
+        icon: '👨‍💼',
+        title: 'Principal - Mode Supervision',
+        permissions: [
+          '✅ Voir tous les comptes personnel avec accès documents',
+          '✅ Consulter les documents de chaque compte individuellement',
+          '✅ Analyser les statistiques d\'utilisation par compte',
+          '✅ Contrôler les accès et permissions',
+          '✅ Superviser l\'activité documentaire du personnel',
+          '✅ Traçabilité complète des actions utilisateurs',
+          '❌ Modifier ou supprimer les documents d\'autrui'
+        ],
+        description: 'Mode supervision permettant le contrôle centralisé des documents par compte personnel.'
+      };
+    }
+
     switch (role) {
       case 'secretary':
         return {
@@ -23,7 +41,7 @@ const AccessControlPanel = ({ userRole }) => {
       case 'principal':
         return {
           icon: '👨‍💼',
-          title: 'Principal',
+          title: 'Principal - Mode Standard',
           permissions: [
             '✅ Assigner des professeurs aux classes et matières',
             '✅ Voir tous les documents de l\'école',
@@ -155,9 +173,35 @@ const AccessControlPanel = ({ userRole }) => {
           </div>
         </div>
 
+        {/* Informations du compte supervisé (mode principal uniquement) */}
+        {isPrincipalMode && selectedAccount && (
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-3">
+            <div className="flex items-center space-x-3">
+              <span className="text-lg">
+                {selectedAccount.role === 'teacher' ? '👩‍🏫' : '👩‍💼'}
+              </span>
+              <div>
+                <h5 className="font-medium text-blue-900">
+                  Supervision de: {selectedAccount.full_name}
+                </h5>
+                <p className="text-sm text-blue-700">
+                  {selectedAccount.role === 'teacher' 
+                    ? `Enseignant en ${selectedAccount.subject}` 
+                    : 'Secrétaire'}
+                  {selectedAccount.classes && selectedAccount.classes.length > 0 && 
+                    ` - Classes: ${selectedAccount.classes.join(', ')}`
+                  }
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {showInfo && (
           <div className="border-t border-gray-100 pt-3">
-            <h5 className="font-medium text-gray-900 mb-2">Vos permissions:</h5>
+            <h5 className="font-medium text-gray-900 mb-2">
+              {isPrincipalMode ? 'Permissions de supervision:' : 'Vos permissions:'}
+            </h5>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
               {roleInfo?.permissions?.map((permission, index) => (
                 <div key={index} className="text-sm flex items-start space-x-2">

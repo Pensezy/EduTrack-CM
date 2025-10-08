@@ -9,6 +9,66 @@ import {
   analyticsService
 } from '../services/edutrackService';
 
+// Hook for data mode detection (demo vs production)
+export const useDataMode = () => {
+  const [isDemo, setIsDemo] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [lastCheck, setLastCheck] = useState(null);
+
+  useEffect(() => {
+    const checkDataMode = async () => {
+      // Cache de 1 minute pour éviter les vérifications répétées
+      const now = Date.now();
+      if (lastCheck && (now - lastCheck) < 60000) {
+        setIsLoading(false);
+        return;
+      }
+
+      setIsLoading(true);
+      
+      try {
+        // Vérifier la présence de données de production via un appel à l'API
+        // En mode démo, on utilise des données statiques
+        const isDemoMode = 
+          window.location.pathname.includes('/demo') ||
+          window.location.search.includes('demo=true') ||
+          localStorage.getItem('edutrack-mode') === 'demo';
+
+        setIsDemo(isDemoMode);
+        setLastCheck(now);
+      } catch (error) {
+        console.warn('Erreur détection mode:', error);
+        // En cas d'erreur, on considère qu'on est en mode démo par sécurité
+        setIsDemo(true);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkDataMode();
+  }, [lastCheck]);
+
+  const switchToDemo = () => {
+    localStorage.setItem('edutrack-mode', 'demo');
+    setIsDemo(true);
+    setLastCheck(null);
+  };
+
+  const switchToProduction = () => {
+    localStorage.removeItem('edutrack-mode');
+    setIsDemo(false);
+    setLastCheck(null);
+  };
+
+  return { 
+    isDemo, 
+    isProduction: !isDemo, 
+    isLoading, 
+    switchToDemo, 
+    switchToProduction 
+  };
+};
+
 // Hook for student data
 export const useStudentData = (studentId) => {
   const [student, setStudent] = useState(null);

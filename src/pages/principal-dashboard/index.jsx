@@ -12,6 +12,7 @@ import PaymentStatusChart from './components/PaymentStatusChart';
 import QuickActions from './components/QuickActions';
 import SystemStatus from './components/SystemStatus';
 import PersonnelManagement from './components/PersonnelManagement';
+import AccountsManagement from './components/AccountsManagement';
 import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import Icon from '../../components/AppIcon';
@@ -81,7 +82,7 @@ const PrincipalDashboard = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'analytics', 'personnel', 'school-info', 'actions', 'system', 'accounts', 'schema', 'debug'].includes(tabParam)) {
+    if (tabParam && ['overview', 'analytics', 'personnel', 'school-info', 'actions', 'system', 'accounts', 'debug'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else {
       setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
@@ -119,7 +120,6 @@ const PrincipalDashboard = () => {
     { id: 'actions', label: 'Actions', icon: 'Zap' },
     { id: 'system', label: 'Système', icon: 'Settings' },
     { id: 'accounts', label: 'Comptes', icon: 'UserCheck' },
-    { id: 'schema', label: 'Schéma DB', icon: 'Database' },
     { id: 'debug', label: 'Debug DB', icon: 'Bug' }
   ];
 
@@ -300,7 +300,7 @@ const PrincipalDashboard = () => {
             {/* Raccourcis directs */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <button
-                onClick={() => navigate('/principal-dashboard?tab=personnel')}
+                onClick={() => navigate('/principal-dashboard?tab=accounts&subtab=create')}
                 className="p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-left group"
               >
                 <div className="flex items-center space-x-3">
@@ -360,19 +360,7 @@ const PrincipalDashboard = () => {
           </div>
         );
       case 'accounts':
-        return (
-          <div className="p-6 bg-white rounded-xl border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">🔧 Diagnostic des Comptes</h3>
-            <p className="text-gray-600">Fonctionnalité simplifiée avec Prisma. Les données sont maintenant gérées automatiquement.</p>
-          </div>
-        );
-      case 'schema':
-        return (
-          <div className="p-6 bg-white rounded-xl border border-gray-200">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Schéma de Base de Données</h3>
-            <p className="text-gray-600">Le schéma est maintenant géré par Prisma et synchronisé automatiquement.</p>
-          </div>
-        );
+        return <AccountsManagement />;
       case 'school-info':
         return (
           <div className="space-y-6">

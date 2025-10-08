@@ -3,6 +3,7 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Import all tab components
 import StudentManagementTab from './components/StudentManagementTab';
@@ -15,6 +16,9 @@ import TransferWorkflow from './components/TransferWorkflow';
 const SecretaryDashboard = () => {
   const [activeTab, setActiveTab] = useState('students');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  
+  // Récupérer les informations de l'utilisateur connecté
+  const { user } = useAuth();
 
   const tabs = [
     {
@@ -99,13 +103,13 @@ const SecretaryDashboard = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <Header 
-        userRole="secretary" 
-        userName="Marie Secrétaire"
+        userRole={user?.role || "secretary"} 
+        userName={user?.full_name || user?.name || "Utilisateur"}
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       {/* Sidebar */}
       <Sidebar 
-        userRole="secretary"
+        userRole={user?.role || "secretary"}
         isCollapsed={isSidebarCollapsed}
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />

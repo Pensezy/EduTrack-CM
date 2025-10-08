@@ -4,10 +4,14 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SchoolSettings = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  
+  // Récupérer les informations de l'utilisateur connecté
+  const { user } = useAuth();
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -60,15 +64,15 @@ const SchoolSettings = () => {
       
       <div className="min-h-screen bg-background">
         <Header 
-          userRole="principal" 
-          userName="M. Directeur"
+          userRole={user?.role || "principal"} 
+          userName={user?.full_name || user?.name || "Utilisateur"}
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
         
         <div className="flex pt-16">
           <Sidebar 
-            userRole="principal"
+            userRole={user?.role || "principal"}
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
           />

@@ -23,6 +23,10 @@ import StaffManagement from "./pages/staff-management";
 import SchoolSettings from "./pages/school-settings";
 import SchoolCalendar from "./pages/school-calendar";
 import DataBackup from "./pages/data-backup";
+import ProfileSettings from "./pages/profile-settings";
+import PasswordRecovery from "./pages/password-recovery";
+import PasswordReset from "./pages/password-reset";
+import ProductionLogin from "./pages/production-login";
 
 const Routes = () => {
   return (
@@ -51,6 +55,10 @@ const Routes = () => {
           <Route path="/school-settings" element={<SchoolSettings />} />
           <Route path="/school-calendar" element={<SchoolCalendar />} />
           <Route path="/data-backup" element={<DataBackup />} />
+          <Route path="/profile-settings" element={<ProfileSettings />} />
+          <Route path="/password-recovery" element={<PasswordRecovery />} />
+          <Route path="/password-reset" element={<PasswordReset />} />
+          <Route path="/production-login" element={<ProductionLogin />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

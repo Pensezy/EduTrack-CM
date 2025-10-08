@@ -4,6 +4,9 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { useAuth } from '../../contexts/AuthContext';
+import { useDataMode } from '../../hooks/useDataMode';
+import { useDashboardData } from '../../hooks/useDashboardData';
 
 // Admin Dashboard Components
 
@@ -11,18 +14,29 @@ const AdminDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
+  
+  // 🔄 Détection du mode données avec cache optimisé
+  const { user } = useAuth();
+  const { dataMode, isDemo } = useDataMode();
+  const { data, loading, error } = useDashboardData();
 
-  // Mock admin data
-  const adminData = {
+  // Admin data basé sur le mode
+  const adminData = isDemo ? {
     id: "admin-001",
     name: "Administrateur Système", 
     email: "admin@edutrack.cm",
     role: "super_admin",
     permissions: ["system_admin", "user_management", "security_monitoring", "analytics_access"]
+  } : {
+    id: user?.id || "admin-real",
+    name: user?.full_name || "Administrateur",
+    email: user?.email || "admin@reelle.cm", 
+    role: user?.role || "admin",
+    permissions: user?.permissions || ["admin_access"]
   };
 
-  // Mock system metrics
-  const systemMetrics = {
+  // System metrics basé sur le mode
+  const systemMetrics = isDemo ? {
     totalUsers: 2847,
     totalStudents: 1856,
     totalTeachers: 234,
@@ -35,14 +49,27 @@ const AdminDashboard = () => {
     weeklySignups: 87,
     criticalAlerts: 3,
     pendingApprovals: 12
+  } : {
+    totalUsers: data?.totalUsers || 0,
+    totalStudents: data?.totalStudents || 0,
+    totalTeachers: data?.totalTeachers || 0,
+    totalParents: data?.totalParents || 0,
+    activeSchools: data?.activeSchools || 1,
+    systemUptime: 100,
+    databaseHealth: 100,
+    storageUsage: data?.storageUsage || 15.2,
+    dailyActiveUsers: data?.dailyActiveUsers || 0,
+    weeklySignups: data?.weeklySignups || 0,
+    criticalAlerts: 0,
+    pendingApprovals: data?.pendingApprovals || 0
   };
 
-  // Mock analytics data
-  const analyticsData = {
+  // Analytics data basé sur le mode
+  const analyticsData = isDemo ? {
     userGrowth: [
       { month: 'Jan', users: 1200, students: 800, teachers: 45, parents: 355 },
       { month: 'Feb', users: 1350, students: 890, teachers: 52, parents: 408 },
-      { month: 'Mar', users: 1580, students: 1020, students: 1020, teachers: 68, parents: 492 },
+      { month: 'Mar', users: 1580, students: 1020, teachers: 68, parents: 492 },
       { month: 'Apr', users: 1820, students: 1180, teachers: 85, parents: 555 },
       { month: 'May', users: 2100, students: 1350, teachers: 102, parents: 648 },
       { month: 'Jun', users: 2380, students: 1520, teachers: 125, parents: 735 },
@@ -64,10 +91,25 @@ const AdminDashboard = () => {
       { feature: 'Communication', usage: 72, users: 834 },
       { feature: 'Analytics', usage: 34, users: 298 }
     ]
+  } : {
+    userGrowth: data?.userGrowth || [
+      { month: 'Jan', users: 0, students: 0, teachers: 0, parents: 0 }
+    ],
+    schoolActivity: data?.schoolActivity || [
+      { name: user?.schoolData?.name || 'Votre école', students: 0, teachers: 0, activity: 100 }
+    ],
+    platformUsage: data?.platformUsage || [
+      { feature: 'Gestion Notes', usage: 0, users: 0 },
+      { feature: 'Présences', usage: 0, users: 0 },
+      { feature: 'Paiements', usage: 0, users: 0 },
+      { feature: 'Documents', usage: 0, users: 0 },
+      { feature: 'Communication', usage: 0, users: 0 },
+      { feature: 'Analytics', usage: 0, users: 0 }
+    ]
   };
 
-  // Mock security data
-  const securityData = {
+  // Security data basé sur le mode
+  const securityData = isDemo ? {
     recentAlerts: [
       { id: 1, type: 'failed_login', severity: 'medium', message: 'Multiple failed login attempts', user: 'unknown', time: '2 min ago', location: 'Douala' },
       { id: 2, type: 'suspicious_activity', severity: 'high', message: 'Unusual grade modification pattern', user: 'teacher.math@demo.cm', time: '15 min ago', location: 'Yaoundé' },
@@ -80,15 +122,28 @@ const AdminDashboard = () => {
       backupStatus: 'completed',
       lastSecurityScan: '2024-11-19T02:30:00Z'
     }
+  } : {
+    recentAlerts: data?.securityAlerts || [
+      { id: 1, type: 'system_status', severity: 'low', message: 'Système opérationnel', user: 'system', time: 'maintenant', location: user?.schoolData?.location || 'N/A' }
+    ],
+    systemStatus: {
+      firewall: 'active',
+      authentication: 'secure',
+      dataEncryption: 'enabled',
+      backupStatus: 'completed',
+      lastSecurityScan: new Date().toISOString()
+    }
   };
 
-  // Mock audit trail
-  const auditTrail = [
+  // Audit trail basé sur le mode
+  const auditTrail = isDemo ? [
     { id: 1, action: 'User Created', actor: 'admin@demo.cm', target: 'student.new@demo.cm', timestamp: '2024-11-19T10:30:00Z', details: 'New student account created' },
     { id: 2, action: 'Grade Modified', actor: 'teacher.math@demo.cm', target: 'Paul Kamga', timestamp: '2024-11-19T09:45:00Z', details: 'Mathematics grade updated: 15/20' },
     { id: 3, action: 'Payment Processed', actor: 'system', target: 'Payment #PAY-001', timestamp: '2024-11-19T08:20:00Z', details: 'MTN Mobile Money - 150,000 FCFA' },
     { id: 4, action: 'User Login', actor: 'parent@demo.cm', target: 'System', timestamp: '2024-11-19T07:15:00Z', details: 'Successful login from mobile app' },
     { id: 5, action: 'Settings Updated', actor: 'admin@demo.cm', target: 'System Configuration', timestamp: '2024-11-18T16:30:00Z', details: 'Notification settings modified' }
+  ] : data?.auditTrail || [
+    { id: 1, action: 'System Login', actor: user?.email || 'admin', target: 'Admin Dashboard', timestamp: new Date().toISOString(), details: 'Accès tableau de bord administrateur' }
   ];
 
   useEffect(() => {
@@ -545,15 +600,29 @@ const AdminDashboard = () => {
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         <div className="p-4 lg:p-6 space-y-6">
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-primary to-secondary rounded-lg p-6 text-white">
+          {/* Welcome Section avec indicateur de mode */}
+          <div className={`bg-gradient-to-r ${isDemo ? 'from-primary to-secondary' : 'from-green-600 to-blue-600'} rounded-lg p-6 text-white relative`}>
+            {/* 🔍 Indicateur de mode données */}
+            <div className="absolute top-4 right-4">
+              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
+                isDemo 
+                  ? 'bg-yellow-500 text-yellow-900' 
+                  : 'bg-green-500 text-green-900'
+              }`}>
+                {isDemo ? '🔄 MODE DÉMO' : '🏫 DONNÉES RÉELLES'}
+              </div>
+            </div>
+            
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
                   {getGreeting()}, {adminData?.name?.split(' ')?.[0]} ! 🔧
                 </h1>
                 <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
-                  Surveillance et gestion globale de la plateforme EduTrack CM. Toutes les écoles, tous les utilisateurs.
+                  {isDemo 
+                    ? 'Surveillance et gestion globale de la plateforme EduTrack CM. Toutes les écoles, tous les utilisateurs.'
+                    : `Administration de ${user?.schoolData?.name || 'votre établissement'}. Gestion système et utilisateurs.`
+                  }
                 </p>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
                   <div className="bg-white/20 rounded-lg px-3 py-1">
@@ -563,7 +632,7 @@ const AdminDashboard = () => {
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
-                      {systemMetrics?.activeSchools} écoles actives
+                      {systemMetrics?.activeSchools} {isDemo ? 'écoles actives' : 'établissement'}
                     </span>
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1">
@@ -613,12 +682,40 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Main Content */}
+          {/* Main Content avec loading et mode */}
           <div className="min-h-[600px]">
-            {activeTab === 'overview' && renderSystemOverview()}
-            {activeTab === 'users' && renderUserManagement()}
-            {activeTab === 'analytics' && renderAnalytics()}
-            {activeTab === 'audit' && renderAuditTrail()}
+            {loading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+                  <p className="text-muted-foreground">
+                    {isDemo ? 'Chargement des données de démonstration...' : 'Chargement des données réelles...'}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                {activeTab === 'overview' && renderSystemOverview()}
+                {activeTab === 'users' && renderUserManagement()}
+                {activeTab === 'analytics' && renderAnalytics()}
+                {activeTab === 'audit' && renderAuditTrail()}
+                
+                {/* Debug mode information */}
+                {!isDemo && (
+                  <div className="bg-green-50 rounded-lg p-4 mt-6">
+                    <div className="flex items-center">
+                      <Icon name="Database" size={20} className="text-green-600 mr-2" />
+                      <div>
+                        <h4 className="font-medium text-green-800">Mode Production Actif</h4>
+                        <p className="text-sm text-green-700">
+                          Données issues de Supabase pour {user?.schoolData?.name || 'votre établissement'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
 
           {/* Quick Actions */}

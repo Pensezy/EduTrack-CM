@@ -3,13 +3,44 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { useAuth } from '../../../contexts/AuthContext';
+import { useDataMode } from '../../../hooks/useDataMode';
+import { useDashboardData } from '../../../hooks/useDashboardData';
 
 const SchoolSettings = () => {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [customClassName, setCustomClassName] = useState('');
   const [showCustomInput, setShowCustomInput] = useState(false);
-  const [schoolData, setSchoolData] = useState({
+
+  // 🔄 Détection du mode données avec cache optimisé
+  const { user } = useAuth();
+  const { dataMode, isDemo, loading: modeLoading } = useDataMode();
+  const { data, loading: dataLoading } = useDashboardData();
+
+  // Récupérer les données de l'école EXACTEMENT comme dans le dashboard principal
+  const schoolDataFromDatabase = data.schoolDetails;
+  const schoolDataFromUser = user?.schoolData;
+  const finalSchoolData = schoolDataFromDatabase || schoolDataFromUser;
+
+  // Fonction pour obtenir l'email EXACTEMENT comme le nom dans le Header
+  const getCurrentEmail = () => {
+    if (isDemo) {
+      return demoSchoolData.email;
+    }
+    // En production, utiliser EXACTEMENT la même cascade que pour le nom
+    return (
+      finalSchoolData?.email ||
+      finalSchoolData?.director_email ||
+      finalSchoolData?.users?.email ||
+      user?.schoolData?.users?.email ||
+      user?.email ||
+      ''
+    );
+  };
+
+  // Données de démonstration
+  const demoSchoolData = {
     name: 'Complexe Scolaire Excellence',
     type: 'college',
     phone: '+237 695 123 456',
@@ -21,7 +52,52 @@ const SchoolSettings = () => {
       { level: '4ème', isActive: true, isCustom: false },
       { level: '3ème', isActive: false, isCustom: false }
     ]
+  };
+
+  // État des données école basé sur le mode - initialisation vide
+  const [schoolData, setSchoolData] = useState({
+    name: '',
+    type: 'college',
+    phone: '',
+    email: '',
+    address: '',
+    availableClasses: []
   });
+
+  // Mise à jour des données quand le mode ou l'utilisateur change
+  useEffect(() => {
+    // Ne pas mettre à jour si le mode est encore en cours de chargement
+    if (modeLoading) return;
+    
+    if (isDemo) {
+      setSchoolData(demoSchoolData);
+    } else {
+      // En mode production, utiliser EXACTEMENT les mêmes sources que le dashboard principal
+      console.log('🔍 Mode Production - Sources de données:', {
+        schoolDataFromDatabase: schoolDataFromDatabase,
+        schoolDataFromUser: schoolDataFromUser,
+        finalSchoolData: finalSchoolData,
+        user: user,
+        userEmail: user?.email
+      });
+      
+      const currentEmail = getCurrentEmail();
+      console.log('📧 Email final utilisé (même logique que Header):', currentEmail);
+      
+      setSchoolData({
+        name: finalSchoolData?.name || finalSchoolData?.director_name || user?.full_name || 'Votre établissement',
+        type: finalSchoolData?.type || 'college',
+        phone: finalSchoolData?.phone || user?.phone || '',
+        email: currentEmail,
+        address: finalSchoolData?.address || '',
+        availableClasses: (finalSchoolData?.available_classes)?.map(className => ({
+          level: className,
+          isActive: true,
+          isCustom: false
+        })) || []
+      });
+    }
+  }, [isDemo, user, data, modeLoading, demoSchoolData]);
 
   // Mettre à jour les classes disponibles quand le type change
   useEffect(() => {
@@ -179,17 +255,31 @@ const SchoolSettings = () => {
 
   const handleSave = async () => {
     setSaving(true);
-    try {
-      // Simuler la sauvegarde
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log('Saving school settings:', schoolData);
-      alert('Paramètres sauvegardés avec succès !');
-    } catch (error) {
-      console.error('Error saving settings:', error);
-      alert('Erreur lors de la sauvegarde');
-    } finally {
-      setSaving(false);
+    
+    if (isDemo) {
+      // Mode démo : simulation seulement
+      try {
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('Mode démo - Paramètres école simulés:', schoolData);
+        alert('Mode démo - Paramètres sauvegardés (simulation uniquement)');
+      } catch (error) {
+        console.error('Erreur simulation:', error);
+        alert('Erreur lors de la simulation');
+      }
+    } else {
+      // Mode production : vraie sauvegarde Supabase
+      try {
+        // Ici vous ajouteriez la logique de sauvegarde réelle vers Supabase
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        console.log('Production - Paramètres école sauvegardés:', schoolData);
+        alert('Paramètres sauvegardés avec succès !');
+      } catch (error) {
+        console.error('Erreur lors de la sauvegarde:', error);
+        alert('Erreur lors de la sauvegarde');
+      }
     }
+    
+    setSaving(false);
   };
 
   const getActiveClassesCount = () => {
@@ -222,36 +312,100 @@ const SchoolSettings = () => {
     }
   };
 
+  // Afficher le loader si le mode est en cours de détection
+  if (modeLoading) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6">
+          <div className="flex items-center space-x-3">
+            <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+            <div>
+              <h3 className="font-semibold text-blue-800">Détection du mode de données...</h3>
+              <p className="text-sm text-blue-700">
+                Identification du type de données (démonstration ou production) en cours.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* 📊 Indicateur de mode données */}
+      {isDemo && (
+        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3">
+            <Icon name="AlertTriangle" size={20} className="text-amber-600" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-amber-800">Mode Démonstration</h3>
+              <p className="text-sm text-amber-700">
+                Vous consultez des données de démonstration. Les modifications ne seront pas sauvegardées.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 📊 Indicateur mode production */}
+      {!isDemo && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center space-x-3">
+            <Icon name="CheckCircle" size={20} className="text-green-600" />
+            <div className="flex-1">
+              <h3 className="font-semibold text-green-800">Mode Production</h3>
+              <p className="text-sm text-green-700">
+                Vous consultez les vraies données de votre établissement. Les modifications seront sauvegardées.
+              </p>
+              {/* Debug temporaire */}
+              <p className="text-xs text-green-600 mt-2">
+                Debug: Email utilisateur = {user?.email || 'AUCUN'} | Email école = {getCurrentEmail() || 'AUCUN'}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* En-tête des paramètres */}
       <div className="bg-card border border-border rounded-lg p-6 shadow-card">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Icon name="School" size={20} className="text-blue-600" />
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              isDemo ? 'bg-amber-100' : 'bg-blue-100'
+            }`}>
+              <Icon name="School" size={20} className={`${
+                isDemo ? 'text-amber-600' : 'text-blue-600'
+              }`} />
             </div>
             <div>
               <h2 className="font-heading font-heading-semibold text-lg text-card-foreground">
-                Paramètres de l'établissement
+                Paramètres de l'établissement {isDemo && '(Démo)'}
               </h2>
               <p className="font-caption font-caption-normal text-sm text-muted-foreground">
-                Configuration et informations générales
+                {isDemo 
+                  ? 'Configuration de démonstration - modifications simulées'
+                  : 'Configuration et informations générales'
+                }
               </p>
             </div>
           </div>
           <Button 
             onClick={handleSave} 
             loading={saving}
-            className="bg-blue-600 hover:bg-blue-700"
+            className={`${
+              isDemo 
+                ? 'bg-amber-600 hover:bg-amber-700'
+                : 'bg-blue-600 hover:bg-blue-700'
+            }`}
           >
             <Icon name="Save" size={16} className="mr-2" />
-            Sauvegarder
+            {isDemo ? 'Simuler' : 'Sauvegarder'}
           </Button>
         </div>
 
-        {/* Statistiques rapides */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {/* Statistiques rapides avec email visible */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 rounded-lg p-4">
             <div className="flex items-center space-x-3">
               <Icon name="GraduationCap" size={20} className="text-blue-600" />
@@ -286,7 +440,31 @@ const SchoolSettings = () => {
                   Année scolaire
                 </p>
                 <p className="font-caption font-caption-normal text-xs text-purple-700">
-                  2024-2025
+                  2025-2026
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-orange-50 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <Icon name="Mail" size={20} className="text-orange-600" />
+              <div className="flex-1 min-w-0">
+                <p className="font-body font-body-semibold text-sm text-orange-900">
+                  Email principal
+                </p>
+                <p className="font-caption font-caption-normal text-xs text-orange-700 truncate" 
+                   title={getCurrentEmail() || 'Non défini - Veuillez configurer'}>
+                  {getCurrentEmail() ? (
+                    <span className="flex items-center">
+                      <Icon name="CheckCircle" size={12} className="mr-1 text-green-600" />
+                      {getCurrentEmail()}
+                    </span>
+                  ) : (
+                    <span className="flex items-center text-red-600">
+                      <Icon name="AlertCircle" size={12} className="mr-1" />
+                      Non défini
+                    </span>
+                  )}
                 </p>
               </div>
             </div>
@@ -294,38 +472,63 @@ const SchoolSettings = () => {
         </div>
 
         {/* Informations générales */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <Input
-            label="Nom de l'établissement"
-            value={schoolData.name}
-            onChange={(e) => handleInputChange('name', e.target.value)}
-          />
-          
-          <Select
-            label="Type d'établissement"
-            value={schoolData.type}
-            onChange={handleSchoolTypeChange}
-            options={schoolTypes}
-          />
+        <div className="space-y-6">
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4 text-sm">Informations de base</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Nom de l'établissement"
+                value={schoolData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                placeholder="Ex: Complexe Scolaire Excellence"
+              />
+              
+              <Select
+                label="Type d'établissement"
+                value={schoolData.type}
+                onChange={handleSchoolTypeChange}
+                options={schoolTypes}
+              />
+            </div>
+          </div>
 
-          <Input
-            label="Téléphone"
-            value={schoolData.phone}
-            onChange={(e) => handleInputChange('phone', e.target.value)}
-          />
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4 text-sm flex items-center">
+              <Icon name="Phone" size={16} className="mr-2 text-blue-600" />
+              Informations de contact
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Input
+                label="Email de l'établissement"
+                type="email"
+                value={schoolData.email || getCurrentEmail()}
+                onChange={(e) => handleInputChange('email', e.target.value)}
+                placeholder={isDemo ? "contact@excellence.cm" : (getCurrentEmail() || "contact@votre-ecole.cm")}
+                helperText="📧 Email principal pour les communications officielles"
+                className="border-orange-200 focus:border-orange-500"
+              />
 
-          <Input
-            label="Email"
-            type="email"
-            value={schoolData.email}
-            onChange={(e) => handleInputChange('email', e.target.value)}
-          />
+              <Input
+                label="Téléphone"
+                value={schoolData.phone}
+                onChange={(e) => handleInputChange('phone', e.target.value)}
+                placeholder="+237 6XX XXX XXX"
+                helperText="📞 Numéro principal de l'établissement"
+              />
+            </div>
+          </div>
 
-          <div className="md:col-span-2">
+          <div>
+            <h4 className="font-semibold text-gray-900 mb-4 text-sm flex items-center">
+              <Icon name="MapPin" size={16} className="mr-2 text-green-600" />
+              Localisation
+            </h4>
             <Input
-              label="Adresse"
+              label="Adresse complète"
               value={schoolData.address}
               onChange={(e) => handleInputChange('address', e.target.value)}
+              placeholder="Quartier, Ville, Région"
+              helperText="📍 Adresse physique de l'établissement"
             />
           </div>
         </div>

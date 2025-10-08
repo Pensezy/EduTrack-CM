@@ -9,6 +9,7 @@ import TransferWorkflowSection from './components/TransferWorkflowSection';
 import CommunicationLogsSection from './components/CommunicationLogsSection';
 import AdministrativeNotesSection from './components/AdministrativeNotesSection';
 import Icon from '../../components/AppIcon';
+import { useAuth } from '../../contexts/AuthContext';
 import Button from '../../components/ui/Button';
 
 const StudentProfileManagement = () => {
@@ -18,6 +19,9 @@ const StudentProfileManagement = () => {
   const [currentUserRole, setCurrentUserRole] = useState('secretary');
   const [selectedStudentId, setSelectedStudentId] = useState('STU-2024-001');
   const [activeTab, setActiveTab] = useState('profile');
+  
+  // Récupérer les informations de l'utilisateur connecté
+  const { user } = useAuth();
 
   // Mock student data
   const [studentData, setStudentData] = useState({
@@ -129,13 +133,13 @@ const StudentProfileManagement = () => {
     <div className="min-h-screen bg-background">
       {/* Header */}
       <Header
-        userRole={currentUserRole}
-        userName="Utilisateur"
+        userRole={user?.role || currentUserRole}
+        userName={user?.full_name || user?.name || "Utilisateur"}
         onToggleSidebar={handleToggleSidebar}
       />
       {/* Sidebar */}
       <Sidebar
-        userRole={currentUserRole}
+        userRole={user?.role || currentUserRole}
         isCollapsed={isSidebarCollapsed}
         onToggle={handleToggleSidebar}
       />
