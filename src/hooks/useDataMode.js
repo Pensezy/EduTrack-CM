@@ -43,17 +43,42 @@ export const useDataMode = () => {
           if (isDemoAccount) {
             setDataMode('demo');
           } else {
-            // Vérifier si l'utilisateur existe dans notre base de données
-            const { data: dbUser, error: dbError } = await supabase
-              .from('users')
-              .select('id, email, role, created_at')
-              .eq('email', user.email)
+            // Vérifier directement si l'utilisateur a une école associée
+            console.log('🔍 Vérification des données école pour:', user.email);
+            
+            const { data: schoolData, error: schoolError } = await supabase
+              .from('schools')
+              .select(`
+                *,
+                users!director_user_id(
+                  id,
+                  email,
+                  full_name,
+                  phone,
+                  role
+                )
+              `)
+              .eq('director_user_id', user.id)
               .single();
 
-            if (dbUser && !dbError) {
+            if (schoolData && !schoolError) {
+              console.log('✅ École trouvée:', schoolData.name, '- Mode PRODUCTION activé');
+              
+              // École trouvée = mode production
+              setUser({ 
+                ...user, 
+                schoolData: { 
+                  ...schoolData, 
+                  director_id: user.id,
+                  user_id: user.id
+                }
+              });
               setDataMode('production');
             } else {
-              // Utilisateur authentifié mais pas dans notre DB = mode démo
+              console.log('❌ Aucune école trouvée pour cet utilisateur - Mode DÉMO');
+              console.log('Erreur école:', schoolError);
+              
+              // Pas d'école = mode démo (même avec un compte authentifié)
               setDataMode('demo');
             }
           }

@@ -356,14 +356,14 @@ const SchoolSettings = () => {
         {schoolData.availableClasses.length > 0 && (
           <div className="space-y-6">
             {/* Grouper les classes par catégorie */}
-            {[...new Set(schoolData.availableClasses.map(cls => cls.category))].map(category => (
-              <div key={category}>
+            {[...new Set(schoolData.availableClasses.map(cls => cls.category || 'autre'))].map(category => (
+              <div key={category || 'autre'}>
                 <h4 className="font-body font-body-semibold text-sm text-gray-900 mb-3 capitalize">
                   Classes {category}
                 </h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {schoolData.availableClasses
-                    .filter(cls => cls.category === category)
+                    .filter(cls => (cls.category || 'autre') === category)
                     .map((classItem) => {
                       const availableClasses = getAvailableClassesByType(schoolData.type);
                       const classInfo = availableClasses.find(c => c.value === classItem.level);

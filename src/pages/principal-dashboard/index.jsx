@@ -13,6 +13,7 @@ import QuickActions from './components/QuickActions';
 import SystemStatus from './components/SystemStatus';
 import PersonnelManagement from './components/PersonnelManagement';
 import DatabaseDiagnostic from './components/DatabaseDiagnostic';
+import ErrorBoundary from '../../components/ErrorBoundary';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import useDashboardData from '../../hooks/useDashboardData';
@@ -24,17 +25,6 @@ const PrincipalDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
   
-  // Récupérer les données de l'école passées lors de la connexion
-  const schoolData = location.state?.school;
-  
-  useEffect(() => {
-    if (schoolData) {
-      console.log('✅ Données école reçues:', schoolData);
-      console.log('🏫 École:', schoolData.name);
-      console.log('📊 Statut:', schoolData.status);
-    }
-  }, [schoolData]);
-  
   // Hook pour les données avec switch automatique démo/production
   const { 
     data, 
@@ -44,14 +34,43 @@ const PrincipalDashboard = () => {
     isDemo, 
     isProduction, 
     modeLoading,
-    refresh 
+    refresh,
+    user  // Récupérer aussi l'utilisateur depuis useDataMode
   } = useDashboardData();
+
+  // Récupérer les données de l'école - PRIORITÉ aux données de useDataMode
+  const schoolDataFromState = location.state?.school;
+  const schoolDataFromUser = user?.schoolData;
+  const schoolData = schoolDataFromUser || schoolDataFromState;
+  
+  useEffect(() => {
+    console.log('🏛️ PrincipalDashboard - État actuel:');
+    console.log('  - Mode de données:', dataMode);
+    console.log('  - Est en mode démo:', isDemo);
+    console.log('  - Est en mode production:', isProduction);
+    console.log('  - Chargement mode:', modeLoading);
+    console.log('  - Utilisateur:', user);
+    
+    if (schoolDataFromUser) {
+      console.log('✅ Données école depuis useDataMode (PRIORITÉ):', schoolDataFromUser);
+    } else if (schoolDataFromState) {
+      console.log('✅ Données école depuis location.state (FALLBACK):', schoolDataFromState);
+    } else {
+      console.log('❌ Aucune donnée école disponible');
+    }
+    
+    if (schoolData) {
+      console.log('🏫 École active:', schoolData.name);
+      console.log('📊 Statut:', schoolData.status);
+      console.log('👤 Directeur ID:', schoolData.director_id);
+    }
+  }, [schoolData, dataMode, isDemo, isProduction, modeLoading, user]);
 
   // Gérer les paramètres URL pour la navigation directe vers un onglet
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'analytics', 'personnel', 'actions', 'system'].includes(tabParam)) {
+    if (tabParam && ['overview', 'analytics', 'personnel', 'actions', 'system', 'accounts'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else {
       setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
@@ -85,8 +104,11 @@ const PrincipalDashboard = () => {
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'analytics', label: 'Analyses', icon: 'TrendingUp' },
     { id: 'personnel', label: 'Personnel', icon: 'Users' },
+    { id: 'school-info', label: 'École', icon: 'School' },
     { id: 'actions', label: 'Actions', icon: 'Zap' },
     { id: 'system', label: 'Système', icon: 'Settings' },
+    { id: 'accounts', label: 'Comptes', icon: 'UserCheck' },
+    { id: 'schema', label: 'Schéma DB', icon: 'Database' },
     { id: 'debug', label: 'Debug DB', icon: 'Bug' }
   ];
 
@@ -241,8 +263,201 @@ const PrincipalDashboard = () => {
             <SystemStatus />
           </div>
         );
+      case 'accounts':
+        return (
+          <div className="p-6 bg-white rounded-xl border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">🔧 Diagnostic des Comptes</h3>
+            <p className="text-gray-600">Fonctionnalité simplifiée avec Prisma. Les données sont maintenant gérées automatiquement.</p>
+          </div>
+        );
+      case 'schema':
+        return (
+          <div className="p-6 bg-white rounded-xl border border-gray-200">
+            <h3 className="text-lg font-semibold text-gray-900 mb-4">📊 Schéma de Base de Données</h3>
+            <p className="text-gray-600">Le schéma est maintenant géré par Prisma et synchronisé automatiquement.</p>
+          </div>
+        );
+      case 'school-info':
+        return (
+          <div className="space-y-6">
+            {/* Informations générales de l'école */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">🏛️ Informations de l'Établissement</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">🏫</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Nom de l'établissement</div>
+                      <div className="font-medium">{schoolData?.name || 'Non défini'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">🎓</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Type d'établissement</div>
+                      <div className="font-medium">{schoolData?.type || 'Non défini'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">📍</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Adresse</div>
+                      <div className="font-medium">{schoolData?.address || 'Non définie'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">🌍</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Localisation</div>
+                      <div className="font-medium">{schoolData?.city ? `${schoolData.city}, ${schoolData.country || ''}` : 'Non définie'}</div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-indigo-100 rounded-lg flex items-center justify-center">👤</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Directeur</div>
+                      <div className="font-medium">{schoolData?.director_name || schoolData?.users?.full_name || 'Non défini'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-yellow-100 rounded-lg flex items-center justify-center">📞</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Téléphone</div>
+                      <div className="font-medium">{schoolData?.phone || 'Non défini'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">🔢</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Code établissement</div>
+                      <div className="font-medium">{schoolData?.code || 'Non défini'}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-teal-100 rounded-lg flex items-center justify-center">⚡</div>
+                    <div>
+                      <div className="text-sm text-gray-500">Statut</div>
+                      <div className={`font-medium px-2 py-1 rounded text-xs inline-block ${
+                        schoolData?.status === 'active' ? 'bg-green-100 text-green-800' :
+                        schoolData?.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        'bg-gray-100 text-gray-800'
+                      }`}>
+                        {schoolData?.status === 'active' ? '✅ Actif' :
+                         schoolData?.status === 'pending' ? '⏳ En attente' :
+                         schoolData?.status || 'Non défini'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            {/* Classes disponibles */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">📚 Classes Disponibles</h3>
+              {schoolData?.available_classes && schoolData.available_classes.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {schoolData.available_classes.map((classe, index) => (
+                    <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                      <div className="text-blue-800 font-medium">{classe}</div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-gray-500 text-center py-8">
+                  Aucune classe définie
+                </div>
+              )}
+            </div>
+            
+            {/* Statistiques rapides */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">📊 Aperçu Rapide</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-blue-800">{data?.stats?.totalStudents || 0}</div>
+                  <div className="text-sm text-blue-600">Élèves inscrits</div>
+                </div>
+                <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-green-800">{data?.stats?.totalTeachers || 0}</div>
+                  <div className="text-sm text-green-600">Enseignants</div>
+                </div>
+                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-purple-800">{data?.stats?.totalClasses || 0}</div>
+                  <div className="text-sm text-purple-600">Classes actives</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
       case 'debug':
-        return <DatabaseDiagnostic />;
+        return (
+          <div className="space-y-6">
+            {/* Debug du mode de données */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">🔍 Debug Mode de Données</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div><strong>Mode actuel:</strong> <span className={`px-2 py-1 rounded ${dataMode === 'production' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{dataMode}</span></div>
+                  <div><strong>Est démo:</strong> {isDemo ? '✅ Oui' : '❌ Non'}</div>
+                  <div><strong>Est production:</strong> {isProduction ? '✅ Oui' : '❌ Non'}</div>
+                  <div><strong>Chargement mode:</strong> {modeLoading ? '⏳ En cours' : '✅ Terminé'}</div>
+                </div>
+                <div className="space-y-2">
+                  <div><strong>Utilisateur connecté:</strong> {user ? '✅ Oui' : '❌ Non'}</div>
+                  <div><strong>Email:</strong> {user?.email || 'N/A'}</div>
+                  <div><strong>ID utilisateur:</strong> {user?.id || 'N/A'}</div>
+                  <div><strong>École détectée:</strong> {user?.schoolData ? '✅ Oui' : '❌ Non'}</div>
+                </div>
+              </div>
+              
+              {user?.schoolData && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                  <h4 className="font-medium text-green-900 mb-2">📊 Données École (useDataMode)</h4>
+                  <div className="text-sm text-green-800 space-y-1">
+                    <div><strong>Nom:</strong> {user.schoolData.name}</div>
+                    <div><strong>ID:</strong> {user.schoolData.id}</div>
+                    <div><strong>Type:</strong> {user.schoolData.type || 'Non défini'}</div>
+                    <div><strong>Statut:</strong> {user.schoolData.status}</div>
+                    <div><strong>Adresse:</strong> {user.schoolData.address || 'Non définie'}</div>
+                    <div><strong>Ville:</strong> {user.schoolData.city || 'Non définie'}</div>
+                    <div><strong>Pays:</strong> {user.schoolData.country || 'Non défini'}</div>
+                    <div><strong>Classes:</strong> {user.schoolData.available_classes ? user.schoolData.available_classes.join(', ') : 'Non définies'}</div>
+                    <div><strong>Code école:</strong> {user.schoolData.code || 'Non défini'}</div>
+                    <div><strong>Directeur ID:</strong> {user.schoolData.director_id}</div>
+                  </div>
+                </div>
+              )}
+              
+              {schoolDataFromState && (
+                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                  <h4 className="font-medium text-blue-900 mb-2">📊 Données École (location.state)</h4>
+                  <div className="text-sm text-blue-800 space-y-1">
+                    <div><strong>Nom:</strong> {schoolDataFromState.name}</div>
+                    <div><strong>ID:</strong> {schoolDataFromState.id}</div>
+                    <div><strong>Statut:</strong> {schoolDataFromState.status}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Debug de la base de données */}
+            <div className="bg-white rounded-xl border border-gray-200 p-6">
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">Diagnostic de la Base de Données</h3>
+              <DatabaseDiagnostic />
+            </div>
+          </div>
+        );
       default:
         return null;
     }
@@ -258,7 +473,15 @@ const PrincipalDashboard = () => {
         {/* Header */}
         <Header
           userRole="principal"
-          userName="M. Directeur"
+          userName={
+            schoolData?.director_name || 
+            schoolData?.directorName || 
+            schoolData?.users?.full_name ||
+            user?.schoolData?.users?.full_name ||
+            user?.full_name ||
+            user?.email?.split('@')[0] || 
+            'Directeur'
+          }
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
@@ -283,10 +506,32 @@ const PrincipalDashboard = () => {
                     <Icon name="BarChart3" size={24} className="text-blue-600" />
                   </div>
                   <div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-1">
-                      Dashboard Principal
-                    </h1>
+                    <div className="flex items-center space-x-3 mb-1">
+                      <h1 className="text-2xl font-bold text-gray-900">
+                        Dashboard Principal
+                      </h1>
+                      {/* Indicateur de mode */}
+                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        isDemo 
+                          ? 'bg-amber-100 text-amber-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {isDemo ? '🔄 Mode Démo' : '🏫 Données Réelles'}
+                      </div>
+                    </div>
                     <div className="flex items-center space-x-4 text-sm text-gray-600">
+                      {/* Nom du directeur si disponible */}
+                      {(schoolData?.director_name || schoolData?.directorName || schoolData?.users?.full_name) && (
+                        <div className="text-sm text-green-600 font-medium">
+                          👤 {schoolData.director_name || schoolData.directorName || schoolData.users?.full_name}
+                        </div>
+                      )}
+                      {/* Nom de l'école si disponible */}
+                      {schoolData && (
+                        <span className="font-medium text-blue-600">
+                          🏛️ {schoolData.name}
+                        </span>
+                      )}
                       <span>
                         📅 {new Date().toLocaleDateString('fr-FR', { 
                           weekday: 'long', 

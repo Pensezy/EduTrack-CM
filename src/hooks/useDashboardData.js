@@ -6,8 +6,8 @@ import productionDataService from '../services/productionDataService';
 /**
  * Hook unifié pour récupérer les données selon le mode (démo/production)
  */
-export const useDashboardData = () => {
-  const { dataMode, isLoading: modeLoading } = useDataMode();
+export const useDashboardData = (schoolContext = null) => {
+  const { dataMode, isLoading: modeLoading, user } = useDataMode();
   const [data, setData] = useState({
     metrics: [],
     classAverages: [],
@@ -42,7 +42,49 @@ export const useDashboardData = () => {
 
     try {
       const service = getService();
-      const result = await service[serviceMethod](...args);
+      
+      // Si on est en mode production, initialiser le contexte de sécurité
+      if (dataMode === 'production' && service.setUserContext) {
+        let userId, schoolId;
+        
+        // Priorité 1: Données de l'école depuis le contexte passé en paramètre
+        if (schoolContext?.director_id && schoolContext?.id) {
+          userId = schoolContext.director_id;
+          schoolId = schoolContext.id;
+        }
+        // Priorité 2: Données de l'utilisateur depuis useDataMode
+        else if (user?.schoolData?.director_id && user?.schoolData?.id) {
+          userId = user.schoolData.director_id;
+          schoolId = user.schoolData.id;
+        }
+        // Priorité 3: Données utilisateur de base
+        else if (user?.dbUser?.id && user?.dbUser?.school_id) {
+          userId = user.dbUser.id;
+          schoolId = user.dbUser.school_id;
+        }
+        // Priorité 4: Utiliser directement l'ID de l'utilisateur Supabase et l'école
+        else if (user?.id && user?.schoolData?.id) {
+          userId = user.id;
+          schoolId = user.schoolData.id;
+        }
+        
+        if (userId && schoolId) {
+          console.log(`🔐 Initialisation contexte sécurisé: User=${userId}, School=${schoolId}`);
+          service.setUserContext(userId, schoolId);
+        } else {
+          console.warn('⚠️ Impossible d\'initialiser le contexte sécurisé');
+          console.warn('  - userId:', userId);
+          console.warn('  - schoolId:', schoolId);
+          console.warn('  - user:', user);
+          console.warn('  - schoolContext:', schoolContext);
+        }
+      }
+      
+      // Passer l'ID de l'école comme premier argument si disponible
+      const schoolId = (dataMode === 'production' && schoolContext?.id) ? schoolContext.id : null;
+      const finalArgs = schoolId ? [schoolId, ...args] : args;
+      
+      const result = await service[serviceMethod](...finalArgs);
       
       if (result.error) {
         throw result.error;
@@ -87,10 +129,15 @@ export const useDashboardData = () => {
 
   // Recharger les données quand le mode change
   useEffect(() => {
+    console.log('🔄 useDashboardData - Mode:', dataMode, 'Loading:', modeLoading);
+    console.log('👤 User context:', user);
+    console.log('🏫 School context:', schoolContext);
+    
     if (!modeLoading && dataMode) {
+      console.log(`📊 Chargement des données en mode: ${dataMode}`);
       loadAllData();
     }
-  }, [dataMode, modeLoading]);
+  }, [dataMode, modeLoading, user]);
 
   return {
     // État des données
@@ -103,6 +150,7 @@ export const useDashboardData = () => {
     isDemo: dataMode === 'demo',
     isProduction: dataMode === 'production',
     modeLoading,
+    user, // Exposer l'utilisateur
     
     // Méthodes de chargement
     loadMetrics,

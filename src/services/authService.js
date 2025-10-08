@@ -15,11 +15,37 @@ export const loginDirector = async (email, password) => {
     });
 
     if (authError) {
-      throw authError;
+      // Améliorer les messages d'erreur de Supabase
+      console.error('Erreur d\'authentification Supabase:', authError);
+      
+      let friendlyMessage = authError.message;
+      
+      switch (authError.message) {
+        case 'Invalid login credentials':
+          friendlyMessage = 'Email ou mot de passe incorrect';
+          break;
+        case 'Email not confirmed':
+          friendlyMessage = 'Votre email n\'a pas encore été confirmé. Vérifiez votre boîte mail.';
+          break;
+        case 'Too many requests':
+          friendlyMessage = 'Trop de tentatives de connexion. Veuillez patienter quelques minutes.';
+          break;
+        case 'User not found':
+          friendlyMessage = 'Aucun compte trouvé avec cette adresse email';
+          break;
+        default:
+          if (authError.message?.includes('invalid credentials')) {
+            friendlyMessage = 'Email ou mot de passe incorrect';
+          } else if (authError.message?.includes('network')) {
+            friendlyMessage = 'Problème de connexion internet. Vérifiez votre connexion.';
+          }
+      }
+      
+      throw new Error(friendlyMessage);
     }
 
     if (!authData.user) {
-      throw new Error('Erreur d\'authentification');
+      throw new Error('Erreur d\'authentification - aucun utilisateur retourné');
     }
 
     console.log('✅ Connexion réussie pour:', authData.user.email);

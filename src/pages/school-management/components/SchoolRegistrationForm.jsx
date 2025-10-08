@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { createPrincipalSchool } from '../../../services/schoolService';
 import SimpleInput from '../../../components/ui/SimpleInput';
 import SimpleSelect from '../../../components/ui/SimpleSelect';
 import Button from '../../../components/ui/Button';
@@ -295,47 +296,69 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
     setError(null);
 
     try {
-      // Create auth user
+      console.log('🏗️ Création du compte directeur avec toutes les données...');
+      
+      // 1. Créer l'utilisateur d'authentification Supabase
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
-            role: 'school_director',
+            role: 'principal',
+            full_name: formData.directorName
           }
         }
       });
 
       if (authError) throw authError;
 
-      // Create school profile
+      if (!authData.user) {
+        throw new Error('Erreur lors de la création de l\'utilisateur');
+      }
+
+      console.log('✅ Utilisateur auth créé:', authData.user.id);
+
+      // 2. Préparer les classes sélectionnées
       const selectedClasses = formData.availableClasses && formData.availableClasses.length > 0
-        ? formData.availableClasses.filter(cls => cls.isActive).map(cls => cls.level)
+        ? formData.availableClasses
+            .filter(cls => cls.isActive)
+            .map(cls => cls.level)
         : [];
 
-      const { error: profileError } = await supabase
-        .from('schools')
-        .insert([
-          {
-            name: formData.schoolName,
-            director_name: formData.directorName,
-            email: formData.email,
-            phone: formData.phone,
-            address: formData.address,
-            type: formData.schoolType,
-            country: formData.country,
-            city: formData.city,
-            available_classes: selectedClasses,
-            user_id: authData.user.id,
-            status: 'pending'
-          }
-        ]);
+      console.log('📚 Classes sélectionnées:', selectedClasses);
 
-      if (profileError) throw profileError;
+      // 3. Utiliser le service complet de création d'école avec toutes les données
+      const schoolCreationData = {
+        authUserId: authData.user.id,
+        email: formData.email,
+        directorName: formData.directorName,
+        phone: formData.phone,
+        schoolName: formData.schoolName,
+        schoolType: formData.schoolType,
+        address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        availableClasses: selectedClasses
+      };
 
+      console.log('🏛️ Données école à créer:', schoolCreationData);
+
+      const creationResult = await createPrincipalSchool(schoolCreationData);
+
+      if (!creationResult.success) {
+        throw new Error(creationResult.message || 'Erreur lors de la création de l\'école');
+      }
+
+      console.log('🎉 École créée avec succès !');
+      console.log('   - École:', creationResult.data.school.name);
+      console.log('   - Directeur:', creationResult.data.user.full_name);
+      console.log('   - Classes créées:', creationResult.data.initialization?.created);
+
+      // Appeler le callback de succès
       onSuccess?.();
+      
     } catch (error) {
-      console.error('Registration error:', error.message);
+      console.error('❌ Erreur lors de l\'inscription:', error);
       setError(error.message || 'Une erreur est survenue lors de l\'inscription');
     } finally {
       setLoading(false);

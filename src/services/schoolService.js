@@ -1,7 +1,13 @@
 // Service principal pour l'authentification et la gestion des écoles
 // Utilise Supabase pour les opérations côté client (Prisma ne fonctionne que côté serveur)
 
-import { supabase } from '../lib/supabase.js';
+import { supabase } from '../lib/supabase';
+import prismaService from './prismaService';
+import ConfigurationService from './configurationService';
+
+/**
+ * Service pour créer une école et lier un directeur
+ */
 
 /**
  * Service pour créer une école et lier un directeur
@@ -111,16 +117,17 @@ export const createPrincipalSchool = async ({
 
     console.log('🔢 Code école final:', schoolCode);
 
-    // 4. Créer l'utilisateur dans la table users
+    // 4. Créer l'utilisateur dans la table users avec toutes les données par défaut
     const { data: userData, error: userError } = await supabase
       .from('users')
       .upsert({
         id: authUserId,
         email: email,
         full_name: directorName,
-        phone: phone,
+        phone: phone || '', // Valeur par défaut pour éviter les erreurs
         role: 'principal',
         is_active: true,
+        photo: '/assets/images/no_image.png', // Photo par défaut
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -196,11 +203,68 @@ export const createPrincipalSchool = async ({
       console.log('✅ Année académique créée:', academicYearData.id);
     }
 
-    // 8. Retourner le résultat
+    // 8. Initialiser toutes les données par défaut de l'école
+    let initializationResult = null;
+    let configurationResult = null;
+    
+    if (academicYearData) {
+      console.log('🏗️ Initialisation des données par défaut...');
+      initializationResult = await prismaService.initializeSchoolDefaults(schoolData.id, academicYearData.id);
+      
+      if (initializationResult.success) {
+        console.log('✅ Données par défaut initialisées:', initializationResult.created);
+      } else {
+        console.warn('⚠️ Erreurs lors de l\'initialisation:', initializationResult.errors);
+      }
+
+      // 8.1 Initialiser les configurations par défaut (types de notes, présence, rôles)
+      console.log('⚙️ Initialisation des configurations par défaut...');
+      try {
+        configurationResult = await ConfigurationService.initializeSchoolConfigurations(schoolData.id);
+        
+        if (configurationResult.errors.length === 0) {
+          console.log('✅ Configurations initialisées:', {
+            gradeTypes: configurationResult.gradeTypes.length,
+            attendanceTypes: configurationResult.attendanceTypes.length,
+            userRoles: configurationResult.userRoles.length
+          });
+        } else {
+          console.warn('⚠️ Certaines configurations ont échoué:', configurationResult.errors);
+        }
+
+        // 8.2 Initialiser les périodes d'évaluation
+        try {
+          const evaluationPeriods = await ConfigurationService.initializeEvaluationPeriods(
+            schoolData.id, 
+            academicYearData.id, 
+            schoolType
+          );
+          configurationResult.evaluationPeriods = evaluationPeriods;
+          console.log(`✅ ${evaluationPeriods.length} périodes d'évaluation créées`);
+        } catch (periodError) {
+          console.warn('⚠️ Erreur lors de la création des périodes d\'évaluation:', periodError.message);
+          configurationResult.errors.push({ type: 'evaluationPeriods', error: periodError.message });
+        }
+
+      } catch (configError) {
+        console.warn('⚠️ Erreur lors de l\'initialisation des configurations:', configError.message);
+        configurationResult = { 
+          gradeTypes: [], 
+          attendanceTypes: [], 
+          userRoles: [], 
+          evaluationPeriods: [],
+          errors: [{ type: 'general', error: configError.message }] 
+        };
+      }
+    }
+
+    // 9. Retourner le résultat
     const result = {
       school: schoolData,
       user: userData,
-      academicYear: academicYearData
+      academicYear: academicYearData,
+      initialization: initializationResult,
+      configuration: configurationResult
     };
 
     console.log('🎉 Service terminé avec succès !', result);

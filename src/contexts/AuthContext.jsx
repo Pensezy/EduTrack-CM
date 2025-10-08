@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import prismaService from '../services/prismaService';
 
 const AuthContext = createContext({});
 
@@ -157,6 +158,24 @@ export const AuthProvider = ({ children }) => {
         phone: data[0].user_phone,
         email: data[0].user_email
       };
+
+      // Valider et corriger les données au moment de la connexion (pour les directeurs)
+      if (authenticatedUser.role === 'principal') {
+        try {
+          const validationResult = await prismaService.validateDirectorData(authenticatedUser.id, authenticatedUser.email);
+          if (validationResult.corrections && validationResult.corrections.length > 0) {
+            console.log('✅ Données corrigées lors de la connexion:', validationResult.corrections);
+          }
+          
+          // Mettre à jour les données utilisateur si des corrections ont été apportées
+          if (validationResult.schoolData && validationResult.schoolData.director_name) {
+            authenticatedUser.full_name = validationResult.schoolData.director_name;
+          }
+        } catch (validationError) {
+          console.warn('⚠️ Erreur validation données:', validationError);
+          // Ne pas bloquer la connexion pour une erreur de validation
+        }
+      }
 
       // Sauvegarder les données complètes dans le localStorage
       localStorage.setItem('edutrack-user', JSON.stringify(authenticatedUser));
