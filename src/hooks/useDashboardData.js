@@ -15,7 +15,9 @@ export const useDashboardData = (schoolContext = null) => {
     payments: [],
     personnel: [],
     students: [],
-    schoolStats: {}
+    schoolStats: {},
+    schoolDetails: null,
+    classes: []
   });
   const [loading, setLoading] = useState({
     metrics: false,
@@ -24,7 +26,9 @@ export const useDashboardData = (schoolContext = null) => {
     payments: false,
     personnel: false,
     students: false,
-    schoolStats: false
+    schoolStats: false,
+    schoolDetails: false,
+    classes: false
   });
   const [errors, setErrors] = useState({});
 
@@ -116,6 +120,10 @@ export const useDashboardData = (schoolContext = null) => {
     loadData('students', 'getStudents', filters);
   
   const loadSchoolStats = () => loadData('schoolStats', 'getSchoolStats');
+  
+  const loadSchoolDetails = () => loadData('schoolDetails', 'getSchoolDetails');
+  
+  const loadClasses = () => loadData('classes', 'getClasses');
 
   // Charger toutes les données de base au montage du composant
   const loadAllData = () => {
@@ -125,6 +133,8 @@ export const useDashboardData = (schoolContext = null) => {
     loadPayments();
     loadPersonnel();
     loadSchoolStats();
+    loadSchoolDetails();
+    loadClasses();
   };
 
   // Recharger les données quand le mode change
@@ -160,6 +170,8 @@ export const useDashboardData = (schoolContext = null) => {
     loadPersonnel,
     loadStudents,
     loadSchoolStats,
+    loadSchoolDetails,
+    loadClasses,
     loadAllData,
     
     // Fonction utilitaire pour rafraîchir toutes les données

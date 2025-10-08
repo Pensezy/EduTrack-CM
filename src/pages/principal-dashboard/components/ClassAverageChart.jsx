@@ -180,7 +180,7 @@ const ClassAverageChart = () => {
           </div>
         </div>
         <p className="font-caption font-caption-normal text-xs text-muted-foreground">
-          Dernière mise à jour: 11/09/2025 04:40
+          Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
         </p>
       </div>
     </div>

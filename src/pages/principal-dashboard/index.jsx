@@ -38,10 +38,11 @@ const PrincipalDashboard = () => {
     user  // Récupérer aussi l'utilisateur depuis useDataMode
   } = useDashboardData();
 
-  // Récupérer les données de l'école - PRIORITÉ aux données de useDataMode
+  // Récupérer les données de l'école - PRIORITÉ aux vraies données de la base de données
+  const schoolDataFromDatabase = data.schoolDetails; // Vraies données depuis Supabase
   const schoolDataFromState = location.state?.school;
   const schoolDataFromUser = user?.schoolData;
-  const schoolData = schoolDataFromUser || schoolDataFromState;
+  const schoolData = schoolDataFromDatabase || schoolDataFromUser || schoolDataFromState;
   
   useEffect(() => {
     console.log('🏛️ PrincipalDashboard - État actuel:');
@@ -51,16 +52,20 @@ const PrincipalDashboard = () => {
     console.log('  - Chargement mode:', modeLoading);
     console.log('  - Utilisateur:', user);
     
-    if (schoolDataFromUser) {
-      console.log('✅ Données école depuis useDataMode (PRIORITÉ):', schoolDataFromUser);
+    if (schoolDataFromDatabase) {
+      console.log('✅ Données école depuis SUPABASE (PRIORITÉ):', schoolDataFromDatabase);
+    } else if (schoolDataFromUser) {
+      console.log('✅ Données école depuis useDataMode (FALLBACK 1):', schoolDataFromUser);
     } else if (schoolDataFromState) {
-      console.log('✅ Données école depuis location.state (FALLBACK):', schoolDataFromState);
+      console.log('✅ Données école depuis location.state (FALLBACK 2):', schoolDataFromState);
     } else {
       console.log('❌ Aucune donnée école disponible');
     }
     
     if (schoolData) {
       console.log('🏫 École active:', schoolData.name);
+      console.log('🎓 Type:', schoolData.type);
+      console.log('📚 Classes disponibles:', schoolData.available_classes);
       console.log('📊 Statut:', schoolData.status);
       console.log('👤 Directeur ID:', schoolData.director_id);
     }
@@ -362,16 +367,56 @@ const PrincipalDashboard = () => {
               </div>
             </div>
             
-            {/* Classes disponibles */}
+            {/* Classes disponibles ET classes réelles */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">📚 Classes Disponibles</h3>
-              {schoolData?.available_classes && schoolData.available_classes.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {schoolData.available_classes.map((classe, index) => (
-                    <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                      <div className="text-blue-800 font-medium">{classe}</div>
-                    </div>
-                  ))}
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">📚 Classes de l'École</h3>
+              
+              {/* Classes définies lors de la création */}
+              {schoolData?.available_classes && schoolData.available_classes.length > 0 && (
+                <div className="mb-6">
+                  <h4 className="text-md font-medium text-gray-700 mb-3">📋 Classes configurées ({schoolData.available_classes.length})</h4>
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    {schoolData.available_classes.map((classe, index) => (
+                      <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
+                        <div className="text-blue-800 font-medium">{classe}</div>
+                        <div className="text-xs text-blue-600">Configuré</div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Classes réellement créées dans la base de données */}
+              {data.classes && data.classes.length > 0 ? (
+                <div>
+                  <h4 className="text-md font-medium text-gray-700 mb-3">🏫 Classes créées ({data.classes.length})</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                    {data.classes.map((classe) => (
+                      <div key={classe.id} className="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="text-green-800 font-medium">{classe.name}</div>
+                          <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                            {classe.level}
+                          </div>
+                        </div>
+                        <div className="text-sm text-green-600 space-y-1">
+                          {classe.section && <div>Section: {classe.section}</div>}
+                          {classe.capacity && <div>Capacité: {classe.capacity} élèves</div>}
+                          <div className="text-xs text-green-500">
+                            Créée le {new Date(classe.created_at).toLocaleDateString('fr-FR')}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : isProduction ? (
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="text-center text-yellow-700">
+                    <Icon name="AlertTriangle" size={24} className="mx-auto mb-2" />
+                    <div className="font-medium">Aucune classe créée</div>
+                    <div className="text-sm">Les classes doivent être créées dans le système pour apparaître ici</div>
+                  </div>
                 </div>
               ) : (
                 <div className="text-gray-500 text-center py-8">
@@ -383,18 +428,30 @@ const PrincipalDashboard = () => {
             {/* Statistiques rapides */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
               <h3 className="text-lg font-semibold text-gray-900 mb-6">📊 Aperçu Rapide</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-800">{data?.stats?.totalStudents || 0}</div>
+                  <div className="text-2xl font-bold text-blue-800">
+                    {keyMetrics.find(m => m.title === 'Élèves')?.value || 0}
+                  </div>
                   <div className="text-sm text-blue-600">Élèves inscrits</div>
                 </div>
                 <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-green-800">{data?.stats?.totalTeachers || 0}</div>
+                  <div className="text-2xl font-bold text-green-800">
+                    {data?.schoolStats?.teachers || 0}
+                  </div>
                   <div className="text-sm text-green-600">Enseignants</div>
                 </div>
                 <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-800">{data?.stats?.totalClasses || 0}</div>
-                  <div className="text-sm text-purple-600">Classes actives</div>
+                  <div className="text-2xl font-bold text-purple-800">
+                    {data?.classes?.length || 0}
+                  </div>
+                  <div className="text-sm text-purple-600">Classes créées</div>
+                </div>
+                <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg">
+                  <div className="text-2xl font-bold text-orange-800">
+                    {schoolData?.available_classes?.length || 0}
+                  </div>
+                  <div className="text-sm text-orange-600">Classes configurées</div>
                 </div>
               </div>
             </div>
@@ -666,11 +723,11 @@ const PrincipalDashboard = () => {
                     </div>
                     <div className="flex items-center space-x-2">
                       <Icon name="Users" size={14} className="text-blue-600" />
-                      <span>400 élèves actifs</span>
+                      <span>{data?.schoolStats?.students || 0} élèves actifs</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Icon name="GraduationCap" size={14} className="text-green-600" />
-                      <span>25 enseignants</span>
+                      <span>{data?.schoolStats?.teachers || 0} enseignants</span>
                     </div>
                     <div className="flex items-center space-x-2">
                       <Icon name="Shield" size={14} className="text-purple-600" />

@@ -239,6 +239,97 @@ export const demoDataService = {
       },
       error: null
     };
+  },
+
+  // Détails de l'école (démo)
+  async getSchoolDetails() {
+    await new Promise(resolve => setTimeout(resolve, 400));
+    return {
+      data: {
+        id: 'demo-school',
+        name: 'École Démonstration',
+        type: 'Établissement Secondaire',
+        address: '123 Rue de la Démonstration',
+        city: 'Ville Démo',
+        country: 'Pays Démo',
+        phone: '+237 123 456 789',
+        code: 'DEMO-001',
+        status: 'active',
+        available_classes: ['6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'],
+        director_id: 'demo-director',
+        users: {
+          id: 'demo-director',
+          full_name: 'Directeur Démonstration',
+          email: 'directeur@demo.com'
+        },
+        created_at: new Date().toISOString()
+      },
+      error: null
+    };
+  },
+
+  // Classes (démo)
+  async getClasses() {
+    await new Promise(resolve => setTimeout(resolve, 500));
+    return {
+      data: [
+        {
+          id: 'demo-class-1',
+          name: '6ème A',
+          level: '6ème',
+          section: 'A',
+          capacity: 50,
+          is_active: true,
+          created_at: '2024-09-01T08:00:00Z'
+        },
+        {
+          id: 'demo-class-2',
+          name: '6ème B',
+          level: '6ème',
+          section: 'B',
+          capacity: 45,
+          is_active: true,
+          created_at: '2024-09-01T08:00:00Z'
+        },
+        {
+          id: 'demo-class-3',
+          name: '5ème A',
+          level: '5ème',
+          section: 'A',
+          capacity: 48,
+          is_active: true,
+          created_at: '2024-09-01T08:00:00Z'
+        },
+        {
+          id: 'demo-class-4',
+          name: '5ème B',
+          level: '5ème',
+          section: 'B',
+          capacity: 46,
+          is_active: true,
+          created_at: '2024-09-01T08:00:00Z'
+        },
+        {
+          id: 'demo-class-5',
+          name: '4ème A',
+          level: '4ème',
+          section: 'A',
+          capacity: 42,
+          is_active: true,
+          created_at: '2024-09-01T08:00:00Z'
+        },
+        {
+          id: 'demo-class-6',
+          name: '3ème A',
+          level: '3ème',
+          section: 'A',
+          capacity: 40,
+          is_active: true,
+          created_at: '2024-09-01T08:00:00Z'
+        }
+      ],
+      error: null
+    };
   }
 };
 

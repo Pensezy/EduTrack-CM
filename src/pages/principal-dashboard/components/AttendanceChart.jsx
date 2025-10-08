@@ -21,15 +21,29 @@ const AttendanceChart = () => {
   const convertAttendanceData = (rawData) => {
     if (!rawData || rawData.length === 0) return [];
     
-    // Convertir le format des données pour le graphique de ligne
-    return rawData.map((item, index) => ({
-      period: item.day,
-      overall: Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100),
-      '6ème': Math.round(Math.random() * 10 + 90), // TODO: Calculer par classe
-      '5ème': Math.round(Math.random() * 10 + 90),
-      '4ème': Math.round(Math.random() * 10 + 90),
-      '3ème': Math.round(Math.random() * 10 + 90)
-    }));
+    if (isDemo) {
+      // Mode démo : utiliser les données mock
+      return rawData.map((item, index) => ({
+        period: item.day,
+        overall: Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100),
+        '6ème': Math.round(Math.random() * 10 + 90),
+        '5ème': Math.round(Math.random() * 10 + 90),
+        '4ème': Math.round(Math.random() * 10 + 90),
+        '3ème': Math.round(Math.random() * 10 + 90)
+      }));
+    } else {
+      // Mode production : données réelles ou vides
+      return rawData.map((item, index) => ({
+        period: item.day || `Jour ${index + 1}`,
+        overall: item.present && (item.present + item.absent + item.late + item.excused) > 0 
+          ? Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100)
+          : 0,
+        '6ème': 0, // Sera calculé avec vraies données par classe
+        '5ème': 0,
+        '4ème': 0,
+        '3ème': 0
+      }));
+    }
   };
 
   const chartData = convertAttendanceData(data.attendance || []);
@@ -169,21 +183,32 @@ const AttendanceChart = () => {
       </div>
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <div className="flex items-center space-x-6">
-          <div className="flex items-center space-x-2">
-            <Icon name="TrendingUp" size={14} className="text-success" />
-            <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-              Tendance positive cette semaine
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Icon name="AlertCircle" size={14} className="text-warning" />
-            <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-              3 alertes d'absentéisme
-            </span>
-          </div>
+          {isDemo ? (
+            <>
+              <div className="flex items-center space-x-2">
+                <Icon name="TrendingUp" size={14} className="text-success" />
+                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  Tendance positive cette semaine
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Icon name="AlertCircle" size={14} className="text-warning" />
+                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  3 alertes d'absentéisme
+                </span>
+              </div>
+            </>
+          ) : (
+            <div className="flex items-center space-x-2">
+              <Icon name="Info" size={14} className="text-muted-foreground" />
+              <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Aucune donnée d'assiduité disponible
+              </span>
+            </div>
+          )}
         </div>
         <p className="font-caption font-caption-normal text-xs text-muted-foreground">
-          Dernière mise à jour: 11/09/2025 04:40
+          Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
         </p>
       </div>
     </div>

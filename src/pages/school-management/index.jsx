@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import Icon from '../../components/AppIcon';
 import SchoolRegistrationForm from './components/SchoolRegistrationForm';
 import TestForm from './components/TestForm';
@@ -10,6 +11,38 @@ import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 const SchoolManagement = () => {
   const [mode, setMode] = useState('login'); // 'login', 'register', or 'diagnostic'
   const navigate = useNavigate();
+  const location = useLocation();
+
+  // Gérer les tokens d'authentification dans l'URL (confirmation email)
+  useEffect(() => {
+    const handleAuthRedirect = async () => {
+      const hash = location.hash;
+      if (hash && hash.includes('access_token')) {
+        try {
+          // Extraire les paramètres du hash
+          const params = new URLSearchParams(hash.substring(1));
+          const accessToken = params.get('access_token');
+          const type = params.get('type');
+
+          if (accessToken && type === 'signup') {
+            // Confirmation d'inscription réussie
+            console.log('✅ Confirmation d\'inscription réussie');
+            
+            // Nettoyer l'URL
+            window.history.replaceState({}, document.title, '/');
+            
+            // Afficher message de succès et passer en mode login
+            alert('🎉 Votre compte a été confirmé avec succès ! Vous pouvez maintenant vous connecter.');
+            setMode('login');
+          }
+        } catch (error) {
+          console.error('Erreur lors de la gestion de la redirection auth:', error);
+        }
+      }
+    };
+
+    handleAuthRedirect();
+  }, [location]);
 
   const handleLoginSuccess = (schoolData) => {
     // Navigate to principal dashboard with school data

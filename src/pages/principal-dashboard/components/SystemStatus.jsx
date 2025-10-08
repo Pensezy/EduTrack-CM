@@ -327,7 +327,7 @@ const SystemStatus = () => {
             <div className="flex items-center justify-center space-x-2 mb-2">
               <Icon name="Users" size={16} className="text-primary" />
               <span className="font-heading font-heading-bold text-xl text-card-foreground">
-                400
+                1
               </span>
             </div>
             <p className="font-caption font-caption-normal text-xs text-muted-foreground">

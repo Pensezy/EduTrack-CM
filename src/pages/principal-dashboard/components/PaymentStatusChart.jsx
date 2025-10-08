@@ -43,6 +43,10 @@ const PaymentStatusChart = () => {
     { class: '3ème B', paid: 26, late: 1, unpaid: 1, total: 28, rate: 92.9 }
   ];
 
+  const emptyClassPaymentData = [
+    { class: 'Aucune classe', paid: 0, late: 0, unpaid: 0, total: 0, rate: 0 }
+  ];
+
   const classOptions = [
     { value: 'all', label: 'Toutes les classes' },
     { value: '6ème', label: '6ème' },
@@ -63,8 +67,13 @@ const PaymentStatusChart = () => {
   ];
 
   const getFilteredClassData = () => {
-    if (selectedClass === 'all') return mockClassPaymentData;
-    return mockClassPaymentData?.filter(item => item?.class?.includes(selectedClass));
+    if (isDemo) {
+      if (selectedClass === 'all') return mockClassPaymentData;
+      return mockClassPaymentData?.filter(item => item?.class?.includes(selectedClass));
+    } else {
+      // Mode production : pas de données de paiement encore
+      return emptyClassPaymentData;
+    }
   };
 
   const CustomTooltip = ({ active, payload, label }) => {
@@ -222,57 +231,116 @@ const PaymentStatusChart = () => {
         </ResponsiveContainer>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6 pt-4 border-t border-border">
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-1">
-            <div className="w-3 h-3 bg-success rounded-sm" />
-            <span className="font-heading font-heading-semibold text-lg text-card-foreground">
-              342
-            </span>
-          </div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">
-            Paiements à jour (85.5%)
-          </p>
-        </div>
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-1">
-            <div className="w-3 h-3 bg-warning rounded-sm" />
-            <span className="font-heading font-heading-semibold text-lg text-card-foreground">
-              38
-            </span>
-          </div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">
-            Paiements en retard (9.5%)
-          </p>
-        </div>
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-1">
-            <div className="w-3 h-3 bg-error rounded-sm" />
-            <span className="font-heading font-heading-semibold text-lg text-card-foreground">
-              20
-            </span>
-          </div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">
-            Paiements impayés (5.0%)
-          </p>
-        </div>
+        {isDemo ? (
+          <>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="w-3 h-3 bg-success rounded-sm" />
+                <span className="font-heading font-heading-semibold text-lg text-card-foreground">
+                  342
+                </span>
+              </div>
+              <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Paiements à jour (85.5%)
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="w-3 h-3 bg-warning rounded-sm" />
+                <span className="font-heading font-heading-semibold text-lg text-card-foreground">
+                  38
+                </span>
+              </div>
+              <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Paiements en retard (9.5%)
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="w-3 h-3 bg-error rounded-sm" />
+                <span className="font-heading font-heading-semibold text-lg text-card-foreground">
+                  20
+                </span>
+              </div>
+              <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Paiements impayés (5.0%)
+              </p>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="w-3 h-3 bg-success rounded-sm" />
+                <span className="font-heading font-heading-semibold text-lg text-card-foreground">
+                  0
+                </span>
+              </div>
+              <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Paiements à jour (0%)
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="w-3 h-3 bg-warning rounded-sm" />
+                <span className="font-heading font-heading-semibold text-lg text-card-foreground">
+                  0
+                </span>
+              </div>
+              <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Paiements en retard (0%)
+              </p>
+            </div>
+            <div className="text-center">
+              <div className="flex items-center justify-center space-x-2 mb-1">
+                <div className="w-3 h-3 bg-error rounded-sm" />
+                <span className="font-heading font-heading-semibold text-lg text-card-foreground">
+                  0
+                </span>
+              </div>
+              <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+                Paiements impayés (0%)
+              </p>
+            </div>
+          </>
+        )}
       </div>
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-2">
-            <Icon name="Euro" size={14} className="text-success" />
-            <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-              Montant collecté: 680 400FCFA
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <Icon name="AlertTriangle" size={14} className="text-error" />
-            <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-              Montant en attente: 110 600FCFA
-            </span>
-          </div>
+          {isDemo ? (
+            <>
+              <div className="flex items-center space-x-2">
+                <Icon name="Euro" size={14} className="text-success" />
+                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  Montant collecté: 680 400FCFA
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Icon name="AlertTriangle" size={14} className="text-error" />
+                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  Montant en attente: 110 600FCFA
+                </span>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="flex items-center space-x-2">
+                <Icon name="Euro" size={14} className="text-muted-foreground" />
+                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  Montant collecté: 0 FCFA
+                </span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Icon name="Info" size={14} className="text-muted-foreground" />
+                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  Aucune transaction enregistrée
+                </span>
+              </div>
+            </>
+          )}
         </div>
         <p className="font-caption font-caption-normal text-xs text-muted-foreground">
-          Dernière mise à jour: 11/09/2025 04:40
+          Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
         </p>
       </div>
     </div>

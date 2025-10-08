@@ -4,6 +4,7 @@ import { createPrincipalSchool } from '../../../services/schoolService';
 import SimpleInput from '../../../components/ui/SimpleInput';
 import SimpleSelect from '../../../components/ui/SimpleSelect';
 import Button from '../../../components/ui/Button';
+import { getCountryPhoneCode, formatPhoneWithCountryCode, validatePhoneNumber } from '../../../utils/countryPhoneCodes';
 
 const SchoolRegistrationForm = ({ onSuccess }) => {
   const [loading, setLoading] = useState(false);
@@ -30,6 +31,22 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
       availableClasses: formData.availableClasses
     });
   }, [formData.schoolType, formData.availableClasses]);
+
+  // Auto-formater le téléphone quand le pays change
+  useEffect(() => {
+    if (formData.country && formData.phone) {
+      const countryLabel = countryData[formData.country]?.label;
+      if (countryLabel) {
+        const formattedPhone = formatPhoneWithCountryCode(formData.phone, countryLabel);
+        if (formattedPhone !== formData.phone) {
+          setFormData(prev => ({
+            ...prev,
+            phone: formattedPhone
+          }));
+        }
+      }
+    }
+  }, [formData.country]); // Se déclenche quand le pays change
 
   // Données des pays et villes
   const countryData = {
@@ -167,10 +184,29 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    
+    // Traitement spécial pour le champ téléphone
+    if (name === 'phone') {
+      const countryLabel = countryData[formData.country]?.label;
+      if (countryLabel && value) {
+        // Formater automatiquement avec l'indicatif du pays
+        const formattedPhone = formatPhoneWithCountryCode(value, countryLabel);
+        setFormData(prev => ({
+          ...prev,
+          [name]: formattedPhone
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          [name]: value
+        }));
+      }
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
     setError(null);
   };
 
@@ -393,14 +429,30 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
           required
         />
 
-        <SimpleInput
-          label="Téléphone"
-          type="tel"
-          name="phone"
-          value={formData.phone}
-          onChange={handleChange}
-          required
-        />
+        <div className="space-y-2">
+          <SimpleInput
+            label="Téléphone"
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            placeholder={
+              formData.country 
+                ? `${getCountryPhoneCode(countryData[formData.country]?.label)} XXXXXXXXX`
+                : "Sélectionnez d'abord un pays"
+            }
+            required
+          />
+          {formData.country && (
+            <p className="text-sm text-gray-500">
+              📞 Indicatif {countryData[formData.country]?.label}: {getCountryPhoneCode(countryData[formData.country]?.label)}
+              {formData.phone && validatePhoneNumber(formData.phone, countryData[formData.country]?.label) ? 
+                ' ✅ Numéro valide' : 
+                formData.phone ? ' ⚠️ Format non valide' : ''
+              }
+            </p>
+          )}
+        </div>
 
         <SimpleInput
           label="Mot de passe"

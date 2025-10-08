@@ -438,7 +438,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
             phone: formData.phone,
             role: 'principal'
           },
-          emailRedirectTo: `${window.location.origin}/school-management`
+          emailRedirectTo: `${window.location.origin}/`
         }
       });
 
@@ -611,7 +611,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
           
           <div className="flex gap-4 justify-center">
             <button
-              onClick={() => window.location.href = '/staff-login'}
+              onClick={() => window.location.href = '/'}
               className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium"
             >
               Aller à la connexion

@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../AppIcon';
 import Button from './Button';
+import { useDataMode } from '../../hooks/useDataMode';
 
 const NotificationCenter = ({ userRole = 'student', className = '' }) => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
+  const { isDemo } = useDataMode();
 
   // Mock notifications based on user role
   const mockNotifications = {
@@ -99,10 +101,17 @@ const NotificationCenter = ({ userRole = 'student', className = '' }) => {
   };
 
   useEffect(() => {
-    const roleNotifications = mockNotifications?.[userRole] || mockNotifications?.student;
-    setNotifications(roleNotifications);
-    setUnreadCount(roleNotifications?.filter(n => !n?.read)?.length);
-  }, [userRole]);
+    if (isDemo) {
+      // Mode démo : utiliser les données mock
+      const roleNotifications = mockNotifications?.[userRole] || mockNotifications?.student;
+      setNotifications(roleNotifications);
+      setUnreadCount(roleNotifications?.filter(n => !n?.read)?.length);
+    } else {
+      // Mode production : pas de notifications jusqu'à implementation avec Supabase
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  }, [userRole, isDemo]);
 
   const handleNotificationClick = (notificationId) => {
     setNotifications(prev => 
