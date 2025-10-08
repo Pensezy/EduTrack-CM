@@ -45,7 +45,23 @@ export const useDataMode = () => {
           } else {
             // Vérifier directement si l'utilisateur a une école associée
             console.log('🔍 Vérification des données école pour:', user.email);
+            console.log('👤 User ID:', user.id);
             
+            // D'abord, vérifier toutes les écoles pour diagnostic
+            const { data: allSchools, error: allError } = await supabase
+              .from('schools')
+              .select('id, name, director_user_id, status')
+              .limit(10);
+            
+            console.log('📋 Toutes les écoles dans la base:', allSchools?.length || 0);
+            if (allSchools && allSchools.length > 0) {
+              allSchools.forEach(s => {
+                console.log(`  - ${s.name} (ID: ${s.id}, Directeur: ${s.director_user_id}, Statut: ${s.status})`);
+                console.log(`    Match avec user? ${s.director_user_id === user.id ? '✅ OUI' : '❌ NON'}`);
+              });
+            }
+            
+            // Maintenant chercher l'école de l'utilisateur
             const { data: schoolData, error: schoolError } = await supabase
               .from('schools')
               .select(`
@@ -61,8 +77,22 @@ export const useDataMode = () => {
               .eq('director_user_id', user.id)
               .single();
 
+            console.log('🔍 Requête école spécifique:');
+            console.log('  - SQL where: director_user_id =', user.id);
+            console.log('  - Résultat:', schoolData ? `École "${schoolData.name}" trouvée` : 'Aucune école');
+            console.log('  - Erreur:', schoolError);
+
             if (schoolData && !schoolError) {
               console.log('✅ École trouvée:', schoolData.name, '- Mode PRODUCTION activé');
+              console.log('📊 Données école complètes:');
+              console.log('  - ID:', schoolData.id);
+              console.log('  - Nom:', schoolData.name);
+              console.log('  - Type:', schoolData.type);
+              console.log('  - Adresse:', schoolData.address);
+              console.log('  - Ville:', schoolData.city);
+              console.log('  - Pays:', schoolData.country);
+              console.log('  - Classes:', schoolData.available_classes);
+              console.log('  - Directeur:', schoolData.users);
               
               // École trouvée = mode production
               setUser({ 
@@ -77,6 +107,7 @@ export const useDataMode = () => {
             } else {
               console.log('❌ Aucune école trouvée pour cet utilisateur - Mode DÉMO');
               console.log('Erreur école:', schoolError);
+              console.log('User ID recherché:', user.id);
               
               // Pas d'école = mode démo (même avec un compte authentifié)
               setDataMode('demo');

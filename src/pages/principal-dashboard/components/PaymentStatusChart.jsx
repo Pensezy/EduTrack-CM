@@ -13,6 +13,9 @@ const PaymentStatusChart = () => {
   // Hook pour les données avec switch automatique démo/production
   const { data, loading, isDemo, loadPayments } = useDashboardData();
 
+  // Récupérer les classes dynamiquement
+  const availableClasses = data.classes || [];
+
   // Recharger les données quand nécessaire
   useEffect(() => {
     loadPayments();
@@ -43,16 +46,25 @@ const PaymentStatusChart = () => {
     { class: '3ème B', paid: 26, late: 1, unpaid: 1, total: 28, rate: 92.9 }
   ];
 
-  const emptyClassPaymentData = [
-    { class: 'Aucune classe', paid: 0, late: 0, unpaid: 0, total: 0, rate: 0 }
-  ];
+  // Générer dynamiquement les données vides selon les classes réelles
+  const emptyClassPaymentData = availableClasses.length > 0 
+    ? availableClasses.map(classe => ({
+        class: classe.name || `${classe.level}${classe.section ? ' ' + classe.section : ''}`,
+        paid: 0,
+        late: 0,
+        unpaid: 0,
+        total: 0,
+        rate: 0
+      }))
+    : [{ class: 'Aucune classe', paid: 0, late: 0, unpaid: 0, total: 0, rate: 0 }];
 
+  // Générer dynamiquement les options de classes
   const classOptions = [
     { value: 'all', label: 'Toutes les classes' },
-    { value: '6ème', label: '6ème' },
-    { value: '5ème', label: '5ème' },
-    { value: '4ème', label: '4ème' },
-    { value: '3ème', label: '3ème' }
+    ...availableClasses.map(classe => ({
+      value: classe.name || classe.level,
+      label: classe.name || `${classe.level}${classe.section ? ' ' + classe.section : ''}`
+    }))
   ];
 
   const periodOptions = [

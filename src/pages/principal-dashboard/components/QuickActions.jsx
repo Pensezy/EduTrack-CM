@@ -2,10 +2,19 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
+import useDashboardData from '../../../hooks/useDashboardData';
 
 const QuickActions = () => {
   const [activeAction, setActiveAction] = useState(null);
   const navigate = useNavigate();
+  
+  // Hook pour récupérer les données selon le mode (démo/production)
+  const { 
+    data, 
+    isDemo, 
+    isProduction, 
+    user 
+  } = useDashboardData();
 
   const quickActions = [
     {
@@ -66,36 +75,70 @@ const QuickActions = () => {
     }
   ];
 
-  const recentActivities = [
+  // Activités récentes basées sur le mode de données
+  const recentActivities = isDemo ? [
     {
       id: 1,
-      title: 'Rapport mensuel généré',
-      description: 'Rapport de performance de septembre',
+      title: 'Données de démonstration',
+      description: 'Vous êtes en mode démonstration',
+      time: 'maintenant',
+      icon: 'TestTube',
+      type: 'info'
+    },
+    {
+      id: 2,
+      title: 'Rapport mensuel généré (démo)',
+      description: 'Rapport de performance de septembre (données fictives)',
       time: '2 heures',
       icon: 'FileText',
       type: 'success'
     },
     {
-      id: 2,
-      title: 'Notification envoyée',
-      description: 'Rappel réunion parents d\'élèves',
+      id: 3,
+      title: 'Notification envoyée (démo)',
+      description: 'Rappel réunion parents d\'élèves (fictif)',
       time: '4 heures',
       icon: 'Bell',
       type: 'info'
     },
     {
-      id: 3,
-      title: 'Nouveau personnel ajouté',
-      description: 'Mme Dubois - Professeur de français',
+      id: 4,
+      title: 'Personnel ajouté (démo)',
+      description: 'Mme Dubois - Professeur de français (fictif)',
       time: '1 jour',
       icon: 'UserPlus',
+      type: 'success'
+    }
+  ] : [
+    {
+      id: 1,
+      title: 'École configurée',
+      description: `Configuration de ${user?.schoolData?.name || 'votre école'}`,
+      time: 'récemment',
+      icon: 'School',
+      type: 'success'
+    },
+    {
+      id: 2,
+      title: 'Classes configurées',
+      description: `${user?.schoolData?.available_classes?.length || 0} classes définies`,
+      time: 'récemment',
+      icon: 'BookOpen',
+      type: 'success'
+    },
+    {
+      id: 3,
+      title: 'Système opérationnel',
+      description: 'Connexion à la base de données établie',
+      time: 'maintenant',
+      icon: 'Database',
       type: 'success'
     },
     {
       id: 4,
-      title: 'Sauvegarde effectuée',
-      description: 'Données sauvegardées automatiquement',
-      time: '2 jours',
+      title: 'Mode production activé',
+      description: 'Données réelles synchronisées',
+      time: 'maintenant',
       icon: 'Shield',
       type: 'info'
     }
@@ -129,6 +172,21 @@ const QuickActions = () => {
 
   return (
     <div className="space-y-6">
+      {/* Indicateur de mode */}
+      {isDemo && (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+          <div className="flex items-center space-x-3">
+            <Icon name="AlertTriangle" size={20} className="text-orange-600" />
+            <div>
+              <h3 className="font-semibold text-orange-800">Mode Démonstration</h3>
+              <p className="text-sm text-orange-700">
+                Les activités affichées sont fictives. Connectez-vous avec un compte réel pour voir vos vraies données.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick Actions Grid */}
       <div className="bg-card border border-border rounded-lg p-6 shadow-card">
         <div className="flex items-center justify-between mb-6">
@@ -141,10 +199,16 @@ const QuickActions = () => {
                 Actions rapides
               </h2>
               <p className="font-caption font-caption-normal text-sm text-muted-foreground">
-                Accès direct aux fonctions principales
+                Accès direct aux fonctions principales {isProduction && `pour ${user?.schoolData?.name}`}
               </p>
             </div>
           </div>
+          {isProduction && (
+            <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+              <span className="text-sm font-medium text-green-700">Données réelles</span>
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

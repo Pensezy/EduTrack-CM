@@ -2,11 +2,15 @@ import React, { useState } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
+import useDashboardData from '../../../hooks/useDashboardData';
 
 const PersonnelManagement = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [selectedPersonnelType, setSelectedPersonnelType] = useState('teacher');
+
+  // Hook pour les données avec switch automatique démo/production
+  const { data, loading, isDemo, loadPersonnel } = useDashboardData();
   const [newPersonnel, setNewPersonnel] = useState({
     firstName: '',
     lastName: '',
@@ -18,8 +22,11 @@ const PersonnelManagement = () => {
     permissions: []
   });
 
-  // Données des enseignants existants
-  const teachers = [
+  // Récupérer les données du personnel selon le mode (démo/production)
+  const personnelData = data.personnel || [];
+  
+  // Données démo pour le mode démo uniquement
+  const demoTeachers = [
     {
       id: 1,
       name: 'Marie Dubois',
@@ -46,8 +53,7 @@ const PersonnelManagement = () => {
     }
   ];
 
-  // Données des secrétaires existants
-  const secretaries = [
+  const demoSecretaries = [
     {
       id: 3,
       name: 'Fatima Ngo',
@@ -72,6 +78,9 @@ const PersonnelManagement = () => {
     }
   ];
 
+  // Utiliser les données selon le mode
+  const teachers = isDemo ? demoTeachers : personnelData.filter(p => p.type === 'teacher');
+  const secretaries = isDemo ? demoSecretaries : personnelData.filter(p => p.type === 'secretary');
   const allPersonnel = [...teachers, ...secretaries];
 
   const subjects = [
@@ -146,40 +155,78 @@ const PersonnelManagement = () => {
   };
 
   const getPersonnelStats = () => {
-    return [
-      {
-        title: 'Total Personnel',
-        value: allPersonnel.length.toString(),
-        change: '+2',
-        changeType: 'positive',
-        icon: 'Users',
-        description: 'Actifs'
-      },
-      {
-        title: 'Enseignants',
-        value: teachers.length.toString(),
-        change: '+1',
-        changeType: 'positive',
-        icon: 'GraduationCap',
-        description: 'Titulaires et contractuels'
-      },
-      {
-        title: 'Secrétaires',
-        value: secretaries.length.toString(),
-        change: '0',
-        changeType: 'neutral',
-        icon: 'UserCheck',
-        description: 'Personnel administratif'
-      },
-      {
-        title: 'Évaluations',
-        value: '4.7/5',
-        change: '+0.2',
-        changeType: 'positive',
-        icon: 'Star',
-        description: 'Moyenne générale'
-      }
-    ];
+    if (isDemo) {
+      return [
+        {
+          title: 'Total Personnel',
+          value: allPersonnel.length.toString(),
+          change: '+2',
+          changeType: 'positive',
+          icon: 'Users',
+          description: 'Actifs'
+        },
+        {
+          title: 'Enseignants',
+          value: teachers.length.toString(),
+          change: '+1',
+          changeType: 'positive',
+          icon: 'GraduationCap',
+          description: 'Titulaires et contractuels'
+        },
+        {
+          title: 'Secrétaires',
+          value: secretaries.length.toString(),
+          change: '0',
+          changeType: 'neutral',
+          icon: 'UserCheck',
+          description: 'Personnel administratif'
+        },
+        {
+          title: 'Évaluations',
+          value: '4.7/5',
+          change: '+0.2',
+          changeType: 'positive',
+          icon: 'Star',
+          description: 'Moyenne générale'
+        }
+      ];
+    } else {
+      // Mode production : données réelles ou zéro
+      return [
+        {
+          title: 'Total Personnel',
+          value: allPersonnel.length.toString(),
+          change: '0',
+          changeType: 'neutral',
+          icon: 'Users',
+          description: allPersonnel.length > 0 ? 'Actifs' : 'Aucun personnel enregistré'
+        },
+        {
+          title: 'Enseignants',
+          value: teachers.length.toString(),
+          change: '0',
+          changeType: 'neutral',
+          icon: 'GraduationCap',
+          description: teachers.length > 0 ? 'Titulaires et contractuels' : 'Aucun enseignant'
+        },
+        {
+          title: 'Secrétaires',
+          value: secretaries.length.toString(),
+          change: '0',
+          changeType: 'neutral',
+          icon: 'UserCheck',
+          description: secretaries.length > 0 ? 'Personnel administratif' : 'Aucun secrétaire'
+        },
+        {
+          title: 'Évaluations',
+          value: allPersonnel.length > 0 ? 'N/A' : '0/5',
+          change: '0',
+          changeType: 'neutral',
+          icon: 'Star',
+          description: allPersonnel.length > 0 ? 'Pas encore évalué' : 'Aucune évaluation'
+        }
+      ];
+    }
   };
 
   const renderOverview = () => (
@@ -240,24 +287,41 @@ const PersonnelManagement = () => {
           Personnel Récemment Ajouté
         </h3>
         <div className="space-y-3">
-          {allPersonnel.slice(0, 3).map((person) => (
-            <div key={person.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white text-sm font-medium">
-                    {person.name.split(' ').map(n => n[0]).join('')}
-                  </span>
+          {allPersonnel.length > 0 ? (
+            allPersonnel.slice(0, 3).map((person) => (
+              <div key={person.id} className="flex items-center justify-between p-3 border border-border rounded-lg">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary rounded-full flex items-center justify-center">
+                    <span className="text-white text-sm font-medium">
+                      {person.name.split(' ').map(n => n[0]).join('')}
+                    </span>
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">{person.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {person.type === 'teacher' ? person.subject : person.role}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-medium text-foreground">{person.name}</p>
-                  <p className="text-sm text-muted-foreground">
-                    {person.type === 'teacher' ? person.subject : person.role}
-                  </p>
-                </div>
+                {getStatusBadge(person.status)}
               </div>
-              {getStatusBadge(person.status)}
+            ))
+          ) : (
+            <div className="text-center py-8">
+              <Icon name="Users" size={48} className="text-muted-foreground mx-auto mb-4" />
+              <p className="text-muted-foreground">Aucun personnel enregistré</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Commencez par ajouter des enseignants ou des secrétaires
+              </p>
+              <Button 
+                className="mt-4" 
+                onClick={() => setActiveSection('create')}
+              >
+                <Icon name="UserPlus" size={16} className="mr-2" />
+                Ajouter Personnel
+              </Button>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>
@@ -280,51 +344,71 @@ const PersonnelManagement = () => {
         </div>
         
         <div className="space-y-4">
-          {personnel.map((person) => (
-            <div key={person.id} className="bg-card border border-border rounded-lg p-4 shadow-card">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
-                    <span className="text-white font-medium">
-                      {person.name.split(' ').map(n => n[0]).join('')}
-                    </span>
+          {personnel.length > 0 ? (
+            personnel.map((person) => (
+              <div key={person.id} className="bg-card border border-border rounded-lg p-4 shadow-card">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-12 h-12 bg-primary rounded-full flex items-center justify-center">
+                      <span className="text-white font-medium">
+                        {person.name.split(' ').map(n => n[0]).join('')}
+                      </span>
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-foreground">{person.name}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {person.type === 'teacher' ? person.subject : person.role}
+                      </p>
+                      <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
+                        <span className="flex items-center">
+                          <Icon name="Mail" size={12} className="mr-1" />
+                          {person.email}
+                        </span>
+                        <span className="flex items-center">
+                          <Icon name="Phone" size={12} className="mr-1" />
+                          {person.phone}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-foreground">{person.name}</h4>
-                    <p className="text-sm text-muted-foreground">
-                      {person.type === 'teacher' ? person.subject : person.role}
-                    </p>
-                    <div className="flex items-center space-x-4 text-xs text-muted-foreground mt-1">
-                      <span className="flex items-center">
-                        <Icon name="Mail" size={12} className="mr-1" />
-                        {person.email}
-                      </span>
-                      <span className="flex items-center">
-                        <Icon name="Phone" size={12} className="mr-1" />
-                        {person.phone}
-                      </span>
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      {getStatusBadge(person.status)}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Expérience: {person.experience}
+                      </p>
+                    </div>
+                    <div className="flex space-x-2">
+                      <Button variant="ghost" size="sm">
+                        <Icon name="Eye" size={14} />
+                      </Button>
+                      <Button variant="ghost" size="sm">
+                        <Icon name="Edit" size={14} />
+                      </Button>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center space-x-4">
-                  <div className="text-right">
-                    {getStatusBadge(person.status)}
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Expérience: {person.experience}
-                    </p>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button variant="ghost" size="sm">
-                      <Icon name="Eye" size={14} />
-                    </Button>
-                    <Button variant="ghost" size="sm">
-                      <Icon name="Edit" size={14} />
-                    </Button>
-                  </div>
-                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <Icon 
+                name={type === 'teachers' ? 'GraduationCap' : 'UserCheck'} 
+                size={64} 
+                className="text-muted-foreground mx-auto mb-4" 
+              />
+              <h4 className="text-lg font-medium text-foreground mb-2">
+                Aucun {type === 'teachers' ? 'enseignant' : 'secrétaire'} enregistré
+              </h4>
+              <p className="text-muted-foreground mb-4">
+                Commencez par ajouter {type === 'teachers' ? 'des enseignants' : 'des secrétaires'} à votre établissement
+              </p>
+              <Button onClick={() => setActiveSection('create')}>
+                <Icon name="Plus" size={16} className="mr-2" />
+                Ajouter {type === 'teachers' ? 'Enseignant' : 'Secrétaire'}
+              </Button>
             </div>
-          ))}
+          )}
         </div>
       </div>
     );

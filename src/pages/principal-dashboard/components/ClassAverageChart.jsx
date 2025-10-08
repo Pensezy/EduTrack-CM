@@ -13,6 +13,9 @@ const ClassAverageChart = () => {
   // Hook pour les données avec switch automatique démo/production
   const { data, loading, isDemo, loadClassAverages } = useDashboardData();
 
+  // Récupérer les classes dynamiquement
+  const availableClasses = data.classes || [];
+
   // Recharger les données quand les filtres changent
   useEffect(() => {
     loadClassAverages({
@@ -33,12 +36,13 @@ const ClassAverageChart = () => {
     { value: 'history', label: 'Histoire' }
   ];
 
+  // Générer dynamiquement les options de niveaux selon les classes réelles
   const gradeOptions = [
     { value: 'all', label: 'Tous les niveaux' },
-    { value: '6', label: '6ème' },
-    { value: '5', label: '5ème' },
-    { value: '4', label: '4ème' },
-    { value: '3', label: '3ème' }
+    ...availableClasses.map(classe => ({
+      value: classe.level || classe.name,
+      label: classe.name || `${classe.level}${classe.section ? ' ' + classe.section : ''}`
+    }))
   ];
 
   const periodOptions = [

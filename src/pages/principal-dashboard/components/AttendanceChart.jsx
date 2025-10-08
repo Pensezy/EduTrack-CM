@@ -12,6 +12,9 @@ const AttendanceChart = () => {
   // Hook pour les données avec switch automatique démo/production
   const { data, loading, isDemo, loadAttendance } = useDashboardData();
 
+  // Récupérer les classes dynamiquement
+  const availableClasses = data.classes || [];
+
   // Recharger les données quand la période change
   useEffect(() => {
     loadAttendance(selectedPeriod);
@@ -22,7 +25,7 @@ const AttendanceChart = () => {
     if (!rawData || rawData.length === 0) return [];
     
     if (isDemo) {
-      // Mode démo : utiliser les données mock
+      // Mode démo : utiliser les données mock avec classes hardcodées
       return rawData.map((item, index) => ({
         period: item.day,
         overall: Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100),
@@ -32,28 +35,30 @@ const AttendanceChart = () => {
         '3ème': Math.round(Math.random() * 10 + 90)
       }));
     } else {
-      // Mode production : données réelles ou vides
-      return rawData.map((item, index) => ({
-        period: item.day || `Jour ${index + 1}`,
-        overall: item.present && (item.present + item.absent + item.late + item.excused) > 0 
-          ? Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100)
-          : 0,
-        '6ème': 0, // Sera calculé avec vraies données par classe
-        '5ème': 0,
-        '4ème': 0,
-        '3ème': 0
-      }));
+      // Mode production : données réelles avec classes dynamiques
+      const dataPoint = {
+        period: rawData[0]?.day || `Jour 1`,
+        overall: 0
+      };
+      
+      // Ajouter dynamiquement les classes réelles de l'école
+      availableClasses.forEach(classe => {
+        dataPoint[classe.name || classe.level] = 0; // Taux de présence à 0 par défaut
+      });
+      
+      return [dataPoint];
     }
   };
 
   const chartData = convertAttendanceData(data.attendance || []);
 
+  // Générer dynamiquement les options de classes
   const classOptions = [
     { value: 'all', label: 'Toutes les classes' },
-    { value: '6ème', label: '6ème' },
-    { value: '5ème', label: '5ème' },
-    { value: '4ème', label: '4ème' },
-    { value: '3ème', label: '3ème' }
+    ...availableClasses.map(classe => ({
+      value: classe.name || classe.level,
+      label: classe.name || `${classe.level}${classe.section ? ' ' + classe.section : ''}`
+    }))
   ];
 
   const periodOptions = [
@@ -67,14 +72,25 @@ const AttendanceChart = () => {
   };
 
   const getDisplayLines = () => {
+    const colors = ['var(--color-success)', 'var(--color-warning)', 'var(--color-accent)', 'var(--color-secondary)', 'var(--color-info)'];
+    
     if (selectedClass === 'all') {
-      return [
-        { key: 'overall', color: 'var(--color-primary)', name: 'Moyenne générale' },
-        { key: '6ème', color: 'var(--color-success)', name: '6ème' },
-        { key: '5ème', color: 'var(--color-warning)', name: '5ème' },
-        { key: '4ème', color: 'var(--color-accent)', name: '4ème' },
-        { key: '3ème', color: 'var(--color-secondary)', name: '3ème' }
+      const lines = [
+        { key: 'overall', color: 'var(--color-primary)', name: 'Moyenne générale' }
       ];
+      
+      // Ajouter dynamiquement les lignes pour chaque classe réelle
+      availableClasses.forEach((classe, index) => {
+        const classKey = classe.name || classe.level;
+        const className = classe.name || `${classe.level}${classe.section ? ' ' + classe.section : ''}`;
+        lines.push({
+          key: classKey,
+          color: colors[index % colors.length],
+          name: className
+        });
+      });
+      
+      return lines;
     } else {
       return [
         { key: selectedClass, color: 'var(--color-primary)', name: selectedClass },

@@ -5,6 +5,7 @@ import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
+import useDashboardData from '../../hooks/useDashboardData';
 
 const NotificationManagement = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
@@ -15,6 +16,14 @@ const NotificationManagement = () => {
     priority: 'normal',
     type: 'info'
   });
+
+  // Hook pour récupérer les données selon le mode (démo/production)
+  const { 
+    data, 
+    isDemo, 
+    isProduction, 
+    user 
+  } = useDashboardData();
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -41,30 +50,62 @@ const NotificationManagement = () => {
     });
   };
 
-  const recentNotifications = [
+  // Notifications récentes basées sur le mode de données
+  const recentNotifications = isDemo ? [
     {
       id: 1,
-      title: 'Réunion parents d\'élèves',
-      message: 'Rappel de la réunion prévue vendredi à 18h',
+      title: 'Réunion parents d\'élèves (DÉMO)',
+      message: 'Rappel de la réunion prévue vendredi à 18h - Données fictives',
       target: 'parents',
       date: '2024-09-20',
-      status: 'sent'
+      status: 'sent',
+      isDemo: true
     },
     {
       id: 2,
-      title: 'Fermeture école',
-      message: 'L\'école sera fermée lundi pour travaux',
+      title: 'Fermeture école (DÉMO)',
+      message: 'L\'école sera fermée lundi pour travaux - Données fictives',
       target: 'all',
       date: '2024-09-18',
-      status: 'sent'
+      status: 'sent',
+      isDemo: true
     },
     {
       id: 3,
-      title: 'Nouvelle activité',
-      message: 'Club de robotique - inscriptions ouvertes',
+      title: 'Nouvelle activité (DÉMO)',
+      message: 'Club de robotique - inscriptions ouvertes - Données fictives',
       target: 'students',
       date: '2024-09-15',
-      status: 'sent'
+      status: 'sent',
+      isDemo: true
+    }
+  ] : [
+    {
+      id: 1,
+      title: 'École configurée',
+      message: `Configuration de ${user?.schoolData?.name || 'votre école'} terminée avec succès`,
+      target: 'staff',
+      date: new Date().toISOString().split('T')[0],
+      status: 'sent',
+      isDemo: false
+    },
+    {
+      id: 2,
+      title: 'Classes définies',
+      message: `${user?.schoolData?.available_classes?.length || 0} classes configurées pour votre ${user?.schoolData?.type || 'établissement'}`,
+      target: 'staff',
+      date: new Date().toISOString().split('T')[0],
+      status: 'sent',
+      isDemo: false
+    },
+    {
+      id: 3,
+      title: 'Système opérationnel',
+      message: 'Votre système de gestion scolaire est maintenant fonctionnel',
+      target: 'all',
+      date: new Date().toISOString().split('T')[0],
+      status: 'sent',
+      isDemo: false
     }
   ];
 
@@ -78,7 +119,13 @@ const NotificationManagement = () => {
       <div className="min-h-screen bg-background">
         <Header 
           userRole="principal" 
-          userName="M. Directeur"
+          userName={
+            user?.schoolData?.director_name || 
+            user?.schoolData?.users?.full_name ||
+            user?.full_name ||
+            user?.email?.split('@')[0] || 
+            'Directeur'
+          }
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
@@ -94,18 +141,41 @@ const NotificationManagement = () => {
             isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
           } p-6`}>
             
+            {/* Indicateur de mode */}
+            {isDemo && (
+              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+                <div className="flex items-center space-x-3">
+                  <Icon name="AlertTriangle" size={20} className="text-orange-600" />
+                  <div>
+                    <h3 className="font-semibold text-orange-800">Mode Démonstration</h3>
+                    <p className="text-sm text-orange-700">
+                      Les notifications affichées sont fictives. Connectez-vous avec un compte réel pour gérer vos vraies notifications.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Page Header */}
             <div className="mb-8">
-              <div className="flex items-center space-x-3 mb-2">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Bell" size={20} className="text-primary" />
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Icon name="Bell" size={20} className="text-primary" />
+                  </div>
+                  <h1 className="text-2xl font-heading font-heading-bold text-foreground">
+                    Gestion des Notifications
+                  </h1>
                 </div>
-                <h1 className="text-2xl font-heading font-heading-bold text-foreground">
-                  Gestion des Notifications
-                </h1>
+                {isProduction && (
+                  <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-sm font-medium text-green-700">Mode réel</span>
+                  </div>
+                )}
               </div>
               <p className="text-muted-foreground">
-                Envoyer des notifications et messages à l'école
+                Envoyer des notifications et messages à {isProduction ? user?.schoolData?.name || 'votre école' : 'l\'école (mode démo)'}
               </p>
             </div>
 
@@ -213,12 +283,23 @@ const NotificationManagement = () => {
                   {recentNotifications.map((notification) => (
                     <div
                       key={notification.id}
-                      className="p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+                      className={`p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+                        notification.isDemo 
+                          ? 'border-orange-200 bg-orange-50/30' 
+                          : 'border-border'
+                      }`}
                     >
                       <div className="flex items-start justify-between mb-2">
-                        <h3 className="font-medium text-foreground">
-                          {notification.title}
-                        </h3>
+                        <div className="flex items-center space-x-2">
+                          <h3 className="font-medium text-foreground">
+                            {notification.title}
+                          </h3>
+                          {notification.isDemo && (
+                            <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                              DÉMO
+                            </span>
+                          )}
+                        </div>
                         <span className="text-xs text-muted-foreground">
                           {notification.date}
                         </span>
@@ -227,12 +308,18 @@ const NotificationManagement = () => {
                         {notification.message}
                       </p>
                       <div className="flex items-center justify-between">
-                        <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          notification.isDemo 
+                            ? 'bg-orange-100 text-orange-700' 
+                            : 'bg-primary/10 text-primary'
+                        }`}>
                           {notification.target}
                         </span>
-                        <span className="text-xs text-success flex items-center">
+                        <span className={`text-xs flex items-center ${
+                          notification.isDemo ? 'text-orange-600' : 'text-success'
+                        }`}>
                           <Icon name="CheckCircle" size={12} className="mr-1" />
-                          Envoyé
+                          {notification.isDemo ? 'Fictif' : 'Envoyé'}
                         </span>
                       </div>
                     </div>

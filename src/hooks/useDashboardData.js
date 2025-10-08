@@ -121,7 +121,11 @@ export const useDashboardData = (schoolContext = null) => {
   
   const loadSchoolStats = () => loadData('schoolStats', 'getSchoolStats');
   
-  const loadSchoolDetails = () => loadData('schoolDetails', 'getSchoolDetails');
+  const loadSchoolDetails = () => {
+    // Passer l'ID utilisateur pour pouvoir chercher l'école même sans contexte défini
+    const userId = user?.id;
+    return loadData('schoolDetails', 'getSchoolDetails', null, userId);
+  };
   
   const loadClasses = () => loadData('classes', 'getClasses');
 

@@ -72,57 +72,65 @@ export const demoPaymentData = [
   { status: 'En défaut', count: 15, percentage: 3.75, color: '#ef4444' }
 ];
 
+// Données de démonstration pour les paiements par classe
+export const demoClassPaymentData = [
+  { class: '6ème A', paid: 28, late: 2, unpaid: 1, total: 31, rate: 90.3 },
+  { class: '6ème B', paid: 26, late: 3, unpaid: 2, total: 31, rate: 83.9 },
+  { class: '5ème A', paid: 29, late: 1, unpaid: 0, total: 30, rate: 96.7 },
+  { class: '5ème B', paid: 27, late: 2, unpaid: 1, total: 30, rate: 90.0 },
+  { class: '4ème A', paid: 25, late: 3, unpaid: 1, total: 29, rate: 86.2 },
+  { class: '4ème B', paid: 28, late: 1, unpaid: 0, total: 29, rate: 96.6 },
+  { class: '3ème A', paid: 24, late: 2, unpaid: 2, total: 28, rate: 85.7 },
+  { class: '3ème B', paid: 26, late: 1, unpaid: 1, total: 28, rate: 92.9 }
+];
+
 // Données de démonstration pour le personnel
 export const demoPersonnel = [
   {
-    id: 'demo-1',
+    id: 1,
     name: 'Marie Dubois',
-    role: 'teacher',
-    department: 'Mathématiques',
-    email: 'marie.dubois@demo.com',
-    phone: '77 123 45 67',
-    joinDate: '2020-09-01',
+    email: 'marie.dubois@edutrack.cm',
+    phone: '237 6XX XXX XXX',
+    subject: 'Mathématiques',
+    type: 'teacher',
     status: 'active',
-    avatar: null,
-    classes: ['6ème A', '5ème B', '4ème A'],
-    subjects: ['Mathématiques']
+    classes: ['6èmeA', '5èmeB'],
+    experience: '8 ans',
+    evaluation: 4.8
   },
   {
-    id: 'demo-2',
-    name: 'Jean Martin',
-    role: 'teacher',
-    department: 'Français',
-    email: 'jean.martin@demo.com',
-    phone: '77 234 56 78',
-    joinDate: '2019-08-15',
+    id: 2,
+    name: 'Jean Kamto',
+    email: 'jean.kamto@edutrack.cm',
+    phone: '237 6XX XXX XXX',
+    subject: 'Français',
+    type: 'teacher',
     status: 'active',
-    avatar: null,
-    classes: ['3ème A', '3ème B'],
-    subjects: ['Français', 'Littérature']
+    classes: ['4èmeA', '3èmeB'],
+    experience: '12 ans',
+    evaluation: 4.6
   },
   {
-    id: 'demo-3',
-    name: 'Fatou Seck',
-    role: 'secretary',
-    department: 'Administration',
-    email: 'fatou.seck@demo.com',
-    phone: '77 345 67 89',
-    joinDate: '2021-02-10',
+    id: 3,
+    name: 'Fatima Ngo',
+    email: 'fatima.ngo@edutrack.cm',
+    phone: '237 6XX XXX XXX',
+    role: 'Secrétaire Principale',
+    type: 'secretary',
     status: 'active',
-    avatar: null
+    permissions: ['student_management', 'document_management', 'grade_access'],
+    experience: '6 ans'
   },
   {
-    id: 'demo-4',
-    name: 'Amadou Ba',
-    role: 'teacher',
-    department: 'Sciences',
-    email: 'amadou.ba@demo.com',
-    phone: '77 456 78 90',
-    joinDate: '2018-09-01',
+    id: 4,
+    name: 'Marie Essomba',
+    email: 'marie.essomba@edutrack.cm',
+    phone: '237 6XX XXX XXX',
+    role: 'Secrétaire Adjointe',
+    type: 'secretary',
     status: 'active',
-    avatar: null,
-    classes: ['5ème A', '4ème A', '4ème B'],
-    subjects: ['Sciences Physiques', 'Chimie']
+    permissions: ['student_management', 'attendance_management'],
+    experience: '3 ans'
   }
 ];
 

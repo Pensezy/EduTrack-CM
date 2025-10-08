@@ -25,6 +25,12 @@ const PrincipalDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
   
+  // États pour la gestion des classes personnalisées
+  const [newClassName, setNewClassName] = useState('');
+  const [addingClass, setAddingClass] = useState(false);
+  const [classError, setClassError] = useState('');
+  const [classSuccess, setClassSuccess] = useState('');
+  
   // Hook pour les données avec switch automatique démo/production
   const { 
     data, 
@@ -75,7 +81,7 @@ const PrincipalDashboard = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'analytics', 'personnel', 'actions', 'system', 'accounts'].includes(tabParam)) {
+    if (tabParam && ['overview', 'analytics', 'personnel', 'school-info', 'actions', 'system', 'accounts', 'schema', 'debug'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else {
       setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
@@ -126,6 +132,91 @@ const PrincipalDashboard = () => {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Fonction générique pour ajouter une classe
+  const handleAddClass = async (className) => {
+    const classNameTrimmed = className.trim();
+    
+    // Validation
+    if (!classNameTrimmed) {
+      setClassError('Nom de classe invalide');
+      return false;
+    }
+    
+    // Vérifier si la classe existe déjà
+    const currentClasses = schoolData?.available_classes || [];
+    if (currentClasses.includes(classNameTrimmed)) {
+      setClassError('Cette classe existe déjà dans votre établissement');
+      return false;
+    }
+    
+    setAddingClass(true);
+    setClassError('');
+    setClassSuccess('');
+    
+    try {
+      // Importer supabase pour la mise à jour
+      const { supabase } = await import('../../lib/supabase');
+      
+      // Ajouter la nouvelle classe au tableau existant
+      const updatedClasses = [...currentClasses, classNameTrimmed];
+      
+      // Mettre à jour en base de données
+      const { error } = await supabase
+        .from('schools')
+        .update({ available_classes: updatedClasses })
+        .eq('id', schoolData.id);
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Succès
+      setClassSuccess(`Classe "${classNameTrimmed}" ajoutée avec succès !`);
+      
+      // Recharger les données pour mettre à jour l'affichage
+      setTimeout(() => {
+        refresh();
+        setClassSuccess('');
+      }, 2000);
+      
+      return true;
+      
+    } catch (error) {
+      console.error('Erreur lors de l\'ajout de la classe:', error);
+      setClassError('Erreur lors de l\'ajout de la classe. Veuillez réessayer.');
+      return false;
+    } finally {
+      setAddingClass(false);
+    }
+  };
+
+  // Fonction pour ajouter une classe personnalisée
+  const handleAddCustomClass = async () => {
+    const className = newClassName.trim();
+    
+    // Validations spécifiques à la saisie personnalisée
+    if (!className) {
+      setClassError('Veuillez saisir un nom de classe');
+      return;
+    }
+    
+    if (className.length < 2) {
+      setClassError('Le nom de classe doit contenir au moins 2 caractères');
+      return;
+    }
+    
+    if (className.length > 50) {
+      setClassError('Le nom de classe ne peut pas dépasser 50 caractères');
+      return;
+    }
+    
+    // Utiliser la fonction générique pour ajouter la classe
+    const success = await handleAddClass(className);
+    if (success) {
+      setNewClassName('');
+    }
   };
 
   const renderTabContent = () => {
@@ -367,62 +458,211 @@ const PrincipalDashboard = () => {
               </div>
             </div>
             
-            {/* Classes disponibles ET classes réelles */}
+            {/* Gestion intelligente des classes */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">📚 Classes de l'École</h3>
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-lg font-semibold text-gray-900">📚 Classes de l'École</h3>
+                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
+                  + Ajouter une classe
+                </button>
+              </div>
               
-              {/* Classes définies lors de la création */}
-              {schoolData?.available_classes && schoolData.available_classes.length > 0 && (
+              {/* Classes actives de l'école */}
+              {schoolData?.available_classes && schoolData.available_classes.length > 0 ? (
                 <div className="mb-6">
-                  <h4 className="text-md font-medium text-gray-700 mb-3">📋 Classes configurées ({schoolData.available_classes.length})</h4>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <h4 className="text-md font-medium text-gray-700 mb-3">
+                    🎯 Vos Classes Actives ({schoolData.available_classes.length})
+                  </h4>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {schoolData.available_classes.map((classe, index) => (
-                      <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center">
-                        <div className="text-blue-800 font-medium">{classe}</div>
-                        <div className="text-xs text-blue-600">Configuré</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Classes réellement créées dans la base de données */}
-              {data.classes && data.classes.length > 0 ? (
-                <div>
-                  <h4 className="text-md font-medium text-gray-700 mb-3">🏫 Classes créées ({data.classes.length})</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-                    {data.classes.map((classe) => (
-                      <div key={classe.id} className="bg-green-50 border border-green-200 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="text-green-800 font-medium">{classe.name}</div>
-                          <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
-                            {classe.level}
-                          </div>
-                        </div>
-                        <div className="text-sm text-green-600 space-y-1">
-                          {classe.section && <div>Section: {classe.section}</div>}
-                          {classe.capacity && <div>Capacité: {classe.capacity} élèves</div>}
-                          <div className="text-xs text-green-500">
-                            Créée le {new Date(classe.created_at).toLocaleDateString('fr-FR')}
-                          </div>
+                      <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center hover:bg-green-100 transition-colors cursor-pointer">
+                        <div className="text-green-800 font-semibold text-lg">{classe}</div>
+                        <div className="text-xs text-green-600 mt-1">Prête à utiliser</div>
+                        <div className="mt-2 flex justify-center space-x-1">
+                          <button className="p-1 text-green-600 hover:bg-green-200 rounded">
+                            <Icon name="Users" size={14} />
+                          </button>
+                          <button className="p-1 text-green-600 hover:bg-green-200 rounded">
+                            <Icon name="Settings" size={14} />
+                          </button>
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
-              ) : isProduction ? (
-                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="text-center text-yellow-700">
-                    <Icon name="AlertTriangle" size={24} className="mx-auto mb-2" />
-                    <div className="font-medium">Aucune classe créée</div>
-                    <div className="text-sm">Les classes doivent être créées dans le système pour apparaître ici</div>
                   </div>
                 </div>
               ) : (
-                <div className="text-gray-500 text-center py-8">
-                  Aucune classe définie
+                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="text-center text-yellow-700">
+                    <Icon name="AlertTriangle" size={24} className="mx-auto mb-2" />
+                    <div className="font-medium">Aucune classe active</div>
+                    <div className="text-sm">Configurez vos classes pour commencer</div>
+                  </div>
                 </div>
               )}
+
+              {/* Suggestions de classes selon le type d'établissement */}
+              {schoolData?.type && (
+                <div className="mb-6">
+                  <h4 className="text-md font-medium text-gray-700 mb-3 flex items-center">
+                    💡 Classes Suggérées pour votre {schoolData.type}
+                    <span className="ml-2 text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                      {schoolData.type}
+                    </span>
+                  </h4>
+                  
+                  {(() => {
+                    const currentClasses = schoolData.available_classes || [];
+                    let suggestions = [];
+                    let levelDescription = '';
+                    
+                    // Suggestions STRICTEMENT selon le type d'établissement
+                    const schoolType = schoolData.type?.toLowerCase().trim();
+                    
+                    if (schoolType === 'primaire' || schoolType === 'école primaire') {
+                      levelDescription = 'Cycle primaire (6-11 ans)';
+                      suggestions = [
+                        'CP', 'CE1', 'CE2', 'CM1', 'CM2',
+                        'CP A', 'CP B', 'CE1 A', 'CE1 B', 'CE2 A', 'CE2 B',
+                        'CM1 A', 'CM1 B', 'CM2 A', 'CM2 B'
+                      ];
+                    } 
+                    else if (schoolType === 'collège' || schoolType === 'college' || schoolType === 'collège d\'enseignement général') {
+                      levelDescription = 'Cycle secondaire 1er degré (11-15 ans)';
+                      suggestions = [
+                        '6ème', '5ème', '4ème', '3ème',
+                        '6ème A', '6ème B', '6ème C', 
+                        '5ème A', '5ème B', '5ème C',
+                        '4ème A', '4ème B', '4ème C',
+                        '3ème A', '3ème B', '3ème C'
+                      ];
+                    }
+                    else if (schoolType === 'lycée' || schoolType === 'lycee' || schoolType === 'lycée d\'enseignement général') {
+                      levelDescription = 'Cycle secondaire 2nd degré (15-18 ans)';
+                      suggestions = [
+                        '2nde', '1ère', 'Terminale',
+                        '2nde A', '2nde C', '2nde D',
+                        '1ère A', '1ère C', '1ère D', '1ère L', '1ère S',
+                        'Terminale A', 'Terminale C', 'Terminale D', 'Terminale L', 'Terminale S', 'Terminale Ti'
+                      ];
+                    }
+                    else if (schoolType.includes('technique') || schoolType.includes('professionnel') || schoolType === 'lycée technique') {
+                      levelDescription = 'Enseignement technique et professionnel';
+                      suggestions = [
+                        'CAP 1ère année', 'CAP 2ème année',
+                        'BEP 1ère année', 'BEP 2ème année',
+                        'BAC Pro 1ère', 'BAC Pro 2ème', 'BAC Pro Terminale',
+                        'BTS 1ère année', 'BTS 2ème année',
+                        'CAP Électricité', 'CAP Mécanique', 'CAP Menuiserie', 'CAP Couture',
+                        'BEP Électronique', 'BEP Informatique', 'BEP Comptabilité',
+                        'BAC Pro Électricité', 'BAC Pro Mécanique Auto', 'BAC Pro Secrétariat'
+                      ];
+                    }
+                    else if (schoolType.includes('maternelle') || schoolType === 'école maternelle') {
+                      levelDescription = 'Cycle préscolaire (3-6 ans)';
+                      suggestions = [
+                        'Petite Section', 'Moyenne Section', 'Grande Section',
+                        'PS A', 'PS B', 'MS A', 'MS B', 'GS A', 'GS B'
+                      ];
+                    }
+                    else if (schoolType.includes('supérieur') || schoolType.includes('université') || schoolType.includes('institut')) {
+                      levelDescription = 'Enseignement supérieur';
+                      suggestions = [
+                        'Licence 1', 'Licence 2', 'Licence 3',
+                        'Master 1', 'Master 2',
+                        'L1 Informatique', 'L1 Mathématiques', 'L1 Économie',
+                        'L2 Informatique', 'L2 Mathématiques', 'L2 Économie',
+                        'L3 Informatique', 'L3 Mathématiques', 'L3 Économie'
+                      ];
+                    }
+                    else {
+                      // Type d'établissement non reconnu - suggestions génériques appropriées
+                      levelDescription = 'Classes générales';
+                      suggestions = [
+                        '6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'
+                      ];
+                    }
+                    
+                    // Filtrer les classes déjà présentes
+                    const availableSuggestions = suggestions.filter(
+                      suggestion => !currentClasses.includes(suggestion)
+                    );
+                    
+                    return (
+                      <div>
+                        <div className="mb-3 text-xs text-gray-600 italic">
+                          {levelDescription}
+                        </div>
+                        {availableSuggestions.length > 0 ? (
+                          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                            {availableSuggestions.slice(0, 12).map((suggestion, index) => (
+                              <div key={index} className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-center hover:bg-blue-100 transition-colors cursor-pointer group">
+                                <div className="text-blue-800 font-medium">{suggestion}</div>
+                                <div className="text-xs text-blue-600 mt-1">Appropriée</div>
+                                <div className="mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button 
+                                    onClick={() => handleAddClass(suggestion)}
+                                    disabled={addingClass}
+                                    className="px-2 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                                  >
+                                    + Ajouter
+                                  </button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div className="text-center text-gray-500 py-4">
+                            <Icon name="CheckCircle" size={20} className="mx-auto mb-2 text-green-500" />
+                            <div className="text-sm">Toutes les classes appropriées pour un {schoolData.type} sont configurées !</div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })()}
+                </div>
+              )}
+
+              {/* Option pour créer une classe personnalisée */}
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+                <h4 className="text-md font-medium text-gray-700 mb-3">🎨 Classe Personnalisée</h4>
+                <div className="flex items-center space-x-3">
+                  <input
+                    type="text"
+                    placeholder="Ex: Ti, 1ère Anglophone, BTS Comptabilité..."
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    value={newClassName}
+                    onChange={(e) => setNewClassName(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAddCustomClass()}
+                  />
+                  <button 
+                    onClick={handleAddCustomClass}
+                    disabled={!newClassName.trim() || addingClass}
+                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                  >
+                    {addingClass ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                        <span>Ajout...</span>
+                      </>
+                    ) : (
+                      <span>Créer</span>
+                    )}
+                  </button>
+                </div>
+                <div className="text-xs text-gray-500 mt-2">
+                  Créez des classes avec des noms spécifiques à votre établissement
+                </div>
+                {classError && (
+                  <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
+                    {classError}
+                  </div>
+                )}
+                {classSuccess && (
+                  <div className="mt-2 text-xs text-green-600 bg-green-50 border border-green-200 rounded px-2 py-1">
+                    {classSuccess}
+                  </div>
+                )}
+              </div>
             </div>
             
             {/* Statistiques rapides */}
@@ -443,15 +683,77 @@ const PrincipalDashboard = () => {
                 </div>
                 <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
                   <div className="text-2xl font-bold text-purple-800">
-                    {data?.classes?.length || 0}
+                    {schoolData?.available_classes?.length || 0}
                   </div>
-                  <div className="text-sm text-purple-600">Classes créées</div>
+                  <div className="text-sm text-purple-600">Classes actives</div>
                 </div>
                 <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg">
                   <div className="text-2xl font-bold text-orange-800">
-                    {schoolData?.available_classes?.length || 0}
+                    {(() => {
+                      const schoolType = schoolData?.type?.toLowerCase().trim();
+                      const currentClasses = schoolData?.available_classes || [];
+                      let suggestions = [];
+                      
+                      // Même logique que dans la section suggestions
+                      if (schoolType === 'primaire' || schoolType === 'école primaire') {
+                        suggestions = [
+                          'CP', 'CE1', 'CE2', 'CM1', 'CM2',
+                          'CP A', 'CP B', 'CE1 A', 'CE1 B', 'CE2 A', 'CE2 B',
+                          'CM1 A', 'CM1 B', 'CM2 A', 'CM2 B'
+                        ];
+                      } else if (schoolType === 'collège' || schoolType === 'college') {
+                        suggestions = [
+                          '6ème', '5ème', '4ème', '3ème',
+                          '6ème A', '6ème B', '6ème C', 
+                          '5ème A', '5ème B', '5ème C',
+                          '4ème A', '4ème B', '4ème C',
+                          '3ème A', '3ème B', '3ème C'
+                        ];
+                      } else if (schoolType === 'lycée' || schoolType === 'lycee') {
+                        suggestions = [
+                          '2nde', '1ère', 'Terminale',
+                          '2nde A', '2nde C', '2nde D',
+                          '1ère A', '1ère C', '1ère D', '1ère L', '1ère S',
+                          'Terminale A', 'Terminale C', 'Terminale D', 'Terminale L', 'Terminale S', 'Terminale Ti'
+                        ];
+                      } else if (schoolType?.includes('technique') || schoolType?.includes('professionnel')) {
+                        suggestions = [
+                          'CAP 1ère année', 'CAP 2ème année',
+                          'BEP 1ère année', 'BEP 2ème année',
+                          'BAC Pro 1ère', 'BAC Pro 2ème', 'BAC Pro Terminale',
+                          'BTS 1ère année', 'BTS 2ème année',
+                          'CAP Électricité', 'CAP Mécanique', 'CAP Menuiserie', 'CAP Couture',
+                          'BEP Électronique', 'BEP Informatique', 'BEP Comptabilité',
+                          'BAC Pro Électricité', 'BAC Pro Mécanique Auto', 'BAC Pro Secrétariat'
+                        ];
+                      } else if (schoolType?.includes('maternelle')) {
+                        suggestions = [
+                          'Petite Section', 'Moyenne Section', 'Grande Section',
+                          'PS A', 'PS B', 'MS A', 'MS B', 'GS A', 'GS B'
+                        ];
+                      } else if (schoolType?.includes('supérieur') || schoolType?.includes('université')) {
+                        suggestions = [
+                          'Licence 1', 'Licence 2', 'Licence 3',
+                          'Master 1', 'Master 2',
+                          'L1 Informatique', 'L1 Mathématiques', 'L1 Économie',
+                          'L2 Informatique', 'L2 Mathématiques', 'L2 Économie',
+                          'L3 Informatique', 'L3 Mathématiques', 'L3 Économie'
+                        ];
+                      } else {
+                        suggestions = [
+                          '6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'
+                        ];
+                      }
+                      
+                      // Filtrer les suggestions qui ne sont pas déjà dans les classes actuelles
+                      const availableSuggestions = suggestions.filter(
+                        suggestion => !currentClasses.includes(suggestion)
+                      );
+                      
+                      return availableSuggestions.length;
+                    })()}
                   </div>
-                  <div className="text-sm text-orange-600">Classes configurées</div>
+                  <div className="text-sm text-orange-600">Classes suggérées</div>
                 </div>
               </div>
             </div>
