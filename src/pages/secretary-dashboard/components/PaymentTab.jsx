@@ -41,14 +41,14 @@ const PaymentTab = () => {
       studentId: "STU001",
       class: "CM2",
       parentName: "Jean Dubois",
-      parentPhone: "+33 6 12 34 56 78",
+      parentPhone: "+237 6 12 34 56 78",
       period: "Novembre 2024",
-      amount: 45.00,
-      paidAmount: 45.00,
+      amount: 25000,
+      paidAmount: 25000,
       status: "paid",
       dueDate: "15/11/2024",
       paidDate: "12/11/2024",
-      paymentMethod: "Virement",
+      paymentMethod: "Mobile Money",
       description: "Frais de scolarité mensuelle"
     },
     {
@@ -57,9 +57,9 @@ const PaymentTab = () => {
       studentId: "STU002",
       class: "CM1",
       parentName: "Sophie Martin",
-      parentPhone: "+33 6 23 45 67 89",
+      parentPhone: "+237 6 23 45 67 89",
       period: "Novembre 2024",
-      amount: 45.00,
+      amount: 25000,
       paidAmount: 0,
       status: "pending",
       dueDate: "15/11/2024",
@@ -73,9 +73,9 @@ const PaymentTab = () => {
       studentId: "STU003",
       class: "CE2",
       parentName: "Marc Rousseau",
-      parentPhone: "+33 6 34 56 78 90",
+      parentPhone: "+237 6 34 56 78 90",
       period: "Octobre 2024",
-      amount: 45.00,
+      amount: 22000,
       paidAmount: 0,
       status: "overdue",
       dueDate: "15/10/2024",
@@ -89,10 +89,10 @@ const PaymentTab = () => {
       studentId: "STU004",
       class: "CM2",
       parentName: "Anne Bernard",
-      parentPhone: "+33 6 45 67 89 01",
+      parentPhone: "+237 6 45 67 89 01",
       period: "Novembre 2024",
-      amount: 65.00,
-      paidAmount: 30.00,
+      amount: 35000,
+      paidAmount: 15000,
       status: "partial",
       dueDate: "15/11/2024",
       paidDate: "10/11/2024",
@@ -105,14 +105,14 @@ const PaymentTab = () => {
       studentId: "STU005",
       class: "CE1",
       parentName: "David Leroy",
-      parentPhone: "+33 6 56 78 90 12",
+      parentPhone: "+237 6 56 78 90 12",
       period: "Novembre 2024",
-      amount: 45.00,
-      paidAmount: 45.00,
+      amount: 20000,
+      paidAmount: 20000,
       status: "paid",
       dueDate: "15/11/2024",
       paidDate: "08/11/2024",
-      paymentMethod: "Chèque",
+      paymentMethod: "Virement bancaire",
       description: "Frais de scolarité mensuelle"
     }
   ];
@@ -225,7 +225,7 @@ const PaymentTab = () => {
             </div>
             <div>
               <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                {stats?.total?.toFixed(2)}€
+                {stats?.total?.toLocaleString()} FCFA
               </p>
               <p className="font-caption font-caption-normal text-xs text-text-secondary">
                 Total attendu
@@ -241,7 +241,7 @@ const PaymentTab = () => {
             </div>
             <div>
               <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                {stats?.collected?.toFixed(2)}€
+                {stats?.collected?.toLocaleString()} FCFA
               </p>
               <p className="font-caption font-caption-normal text-xs text-text-secondary">
                 Collecté
@@ -257,7 +257,7 @@ const PaymentTab = () => {
             </div>
             <div>
               <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                {stats?.outstanding?.toFixed(2)}€
+                {stats?.outstanding?.toLocaleString()} FCFA
               </p>
               <p className="font-caption font-caption-normal text-xs text-text-secondary">
                 En attente
@@ -365,11 +365,11 @@ const PaymentTab = () => {
                     <td className="p-4">
                       <div>
                         <p className="font-body font-body-semibold text-sm text-text-primary">
-                          {payment?.amount?.toFixed(2)}€
+                          {payment?.amount?.toLocaleString()} FCFA
                         </p>
                         {payment?.status === 'partial' && (
                           <p className="font-caption font-caption-normal text-xs text-success">
-                            Payé: {payment?.paidAmount?.toFixed(2)}€
+                            Payé: {payment?.paidAmount?.toLocaleString()} FCFA
                           </p>
                         )}
                         {payment?.paymentMethod && (
