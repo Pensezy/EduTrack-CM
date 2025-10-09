@@ -3,16 +3,13 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
-import { useDataMode } from '../../hooks/useDataMode';
-import useDashboardData from '../../hooks/useDashboardData';
+import useUserProfile from '../../hooks/useUserProfile';
 
 const ProfileSettings = () => {
   const { user } = useAuth();
-  const { isDemo, isProduction } = useDataMode();
-  const { data, loading } = useDashboardData();
+  const { profile: userProfile, loading: profileLoading, error } = useUserProfile();
   
   const [isChangingPassword, setIsChangingPassword] = useState(false);
-  const [userProfile, setUserProfile] = useState(null);
   const [passwordData, setPasswordData] = useState({
     currentPassword: '',
     newPassword: '',
@@ -24,219 +21,10 @@ const ProfileSettings = () => {
     confirm: false
   });
 
-  // Construire le profil utilisateur - SIMPLE : 2 cas seulement
-  useEffect(() => {
-    const buildUserProfile = () => {
-      if (!user) return null;
+  // Le profil est maintenant géré par le hook useUserProfile
 
-      // 🎯 SIMPLE : Vérifier si c'est un compte de démo
-      const isDemoAccount = user.email?.includes('@demo.com');
-
-      if (isDemoAccount) {
-        // ============ CAS 1: COMPTE DÉMO ============
-        return getDemoProfile(user.role);
-      } else {
-        // ============ CAS 2: COMPTE SUPABASE RÉEL ============
-        return getRealProfile();
-      }
-    };
-
-    // Fonction pour profil de démo
-    const getDemoProfile = (role) => {
-      const demoProfiles = {
-        principal: {
-          id: user.id,
-          full_name: 'M. Jean-Claude Mbarga',
-          email: user.email,
-          phone: '+237 693 456 789',
-          role: 'principal',
-          school_name: 'Collège Moderne de Yaoundé',
-          school_address: '123 Avenue de l\'Indépendance, Yaoundé',
-          position: 'Directeur d\'Établissement',
-          experience: '15 ans',
-          specialization: 'Administration Scolaire',
-          employees_count: 25,
-          students_count: 400,
-          classes_managed: ['6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'],
-          certifications: ['Diplôme de Directeur d\'École', 'Formation Management Éducatif']
-        },
-        teacher: {
-          id: user.id,
-          full_name: 'Mme Marie-Josée Nguema',
-          email: user.email,
-          phone: '+237 695 234 567',
-          role: 'teacher',
-          subject: 'Mathématiques',
-          classes: ['6èmeA', '5èmeB', '4èmeC'],
-          school_name: 'Collège Moderne de Yaoundé',
-          experience: '8 ans',
-          degree: 'Master en Mathématiques',
-          specialization: 'Algèbre et Géométrie',
-          students_count: 120,
-          schedule: 'Lundi-Vendredi 8h-15h',
-          certifications: ['CAPES Mathématiques', 'Formation Pédagogie Numérique']
-        },
-        secretary: {
-          id: user.id,
-          full_name: 'Mlle Catherine Fouda',
-          email: user.email,
-          phone: '+237 691 345 678',
-          role: 'secretary',
-          position: 'Secrétaire Principale',
-          school_name: 'Collège Moderne de Yaoundé',
-          experience: '6 ans',
-          specialization: 'Gestion Administrative',
-          permissions: ['Gestion Étudiants', 'Documents Administratifs', 'Planification'],
-          schedule: 'Lundi-Vendredi 7h30-16h30',
-          certifications: ['BTS Secrétariat', 'Formation Gestion Éducative']
-        },
-        student: {
-          id: user.id,
-          full_name: 'Kevin Essomba',
-          email: user.email,
-          phone: '+237 659 456 789',
-          role: 'student',
-          class_name: '3èmeA',
-          school_name: 'Collège Moderne de Yaoundé',
-          student_id: 'ETU2024001',
-          birth_date: '2008-05-15',
-          parent_phone: '+237 695 000 111',
-          parent_name: 'M. André Owona',
-          subjects: ['Mathématiques', 'Français', 'Anglais', 'Sciences', 'Histoire'],
-          average_grade: '14.5/20',
-          attendance_rate: '92%'
-        },
-        parent: {
-          id: user.id,
-          full_name: 'M. André Owona',
-          email: user.email,
-          phone: '+237 697 567 890',
-          role: 'parent',
-          children: [{ name: 'Kevin Essomba', class: '3èmeA', average: '14.5/20' }],
-          school_name: 'Collège Moderne de Yaoundé',
-          profession: 'Ingénieur',
-          emergency_contact: '+237 695 000 222',
-          address: '15 Rue de la Paix, Yaoundé'
-        }
-      };
-      return demoProfiles[role] || demoProfiles.student;
-    };
-
-    // Fonction pour profil réel
-    const getRealProfile = () => {
-      // Base : vraies données de l'utilisateur Supabase
-      let profile = {
-        id: user.id,
-        full_name: user.full_name || user.user_metadata?.full_name || user.email?.split('@')[0] || 'Utilisateur',
-        email: user.email,
-        phone: user.phone || user.user_metadata?.phone,
-        role: user.role || user.user_metadata?.role || 'student',
-        avatar: user.avatar || user.user_metadata?.avatar,
-        created_at: user.created_at
-      };
-
-      // Chercher les données spécifiques selon le rôle
-      let specificData = null;
-      switch (profile.role) {
-        case 'principal':
-          specificData = data?.currentUser || user;
-          const schoolData = data?.schoolData || user?.schoolData || data?.schoolDetails;
-          if (specificData) {
-            profile.full_name = specificData.full_name || specificData.name || profile.full_name;
-            profile.phone = specificData.phone || profile.phone;
-          }
-          profile = {
-            ...profile,
-            school_name: schoolData?.name || 'École non définie',
-            school_address: schoolData?.address || 'Adresse non définie',
-            position: 'Directeur d\'Établissement',
-            employees_count: data?.personnel?.length || 0,
-            students_count: data?.students?.length || 0,
-            classes_managed: schoolData?.available_classes || [],
-            experience: specificData?.experience || 'Non défini',
-            specialization: specificData?.specialization || 'Administration Scolaire',
-            certifications: specificData?.certifications || []
-          };
-          break;
-
-        case 'teacher':
-          specificData = data?.personnel?.find(p => p.email === user.email && p.type === 'teacher');
-          if (specificData) {
-            profile.full_name = specificData.full_name || specificData.name || profile.full_name;
-            profile.phone = specificData.phone || profile.phone;
-          }
-          profile = {
-            ...profile,
-            subject: specificData?.subject || 'Matière non définie',
-            classes: specificData?.classes || [],
-            experience: specificData?.experience || 'Non défini',
-            students_count: specificData?.students_count || 0,
-            degree: specificData?.degree || 'Diplôme non défini',
-            specialization: specificData?.specialization || 'Non défini',
-            schedule: specificData?.schedule || 'Horaires non définis',
-            certifications: specificData?.certifications || []
-          };
-          break;
-
-        case 'secretary':
-          specificData = data?.personnel?.find(p => p.email === user.email && p.type === 'secretary');
-          if (specificData) {
-            profile.full_name = specificData.full_name || specificData.name || profile.full_name;
-            profile.phone = specificData.phone || profile.phone;
-          }
-          profile = {
-            ...profile,
-            position: specificData?.role || 'Secrétaire',
-            experience: specificData?.experience || 'Non défini',
-            permissions: specificData?.permissions || [],
-            specialization: specificData?.specialization || 'Gestion Administrative',
-            schedule: specificData?.schedule || 'Horaires non définis',
-            certifications: specificData?.certifications || []
-          };
-          break;
-
-        case 'student':
-          specificData = data?.students?.find(s => s.email === user.email);
-          if (specificData) {
-            profile.full_name = specificData.full_name || specificData.name || profile.full_name;
-            profile.phone = specificData.phone || profile.phone;
-          }
-          profile = {
-            ...profile,
-            class_name: specificData?.class_name || 'Classe non définie',
-            student_id: specificData?.student_id || 'ID non défini',
-            birth_date: specificData?.birth_date || 'Date non définie',
-            parent_phone: specificData?.parent_phone || 'Contact parent non défini',
-            parent_name: specificData?.parent_name || 'Parent non défini',
-            subjects: specificData?.subjects || [],
-            average_grade: specificData?.average_grade || 'Non calculée',
-            attendance_rate: specificData?.attendance_rate || 'Non calculé'
-          };
-          break;
-
-        case 'parent':
-          specificData = data?.parents?.find(p => p.email === user.email);
-          if (specificData) {
-            profile.full_name = specificData.full_name || specificData.name || profile.full_name;
-            profile.phone = specificData.phone || profile.phone;
-          }
-          profile = {
-            ...profile,
-            children: specificData?.children || [],
-            profession: specificData?.profession || 'Non définie',
-            emergency_contact: specificData?.emergency_contact || 'Non défini',
-            address: specificData?.address || 'Non définie'
-          };
-          break;
-      }
-
-      return profile;
-    };
-
-    setUserProfile(buildUserProfile());
-  }, [user, data]);
-
-  if (!userProfile) {
+  // Affichage de chargement rapide
+  if (profileLoading || !user) {
     return (
       <div className="max-w-2xl mx-auto p-6">
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -245,6 +33,31 @@ const ProfileSettings = () => {
             <div className="flex-1 space-y-2 py-1">
               <div className="h-4 bg-gray-200 rounded w-3/4"></div>
               <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+              <div className="h-3 bg-gray-200 rounded w-1/3 mt-2"></div>
+            </div>
+          </div>
+          <div className="mt-6 space-y-3">
+            <div className="h-4 bg-gray-200 rounded"></div>
+            <div className="h-4 bg-gray-200 rounded w-4/5"></div>
+            <div className="h-4 bg-gray-200 rounded w-3/5"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Affichage d'erreur si échec de chargement
+  if (error && !profileLoading) {
+    return (
+      <div className="max-w-2xl mx-auto p-6">
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <div className="flex items-center space-x-3">
+            <Icon name="AlertCircle" size={20} className="text-red-600" />
+            <div>
+              <h3 className="font-medium text-red-900">Erreur de chargement</h3>
+              <p className="text-sm text-red-700 mt-1">
+                Impossible de charger les informations du profil. Veuillez actualiser la page.
+              </p>
             </div>
           </div>
         </div>

@@ -55,7 +55,7 @@ const QuickActions = () => {
       description: 'Accéder aux profils du personnel',
       icon: 'Users',
       color: 'bg-warning',
-      path: '/staff-management'
+      path: '/principal-dashboard?tab=personnel'
     },
     {
       id: 'settings',
