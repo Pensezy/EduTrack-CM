@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
@@ -7,18 +8,27 @@ import { useAuth } from '../../contexts/AuthContext';
 
 // Import all tab components
 import StudentManagementTab from './components/StudentManagementTab';
-import GradeEntryTab from './components/GradeEntryTab';
 import AttendanceTab from './components/AttendanceTab';
 import PaymentTab from './components/PaymentTab';
 import NotificationCenter from './components/NotificationCenter';
 import TransferWorkflow from './components/TransferWorkflow';
+import DocumentsTab from './components/DocumentsTab';
 
 const SecretaryDashboard = () => {
+  const [searchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState('students');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Récupérer les informations de l'utilisateur connecté
   const { user } = useAuth();
+
+  // Gérer la navigation via les paramètres URL
+  useEffect(() => {
+    const tabParam = searchParams.get('tab');
+    if (tabParam && ['students', 'attendance', 'payments', 'notifications', 'transfers', 'documents'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [searchParams]);
 
   const tabs = [
     {
@@ -29,18 +39,11 @@ const SecretaryDashboard = () => {
       description: 'Inscriptions et profils'
     },
     {
-      id: 'grades',
-      label: 'Saisie des Notes',
-      icon: 'BookOpen',
-      component: GradeEntryTab,
-      description: 'Évaluations et bulletins'
-    },
-    {
       id: 'attendance',
-      label: 'Présences',
+      label: 'Gestion des Absences',
       icon: 'Calendar',
       component: AttendanceTab,
-      description: 'Suivi quotidien'
+      description: 'Absences et retards'
     },
     {
       id: 'payments',
@@ -55,6 +58,13 @@ const SecretaryDashboard = () => {
       icon: 'Bell',
       component: NotificationCenter,
       description: 'SMS et emails'
+    },
+    {
+      id: 'documents',
+      label: 'Documents',
+      icon: 'FileText',
+      component: DocumentsTab,
+      description: 'Certificats et attestations'
     },
     {
       id: 'transfers',

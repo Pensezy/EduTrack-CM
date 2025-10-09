@@ -21,10 +21,9 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Documents', path: '/document-management-hub', icon: 'Files', description: 'Ressources pédagogiques' }
     ],
     secretary: [
-      { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home', description: 'Aperçu administratif' },
-      { label: 'Centre Documents', path: '/document-management-center', icon: 'FileText', description: 'Gestion documentaire' },
-      { label: 'Gestion Étudiants', path: '/student-profile-management', icon: 'Users', description: 'Dossiers étudiants' },
-      { label: 'Bulletins & Notes', path: '/grade-management-system', icon: 'BookOpen', description: 'Gestion des notes' }
+      { label: 'Gestion Élèves', path: '/secretary-dashboard?tab=students', icon: 'Users', description: 'Inscriptions et profils' },
+      { label: 'Gestion Absences', path: '/secretary-dashboard?tab=attendance', icon: 'Calendar', description: 'Absences et retards' },
+      { label: 'Paiements', path: '/secretary-dashboard?tab=payments', icon: 'CreditCard', description: 'Frais de scolarité' }
     ],
     principal: [
       { label: 'Vue d\'ensemble', path: '/principal-dashboard', icon: 'Home', description: 'Dashboard principal' },
@@ -53,10 +52,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Emploi du temps', icon: 'Calendar', path: '/teacher-dashboard' },
     ],
     secretary: [
-      { label: 'Nouvel élève', icon: 'UserPlus', path: '/student-profile-management' },
-      { label: 'Rapports', icon: 'FileBarChart', path: '/report-generation' },
-      { label: 'Notifications', icon: 'Mail', path: '/notification-management' },
-      { label: 'Documents', icon: 'FileText', path: '/document-management-center' },
+      { label: 'Notifications', icon: 'Bell', path: '/secretary-dashboard?tab=notifications' },
+      { label: 'Transferts', icon: 'ArrowRightLeft', path: '/secretary-dashboard?tab=transfers' }
     ],
     principal: [
       { label: 'Créer compte personnel', icon: 'UserPlus', path: '/principal-dashboard?tab=accounts&subtab=create' },

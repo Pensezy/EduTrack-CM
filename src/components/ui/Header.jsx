@@ -27,9 +27,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     ],
     secretary: [
       { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home' },
-      { label: 'Document Center', path: '/document-management-center', icon: 'FileText' },
-      { label: 'Students', path: '/student-profile-management', icon: 'Users' },
-      { label: 'Grade Reports', path: '/grade-management-system', icon: 'BookOpen' },
+      { label: 'Paramètres', path: '/profile-settings', icon: 'Settings' },
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },
