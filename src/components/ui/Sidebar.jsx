@@ -22,7 +22,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
     ],
     secretary: [
       { label: 'Gestion Élèves', path: '/secretary-dashboard?tab=students', icon: 'Users', description: 'Inscriptions et profils' },
-      { label: 'Gestion Absences', path: '/secretary-dashboard?tab=attendance', icon: 'Calendar', description: 'Absences et retards' },
+      { label: 'Tâches du Jour', path: '/secretary-dashboard?tab=tasks', icon: 'CheckSquare', description: 'Actions prioritaires' },
+      { label: 'Justificatifs', path: '/secretary-dashboard?tab=justifications', icon: 'FileCheck', description: 'Absences et retards' },
       { label: 'Paiements', path: '/secretary-dashboard?tab=payments', icon: 'CreditCard', description: 'Frais de scolarité' }
     ],
     principal: [
@@ -52,8 +53,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Emploi du temps', icon: 'Calendar', path: '/teacher-dashboard' },
     ],
     secretary: [
-      { label: 'Notifications', icon: 'Bell', path: '/secretary-dashboard?tab=notifications' },
-      { label: 'Transferts', icon: 'ArrowRightLeft', path: '/secretary-dashboard?tab=transfers' }
+      { label: 'Planning', icon: 'Calendar', path: '/secretary-dashboard?tab=planning' },
+      { label: 'Communication', icon: 'MessageCircle', path: '/secretary-dashboard?tab=communications' }
     ],
     principal: [
       { label: 'Créer compte personnel', icon: 'UserPlus', path: '/principal-dashboard?tab=accounts&subtab=create' },

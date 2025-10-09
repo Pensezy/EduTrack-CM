@@ -26,8 +26,9 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
       { label: 'Account', path: '/teacher-account-management', icon: 'User' },
     ],
     secretary: [
-      { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home' },
-      { label: 'Paramètres', path: '/profile-settings', icon: 'Settings' },
+      { label: 'Paiements', path: '/secretary-dashboard?tab=payments', icon: 'CreditCard' },
+      { label: 'Communication', path: '/secretary-dashboard?tab=communications', icon: 'MessageCircle' },
+      { label: 'Documents', path: '/secretary-dashboard?tab=documents', icon: 'FileText' },
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },

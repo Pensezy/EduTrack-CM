@@ -8,15 +8,17 @@ import { useAuth } from '../../contexts/AuthContext';
 
 // Import all tab components
 import StudentManagementTab from './components/StudentManagementTab';
-import AttendanceTab from './components/AttendanceTab';
+import JustificationTab from './components/JustificationTab';
 import PaymentTab from './components/PaymentTab';
 import NotificationCenter from './components/NotificationCenter';
 import TransferWorkflow from './components/TransferWorkflow';
 import DocumentsTab from './components/DocumentsTab';
+import PlanningTab from './components/PlanningTab';
+import TasksTab from './components/TasksTab';
 
 const SecretaryDashboard = () => {
   const [searchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState('students');
+  const [activeTab, setActiveTab] = useState('tasks');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Récupérer les informations de l'utilisateur connecté
@@ -25,46 +27,64 @@ const SecretaryDashboard = () => {
   // Gérer la navigation via les paramètres URL
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    if (tabParam && ['students', 'attendance', 'payments', 'notifications', 'transfers', 'documents'].includes(tabParam)) {
+    const validTabs = ['students', 'justifications', 'payments', 'communications', 'transfers', 'documents', 'planning', 'tasks'];
+    if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [searchParams]);
 
   const tabs = [
     {
-      id: 'students',
-      label: 'Gestion des Élèves',
-      icon: 'Users',
-      component: StudentManagementTab,
-      description: 'Inscriptions et profils'
+      id: 'tasks',
+      label: 'Tâches',
+      icon: 'CheckSquare',
+      component: TasksTab,
+      description: 'Actions du jour'
     },
     {
-      id: 'attendance',
-      label: 'Gestion des Absences',
-      icon: 'Calendar',
-      component: AttendanceTab,
-      description: 'Absences et retards'
+      id: 'students',
+      label: 'Élèves',
+      icon: 'Users',
+      component: StudentManagementTab,
+      description: 'Inscriptions'
+    },
+    {
+      id: 'justifications',
+      label: 'Absences',
+      icon: 'FileCheck',
+      component: JustificationTab,
+      description: 'Justificatifs'
     },
     {
       id: 'payments',
       label: 'Paiements',
       icon: 'CreditCard',
       component: PaymentTab,
-      description: 'Frais de scolarité'
+      description: 'Frais scolaires'
     },
     {
-      id: 'notifications',
-      label: 'Notifications',
-      icon: 'Bell',
-      component: NotificationCenter,
-      description: 'SMS et emails'
+      id: 'planning',
+      label: 'Planning',
+      icon: 'Calendar',
+      component: PlanningTab,
+      description: 'Rendez-vous'
     },
+    {
+      id: 'communications',
+      label: 'Communication',
+      icon: 'MessageCircle',
+      component: NotificationCenter,
+      description: 'SMS & emails'
+    }
+  ];
+
+  const secondaryTabs = [
     {
       id: 'documents',
       label: 'Documents',
       icon: 'FileText',
       component: DocumentsTab,
-      description: 'Certificats et attestations'
+      description: 'Certificats'
     },
     {
       id: 'transfers',
@@ -75,35 +95,36 @@ const SecretaryDashboard = () => {
     }
   ];
 
-  const currentTab = tabs?.find(tab => tab?.id === activeTab);
+  const allTabs = [...tabs, ...secondaryTabs];
+  const currentTab = allTabs?.find(tab => tab?.id === activeTab);
   const ActiveComponent = currentTab?.component;
 
   const quickStats = [
     {
-      label: 'Élèves actifs',
+      label: 'Élèves inscrits',
       value: '127',
       icon: 'Users',
       color: 'text-success',
       bgColor: 'bg-success/10'
     },
     {
-      label: 'Absences aujourd\'hui',
-      value: '8',
-      icon: 'AlertTriangle',
+      label: 'Justificatifs en attente',
+      value: '5',
+      icon: 'FileText',
       color: 'text-warning',
       bgColor: 'bg-warning/10'
     },
     {
-      label: 'Paiements en attente',
-      value: '23',
-      icon: 'Clock',
+      label: 'Paiements en retard',
+      value: '12',
+      icon: 'CreditCard',
       color: 'text-error',
       bgColor: 'bg-error/10'
     },
     {
-      label: 'Messages envoyés',
-      value: '45',
-      icon: 'MessageSquare',
+      label: 'Appels parents urgents',
+      value: '3',
+      icon: 'Phone',
       color: 'text-primary',
       bgColor: 'bg-primary/10'
     }
@@ -180,43 +201,77 @@ const SecretaryDashboard = () => {
 
           {/* Tab Navigation */}
           <div className="bg-card rounded-lg border border-border mb-6">
-            {/* Desktop Tab Navigation */}
-            <div className="hidden lg:block border-b border-border">
-              <nav className="flex space-x-8 px-6">
+            {/* Desktop Tab Navigation - Compact Grid */}
+            <div className="hidden lg:block p-6">
+              {/* Main Tabs - Grid Layout */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
                 {tabs?.map((tab) => (
                   <button
                     key={tab?.id}
                     onClick={() => setActiveTab(tab?.id)}
-                    className={`flex items-center space-x-2 py-4 px-2 border-b-2 font-body font-body-semibold text-sm transition-micro ${
+                    className={`flex items-center space-x-3 p-4 rounded-lg border transition-micro ${
                       activeTab === tab?.id
-                        ? 'border-primary text-primary' :'border-transparent text-text-secondary hover:text-text-primary hover:border-muted'
+                        ? 'border-primary bg-primary/5 text-primary' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50 text-text-secondary hover:text-text-primary'
                     }`}
                   >
-                    <Icon name={tab?.icon} size={18} />
-                    <div className="text-left">
-                      <div>{tab?.label}</div>
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      activeTab === tab?.id ? 'bg-primary/10' : 'bg-muted/30'
+                    }`}>
+                      <Icon name={tab?.icon} size={20} />
+                    </div>
+                    <div className="text-left flex-1">
+                      <div className="font-body font-body-semibold text-sm">{tab?.label}</div>
                       <div className="font-caption font-caption-normal text-xs opacity-70">
                         {tab?.description}
                       </div>
                     </div>
                   </button>
                 ))}
-              </nav>
+              </div>
+              
+              {/* Secondary Tabs - Inline */}
+              <div className="flex space-x-3 pt-4 border-t border-border">
+                <span className="text-xs font-medium text-text-secondary px-2 py-1">Autres :</span>
+                {secondaryTabs?.map((tab) => (
+                  <button
+                    key={tab?.id}
+                    onClick={() => setActiveTab(tab?.id)}
+                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg border text-sm transition-micro ${
+                      activeTab === tab?.id
+                        ? 'border-primary bg-primary/5 text-primary' 
+                        : 'border-border hover:border-primary/50 hover:bg-muted/50 text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Icon name={tab?.icon} size={16} />
+                    <span className="font-body font-body-medium">{tab?.label}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
             {/* Mobile Tab Navigation */}
-            <div className="lg:hidden border-b border-border p-4">
-              <div className="relative">
+            <div className="lg:hidden p-4">
+              <div className="relative mb-4">
                 <select
                   value={activeTab}
                   onChange={(e) => setActiveTab(e?.target?.value)}
                   className="w-full appearance-none bg-input border border-border rounded-md px-4 py-2 pr-8 font-body font-body-normal text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
                 >
-                  {tabs?.map((tab) => (
-                    <option key={tab?.id} value={tab?.id}>
-                      {tab?.label} - {tab?.description}
-                    </option>
-                  ))}
+                  <optgroup label="Fonctions principales">
+                    {tabs?.map((tab) => (
+                      <option key={tab?.id} value={tab?.id}>
+                        {tab?.label} - {tab?.description}
+                      </option>
+                    ))}
+                  </optgroup>
+                  <optgroup label="Autres fonctions">
+                    {secondaryTabs?.map((tab) => (
+                      <option key={tab?.id} value={tab?.id}>
+                        {tab?.label} - {tab?.description}
+                      </option>
+                    ))}
+                  </optgroup>
                 </select>
                 <Icon 
                   name="ChevronDown" 
@@ -240,39 +295,39 @@ const SecretaryDashboard = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
               <Button
                 variant="outline"
-                iconName="UserPlus"
+                iconName="CheckSquare"
                 iconPosition="left"
-                onClick={() => setActiveTab('students')}
+                onClick={() => setActiveTab('tasks')}
                 className="justify-start"
               >
-                Nouvel élève
+                Mes tâches du jour
+              </Button>
+              <Button
+                variant="outline"
+                iconName="Phone"
+                iconPosition="left"
+                onClick={() => setActiveTab('justifications')}
+                className="justify-start"
+              >
+                Appels parents urgents
               </Button>
               <Button
                 variant="outline"
                 iconName="Calendar"
                 iconPosition="left"
-                onClick={() => setActiveTab('attendance')}
+                onClick={() => setActiveTab('planning')}
                 className="justify-start"
               >
-                Prendre les présences
+                Planning rendez-vous
               </Button>
               <Button
                 variant="outline"
-                iconName="Mail"
+                iconName="FileText"
                 iconPosition="left"
-                onClick={() => setActiveTab('notifications')}
+                onClick={() => setActiveTab('documents')}
                 className="justify-start"
               >
-                Envoyer un message
-              </Button>
-              <Button
-                variant="outline"
-                iconName="Download"
-                iconPosition="left"
-                onClick={() => console.log('Export data')}
-                className="justify-start"
-              >
-                Exporter les données
+                Certificats à imprimer
               </Button>
             </div>
           </div>
