@@ -8,6 +8,8 @@ import { useAuth } from '../../contexts/AuthContext';
 
 // Import all tab components
 import StudentManagementTab from './components/StudentManagementTab';
+import TeacherManagementTab from './components/TeacherManagementTab';
+import StudentCardTab from './components/StudentCardTab';
 import JustificationTab from './components/JustificationTab';
 import PaymentTab from './components/PaymentTab';
 import NotificationCenter from './components/NotificationCenter';
@@ -27,7 +29,7 @@ const SecretaryDashboard = () => {
   // Gérer la navigation via les paramètres URL
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs = ['students', 'justifications', 'payments', 'communications', 'transfers', 'documents', 'planning', 'tasks'];
+    const validTabs = ['students', 'teachers', 'cards', 'justifications', 'payments', 'communications', 'transfers', 'documents', 'planning', 'tasks'];
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
     }
@@ -49,6 +51,20 @@ const SecretaryDashboard = () => {
       description: 'Inscriptions'
     },
     {
+      id: 'teachers',
+      label: 'Enseignants',
+      icon: 'GraduationCap',
+      component: TeacherManagementTab,
+      description: 'Comptes prof'
+    },
+    {
+      id: 'cards',
+      label: 'Cartes',
+      icon: 'CreditCard',
+      component: StudentCardTab,
+      description: 'Cartes scolaires'
+    },
+    {
       id: 'justifications',
       label: 'Absences',
       icon: 'FileCheck',
@@ -58,7 +74,7 @@ const SecretaryDashboard = () => {
     {
       id: 'payments',
       label: 'Paiements',
-      icon: 'CreditCard',
+      icon: 'Banknote',
       component: PaymentTab,
       description: 'Frais scolaires'
     },
@@ -204,7 +220,7 @@ const SecretaryDashboard = () => {
             {/* Desktop Tab Navigation - Compact Grid */}
             <div className="hidden lg:block p-6">
               {/* Main Tabs - Grid Layout */}
-              <div className="grid grid-cols-3 gap-3 mb-4">
+              <div className="grid grid-cols-4 gap-3 mb-4">
                 {tabs?.map((tab) => (
                   <button
                     key={tab?.id}
