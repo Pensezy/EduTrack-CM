@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../../../contexts/AuthContext';
-import { documentService } from '../../../services/documentService';
+// import { documentService } from '../../../services/documentService';
 
 const TeacherAssignments = ({ assignments, onAssignmentsUpdate }) => {
   const { userProfile } = useAuth();
