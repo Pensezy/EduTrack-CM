@@ -11,12 +11,14 @@ import GradesOverview from './components/GradesOverview';
 import PaymentStatus from './components/PaymentStatus';
 import CommunicationCenter from './components/CommunicationCenter';
 import UpcomingEvents from './components/UpcomingEvents';
+import MultiSchoolChildrenOverview from './components/MultiSchoolChildrenOverview';
 
 const ParentDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedChild, setSelectedChild] = useState(null);
   const [selectedSchool, setSelectedSchool] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [viewMode, setViewMode] = useState('traditional'); // 'traditional' ou 'multischool'
 
   // Mock parent data with multi-school children
   const parentData = {
@@ -365,16 +367,58 @@ const ParentDashboard = () => {
             </div>
           </div>
 
-          {/* Multi-School Child Selector */}
-          <ChildSelector
-            children={parentData?.children}
-            schools={getSchools()}
-            selectedChild={selectedChild}
-            selectedSchool={selectedSchool}
-            onChildSelect={handleChildSelect}
-            onSchoolChange={handleSchoolChange}
-            getChildrenBySchool={getChildrenBySchool}
-          />
+          {/* Sélecteur de mode de vue */}
+          <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200">
+            <div>
+              <h3 className="font-semibold text-gray-800">Mode d'affichage</h3>
+              <p className="text-sm text-gray-600">
+                Choisissez comment voir vos enfants
+              </p>
+            </div>
+            <div className="flex bg-gray-100 rounded-lg p-1">
+              <button
+                onClick={() => setViewMode('traditional')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'traditional'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Icon name="Users" size={16} className="mr-2 inline" />
+                Vue Traditionnelle
+              </button>
+              <button
+                onClick={() => setViewMode('multischool')}
+                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                  viewMode === 'multischool'
+                    ? 'bg-white text-blue-600 shadow-sm'
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+              >
+                <Icon name="Globe" size={16} className="mr-2 inline" />
+                Multi-Établissements
+              </button>
+            </div>
+          </div>
+
+          {/* Vue Multi-Établissements */}
+          {viewMode === 'multischool' && (
+            <MultiSchoolChildrenOverview parentGlobalId="global-parent-1" />
+          )}
+
+          {/* Vue Traditionnelle */}
+          {viewMode === 'traditional' && (
+            <>
+              {/* Multi-School Child Selector */}
+              <ChildSelector
+                children={parentData?.children}
+                schools={getSchools()}
+                selectedChild={selectedChild}
+                selectedSchool={selectedSchool}
+                onChildSelect={handleChildSelect}
+                onSchoolChange={handleSchoolChange}
+                getChildrenBySchool={getChildrenBySchool}
+              />
 
           {/* Selected Child Overview */}
           {selectedChild && (
@@ -478,6 +522,8 @@ const ParentDashboard = () => {
               </Link>
             </div>
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>

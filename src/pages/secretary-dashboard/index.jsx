@@ -17,6 +17,7 @@ import TransferWorkflow from './components/TransferWorkflow';
 import DocumentsTab from './components/DocumentsTab';
 import PlanningTab from './components/PlanningTab';
 import TasksTab from './components/TasksTab';
+import SchoolYearTab from './components/SchoolYearTab';
 
 const SecretaryDashboard = () => {
   const [searchParams] = useSearchParams();
@@ -29,7 +30,7 @@ const SecretaryDashboard = () => {
   // Gérer la navigation via les paramètres URL
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    const validTabs = ['students', 'teachers', 'cards', 'justifications', 'payments', 'communications', 'transfers', 'documents', 'planning', 'tasks'];
+    const validTabs = ['students', 'teachers', 'cards', 'justifications', 'payments', 'communications', 'transfers', 'documents', 'planning', 'tasks', 'schoolyear'];
     if (tabParam && validTabs.includes(tabParam)) {
       setActiveTab(tabParam);
     }
@@ -84,6 +85,13 @@ const SecretaryDashboard = () => {
       icon: 'Calendar',
       component: PlanningTab,
       description: 'Rendez-vous'
+    },
+    {
+      id: 'schoolyear',
+      label: 'Année Scolaire',
+      icon: 'RotateCcw',
+      component: SchoolYearTab,
+      description: 'Transition d\'année'
     },
     {
       id: 'communications',
@@ -187,7 +195,7 @@ const SecretaryDashboard = () => {
                     })}
                   </p>
                   <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    Année scolaire 2024-2025
+                    Année scolaire 2025-2026
                   </p>
                 </div>
               </div>

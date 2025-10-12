@@ -84,6 +84,7 @@
     ]
   },
   "devDependencies": {
+    "@faker-js/faker": "^10.0.0",
     "@tailwindcss/aspect-ratio": "^0.4.2",
     "@tailwindcss/container-queries": "^0.1.1",
     "@tailwindcss/line-clamp": "^0.1.0",

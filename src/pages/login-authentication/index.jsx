@@ -150,7 +150,7 @@ const LoginAuthentication = () => {
         )}
 
         {/* Production Login Link */}
-        <div className="mt-8 text-center">
+        <div className="mt-6 text-center">
           <div className="bg-white/80 backdrop-blur-sm border border-border rounded-xl p-6 shadow-sm">
             <h3 className="text-lg font-heading font-semibold text-foreground mb-3">
               Compte personnel ?

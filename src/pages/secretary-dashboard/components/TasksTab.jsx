@@ -9,6 +9,18 @@ const TasksTab = () => {
   const [filterPriority, setFilterPriority] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showUrgentCallsModal, setShowUrgentCallsModal] = useState(false);
+  const [newTask, setNewTask] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    dueDate: '',
+    dueTime: '',
+    category: 'general',
+    contact: '',
+    studentRelated: ''
+  });
 
   const priorityOptions = [
     { value: '', label: 'Toutes les priorités' },
@@ -29,29 +41,29 @@ const TasksTab = () => {
   const [tasks, setTasks] = useState([
     {
       id: 1,
-      title: "Appeler Mme Martin pour justificatif d'absence",
-      description: "Camille Rousseau absente hier sans justification",
+      title: "Appeler Mme Mbarga pour justificatif d'absence",
+      description: "Junior Mbarga absent hier sans justification",
       priority: "urgent",
       status: "pending",
-      dueDate: "2024-11-18",
+      dueDate: "2025-10-18",
       dueTime: "09:00",
       category: "appels",
       assignedTo: "Secrétariat",
-      studentRelated: "Camille Rousseau - CE2",
-      contact: "+33 6 34 56 78 90",
+      studentRelated: "Junior Mbarga - CM1",
+      contact: "+237 6 89 01 23 45",
       estimatedDuration: "15 min"
     },
     {
       id: 2,
       title: "Préparer certificats de scolarité",
-      description: "3 certificats à imprimer pour les familles Dubois, Bernard et Leroy",
+      description: "3 certificats à imprimer pour les familles Nkomo, Biya et Atangana",
       priority: "high",
       status: "pending",
-      dueDate: "2024-11-18",
+      dueDate: "2025-10-18",
       dueTime: "14:00",
       category: "documents",
       assignedTo: "Secrétariat",
-      studentRelated: "Marie Dubois, Lucas Bernard, Emma Leroy",
+      studentRelated: "Amina Nkomo, Kevin Biya, Sarah Atangana",
       contact: "",
       estimatedDuration: "30 min"
     },
@@ -61,7 +73,7 @@ const TasksTab = () => {
       description: "Envoyer rappel pour les familles avec paiements en retard",
       priority: "medium",
       status: "in_progress",
-      dueDate: "2024-11-19",
+      dueDate: "2025-10-19",
       dueTime: "10:00",
       category: "paiements",
       assignedTo: "Secrétariat",
@@ -211,7 +223,42 @@ const TasksTab = () => {
   };
 
   const handleAddTask = () => {
-    console.log('Add new task');
+    setShowAddTaskModal(true);
+  };
+
+  const handleSaveNewTask = () => {
+    if (newTask.title && newTask.description) {
+      const task = {
+        id: tasks.length + 1,
+        title: newTask.title,
+        description: newTask.description,
+        priority: newTask.priority,
+        status: 'pending',
+        dueDate: newTask.dueDate,
+        dueTime: newTask.dueTime,
+        category: newTask.category,
+        assignedTo: 'Secrétariat',
+        studentRelated: newTask.studentRelated,
+        contact: newTask.contact,
+        estimatedDuration: '30 min'
+      };
+      setTasks([...tasks, task]);
+      setNewTask({
+        title: '',
+        description: '',
+        priority: 'medium',
+        dueDate: '',
+        dueTime: '',
+        category: 'general',
+        contact: '',
+        studentRelated: ''
+      });
+      setShowAddTaskModal(false);
+    }
+  };
+
+  const handleShowUrgentCalls = () => {
+    setShowUrgentCallsModal(true);
   };
 
   const handleEditTask = (taskId) => {
@@ -223,7 +270,8 @@ const TasksTab = () => {
   };
 
   const handleCallContact = (contact) => {
-    console.log('Call contact:', contact);
+    // Simulation d'un appel
+    window.open(`tel:${contact}`, '_self');
   };
 
   const stats = {
@@ -250,7 +298,7 @@ const TasksTab = () => {
             variant="outline"
             iconName="Phone"
             iconPosition="left"
-            onClick={() => console.log('Quick call list')}
+            onClick={handleShowUrgentCalls}
           >
             Appels urgents
           </Button>
@@ -502,6 +550,168 @@ const TasksTab = () => {
           </div>
         )}
       </div>
+
+      {/* Modal Nouvelle Tâche */}
+      {showAddTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                Créer une nouvelle tâche
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowAddTaskModal(false)}
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Input
+                    label="Titre de la tâche"
+                    placeholder="Ex: Appeler les parents de..."
+                    value={newTask.title}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Input
+                    label="Description"
+                    placeholder="Détails de la tâche à effectuer"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    required
+                  />
+                </div>
+                <Select
+                  label="Priorité"
+                  options={[
+                    { value: 'urgent', label: 'Urgent' },
+                    { value: 'high', label: 'Important' },
+                    { value: 'medium', label: 'Normal' },
+                    { value: 'low', label: 'Faible' }
+                  ]}
+                  value={newTask.priority}
+                  onChange={(value) => setNewTask(prev => ({ ...prev, priority: value }))}
+                />
+                <Select
+                  label="Catégorie"
+                  options={[
+                    { value: 'appels', label: 'Appels' },
+                    { value: 'documents', label: 'Documents' },
+                    { value: 'paiements', label: 'Paiements' },
+                    { value: 'inscriptions', label: 'Inscriptions' },
+                    { value: 'planning', label: 'Planning' },
+                    { value: 'general', label: 'Général' }
+                  ]}
+                  value={newTask.category}
+                  onChange={(value) => setNewTask(prev => ({ ...prev, category: value }))}
+                />
+                <Input
+                  label="Date d'échéance"
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+                <Input
+                  label="Heure d'échéance"
+                  type="time"
+                  value={newTask.dueTime}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, dueTime: e.target.value }))}
+                />
+                <Input
+                  label="Élève concerné (optionnel)"
+                  placeholder="Ex: Marie Dubois - CM2"
+                  value={newTask.studentRelated}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, studentRelated: e.target.value }))}
+                />
+                <Input
+                  label="Contact (optionnel)"
+                  placeholder="+237 6XX XX XX XX"
+                  value={newTask.contact}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, contact: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-border">
+              <Button variant="default" onClick={handleSaveNewTask}>
+                Créer la tâche
+              </Button>
+              <Button variant="outline" onClick={() => setShowAddTaskModal(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Appels Urgents */}
+      {showUrgentCallsModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                Appels Urgents
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setShowUrgentCallsModal(false)}
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div className="p-6">
+              <div className="space-y-3">
+                {tasks
+                  .filter(task => task.priority === 'urgent' && task.contact && task.status === 'pending')
+                  .map((task) => (
+                    <div key={task.id} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                      <div className="flex-1">
+                        <p className="font-body font-body-medium text-sm text-text-primary">
+                          {task.title}
+                        </p>
+                        <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                          {task.contact}
+                        </p>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        iconName="Phone"
+                        onClick={() => handleCallContact(task.contact)}
+                      >
+                        Appeler
+                      </Button>
+                    </div>
+                  ))}
+                
+                {tasks.filter(task => task.priority === 'urgent' && task.contact && task.status === 'pending').length === 0 && (
+                  <div className="text-center py-8">
+                    <Icon name="Phone" size={32} className="text-muted-foreground mx-auto mb-3" />
+                    <p className="font-body font-body-normal text-text-secondary">
+                      Aucun appel urgent en cours
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-border">
+              <Button variant="outline" onClick={() => setShowUrgentCallsModal(false)}>
+                Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

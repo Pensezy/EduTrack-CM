@@ -144,24 +144,34 @@ export const useDashboardData = (schoolContext = null) => {
   // Recharger les données quand le mode change (optimisé)
   useEffect(() => {
     if (!modeLoading && dataMode) {
-      console.log(`� Chargement rapide des données en mode: ${dataMode}`);
-      
-      // Charger uniquement les données essentielles en premier
-      loadMetrics();
-      loadSchoolDetails();
-      
-      // Charger les autres données après un petit délai pour améliorer la responsivité
-      setTimeout(() => {
+      console.log(`🚀 Chargement optimisé des données en mode: ${dataMode}`);
+      if (dataMode === 'demo') {
+        // Mode démo : Chargement immédiat de toutes les données (elles sont locales)
+        loadMetrics();
+        loadSchoolDetails();
         loadSchoolStats();
         loadClasses();
-      }, 100);
-      
-      setTimeout(() => {
         loadPersonnel();
         loadClassAverages();
         loadAttendance();
         loadPayments();
-      }, 200);
+      } else {
+        // Mode production : Données critiques en priorité
+        Promise.all([
+          loadSchoolDetails(),
+          loadMetrics()
+        ]).then(() => {
+          // Dès que les données critiques sont là, charger le reste en parallèle
+          Promise.all([
+            loadSchoolStats(),
+            loadClasses(),
+            loadPersonnel(),
+            loadClassAverages(),
+            loadAttendance(),
+            loadPayments()
+          ]);
+        });
+      }
     }
   }, [dataMode, modeLoading]);
 

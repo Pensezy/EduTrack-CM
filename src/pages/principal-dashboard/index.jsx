@@ -14,6 +14,7 @@ import SystemStatus from './components/SystemStatus';
 import PersonnelManagement from './components/PersonnelManagement';
 import AccountsManagement from './components/AccountsManagement';
 import DatabaseDiagnostic from './components/DatabaseDiagnostic';
+import SchoolYearValidationTab from './components/SchoolYearValidationTab';
 import ErrorBoundary from '../../components/ErrorBoundary';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
@@ -25,6 +26,7 @@ const PrincipalDashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showMobileMenu, setShowMobileMenu] = useState(false);
   
   // États pour la gestion des classes personnalisées
   const [newClassName, setNewClassName] = useState('');
@@ -82,7 +84,7 @@ const PrincipalDashboard = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'analytics', 'personnel', 'school-info', 'actions', 'system', 'accounts', 'debug'].includes(tabParam)) {
+    if (tabParam && ['overview', 'analytics', 'personnel', 'school-year', 'school-info', 'actions', 'system', 'accounts', 'debug'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else {
       setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
@@ -96,6 +98,20 @@ const PrincipalDashboard = () => {
 
     return () => clearInterval(timer);
   }, []);
+
+  // Fermeture du menu mobile au clic à l'extérieur
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (!event.target.closest('[data-mobile-menu]')) {
+        setShowMobileMenu(false);
+      }
+    };
+
+    if (showMobileMenu) {
+      document.addEventListener('click', handleClickOutside);
+      return () => document.removeEventListener('click', handleClickOutside);
+    }
+  }, [showMobileMenu]);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -116,6 +132,7 @@ const PrincipalDashboard = () => {
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'analytics', label: 'Analyses', icon: 'TrendingUp' },
     { id: 'personnel', label: 'Personnel', icon: 'Users' },
+    { id: 'school-year', label: 'Validation Année', icon: 'Calendar' },
     { id: 'school-info', label: 'École', icon: 'School' },
     { id: 'actions', label: 'Actions', icon: 'Zap' },
     { id: 'system', label: 'Système', icon: 'Settings' },
@@ -223,10 +240,10 @@ const PrincipalDashboard = () => {
     switch (activeTab) {
       case 'overview':
         return (
-          <div className="space-y-8">
-            {/* Key Metrics - Toutes les métriques importantes */}
-            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-              {keyMetrics?.map((metric, index) => (
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+            {/* Key Metrics - Responsive et prioritaires */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+              {keyMetrics?.slice(0, 4).map((metric, index) => (
                 <MetricCard
                   key={index}
                   title={metric?.title}
@@ -240,114 +257,128 @@ const PrincipalDashboard = () => {
               ))}
             </div>
             
-            {/* Charts Section */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Aperçu des performances</h3>
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-                <ClassAverageChart />
-                <AttendanceChart />
+            {/* Charts Section - Responsive */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Aperçu des performances</h3>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+                <div className="min-h-[200px] sm:min-h-[250px]">
+                  <ClassAverageChart />
+                </div>
+                <div className="min-h-[200px] sm:min-h-[250px]">
+                  <AttendanceChart />
+                </div>
               </div>
             </div>
             
-            {/* Payment Status - Plus compact */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">État des paiements</h3>
-              <PaymentStatusChart />
+            {/* Payment Status - Compact et responsive */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">État des paiements</h3>
+              <div className="min-h-[150px] sm:min-h-[200px]">
+                <PaymentStatusChart />
+              </div>
             </div>
           </div>
         );
       case 'analytics':
         return (
-          <div className="space-y-8">
-            {/* Header Section */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-100">
+          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
+            {/* Header Section - Responsive */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-100">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                  <Icon name="TrendingUp" size={24} className="text-blue-600" />
+                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Icon name="TrendingUp" size={20} className="text-blue-600 sm:size-6" />
                 </div>
-                <div>
-                  <h2 className="text-xl font-bold text-gray-900">
+                <div className="min-w-0">
+                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
                     Analyses Détaillées
                   </h2>
-                  <p className="text-gray-600">
-                    Rapports et tendances de performance scolaire
+                  <p className="text-sm sm:text-base text-gray-600">
+                    Rapports et tendances de performance
                   </p>
                 </div>
               </div>
             </div>
             
-            {/* Charts Grid */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <ClassAverageChart />
+            {/* Charts Grid - Responsive */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+                <div className="min-h-[250px] sm:min-h-[300px]">
+                  <ClassAverageChart />
+                </div>
               </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-6">
-                <AttendanceChart />
+              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+                <div className="min-h-[250px] sm:min-h-[300px]">
+                  <AttendanceChart />
+                </div>
               </div>
             </div>
             
-            {/* Payment Analytics */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <PaymentStatusChart />
+            {/* Payment Analytics - Responsive */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+              <div className="min-h-[200px] sm:min-h-[250px]">
+                <PaymentStatusChart />
+              </div>
             </div>
           </div>
         );
       case 'personnel':
         return <PersonnelManagement />;
+      case 'school-year':
+        return <SchoolYearValidationTab />;
       case 'actions':
         return (
-          <div className="space-y-6">
-            {/* Raccourcis directs */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-4 sm:space-y-6">
+            {/* Raccourcis directs - Responsifs */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
               <button
                 onClick={() => navigate('/principal-dashboard?tab=accounts&subtab=create')}
-                className="p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-left group"
+                className="p-3 sm:p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-left group"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <Icon name="UserPlus" size={20} className="text-blue-600" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon name="UserPlus" size={16} className="text-blue-600 sm:size-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-blue-900">Créer Personnel</h3>
-                    <p className="text-sm text-blue-700">Ajouter enseignant/secrétaire</p>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-blue-900 text-sm sm:text-base">Créer Personnel</h3>
+                    <p className="text-xs sm:text-sm text-blue-700 truncate">Ajouter enseignant/secrétaire</p>
                   </div>
                 </div>
               </button>
               
               <button
                 onClick={() => navigate('/notification-management')}
-                className="p-4 bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 text-left group"
+                className="p-3 sm:p-4 bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 text-left group"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Icon name="Bell" size={20} className="text-green-600" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon name="Bell" size={16} className="text-green-600 sm:size-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-green-900">Notification</h3>
-                    <p className="text-sm text-green-700">Message à l'école</p>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-green-900 text-sm sm:text-base">Notification</h3>
+                    <p className="text-xs sm:text-sm text-green-700 truncate">Message à l'école</p>
                   </div>
                 </div>
               </button>
               
               <button
                 onClick={() => navigate('/report-generation')}
-                className="p-4 bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 rounded-xl transition-all duration-200 text-left group"
+                className="p-3 sm:p-4 bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 rounded-xl transition-all duration-200 text-left group sm:col-span-2 lg:col-span-1"
               >
                 <div className="flex items-center space-x-3">
-                  <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                    <Icon name="FileBarChart" size={20} className="text-purple-600" />
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                    <Icon name="FileBarChart" size={16} className="text-purple-600 sm:size-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-purple-900">Rapport</h3>
-                    <p className="text-sm text-purple-700">Générer analyse</p>
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-purple-900 text-sm sm:text-base">Rapport</h3>
+                    <p className="text-xs sm:text-sm text-purple-700 truncate">Générer analyse</p>
                   </div>
                 </div>
               </button>
             </div>
             
-            {/* Section complète */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">Toutes les Actions</h3>
+            {/* Section complète - Responsive */}
+            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
+              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Toutes les Actions</h3>
               <QuickActions />
             </div>
           </div>
@@ -841,158 +872,211 @@ const PrincipalDashboard = () => {
         />
 
         {/* Main Content */}
-        <main className={`pt-16 transition-all duration-state ${
-          isSidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
-        }`}>
-          <div className="p-4 lg:p-6 max-w-7xl mx-auto">
-            {/* Page Header - Amélioré */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-6 border border-blue-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                    <Icon name="BarChart3" size={24} className="text-blue-600" />
+        <main className={`pt-16 transition-all duration-300 ${
+          isSidebarCollapsed ? 'lg:pl-20' : 'lg:pl-64'
+        } overflow-x-hidden min-h-screen`}>
+          <div className="p-3 sm:p-4 lg:p-6 w-full">
+            <div className="max-w-full w-full overflow-x-auto">
+            {/* Page Header - Simplifié et responsive */}
+            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-blue-100">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                <div className="flex items-center space-x-3 sm:space-x-4">
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                    <Icon name="BarChart3" size={20} className="text-blue-600 sm:size-6" />
                   </div>
-                  <div>
-                    <div className="flex items-center space-x-3 mb-1">
-                      <h1 className="text-2xl font-bold text-gray-900">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
+                      <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                         Dashboard Principal
                       </h1>
-                      {/* Indicateur de mode */}
-                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      {/* Indicateur de mode - simplifié */}
+                      <div className={`self-start px-2 py-1 rounded-full text-xs font-medium ${
                         isDemo 
                           ? 'bg-amber-100 text-amber-800' 
                           : 'bg-green-100 text-green-800'
                       }`}>
-                        {isDemo ? '🔄 Mode Démo' : '🏫 Données Réelles'}
+                        {isDemo ? '🔄 Démo' : '🏫 Réel'}
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4 text-sm text-gray-600">
-                      {/* Nom du directeur si disponible */}
-                      {(schoolData?.director_name || schoolData?.directorName || schoolData?.users?.full_name) && (
-                        <div className="text-sm text-green-600 font-medium">
-                          👤 {schoolData.director_name || schoolData.directorName || schoolData.users?.full_name}
-                        </div>
-                      )}
-                      {/* Nom de l'école si disponible */}
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
+                      {/* Nom de l'école - priorité sur mobile */}
                       {schoolData && (
-                        <span className="font-medium text-blue-600">
+                        <span className="font-medium text-blue-600 truncate">
                           🏛️ {schoolData.name}
                         </span>
                       )}
-                      <span>
+                      {/* Directeur - masqué sur très petits écrans */}
+                      {(schoolData?.director_name || schoolData?.directorName || schoolData?.users?.full_name) && (
+                        <div className="hidden sm:block text-green-600 font-medium truncate">
+                          👤 {schoolData.director_name || schoolData.directorName || schoolData.users?.full_name}
+                        </div>
+                      )}
+                      {/* Date - masquée sur mobile */}
+                      <span className="hidden md:block">
                         📅 {new Date().toLocaleDateString('fr-FR', { 
-                          weekday: 'long', 
+                          weekday: 'short', 
                           day: 'numeric', 
-                          month: 'long' 
+                          month: 'short' 
                         })}
                       </span>
-                      <div className="flex items-center space-x-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                        <span>Système opérationnel</span>
-                      </div>
                     </div>
                   </div>
                 </div>
                 
-                <div className="flex items-center space-x-3">
-                  {/* Indicateur du mode de données */}
-                  <div className={`hidden md:flex items-center space-x-2 backdrop-blur-sm rounded-lg px-3 py-2 ${
-                    isDemo 
-                      ? 'bg-orange-50 border border-orange-200' 
-                      : 'bg-green-50 border border-green-200'
-                  }`}>
-                    <div className={`w-2 h-2 rounded-full ${
-                      isDemo ? 'bg-orange-500 animate-pulse' : 'bg-green-500'
-                    }`} />
-                    <span className={`text-sm font-medium ${
-                      isDemo ? 'text-orange-700' : 'text-green-700'
-                    }`}>
-                      {modeLoading ? 'Chargement...' : (isDemo ? 'Mode Démo' : 'Données Réelles')}
+                <div className="flex items-center justify-between lg:justify-end space-x-2 sm:space-x-3">
+                  {/* Statistiques rapides - responsive */}
+                  <div className="hidden sm:flex items-center space-x-2 bg-white/60 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2">
+                    <Icon name="Users" size={14} className="text-blue-600" />
+                    <span className="text-xs sm:text-sm font-medium text-gray-700">
+                      {data.schoolStats?.totalStudents || (isDemo ? '400' : '0')}
                     </span>
-                    {isDemo && (
-                      <Icon name="TestTube" size={14} className="text-orange-600" />
-                    )}
-                    {isProduction && (
-                      <Icon name="Database" size={14} className="text-green-600" />
-                    )}
                   </div>
                   
-                  <div className="hidden md:flex items-center space-x-2 bg-white/60 backdrop-blur-sm rounded-lg px-3 py-2">
-                    <Icon name="Users" size={16} className="text-blue-600" />
-                    <span className="text-sm font-medium text-gray-700">
-                      {data.schoolStats?.totalStudents || (isDemo ? '400' : '0')} élèves
-                    </span>
+                  {/* Statut système - simplifié */}
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span className="text-xs text-gray-600 hidden sm:inline">OK</span>
                   </div>
+                  
                   <NotificationCenter userRole="principal" />
                   <AccessibilityControls />
                 </div>
               </div>
             </div>
 
-            {/* Tab Navigation - Avec indicateurs */}
-            <div className="flex space-x-1 mb-8 bg-gray-100 p-1 rounded-lg w-fit">
-              {tabOptions?.map((tab) => {
-                // Ajouter des indicateurs contextuels
-                const getTabBadge = (tabId) => {
-                  switch (tabId) {
-                    case 'personnel':
-                      return <div className="w-2 h-2 bg-green-500 rounded-full ml-1" title="25 membres actifs" />;
-                    case 'system':
-                      return <div className="w-2 h-2 bg-yellow-500 rounded-full ml-1" title="1 alerte mineure" />;
-                    default:
-                      return null;
-                  }
-                };
-                
-                return (
-                  <button
-                    key={tab?.id}
-                    onClick={() => handleTabChange(tab?.id)}
-                    className={`flex items-center space-x-2 px-4 py-2 text-sm rounded-md transition-all duration-200 relative ${
-                      activeTab === tab?.id
-                        ? 'bg-white text-blue-600 shadow-sm font-medium' 
-                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Icon name={tab?.icon} size={16} />
-                    <span>{tab?.label}</span>
-                    {getTabBadge(tab?.id)}
-                  </button>
-                );
-              })}
+            {/* Tab Navigation - Version desktop */}
+            <div className="mb-6 sm:mb-8 hidden sm:block">
+              <div className="bg-gray-100 p-1 rounded-lg overflow-x-auto scrollbar-hide w-full">
+                <div className="flex space-x-1 min-w-max pb-1">
+                  {tabOptions?.map((tab) => {
+                    // Ajouter des indicateurs contextuels
+                    const getTabBadge = (tabId) => {
+                      switch (tabId) {
+                        case 'personnel':
+                          return <div className="w-2 h-2 bg-green-500 rounded-full ml-1 flex-shrink-0" title="25 membres actifs" />;
+                        case 'system':
+                          return <div className="w-2 h-2 bg-yellow-500 rounded-full ml-1 flex-shrink-0" title="1 alerte mineure" />;
+                        case 'school-year':
+                          return <div className="w-2 h-2 bg-warning rounded-full ml-1 flex-shrink-0" title="3 demandes en attente" />;
+                        default:
+                          return null;
+                      }
+                    };
+                    
+                    return (
+                      <button
+                        key={tab?.id}
+                        onClick={() => handleTabChange(tab?.id)}
+                        className={`flex items-center space-x-2 px-3 lg:px-4 py-2 text-sm rounded-md transition-all duration-200 relative whitespace-nowrap flex-shrink-0 ${
+                          activeTab === tab?.id
+                            ? 'bg-white text-blue-600 shadow-sm font-medium' 
+                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon name={tab?.icon} size={16} className="flex-shrink-0" />
+                        <span className={`transition-all duration-200 ${
+                          !isSidebarCollapsed ? 'text-xs lg:text-sm' : 'text-sm'
+                        }`}>
+                          {!isSidebarCollapsed && tab?.label.length > 12 
+                            ? tab?.label.split(' ').map(word => word.substring(0, 4)).join(' ')
+                            : tab?.label
+                          }
+                        </span>
+                        {getTabBadge(tab?.id)}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
 
-            {/* Notification mode démo */}
+            {/* Tab Navigation - Version mobile avec dropdown */}
+            <div className="mb-6 sm:hidden">
+              <div className="relative" data-mobile-menu>
+                <button
+                  onClick={() => setShowMobileMenu(!showMobileMenu)}
+                  className={`w-full flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg text-sm font-medium ${
+                    activeTab ? 'text-blue-600' : 'text-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center space-x-2">
+                    <Icon name={tabOptions?.find(t => t.id === activeTab)?.icon} size={16} />
+                    <span>{tabOptions?.find(t => t.id === activeTab)?.label}</span>
+                    {/* Indicateur d'alertes */}
+                    {((activeTab === 'personnel' && true) || 
+                      (activeTab === 'system' && true) || 
+                      (activeTab === 'school-year' && true)) && (
+                      <div className="w-2 h-2 bg-warning rounded-full"></div>
+                    )}
+                  </div>
+                  <Icon 
+                    name={showMobileMenu ? "ChevronUp" : "ChevronDown"} 
+                    size={16} 
+                    className="text-gray-400"
+                  />
+                </button>
+                
+                {showMobileMenu && (
+                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                    <div className="py-1">
+                      {tabOptions?.map((tab) => {
+                        const hasAlert = (tab.id === 'personnel') || (tab.id === 'system') || (tab.id === 'school-year');
+                        
+                        return (
+                          <button
+                            key={tab?.id}
+                            onClick={() => {
+                              handleTabChange(tab?.id);
+                              setShowMobileMenu(false);
+                            }}
+                            className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors ${
+                              activeTab === tab?.id
+                                ? 'bg-blue-50 text-blue-600 font-medium' 
+                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                            }`}
+                          >
+                            <div className="flex items-center space-x-3">
+                              <Icon name={tab?.icon} size={16} className="flex-shrink-0" />
+                              <span>{tab?.label}</span>
+                            </div>
+                            {hasAlert && (
+                              <div className="w-2 h-2 bg-warning rounded-full flex-shrink-0"></div>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notification mode démo - Compacte */}
             {isDemo && (
-              <div className="mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-400 p-4 rounded-lg">
-                <div className="flex items-center">
-                  <div className="flex-shrink-0">
-                    <Icon name="AlertTriangle" size={20} className="text-orange-400" />
-                  </div>
-                  <div className="ml-3">
-                    <p className="text-sm text-orange-700">
-                      <strong>Mode Démonstration :</strong> Vous visualisez des données fictives à des fins de test.
-                      Connectez-vous avec un compte réel pour accéder aux vraies données de votre école.
+              <div className="mb-4 sm:mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-400 p-3 sm:p-4 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Icon name="AlertTriangle" size={18} className="text-orange-400 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-xs sm:text-sm text-orange-700">
+                      <strong>Mode Demo :</strong> <span className="hidden sm:inline">Données fictives pour test. </span>
+                      <button
+                        onClick={() => navigate('/school-management')}
+                        className="text-orange-600 hover:text-orange-800 font-medium underline"
+                      >
+                        Se connecter
+                      </button>
                     </p>
-                  </div>
-                  <div className="ml-auto flex-shrink-0">
-                    <button
-                      onClick={() => navigate('/school-management')}
-                      className="text-sm text-orange-600 hover:text-orange-800 font-medium underline"
-                    >
-                      Se connecter
-                    </button>
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Indicateur de chargement */}
+            {/* Indicateur de chargement - Compact */}
             {modeLoading && (
-              <div className="mb-6 bg-blue-50 border border-blue-200 p-4 rounded-lg">
-                <div className="flex items-center">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                  <span className="ml-2 text-sm text-blue-700">Détection du mode de données en cours...</span>
+              <div className="mb-4 sm:mb-6 bg-blue-50 border border-blue-200 p-3 sm:p-4 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0"></div>
+                  <span className="text-xs sm:text-sm text-blue-700">Chargement...</span>
                 </div>
               </div>
             )}
@@ -1002,44 +1086,38 @@ const PrincipalDashboard = () => {
               {renderTabContent()}
             </div>
 
-            {/* Footer Info - Amélioré */}
-            <div className="mt-12 pt-6 border-t border-border">
-              <div className="bg-gray-50 rounded-xl p-4">
-                <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between text-sm text-muted-foreground">
-                  <div className="flex flex-wrap items-center gap-4 mb-4 lg:mb-0">
+            {/* Footer Info - Simplifié */}
+            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t border-border">
+              <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs sm:text-sm text-muted-foreground">
+                  <div className="flex flex-wrap items-center gap-2 sm:gap-4">
                     <div className="flex items-center space-x-2">
                       <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                      <span className="font-medium">Système opérationnel</span>
+                      <span className="font-medium">Système OK</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Icon name="Users" size={14} className="text-blue-600" />
-                      <span>{data?.schoolStats?.students || 0} élèves actifs</span>
+                      <Icon name="Users" size={12} className="text-blue-600" />
+                      <span>{data?.schoolStats?.students || 0} élèves</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Icon name="GraduationCap" size={14} className="text-green-600" />
+                      <Icon name="GraduationCap" size={12} className="text-green-600" />
                       <span>{data?.schoolStats?.teachers || 0} enseignants</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="Shield" size={14} className="text-purple-600" />
-                      <span>Sécurisé SSL</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="Database" size={14} className="text-orange-600" />
-                      <span>99.9% uptime</span>
-                    </div>
                   </div>
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2 sm:space-x-4">
                     <div className="flex items-center space-x-2">
-                      <Icon name="Activity" size={14} className="text-green-500" />
-                      <span>Données en temps réel</span>
+                      <Icon name="Activity" size={12} className="text-green-500" />
+                      <span className="hidden sm:inline">Temps réel</span>
+                      <span className="sm:hidden">Live</span>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Icon name="Clock" size={14} />
-                      <span>Sync: {currentTime?.toLocaleTimeString('fr-FR')}</span>
+                      <Icon name="Clock" size={12} />
+                      <span>{currentTime?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
                 </div>
               </div>
+            </div>
             </div>
           </div>
         </main>

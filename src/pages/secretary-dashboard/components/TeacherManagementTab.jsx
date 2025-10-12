@@ -10,6 +10,9 @@ const TeacherManagementTab = () => {
   const [filterSubject, setFilterSubject] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [selectedTeacher, setSelectedTeacher] = useState(null);
 
   const [newTeacher, setNewTeacher] = useState({
     fullName: '',
@@ -17,10 +20,11 @@ const TeacherManagementTab = () => {
     phone: '',
     subject: '',
     className: '',
-    pinCode: ''
+    password: '',
+    confirmPassword: ''
   });
 
-  const teachers = [
+  const initialTeachers = [
     {
       id: 1,
       fullName: "Marie Nguema",
@@ -70,6 +74,8 @@ const TeacherManagementTab = () => {
       avatar: "/public/assets/images/no_image.png"
     }
   ];
+
+  const [teachers, setTeachers] = useState(initialTeachers);
 
   const subjectOptions = [
     { value: '', label: 'Toutes les matières' },
@@ -128,30 +134,161 @@ const TeacherManagementTab = () => {
   };
 
   const handleSaveTeacher = () => {
-    console.log('Saving new teacher:', newTeacher);
-    // Ici on appellerait le service pour créer l'enseignant
-    setShowAddTeacherForm(false);
-    setNewTeacher({
-      fullName: '',
-      email: '',
-      phone: '',
-      subject: '',
-      className: '',
-      pinCode: ''
-    });
+    if (newTeacher.fullName && newTeacher.email && newTeacher.subject && newTeacher.className && 
+        newTeacher.password && newTeacher.confirmPassword) {
+      
+      // Validation du mot de passe
+      if (!validatePassword(newTeacher.password)) {
+        alert('Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial');
+        return;
+      }
+      
+      // Vérification de la correspondance des mots de passe
+      if (newTeacher.password !== newTeacher.confirmPassword) {
+        alert('Les mots de passe ne correspondent pas');
+        return;
+      }
+      
+      const teacher = {
+        id: teachers.length + 1,
+        fullName: newTeacher.fullName,
+        email: newTeacher.email,
+        phone: newTeacher.phone,
+        subject: newTeacher.subject,
+        className: newTeacher.className,
+        status: "active",
+        joinDate: new Date().toLocaleDateString('fr-FR'),
+        teacherId: `PROF${String(teachers.length + 1).padStart(3, '0')}`,
+        avatar: "/public/assets/images/no_image.png"
+      };
+      setTeachers([...teachers, teacher]);
+      setNewTeacher({
+        fullName: '',
+        email: '',
+        phone: '',
+        subject: '',
+        className: '',
+        password: '',
+        confirmPassword: ''
+      });
+      setShowAddTeacherForm(false);
+    }
   };
 
   const handleEditTeacher = (teacherId) => {
-    console.log('Edit teacher:', teacherId);
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (teacher) {
+      setSelectedTeacher(teacher);
+      setNewTeacher({
+        fullName: teacher.fullName,
+        email: teacher.email,
+        phone: teacher.phone,
+        subject: teacher.subject,
+        className: teacher.className,
+        password: '',
+        confirmPassword: ''
+      });
+      setShowEditModal(true);
+    }
+  };
+
+  const handleUpdateTeacher = () => {
+    if (selectedTeacher && newTeacher.fullName && newTeacher.email && newTeacher.subject && newTeacher.className) {
+      
+      // Si un nouveau mot de passe est fourni, le valider
+      if (newTeacher.password) {
+        if (!validatePassword(newTeacher.password)) {
+          alert('Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial');
+          return;
+        }
+        
+        if (newTeacher.password !== newTeacher.confirmPassword) {
+          alert('Les mots de passe ne correspondent pas');
+          return;
+        }
+      }
+      
+      setTeachers(teachers.map(teacher => 
+        teacher.id === selectedTeacher.id
+          ? {
+              ...teacher,
+              fullName: newTeacher.fullName,
+              email: newTeacher.email,
+              phone: newTeacher.phone,
+              subject: newTeacher.subject,
+              className: newTeacher.className
+            }
+          : teacher
+      ));
+      setShowEditModal(false);
+      setSelectedTeacher(null);
+      setNewTeacher({
+        fullName: '',
+        email: '',
+        phone: '',
+        subject: '',
+        className: '',
+        password: '',
+        confirmPassword: ''
+      });
+    }
   };
 
   const handleDeleteTeacher = (teacherId) => {
-    console.log('Delete teacher:', teacherId);
+    const teacher = teachers.find(t => t.id === teacherId);
+    if (teacher) {
+      setSelectedTeacher(teacher);
+      setShowDeleteModal(true);
+    }
   };
 
-  const generatePinCode = () => {
-    const pin = Math.floor(1000 + Math.random() * 9000).toString();
-    setNewTeacher(prev => ({ ...prev, pinCode: pin }));
+  const handleConfirmDelete = () => {
+    if (selectedTeacher) {
+      setTeachers(teachers.filter(teacher => teacher.id !== selectedTeacher.id));
+      setShowDeleteModal(false);
+      setSelectedTeacher(null);
+    }
+  };
+
+  const handleToggleStatus = (teacherId) => {
+    setTeachers(teachers.map(teacher => 
+      teacher.id === teacherId 
+        ? { ...teacher, status: teacher.status === 'active' ? 'inactive' : 'active' }
+        : teacher
+    ));
+  };
+
+  const validatePassword = (password) => {
+    if (password.length < 8) return false;
+    if (!/(?=.*[a-z])/.test(password)) return false;
+    if (!/(?=.*[A-Z])/.test(password)) return false;
+    if (!/(?=.*\d)/.test(password)) return false;
+    if (!/(?=.*[@$!%*?&])/.test(password)) return false;
+    return true;
+  };
+
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&';
+    let password = '';
+    // Au moins une majuscule, une minuscule, un chiffre et un caractère spécial
+    password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+    password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+    password += '0123456789'[Math.floor(Math.random() * 10)];
+    password += '@$!%*?&'[Math.floor(Math.random() * 7)];
+    
+    // Compléter avec 4 caractères aléatoires
+    for (let i = 4; i < 8; i++) {
+      password += chars[Math.floor(Math.random() * chars.length)];
+    }
+    
+    // Mélanger les caractères
+    password = password.split('').sort(() => 0.5 - Math.random()).join('');
+    
+    setNewTeacher(prev => ({ 
+      ...prev, 
+      password: password,
+      confirmPassword: password
+    }));
   };
 
   return (
@@ -231,22 +368,43 @@ const TeacherManagementTab = () => {
               onChange={(value) => setNewTeacher(prev => ({ ...prev, className: value }))}
               required
             />
-            <div className="flex gap-2">
+            <div className="space-y-4">
+              <div className="flex gap-2">
+                <Input
+                  label="Mot de passe"
+                  type="password"
+                  placeholder="Minimum 8 caractères"
+                  value={newTeacher.password}
+                  onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                  required
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={generateSecurePassword}
+                  className="mt-6"
+                >
+                  Générer
+                </Button>
+              </div>
               <Input
-                label="Code PIN"
-                placeholder="Code de connexion"
-                value={newTeacher.pinCode}
-                onChange={(e) => setNewTeacher(prev => ({ ...prev, pinCode: e.target.value }))}
+                label="Confirmer le mot de passe"
+                type="password"
+                placeholder="Répéter le mot de passe"
+                value={newTeacher.confirmPassword}
+                onChange={(e) => setNewTeacher(prev => ({ ...prev, confirmPassword: e.target.value }))}
                 required
               />
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={generatePinCode}
-                className="mt-6"
-              >
-                Générer
-              </Button>
+              {newTeacher.password && !validatePassword(newTeacher.password) && (
+                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                  Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)
+                </div>
+              )}
+              {newTeacher.password && newTeacher.confirmPassword && newTeacher.password !== newTeacher.confirmPassword && (
+                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                  Les mots de passe ne correspondent pas
+                </div>
+              )}
             </div>
           </div>
           
@@ -361,6 +519,14 @@ const TeacherManagementTab = () => {
                       <Button
                         variant="ghost"
                         size="icon"
+                        onClick={() => handleToggleStatus(teacher?.id)}
+                        title={teacher?.status === 'active' ? 'Désactiver' : 'Activer'}
+                      >
+                        <Icon name={teacher?.status === 'active' ? 'UserX' : 'UserCheck'} size={16} />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
                         onClick={() => handleEditTeacher(teacher?.id)}
                         title="Modifier"
                       >
@@ -458,6 +624,196 @@ const TeacherManagementTab = () => {
           </div>
         </div>
       </div>
+
+      {/* Modal Modifier Enseignant */}
+      {showEditModal && selectedTeacher && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                Modifier {selectedTeacher.fullName}
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowEditModal(false);
+                  setSelectedTeacher(null);
+                  setNewTeacher({
+                    fullName: '',
+                    email: '',
+                    phone: '',
+                    subject: '',
+                    className: '',
+                    password: '',
+                    confirmPassword: ''
+                  });
+                }}
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <Input
+                  label="Nom complet"
+                  placeholder="Ex: Marie Nguema"
+                  value={newTeacher.fullName}
+                  onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
+                  required
+                />
+                <Input
+                  label="Email"
+                  type="email"
+                  placeholder="marie.nguema@school.cm"
+                  value={newTeacher.email}
+                  onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
+                  required
+                />
+                <Input
+                  label="Téléphone"
+                  placeholder="+237 6XX XX XX XX"
+                  value={newTeacher.phone}
+                  onChange={(e) => setNewTeacher(prev => ({ ...prev, phone: e.target.value }))}
+                />
+                <Select
+                  label="Matière principale"
+                  placeholder="Choisir une matière"
+                  options={subjectOptions.filter(opt => opt.value)}
+                  value={newTeacher.subject}
+                  onChange={(value) => setNewTeacher(prev => ({ ...prev, subject: value }))}
+                  required
+                />
+                <Select
+                  label="Classe assignée"
+                  placeholder="Choisir une classe"
+                  options={classOptions.filter(opt => opt.value)}
+                  value={newTeacher.className}
+                  onChange={(value) => setNewTeacher(prev => ({ ...prev, className: value }))}
+                  required
+                />
+                
+                <div className="space-y-4 pt-4 border-t border-gray-200">
+                  <div className="text-sm font-medium text-gray-700">Modifier le mot de passe (optionnel)</div>
+                  <div className="flex gap-2">
+                    <Input
+                      label="Nouveau mot de passe"
+                      type="password"
+                      placeholder="Minimum 8 caractères"
+                      value={newTeacher.password}
+                      onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                    />
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={generateSecurePassword}
+                      className="mt-6"
+                    >
+                      Générer
+                    </Button>
+                  </div>
+                  <Input
+                    label="Confirmer le nouveau mot de passe"
+                    type="password"
+                    placeholder="Répéter le mot de passe"
+                    value={newTeacher.confirmPassword}
+                    onChange={(e) => setNewTeacher(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  />
+                  {newTeacher.password && !validatePassword(newTeacher.password) && (
+                    <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                      Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)
+                    </div>
+                  )}
+                  {newTeacher.password && newTeacher.confirmPassword && newTeacher.password !== newTeacher.confirmPassword && (
+                    <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                      Les mots de passe ne correspondent pas
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-border">
+              <Button variant="default" onClick={handleUpdateTeacher}>
+                Sauvegarder
+              </Button>
+              <Button variant="outline" onClick={() => {
+                setShowEditModal(false);
+                setSelectedTeacher(null);
+                setNewTeacher({
+                  fullName: '',
+                  email: '',
+                  phone: '',
+                  subject: '',
+                  className: '',
+                  password: '',
+                  confirmPassword: ''
+                });
+              }}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Confirmer Suppression */}
+      {showDeleteModal && selectedTeacher && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-md w-full">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                Supprimer l'enseignant
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setSelectedTeacher(null);
+                }}
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-error/10 rounded-lg flex items-center justify-center">
+                  <Icon name="AlertTriangle" size={24} className="text-error" />
+                </div>
+                <div>
+                  <p className="font-body font-body-medium text-sm text-text-primary">
+                    Supprimer {selectedTeacher.fullName} ?
+                  </p>
+                  <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                    {selectedTeacher.subject} - {selectedTeacher.className}
+                  </p>
+                </div>
+              </div>
+              
+              <div className="bg-error/10 rounded-lg p-4">
+                <p className="font-caption font-caption-normal text-xs text-error">
+                  ⚠️ Cette action est irréversible. L'enseignant sera définitivement supprimé du système.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-border">
+              <Button variant="destructive" onClick={handleConfirmDelete}>
+                Supprimer définitivement
+              </Button>
+              <Button variant="outline" onClick={() => {
+                setShowDeleteModal(false);
+                setSelectedTeacher(null);
+              }}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

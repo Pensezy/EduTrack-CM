@@ -29,7 +29,7 @@ const NotificationCenter = () => {
 
   const templates = {
     absence: `Bonjour,\n\nNous vous informons que votre enfant {STUDENT_NAME} a été absent(e) aujourd'hui.\n\nSi cette absence était prévue, merci de nous en informer.\n\nCordialement,\nL'équipe pédagogique`,
-    payment: `Bonjour,\n\nNous vous rappelons que le paiement des frais de scolarité pour {STUDENT_NAME} est dû le {DUE_DATE}.\n\nMontant: {AMOUNT}€\n\nMerci de régulariser votre situation.\n\nCordialement,\nLe secrétariat`,
+    payment: `Bonjour,\n\nNous vous rappelons que le paiement des frais de scolarité pour {STUDENT_NAME} est dû le {DUE_DATE}.\n\nMontant: {AMOUNT} FCFA\n\nMerci de régulariser votre situation.\n\nCordialement,\nLe secrétariat`,
     meeting: `Bonjour,\n\nVous êtes convié(e) à une réunion concernant {STUDENT_NAME}.\n\nDate: {DATE}\nHeure: {TIME}\nLieu: {LOCATION}\n\nMerci de confirmer votre présence.\n\nCordialement,\nL'équipe pédagogique`,
     grades: `Bonjour,\n\nDe nouvelles notes sont disponibles pour {STUDENT_NAME} dans votre espace parent.\n\nConnectez-vous pour les consulter.\n\nCordialement,\nL'équipe pédagogique`,
     event: `Bonjour,\n\nNous vous informons qu'un événement scolaire aura lieu:\n\n{EVENT_NAME}\nDate: {DATE}\nHeure: {TIME}\n\nPlus d'informations à suivre.\n\nCordialement,\nL'équipe pédagogique`
@@ -38,42 +38,42 @@ const NotificationCenter = () => {
   const parents = [
     {
       id: 1,
-      name: "Jean Dubois",
-      phone: "+33 6 12 34 56 78",
-      email: "jean.dubois@email.fr",
-      studentName: "Marie Dubois",
+      name: "Paul Nkomo",
+      phone: "+237 6 78 90 12 34",
+      email: "p.nkomo@gmail.com",
+      studentName: "Amina Nkomo",
       class: "CM2"
     },
     {
       id: 2,
-      name: "Sophie Martin",
-      phone: "+33 6 23 45 67 89",
-      email: "sophie.martin@email.fr",
-      studentName: "Pierre Martin",
+      name: "Marie Mbarga",
+      phone: "+237 6 89 01 23 45",
+      email: "marie.mbarga@yahoo.fr",
+      studentName: "Junior Mbarga",
       class: "CM1"
     },
     {
       id: 3,
-      name: "Marc Rousseau",
-      phone: "+33 6 34 56 78 90",
-      email: "marc.rousseau@email.fr",
-      studentName: "Camille Rousseau",
+      name: "Jean Fouda",
+      phone: "+237 6 90 12 34 56",
+      email: "j.fouda@outlook.com",
+      studentName: "Grace Fouda",
       class: "CE2"
     },
     {
       id: 4,
-      name: "Anne Bernard",
-      phone: "+33 6 45 67 89 01",
-      email: "anne.bernard@email.fr",
-      studentName: "Lucas Bernard",
+      name: "Esther Biya",
+      phone: "+237 6 01 23 45 67",
+      email: "esther.biya@hotmail.com",
+      studentName: "Kevin Biya",
       class: "CM2"
     },
     {
       id: 5,
-      name: "David Leroy",
-      phone: "+33 6 56 78 90 12",
-      email: "david.leroy@email.fr",
-      studentName: "Emma Leroy",
+      name: "Michel Atangana",
+      phone: "+237 6 12 34 56 78",
+      email: "m.atangana@gmail.com",
+      studentName: "Sarah Atangana",
       class: "CE1"
     }
   ];
@@ -83,7 +83,7 @@ const NotificationCenter = () => {
       id: 1,
       type: 'sms',
       subject: 'Absence non justifiée',
-      recipients: ['Jean Dubois', 'Sophie Martin'],
+      recipients: ['Paul Nkomo', 'Marie Mbarga'],
       sentDate: '11/12/2024 14:30',
       status: 'delivered',
       deliveryCount: 2
@@ -92,7 +92,7 @@ const NotificationCenter = () => {
       id: 2,
       type: 'email',
       subject: 'Rappel paiement frais de scolarité',
-      recipients: ['Marc Rousseau'],
+      recipients: ['Jean Fouda'],
       sentDate: '11/12/2024 09:15',
       status: 'delivered',
       deliveryCount: 1
@@ -101,7 +101,7 @@ const NotificationCenter = () => {
       id: 3,
       type: 'both',
       subject: 'Réunion parents-professeurs',
-      recipients: ['Anne Bernard', 'David Leroy', 'Jean Dubois'],
+      recipients: ['Esther Biya', 'Michel Atangana', 'Paul Nkomo'],
       sentDate: '10/12/2024 16:45',
       status: 'delivered',
       deliveryCount: 6
@@ -110,7 +110,7 @@ const NotificationCenter = () => {
       id: 4,
       type: 'sms',
       subject: 'Nouvelles notes disponibles',
-      recipients: ['Sophie Martin', 'Anne Bernard'],
+      recipients: ['Marie Mbarga', 'Esther Biya'],
       sentDate: '10/12/2024 11:20',
       status: 'failed',
       deliveryCount: 1
