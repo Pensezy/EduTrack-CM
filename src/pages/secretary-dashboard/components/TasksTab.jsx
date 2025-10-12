@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import dataModeService from '../../../services/dataModeService';
 
 const TasksTab = () => {
   const [filterPriority, setFilterPriority] = useState('');
@@ -38,92 +39,36 @@ const TasksTab = () => {
     { value: 'cancelled', label: 'Annulé' }
   ];
 
-  const [tasks, setTasks] = useState([
-    {
-      id: 1,
-      title: "Appeler Mme Mbarga pour justificatif d'absence",
-      description: "Junior Mbarga absent hier sans justification",
-      priority: "urgent",
-      status: "pending",
-      dueDate: "2025-10-18",
-      dueTime: "09:00",
-      category: "appels",
-      assignedTo: "Secrétariat",
-      studentRelated: "Junior Mbarga - CM1",
-      contact: "+237 6 89 01 23 45",
-      estimatedDuration: "15 min"
-    },
-    {
-      id: 2,
-      title: "Préparer certificats de scolarité",
-      description: "3 certificats à imprimer pour les familles Nkomo, Biya et Atangana",
-      priority: "high",
-      status: "pending",
-      dueDate: "2025-10-18",
-      dueTime: "14:00",
-      category: "documents",
-      assignedTo: "Secrétariat",
-      studentRelated: "Amina Nkomo, Kevin Biya, Sarah Atangana",
-      contact: "",
-      estimatedDuration: "30 min"
-    },
-    {
-      id: 3,
-      title: "Relance paiement frais de cantine",
-      description: "Envoyer rappel pour les familles avec paiements en retard",
-      priority: "medium",
-      status: "in_progress",
-      dueDate: "2025-10-19",
-      dueTime: "10:00",
-      category: "paiements",
-      assignedTo: "Secrétariat",
-      studentRelated: "5 familles concernées",
-      contact: "",
-      estimatedDuration: "45 min"
-    },
-    {
-      id: 4,
-      title: "Mettre à jour planning rendez-vous",
-      description: "Confirmer RDV parents pour la semaine prochaine",
-      priority: "medium",
-      status: "pending",
-      dueDate: "2024-11-18",
-      dueTime: "16:00",
-      category: "planning",
-      assignedTo: "Secrétariat",
-      studentRelated: "",
-      contact: "",
-      estimatedDuration: "20 min"
-    },
-    {
-      id: 5,
-      title: "Vérifier dossiers d'inscription",
-      description: "Contrôler les pièces manquantes pour 3 nouveaux élèves",
-      priority: "high",
-      status: "pending",
-      dueDate: "2024-11-20",
-      dueTime: "11:00",
-      category: "inscriptions",
-      assignedTo: "Secrétariat",
-      studentRelated: "3 nouveaux élèves",
-      contact: "",
-      estimatedDuration: "1 heure"
-    },
-    {
-      id: 6,
-      title: "Impression bulletins 1er trimestre",
-      description: "Préparer et imprimer tous les bulletins scolaires",
-      priority: "low",
-      status: "completed",
-      dueDate: "2024-11-15",
-      dueTime: "15:00",
-      category: "documents",
-      assignedTo: "Secrétariat",
-      studentRelated: "Toutes les classes",
-      contact: "",
-      estimatedDuration: "2 heures"
+  const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [currentMode, setCurrentMode] = useState('demo');
+
+  // Charger les tâches selon le mode de données
+  useEffect(() => {
+    loadTasks();
+    
+    // Écouter les changements de mode
+    const handleModeChange = (event) => {
+      setCurrentMode(event.detail.mode);
+      loadTasks();
+    };
+
+    window.addEventListener('dataModeChanged', handleModeChange);
+    return () => window.removeEventListener('dataModeChanged', handleModeChange);
+  }, []);
+
+  const loadTasks = async () => {
+    setLoading(true);
+    try {
+      const data = await dataModeService.getData('tasks');
+      setTasks(data);
+    } catch (error) {
+      console.error('Erreur lors du chargement des tâches:', error);
+      setTasks([]);
+    } finally {
+      setLoading(false);
     }
-  ]);
+  };
 
   const getPriorityConfig = (priority) => {
     const configs = {
@@ -286,9 +231,20 @@ const TasksTab = () => {
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
-          <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
-            Tâches Quotidiennes
-          </h2>
+          <div className="flex items-center space-x-3">
+            <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
+              Tâches Quotidiennes
+            </h2>
+            <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+              currentMode === 'demo' 
+                ? 'bg-blue-100 text-blue-800' 
+                : currentMode === 'real' 
+                ? 'bg-green-100 text-green-800'
+                : 'bg-orange-100 text-orange-800'
+            }`}>
+              {currentMode === 'demo' ? 'Mode Démo' : currentMode === 'real' ? 'Données Réelles' : 'Mode Hybride'}
+            </span>
+          </div>
           <p className="font-body font-body-normal text-text-secondary mt-1">
             Gestion des tâches administratives et suivi des actions prioritaires
           </p>
@@ -387,8 +343,6 @@ const TasksTab = () => {
             placeholder="Rechercher une tâche..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            iconName="Search"
-            iconPosition="left"
           />
           <Select
             options={priorityOptions}
@@ -419,11 +373,19 @@ const TasksTab = () => {
           </div>
         </div>
 
-        <div className="space-y-4">
-          {filteredTasks.map((task) => {
-            const priorityConfig = getPriorityConfig(task.priority);
-            const statusConfig = getStatusConfig(task.status);
-            const categoryConfig = getCategoryConfig(task.category);
+        {loading ? (
+          <div className="text-center py-12">
+            <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full mx-auto mb-4"></div>
+            <p className="font-body font-body-normal text-text-secondary">
+              Chargement des tâches...
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredTasks.map((task) => {
+              const priorityConfig = getPriorityConfig(task.priority);
+              const statusConfig = getStatusConfig(task.status);
+              const categoryConfig = getCategoryConfig(task.category);
             
             return (
               <div key={task.id} className="border border-border rounded-lg p-4 hover:bg-muted/50 transition-micro">
@@ -535,8 +497,9 @@ const TasksTab = () => {
                 </div>
               </div>
             );
-          })}
-        </div>
+            })}
+          </div>
+        )}
 
         {filteredTasks.length === 0 && (
           <div className="text-center py-12">

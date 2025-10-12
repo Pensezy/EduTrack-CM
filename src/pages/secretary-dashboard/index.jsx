@@ -2,9 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
+import DataModeToggle from '../../components/DataModeToggle';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
+import dataModeService from '../../services/dataModeService';
 
 // Import all tab components
 import StudentManagementTab from './components/StudentManagementTab';
@@ -222,6 +224,16 @@ const SecretaryDashboard = () => {
               </div>
             ))}
           </div>
+
+          {/* Data Mode Toggle */}
+          <DataModeToggle 
+            schoolInfo={{
+              id: user?.currentSchoolId || user?.school_id,
+              isInitialized: user?.school?.isInitialized || false,
+              type: user?.school?.type || 'college'
+            }}
+            userInfo={user}
+          />
 
           {/* Tab Navigation */}
           <div className="bg-card rounded-lg border border-border mb-6">
