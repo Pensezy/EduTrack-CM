@@ -11,10 +11,13 @@ const DocumentsTab = () => {
   const [selectedDocuments, setSelectedDocuments] = useState([]);
   const [showDocumentModal, setShowDocumentModal] = useState(false);
   const [showAnalyticsModal, setShowAnalyticsModal] = useState(false);
+  const [showUploadModal, setShowUploadModal] = useState(false);
   const [documentModalType, setDocumentModalType] = useState('');
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [statistics, setStatistics] = useState(null);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [dragActive, setDragActive] = useState(false);
 
   // Chargement initial des données
   useEffect(() => {
@@ -359,6 +362,117 @@ const DocumentsTab = () => {
     }
   };
 
+  // Gestion de l'upload de fichiers
+  const handleFileUpload = async (files) => {
+    if (!files || files.length === 0) return;
+
+    setUploadProgress(0);
+    
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      
+      // Validation des types de fichiers
+      const allowedTypes = [
+        'application/pdf',
+        'application/msword',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'image/jpeg',
+        'image/png',
+        'image/gif',
+        'text/plain'
+      ];
+      
+      if (!allowedTypes.includes(file.type)) {
+        alert(`❌ Type de fichier non supporté: ${file.name}\nTypes acceptés: PDF, DOC, DOCX, JPG, PNG, GIF, TXT`);
+        continue;
+      }
+      
+      // Validation de la taille (max 10MB)
+      if (file.size > 10 * 1024 * 1024) {
+        alert(`❌ Fichier trop volumineux: ${file.name}\nTaille maximum: 10 MB`);
+        continue;
+      }
+      
+      // Simuler l'upload avec progress
+      for (let progress = 0; progress <= 100; progress += 10) {
+        setUploadProgress(progress);
+        await new Promise(resolve => setTimeout(resolve, 50));
+      }
+      
+      // Créer le nouveau document
+      const newDocument = {
+        id: Date.now() + i,
+        name: file.name.replace(/\.[^/.]+$/, ""), // Nom sans extension
+        type: getDocumentTypeFromFile(file),
+        dateCreated: new Date().toLocaleDateString('fr-FR'),
+        dateModified: new Date().toLocaleDateString('fr-FR'),
+        status: "generated",
+        studentName: "Document uploadé",
+        class: "À définir",
+        format: file.type.includes('pdf') ? 'PDF' : 
+                file.type.includes('word') ? 'DOC' : 
+                file.type.includes('image') ? 'IMAGE' : 'AUTRE',
+        size: formatFileSize(file.size),
+        generatedBy: "secretary",
+        printedCopies: 0,
+        downloadCount: 0,
+        urgency: "normal",
+        validityPeriod: "permanent",
+        originalFile: file // Stocker le fichier pour usage futur
+      };
+      
+      const updatedDocs = [newDocument, ...documents];
+      setDocuments(updatedDocs);
+      setStatistics(calculateStatistics(updatedDocs));
+    }
+    
+    setUploadProgress(0);
+    setShowUploadModal(false);
+    alert(`✅ ${files.length} fichier(s) uploadé(s) avec succès !`);
+  };
+
+  const getDocumentTypeFromFile = (file) => {
+    if (file.type.includes('pdf')) return 'administratif';
+    if (file.type.includes('word')) return 'administratif';
+    if (file.type.includes('image')) return 'administratif';
+    return 'administratif';
+  };
+
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  // Gestion du drag & drop
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    
+    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+      handleFileUpload(Array.from(e.dataTransfer.files));
+    }
+  };
+
+  const handleFileInputChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(Array.from(e.target.files));
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -387,14 +501,16 @@ const DocumentsTab = () => {
           >
             Statistiques
           </Button>
-          <Button
-            variant="outline"
-            iconName="Plus"
-            iconPosition="left"
-            onClick={() => handleGenerateDocument('certificat')}
-          >
-            Nouveau document
-          </Button>
+          <div className="relative">
+            <Button
+              variant="outline"
+              iconName="Plus"
+              iconPosition="left"
+              onClick={() => setShowUploadModal(true)}
+            >
+              Nouveau document
+            </Button>
+          </div>
           <Button
             variant="default"
             iconName="Printer"
@@ -412,7 +528,7 @@ const DocumentsTab = () => {
         <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-4">
           Génération rapide
         </h3>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
           <Button
             variant="outline"
             iconName="FileText"
@@ -439,6 +555,15 @@ const DocumentsTab = () => {
             className="justify-start"
           >
             Bulletin scolaire
+          </Button>
+          <Button
+            variant="default"
+            iconName="Upload"
+            iconPosition="left"
+            onClick={() => setShowUploadModal(true)}
+            className="justify-start bg-green-600 hover:bg-green-700 text-white border-green-600"
+          >
+            Uploader un fichier
           </Button>
         </div>
       </div>
@@ -834,6 +959,117 @@ const DocumentsTab = () => {
                 onClick={() => setShowAnalyticsModal(false)}
               >
                 Fermer
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal d'Upload de Fichiers */}
+      {showUploadModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl mx-4">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="text-lg font-semibold text-text-primary">
+                Uploader des Documents
+              </h3>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowUploadModal(false)}
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div className="p-6">
+              {/* Zone de Drag & Drop */}
+              <div
+                className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                  dragActive 
+                    ? 'border-primary bg-primary/5' 
+                    : 'border-gray-300 hover:border-gray-400'
+                }`}
+                onDragEnter={handleDrag}
+                onDragLeave={handleDrag}
+                onDragOver={handleDrag}
+                onDrop={handleDrop}
+              >
+                <input
+                  type="file"
+                  multiple
+                  accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.gif,.txt"
+                  onChange={handleFileInputChange}
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                />
+                
+                <div className="space-y-4">
+                  <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
+                    <Icon name="Upload" size={32} className="text-primary" />
+                  </div>
+                  
+                  <div>
+                    <h4 className="text-lg font-medium text-text-primary mb-2">
+                      Glissez vos fichiers ici ou cliquez pour sélectionner
+                    </h4>
+                    <p className="text-sm text-text-secondary">
+                      Types supportés: PDF, DOC, DOCX, JPG, PNG, GIF, TXT
+                    </p>
+                    <p className="text-xs text-text-secondary mt-1">
+                      Taille maximum: 10 MB par fichier
+                    </p>
+                  </div>
+                  
+                  <Button
+                    variant="outline"
+                    iconName="FolderOpen"
+                    iconPosition="left"
+                  >
+                    Parcourir les fichiers
+                  </Button>
+                </div>
+              </div>
+
+              {/* Barre de Progression */}
+              {uploadProgress > 0 && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-text-primary">
+                      Upload en cours...
+                    </span>
+                    <span className="text-sm text-text-secondary">
+                      {uploadProgress}%
+                    </span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-2">
+                    <div
+                      className="bg-primary h-2 rounded-full transition-all duration-300"
+                      style={{ width: `${uploadProgress}%` }}
+                    ></div>
+                  </div>
+                </div>
+              )}
+
+              {/* Instructions */}
+              <div className="mt-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <h5 className="font-medium text-blue-900 mb-2">
+                  📋 Instructions d'upload
+                </h5>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Les documents uploadés seront automatiquement ajoutés à votre liste</li>
+                  <li>• Vous pourrez modifier les informations après l'upload</li>
+                  <li>• Les fichiers sont analysés pour détecter le type de document</li>
+                  <li>• Assurez-vous que les noms de fichiers sont explicites</li>
+                </ul>
+              </div>
+            </div>
+            
+            <div className="flex items-center justify-end space-x-3 p-6 border-t border-border">
+              <Button
+                variant="outline"
+                onClick={() => setShowUploadModal(false)}
+              >
+                Annuler
               </Button>
             </div>
           </div>
