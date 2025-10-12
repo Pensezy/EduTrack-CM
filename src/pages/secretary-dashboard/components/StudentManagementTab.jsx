@@ -651,17 +651,15 @@ const StudentManagementTab = () => {
                         size="icon"
                         onClick={() => handleViewProfile(student?.id)}
                         title="Voir le profil"
-                      >
-                        <Icon name="Eye" size={16} />
-                      </Button>
+                        iconName="Eye"
+                      />
                       <Button
                         variant="ghost"
                         size="icon"
                         onClick={() => handleTransferStudent(student?.id)}
                         title="Transférer l'élève"
-                      >
-                        <Icon name="ArrowRightLeft" size={16} />
-                      </Button>
+                        iconName="ArrowRightLeft"
+                      />
                     </div>
                   </td>
                 </tr>
@@ -750,9 +748,8 @@ const StudentManagementTab = () => {
                   setShowAddModal(false);
                   resetWorkflow();
                 }}
-              >
-                <Icon name="X" size={20} />
-              </Button>
+                iconName="X"
+              />
             </div>
 
             {/* Indicateur de progression */}
@@ -990,7 +987,7 @@ const StudentManagementTab = () => {
                   </div>
 
                   {familyData.students.map((student, index) => (
-                    <div key={index} className="border border-border rounded-lg p-4 space-y-4">
+                    <div key={`student-${index}-${student.firstName || 'new'}`} className="border border-border rounded-lg p-4 space-y-4">
                       <div className="flex items-center justify-between">
                         <h5 className="font-heading font-heading-medium text-base text-text-primary">
                           Élève {index + 1}
@@ -1001,8 +998,9 @@ const StudentManagementTab = () => {
                             size="sm"
                             onClick={() => removeStudent(index)}
                             className="text-destructive hover:text-destructive"
+                            iconName="Trash2"
+                            iconPosition="left"
                           >
-                            <Icon name="Trash2" size={16} />
                             Supprimer
                           </Button>
                         )}
@@ -1066,8 +1064,9 @@ const StudentManagementTab = () => {
                     variant="outline"
                     onClick={addStudent}
                     className="w-full"
+                    iconName="Plus"
+                    iconPosition="left"
                   >
-                    <Icon name="Plus" size={16} className="mr-2" />
                     Ajouter un autre élève
                   </Button>
                 </div>
@@ -1087,8 +1086,13 @@ const StudentManagementTab = () => {
 
                   {(!familyData.students[0]?.customUsername) && (
                     <div className="text-center">
-                      <Button onClick={generateAccountsData} size="lg" className="mb-6">
-                        <Icon name="Key" size={16} className="mr-2" />
+                      <Button 
+                        onClick={generateAccountsData} 
+                        size="lg" 
+                        className="mb-6"
+                        iconName="Key"
+                        iconPosition="left"
+                      >
                         {inscriptionMode === 'new' ? 'Générer les Identifiants de Connexion' : 'Générer les Identifiants des Élèves'}
                       </Button>
                     </div>
@@ -1283,8 +1287,12 @@ const StudentManagementTab = () => {
             <div className="flex items-center justify-between p-6 border-t border-border">
               <div className="flex gap-3">
                 {currentStep > 1 && (
-                  <Button variant="outline" onClick={prevStep}>
-                    <Icon name="ChevronLeft" size={16} />
+                  <Button 
+                    variant="outline" 
+                    onClick={prevStep}
+                    iconName="ChevronLeft"
+                    iconPosition="left"
+                  >
                     Précédent
                   </Button>
                 )}
@@ -1311,9 +1319,10 @@ const StudentManagementTab = () => {
                       )) ||
                       (currentStep === 2 && familyData.students.some(s => !s.firstName || !s.lastName || !s.class))
                     }
+                    iconName="ChevronRight"
+                    iconPosition="right"
                   >
                     Suivant
-                    <Icon name="ChevronRight" size={16} />
                   </Button>
                 ) : (
                   <Button 
@@ -1324,8 +1333,9 @@ const StudentManagementTab = () => {
                       resetWorkflow();
                     }}
                     disabled={!familyData.students[0]?.customUsername}
+                    iconName="Check"
+                    iconPosition="left"
                   >
-                    <Icon name="Check" size={16} className="mr-2" />
                     Finaliser l'Inscription
                   </Button>
                 )}
@@ -1347,9 +1357,8 @@ const StudentManagementTab = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowProfileModal(false)}
-              >
-                <Icon name="X" size={20} />
-              </Button>
+                iconName="X"
+              />
             </div>
             
             <div className="p-6 space-y-6">
@@ -1455,9 +1464,8 @@ const StudentManagementTab = () => {
                 variant="ghost"
                 size="icon"
                 onClick={() => setShowTransferModal(false)}
-              >
-                <Icon name="X" size={20} />
-              </Button>
+                iconName="X"
+              />
             </div>
             
             <div className="p-6">

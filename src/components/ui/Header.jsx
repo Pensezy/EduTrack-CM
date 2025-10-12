@@ -210,7 +210,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                 <AppIcon name="User" size={16} color="white" />
               </div>
               <span className="font-body font-body-normal text-sm text-text-primary hidden md:block">
-                {userName}
+                {userName || "Utilisateur"}
               </span>
               <AppIcon name="ChevronDown" size={16} className="hidden md:block" />
             </Button>
@@ -224,7 +224,12 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                       {userName}
                     </p>
                     <p className="text-xs text-gray-500 capitalize">
-                      {userRole}
+                      {userRole === 'secretary' ? 'Secrétaire' : 
+                       userRole === 'principal' ? 'Directeur' :
+                       userRole === 'teacher' ? 'Enseignant' :
+                       userRole === 'student' ? 'Élève' :
+                       userRole === 'parent' ? 'Parent' :
+                       userRole === 'admin' ? 'Administrateur' : userRole}
                     </p>
                   </div>
                   

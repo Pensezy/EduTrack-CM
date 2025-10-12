@@ -124,7 +124,7 @@ const DEMO_DATA = {
       parentId: 'parent-1',
       studentId: 'student-1',
       schoolId: 'school-1',
-      relationshipType: 'père',
+      relationshipType: 'parent',
       isPrimaryContact: true,
       canPickup: true,
       emergencyContact: true
@@ -134,7 +134,7 @@ const DEMO_DATA = {
       parentId: 'parent-1',
       studentId: 'student-2',
       schoolId: 'school-2',
-      relationshipType: 'père',
+      relationshipType: 'parent',
       isPrimaryContact: true,
       canPickup: true,
       emergencyContact: true
@@ -144,7 +144,7 @@ const DEMO_DATA = {
       parentId: 'parent-2',
       studentId: 'student-3',
       schoolId: 'school-2',
-      relationshipType: 'mère',
+      relationshipType: 'parent',
       isPrimaryContact: true,
       canPickup: true,
       emergencyContact: true
@@ -154,7 +154,7 @@ const DEMO_DATA = {
       parentId: 'parent-2',
       studentId: 'student-4',
       schoolId: 'school-3',
-      relationshipType: 'mère',
+      relationshipType: 'parent',
       isPrimaryContact: true,
       canPickup: true,
       emergencyContact: true
@@ -167,6 +167,14 @@ const DEMO_DATA = {
  * VERSION DEMO avec données fictives - ne touche pas à la base de données
  */
 export class ParentMultiSchoolService {
+
+  /**
+   * Détecter le type de relation basé sur le prénom du parent
+   */
+  detectRelationshipType(firstName) {
+    // Toujours retourner "Parent" pour une interface neutre
+    return 'Parent';
+  }
   
   /**
    * Vérifier si un parent existe déjà par email ou téléphone
@@ -188,8 +196,12 @@ export class ParentMultiSchoolService {
           const student = DEMO_DATA.students.find(s => s.id === rel.studentId);
           const school = DEMO_DATA.schools.find(s => s.id === rel.schoolId);
           
+          // Ajuster le type de relation basé sur le prénom du parent
+          const adjustedRelationType = this.detectRelationshipType(existingParent.firstName);
+          
           return {
             ...rel,
+            relationshipType: adjustedRelationType,
             student: {
               ...student,
               school,

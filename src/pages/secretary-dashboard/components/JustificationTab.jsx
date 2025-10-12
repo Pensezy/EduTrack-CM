@@ -1,13 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import AbsenceJustificationModal from './AbsenceJustificationModal';
+import NewAbsenceModal from './NewAbsenceModal';
+import NotificationHistoryModal from './NotificationHistoryModal';
+import { Checkbox } from '../../../components/ui/Checkbox';
+import absenceService from '../../../services/absenceService';
 
 const JustificationTab = () => {
   const [selectedDate, setSelectedDate] = useState(new Date()?.toISOString()?.split('T')?.[0]);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
+  const [absenceData, setAbsenceData] = useState([]);
+  const [selectedAbsences, setSelectedAbsences] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [showJustificationModal, setShowJustificationModal] = useState(false);
+  const [showNewAbsenceModal, setShowNewAbsenceModal] = useState(false);
+  const [showNotificationHistoryModal, setShowNotificationHistoryModal] = useState(false);
+  const [selectedAbsence, setSelectedAbsence] = useState(null);
 
   const statusOptions = [
     { value: '', label: 'Tous les statuts' },
@@ -17,93 +31,36 @@ const JustificationTab = () => {
     { value: 'late', label: 'Retard' }
   ];
 
-  const absenceData = [
-    {
-      id: 1,
-      studentName: "Junior Mbarga",
-      studentId: "STU002",
-      class: "CM1",
-      parentName: "Marie Mbarga",
-      parentPhone: "+237 6 89 01 23 45",
-      parentEmail: "marie.mbarga@yahoo.fr",
-      absenceDate: "15/11/2024",
-      type: "absence",
-      status: "justified",
-      justification: "Rendez-vous médical",
-      justificationDate: "16/11/2024",
-      notifiedParent: true,
-      duration: "Matinée",
-      teacherNotified: true
-    },
-    {
-      id: 2,
-      studentName: "Grace Fouda",
-      studentId: "STU003",
-      class: "CE2",
-      parentName: "Jean Fouda",
-      parentPhone: "+237 6 90 12 34 56",
-      parentEmail: "j.fouda@outlook.com",
-      absenceDate: "16/11/2024",
-      type: "absence",
-      status: "pending",
-      justification: "",
-      justificationDate: "",
-      notifiedParent: true,
-      duration: "Journée complète",
-      teacherNotified: true
-    },
-    {
-      id: 3,
-      studentName: "Kevin Biya",
-      studentId: "STU004",
-      class: "CM2",
-      parentName: "Esther Biya",
-      parentPhone: "+237 6 01 23 45 67",
-      parentEmail: "esther.biya@hotmail.com",
-      absenceDate: "16/11/2024",
-      type: "late",
-      status: "unjustified",
-      justification: "",
-      justificationDate: "",
-      notifiedParent: false,
-      duration: "30 minutes",
-      teacherNotified: true
-    },
-    {
-      id: 4,
-      studentName: "Sarah Atangana",
-      studentId: "STU005",
-      class: "CE1",
-      parentName: "Michel Atangana",
-      parentPhone: "+237 6 12 34 56 78",
-      parentEmail: "m.atangana@gmail.com",
-      absenceDate: "14/11/2024",
-      type: "absence",
-      status: "unjustified",
-      justification: "",
-      justificationDate: "",
-      notifiedParent: true,
-      duration: "Après-midi",
-      teacherNotified: true
-    },
-    {
-      id: 5,
-      studentName: "Amina Nkomo",
-      studentId: "STU001",
-      class: "CM2",
-      parentName: "Paul Nkomo",
-      parentPhone: "+237 6 78 90 12 34",
-      parentEmail: "p.nkomo@gmail.com",
-      absenceDate: "13/11/2024",
-      type: "late",
-      status: "justified",
-      justification: "Problème de transport",
-      justificationDate: "13/11/2024",
-      notifiedParent: false,
-      duration: "15 minutes",
-      teacherNotified: true
+  // Chargement des données depuis le service
+  useEffect(() => {
+    loadAbsences();
+  }, []);
+
+  const loadAbsences = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const absences = await absenceService.getAllAbsences();
+      setAbsenceData(absences);
+    } catch (err) {
+      setError('Erreur lors du chargement des absences');
+      console.error('Erreur:', err);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  // Affichage des messages de succès temporaires
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
+
+
 
   const getStatusConfig = (status) => {
     const configs = {
@@ -149,16 +106,113 @@ const JustificationTab = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleCallParent = (absenceId) => {
-    console.log('Call parent for absence:', absenceId);
+  const handleCallParent = async (absenceId) => {
+    try {
+      const callData = {
+        successful: true,
+        duration: '3 min',
+        notes: 'Appel effectué concernant l\'absence'
+      };
+      
+      const updatedAbsence = await absenceService.callParent(absenceId, callData);
+      setAbsenceData(prev => 
+        prev.map(absence => 
+          absence.id === absenceId ? updatedAbsence : absence
+        )
+      );
+      setSuccessMessage('Appel parent enregistré avec succès');
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l\'enregistrement de l\'appel');
+    }
   };
 
-  const handleJustifyAbsence = (absenceId) => {
-    console.log('Justify absence:', absenceId);
+  const handleJustifyAbsence = (absence) => {
+    setSelectedAbsence(absence);
+    setShowJustificationModal(true);
   };
 
-  const handleSendReminder = (absenceId) => {
-    console.log('Send reminder for:', absenceId);
+  const handleAbsenceUpdated = (updatedAbsence) => {
+    setAbsenceData(prev => 
+      prev.map(absence => 
+        absence.id === updatedAbsence.id ? updatedAbsence : absence
+      )
+    );
+    setSuccessMessage('Absence mise à jour avec succès');
+  };
+
+  const handleAbsenceCreated = (newAbsence) => {
+    setAbsenceData(prev => [...prev, newAbsence]);
+    setSuccessMessage(`Absence enregistrée pour ${newAbsence.studentName}`);
+  };
+
+  const handleSendReminder = async (absenceId, type = 'sms') => {
+    try {
+      const message = 'Rappel concernant l\'absence de votre enfant. Merci de nous contacter.';
+      
+      if (type === 'sms') {
+        await absenceService.sendSMSReminder(absenceId, message);
+      } else {
+        await absenceService.sendEmailReminder(absenceId, {
+          subject: 'Absence de votre enfant',
+          message: message
+        });
+      }
+      
+      // Recharger les données pour voir la mise à jour
+      loadAbsences();
+      setSuccessMessage(`Rappel ${type} envoyé avec succès`);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l\'envoi du rappel');
+    }
+  };
+
+  const handleBulkReminders = async () => {
+    if (selectedAbsences.length === 0) {
+      setError('Veuillez sélectionner au moins une absence');
+      return;
+    }
+
+    try {
+      const message = 'Rappel concernant l\'absence de votre enfant.';
+      await absenceService.bulkSendReminders(selectedAbsences, 'sms', message);
+      
+      loadAbsences();
+      setSelectedAbsences([]);
+      setSuccessMessage(`Rappels envoyés pour ${selectedAbsences.length} absence(s)`);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l\'envoi des rappels');
+    }
+  };
+
+  const handleBulkJustify = async () => {
+    const justifiableAbsences = selectedAbsences.filter(absenceId => {
+      const absence = absenceData.find(a => a.id === absenceId);
+      return absence && absence.status !== 'justified';
+    });
+
+    if (justifiableAbsences.length === 0) {
+      setError('Aucune absence sélectionnée ne peut être justifiée');
+      return;
+    }
+
+    try {
+      const reason = 'Justification groupée par l\'administration';
+      await absenceService.bulkJustifyAbsences(justifiableAbsences, reason);
+      
+      loadAbsences();
+      setSelectedAbsences([]);
+      setSuccessMessage(`${justifiableAbsences.length} absence(s) justifiée(s)`);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la justification groupée');
+    }
+  };
+
+  const toggleAbsenceSelection = (absenceId) => {
+    setSelectedAbsences(prev => 
+      prev.includes(absenceId) 
+        ? prev.filter(id => id !== absenceId)
+        : [...prev, absenceId]
+    );
   };
 
   const stats = {
@@ -170,6 +224,45 @@ const JustificationTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Messages d'erreur et de succès */}
+      {error && (
+        <div className="p-3 bg-error/10 border border-error/20 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Icon name="AlertCircle" size={16} className="text-error" />
+            <p className="font-body font-body-normal text-sm text-error">
+              {error}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setError('')}
+              className="ml-auto"
+            >
+              <Icon name="X" size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Icon name="CheckCircle" size={16} className="text-success" />
+            <p className="font-body font-body-normal text-sm text-success">
+              {successMessage}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSuccessMessage('')}
+              className="ml-auto"
+            >
+              <Icon name="X" size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -180,22 +273,32 @@ const JustificationTab = () => {
             Suivi des absences et retards, justifications et relances parents
           </p>
         </div>
-        <div className="flex items-center space-x-3">
+        <div className="flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
-            iconName="Phone"
+            iconName="CheckCircle"
             iconPosition="left"
-            onClick={() => console.log('Call all parents')}
+            onClick={handleBulkJustify}
+            disabled={selectedAbsences.length === 0}
           >
-            Appeler parents
+            Justifier sélection ({selectedAbsences.length})
+          </Button>
+          <Button
+            variant="outline"
+            iconName="Mail"
+            iconPosition="left"
+            onClick={handleBulkReminders}
+            disabled={selectedAbsences.length === 0}
+          >
+            Rappels sélection ({selectedAbsences.length})
           </Button>
           <Button
             variant="default"
-            iconName="Mail"
+            iconName="UserX"
             iconPosition="left"
-            onClick={() => console.log('Send reminders')}
+            onClick={() => setShowNewAbsenceModal(true)}
           >
-            Envoyer rappels
+            Nouvelle Absence
           </Button>
         </div>
       </div>
@@ -307,13 +410,35 @@ const JustificationTab = () => {
           </div>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b border-border">
-                <th className="text-left py-3 px-4 font-body font-body-semibold text-sm text-text-secondary">
-                  Élève
-                </th>
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="font-body font-body-normal text-text-secondary">
+                Chargement des absences...
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="border-b border-border">
+                  <th className="text-left py-3 px-4 w-12">
+                    <Checkbox
+                      checked={selectedAbsences.length === filteredAbsences.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedAbsences(filteredAbsences.map(absence => absence.id));
+                        } else {
+                          setSelectedAbsences([]);
+                        }
+                      }}
+                    />
+                  </th>
+                  <th className="text-left py-3 px-4 font-body font-body-semibold text-sm text-text-secondary">
+                    Élève
+                  </th>
                 <th className="text-left py-3 px-4 font-body font-body-semibold text-sm text-text-secondary">
                   Date / Type
                 </th>
@@ -338,6 +463,12 @@ const JustificationTab = () => {
                 
                 return (
                   <tr key={absence.id} className="border-b border-border hover:bg-muted/50 transition-micro">
+                    <td className="py-4 px-4">
+                      <Checkbox
+                        checked={selectedAbsences.includes(absence.id)}
+                        onChange={() => toggleAbsenceSelection(absence.id)}
+                      />
+                    </td>
                     <td className="py-4 px-4">
                       <div>
                         <div className="font-body font-body-semibold text-sm text-text-primary">
@@ -397,7 +528,7 @@ const JustificationTab = () => {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleJustifyAbsence(absence.id)}
+                            onClick={() => handleJustifyAbsence(absence)}
                             title="Justifier"
                           >
                             <Icon name="CheckCircle" size={16} />
@@ -406,11 +537,32 @@ const JustificationTab = () => {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleSendReminder(absence.id)}
-                          title="Envoyer rappel"
+                          onClick={() => handleSendReminder(absence.id, 'sms')}
+                          title="SMS"
+                        >
+                          <Icon name="MessageSquare" size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleSendReminder(absence.id, 'email')}
+                          title="Email"
                         >
                           <Icon name="Mail" size={16} />
                         </Button>
+                        {absence.notificationHistory && absence.notificationHistory.length > 0 && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedAbsence(absence);
+                              setShowNotificationHistoryModal(true);
+                            }}
+                            title="Historique des notifications"
+                          >
+                            <Icon name="History" size={16} />
+                          </Button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -418,20 +570,40 @@ const JustificationTab = () => {
               })}
             </tbody>
           </table>
-        </div>
 
-        {filteredAbsences.length === 0 && (
-          <div className="text-center py-12">
-            <Icon name="CheckCircle" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-2">
-              Aucune absence trouvée
-            </h3>
-            <p className="font-body font-body-normal text-text-secondary">
-              Aucune absence ne correspond à vos critères de recherche.
-            </p>
-          </div>
+          {filteredAbsences.length === 0 && (
+            <div className="text-center py-12">
+              <Icon name="CheckCircle" size={48} className="text-muted-foreground mx-auto mb-4" />
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-2">
+                Aucune absence trouvée
+              </h3>
+              <p className="font-body font-body-normal text-text-secondary">
+                Aucune absence ne correspond à vos critères de recherche.
+              </p>
+            </div>
+          )}
+        </div>
         )}
       </div>
+      {/* Modals */}
+      <AbsenceJustificationModal
+        isOpen={showJustificationModal}
+        onClose={() => setShowJustificationModal(false)}
+        absence={selectedAbsence}
+        onAbsenceUpdated={handleAbsenceUpdated}
+      />
+
+      <NewAbsenceModal
+        isOpen={showNewAbsenceModal}
+        onClose={() => setShowNewAbsenceModal(false)}
+        onAbsenceCreated={handleAbsenceCreated}
+      />
+
+      <NotificationHistoryModal
+        isOpen={showNotificationHistoryModal}
+        onClose={() => setShowNotificationHistoryModal(false)}
+        absence={selectedAbsence}
+      />
     </div>
   );
 };

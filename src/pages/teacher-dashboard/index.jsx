@@ -11,12 +11,14 @@ import DocumentManager from './components/DocumentManager';
 import AttendanceManager from './components/AttendanceManager';
 import StudentCommunication from './components/StudentCommunication';
 import TeacherSchedule from './components/TeacherSchedule';
+import TeacherMultiSchoolOverview from './components/TeacherMultiSchoolOverview';
 
 const TeacherDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [viewMode, setViewMode] = useState('single'); // 'single' ou 'multi-school'
 
   // Mock teacher data with assigned classes
   const teacherData = {
@@ -315,7 +317,53 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
-          {/* Class Selector */}
+          {/* Mode Selector */}
+          <div className="bg-card rounded-lg border border-border p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="font-heading font-heading-medium text-base text-text-primary mb-1">
+                  Mode d'affichage
+                </h3>
+                <p className="text-sm text-text-secondary">
+                  Choisissez entre vue établissement unique ou multi-établissements
+                </p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setViewMode('single')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    viewMode === 'single'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <Icon name="School" size={16} className="mr-2 inline" />
+                  Vue Simple
+                </button>
+                <button
+                  onClick={() => setViewMode('multi-school')}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    viewMode === 'multi-school'
+                      ? 'bg-primary text-primary-foreground'
+                      : 'bg-muted text-text-secondary hover:text-text-primary'
+                  }`}
+                >
+                  <Icon name="Building" size={16} className="mr-2 inline" />
+                  Multi-Établissements
+                </button>
+              </div>
+            </div>
+          </div>
+
+          {/* Vue Multi-Établissements */}
+          {viewMode === 'multi-school' && (
+            <TeacherMultiSchoolOverview teacherGlobalId="global-teacher-1" />
+          )}
+
+          {/* Vue Simple - Contenu existant */}
+          {viewMode === 'single' && (
+            <>
+              {/* Class Selector */}
           <ClassSelector
             classes={teacherData?.assignedClasses}
             selectedClass={selectedClass}
@@ -430,6 +478,8 @@ const TeacherDashboard = () => {
               </Link>
             </div>
           </div>
+            </>
+          )}
         </div>
       </main>
     </div>

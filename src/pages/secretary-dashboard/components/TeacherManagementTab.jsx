@@ -4,15 +4,32 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import Image from '../../../components/AppImage';
+import TeacherSearchSelector from './TeacherSearchSelector';
+import TeacherAssignmentManager from './TeacherAssignmentManager';
+import teacherMultiSchoolServiceDemo from '../../../services/teacherMultiSchoolServiceDemo';
 
 const TeacherManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
-  const [showAddTeacherForm, setShowAddTeacherForm] = useState(false);
+
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [selectedTeacher, setSelectedTeacher] = useState(null);
+  
+  // États pour le système multi-établissements
+  const [showMultiSchoolAssignment, setShowMultiSchoolAssignment] = useState(false);
+  const [currentStep, setCurrentStep] = useState(1);
+  const [assignationMode, setAssignationMode] = useState('existing'); // 'new' ou 'existing'
+  const [selectedExistingTeacher, setSelectedExistingTeacher] = useState(null);
+  const [teacherSearchTerm, setTeacherSearchTerm] = useState('');
+
+  // Établissement de la secrétaire connectée
+  const currentSchool = {
+    id: 'school-1', // ID de l'établissement de la secrétaire
+    name: 'École Primaire Centrale',
+    type: 'Primaire'
+  };
 
   const [newTeacher, setNewTeacher] = useState({
     fullName: '',
@@ -104,6 +121,29 @@ const TeacherManagementTab = () => {
     { value: 'CM2', label: 'CM2' }
   ];
 
+
+
+  // Fonctions pour le workflow multi-établissements
+  const resetMultiSchoolWorkflow = () => {
+    setCurrentStep(1);
+    setAssignationMode('existing');
+    setSelectedExistingTeacher(null);
+    setTeacherSearchTerm('');
+  };
+
+  const nextStep = () => {
+    if (currentStep < 3) setCurrentStep(currentStep + 1);
+  };
+
+  const prevStep = () => {
+    if (currentStep > 1) setCurrentStep(currentStep - 1);
+  };
+
+  const handleMultiSchoolAssignment = () => {
+    resetMultiSchoolWorkflow();
+    setShowMultiSchoolAssignment(true);
+  };
+
   const getStatusBadge = (status) => {
     const statusConfig = {
       active: { label: 'Actif', className: 'bg-success/10 text-success' },
@@ -129,51 +169,7 @@ const TeacherManagementTab = () => {
     return matchesSearch && matchesSubject && matchesStatus;
   });
 
-  const handleAddTeacher = () => {
-    setShowAddTeacherForm(true);
-  };
 
-  const handleSaveTeacher = () => {
-    if (newTeacher.fullName && newTeacher.email && newTeacher.subject && newTeacher.className && 
-        newTeacher.password && newTeacher.confirmPassword) {
-      
-      // Validation du mot de passe
-      if (!validatePassword(newTeacher.password)) {
-        alert('Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial');
-        return;
-      }
-      
-      // Vérification de la correspondance des mots de passe
-      if (newTeacher.password !== newTeacher.confirmPassword) {
-        alert('Les mots de passe ne correspondent pas');
-        return;
-      }
-      
-      const teacher = {
-        id: teachers.length + 1,
-        fullName: newTeacher.fullName,
-        email: newTeacher.email,
-        phone: newTeacher.phone,
-        subject: newTeacher.subject,
-        className: newTeacher.className,
-        status: "active",
-        joinDate: new Date().toLocaleDateString('fr-FR'),
-        teacherId: `PROF${String(teachers.length + 1).padStart(3, '0')}`,
-        avatar: "/public/assets/images/no_image.png"
-      };
-      setTeachers([...teachers, teacher]);
-      setNewTeacher({
-        fullName: '',
-        email: '',
-        phone: '',
-        subject: '',
-        className: '',
-        password: '',
-        confirmPassword: ''
-      });
-      setShowAddTeacherForm(false);
-    }
-  };
 
   const handleEditTeacher = (teacherId) => {
     const teacher = teachers.find(t => t.id === teacherId);
@@ -303,121 +299,19 @@ const TeacherManagementTab = () => {
             Gérez les comptes et affectations des enseignants
           </p>
         </div>
-        <Button
-          variant="default"
-          iconName="UserPlus"
-          iconPosition="left"
-          onClick={handleAddTeacher}
-        >
-          Nouvel Enseignant
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="default"
+            iconName="School"
+            iconPosition="left"
+            onClick={handleMultiSchoolAssignment}
+          >
+            Assigner Enseignant
+          </Button>
+        </div>
       </div>
 
-      {/* Add Teacher Form */}
-      {showAddTeacherForm && (
-        <div className="bg-card rounded-lg border border-border p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-              Créer un compte enseignant
-            </h3>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setShowAddTeacherForm(false)}
-            >
-              <Icon name="X" size={20} />
-            </Button>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Input
-              label="Nom complet"
-              placeholder="Ex: Marie Nguema"
-              value={newTeacher.fullName}
-              onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
-              required
-            />
-            <Input
-              label="Email"
-              type="email"
-              placeholder="marie.nguema@school.cm"
-              value={newTeacher.email}
-              onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
-              required
-            />
-            <Input
-              label="Téléphone"
-              placeholder="+237 6XX XX XX XX"
-              value={newTeacher.phone}
-              onChange={(e) => setNewTeacher(prev => ({ ...prev, phone: e.target.value }))}
-              required
-            />
-            <Select
-              label="Matière principale"
-              placeholder="Choisir une matière"
-              options={subjectOptions.filter(opt => opt.value)}
-              value={newTeacher.subject}
-              onChange={(value) => setNewTeacher(prev => ({ ...prev, subject: value }))}
-              required
-            />
-            <Select
-              label="Classe assignée"
-              placeholder="Choisir une classe"
-              options={classOptions.filter(opt => opt.value)}
-              value={newTeacher.className}
-              onChange={(value) => setNewTeacher(prev => ({ ...prev, className: value }))}
-              required
-            />
-            <div className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  label="Mot de passe"
-                  type="password"
-                  placeholder="Minimum 8 caractères"
-                  value={newTeacher.password}
-                  onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
-                  required
-                />
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={generateSecurePassword}
-                  className="mt-6"
-                >
-                  Générer
-                </Button>
-              </div>
-              <Input
-                label="Confirmer le mot de passe"
-                type="password"
-                placeholder="Répéter le mot de passe"
-                value={newTeacher.confirmPassword}
-                onChange={(e) => setNewTeacher(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                required
-              />
-              {newTeacher.password && !validatePassword(newTeacher.password) && (
-                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                  Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)
-                </div>
-              )}
-              {newTeacher.password && newTeacher.confirmPassword && newTeacher.password !== newTeacher.confirmPassword && (
-                <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                  Les mots de passe ne correspondent pas
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="flex gap-3 mt-6">
-            <Button variant="default" onClick={handleSaveTeacher}>
-              Créer le compte
-            </Button>
-            <Button variant="outline" onClick={() => setShowAddTeacherForm(false)}>
-              Annuler
-            </Button>
-          </div>
-        </div>
-      )}
+
 
       {/* Filters */}
       <div className="bg-card rounded-lg border border-border p-4">
@@ -810,6 +704,371 @@ const TeacherManagementTab = () => {
               }}>
                 Annuler
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Assignation Multi-Établissements */}
+      {showMultiSchoolAssignment && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div>
+                <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                  🏫 Assignation Multi-Établissements
+                </h3>
+                <p className="text-sm text-text-secondary mt-1">
+                  Étape {currentStep} sur 3 - {currentStep === 1 ? 'Type d\'assignation' : currentStep === 2 ? 'Recherche enseignant' : 'Configuration assignation'}
+                </p>
+              </div>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowMultiSchoolAssignment(false);
+                  resetMultiSchoolWorkflow();
+                }}
+                iconName="X"
+              />
+            </div>
+            
+            {/* Indicateur de progression */}
+            <div className="px-6 py-4 border-b border-border">
+              <div className="flex items-center space-x-4">
+                {[1, 2, 3].map((step) => (
+                  <div key={step} className="flex items-center space-x-2">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
+                      step === currentStep 
+                        ? 'bg-primary text-primary-foreground' 
+                        : step < currentStep 
+                        ? 'bg-success text-success-foreground' 
+                        : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {step < currentStep ? <Icon name="Check" size={16} /> : step}
+                    </div>
+                    <span className={`text-sm ${
+                      step === currentStep ? 'text-primary font-medium' : 'text-text-secondary'
+                    }`}>
+                      {step === 1 ? 'Type' : step === 2 ? 'Enseignant' : 'Assignation'}
+                    </span>
+                    {step < 3 && <div className="w-8 h-0.5 bg-border mx-2" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="p-6">
+              {/* Étape 1: Choix du type */}
+              {currentStep === 1 && (
+                <div className="space-y-6">
+                  <div className="text-center mb-6">
+                    <Icon name="School" size={48} className="text-primary mx-auto mb-2" />
+                    <h4 className="font-heading font-heading-semibold text-lg text-text-primary">
+                      Type d'Assignation
+                    </h4>
+                    <p className="text-sm text-text-secondary">
+                      Assignation d'un enseignant existant ou nouveau à un établissement
+                    </p>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <div 
+                      onClick={() => setAssignationMode('existing')}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        assignationMode === 'existing' 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          assignationMode === 'existing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          <Icon name="Users" size={20} />
+                        </div>
+                        <div>
+                          <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                            Enseignant Existant
+                          </h5>
+                          <p className="text-sm text-text-secondary">
+                            Assigner un enseignant déjà dans le système global
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div 
+                      onClick={() => setAssignationMode('new')}
+                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                        assignationMode === 'new' 
+                          ? 'border-primary bg-primary/5' 
+                          : 'border-border hover:border-primary/50'
+                      }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                          assignationMode === 'new' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                        }`}>
+                          <Icon name="UserPlus" size={20} />
+                        </div>
+                        <div>
+                          <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                            Nouvel Enseignant
+                          </h5>
+                          <p className="text-sm text-text-secondary">
+                            Créer un nouveau compte enseignant puis l'assigner
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mb-6">
+                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Icon name="Building" size={20} className="text-primary" />
+                        </div>
+                        <div>
+                          <h5 className="font-heading font-heading-semibold text-sm text-text-primary">
+                            Établissement de destination
+                          </h5>
+                          <p className="text-sm text-text-secondary">
+                            {currentSchool.name}
+                          </p>
+                          <p className="text-xs text-text-tertiary">
+                            Vous ne pouvez assigner des enseignants que dans votre établissement
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Étape 2: Recherche/Création enseignant */}
+              {currentStep === 2 && (
+                <div className="space-y-6">
+                  {assignationMode === 'existing' ? (
+                    <div>
+                      <div className="text-center mb-4">
+                        <Icon name="Search" size={40} className="text-primary mx-auto mb-2" />
+                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                          Rechercher un Enseignant Existant
+                        </h5>
+                        <p className="text-sm text-text-secondary">
+                          Système multi-établissements - Un enseignant peut avoir plusieurs assignations
+                        </p>
+                      </div>
+
+                      <TeacherSearchSelector
+                        onTeacherSelect={(teacher) => {
+                          setSelectedExistingTeacher(teacher);
+                        }}
+                        onCreateNew={() => {
+                          setAssignationMode('new');
+                          setSelectedExistingTeacher(null);
+                        }}
+                        selectedTeacher={selectedExistingTeacher}
+                        searchTerm={teacherSearchTerm}
+                        onSearchChange={setTeacherSearchTerm}
+                      />
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="text-center mb-6">
+                        <Icon name="UserPlus" size={40} className="text-success mx-auto mb-2" />
+                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                          Créer un Nouveau Compte Enseignant
+                        </h5>
+                        <p className="text-sm text-text-secondary">
+                          Créez le profil enseignant puis assignez-le à l'établissement
+                        </p>
+                      </div>
+
+                      <div className="bg-card rounded-lg border border-border p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Input
+                            label="Nom complet"
+                            placeholder="Ex: Marie Nguema"
+                            value={newTeacher.fullName}
+                            onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
+                            required
+                          />
+                          <Input
+                            label="Email"
+                            type="email"
+                            placeholder="marie.nguema@school.cm"
+                            value={newTeacher.email}
+                            onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
+                            required
+                          />
+                          <Input
+                            label="Téléphone"
+                            placeholder="+237 6XX XX XX XX"
+                            value={newTeacher.phone}
+                            onChange={(e) => setNewTeacher(prev => ({ ...prev, phone: e.target.value }))}
+                            required
+                          />
+                          <Select
+                            label="Matière principale"
+                            placeholder="Choisir une matière"
+                            options={subjectOptions.filter(opt => opt.value)}
+                            value={newTeacher.subject}
+                            onChange={(value) => setNewTeacher(prev => ({ ...prev, subject: value }))}
+                            required
+                          />
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <div className="flex gap-2">
+                            <Input
+                              label="Mot de passe"
+                              type="password"
+                              placeholder="Minimum 8 caractères"
+                              value={newTeacher.password}
+                              onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                              required
+                            />
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={generateSecurePassword}
+                              className="mt-6"
+                            >
+                              Générer
+                            </Button>
+                          </div>
+                          <Input
+                            label="Confirmer le mot de passe"
+                            type="password"
+                            placeholder="Répéter le mot de passe"
+                            value={newTeacher.confirmPassword}
+                            onChange={(e) => setNewTeacher(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                            required
+                          />
+                        </div>
+
+                        {newTeacher.password && !validatePassword(newTeacher.password) && (
+                          <div className="text-sm text-red-600 bg-red-50 p-2 rounded mt-4">
+                            Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)
+                          </div>
+                        )}
+                        {newTeacher.password && newTeacher.confirmPassword && newTeacher.password !== newTeacher.confirmPassword && (
+                          <div className="text-sm text-red-600 bg-red-50 p-2 rounded mt-4">
+                            Les mots de passe ne correspondent pas
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* Étape 3: Configuration assignation */}
+              {currentStep === 3 && selectedExistingTeacher && (
+                <div>
+                  <div className="text-center mb-6">
+                    <Icon name="Settings" size={40} className="text-success mx-auto mb-2" />
+                    <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                      Configuration de l'Assignation
+                    </h5>
+                    <p className="text-sm text-text-secondary">
+                      Définir les classes et matières pour cet enseignant
+                    </p>
+                  </div>
+
+                  <TeacherAssignmentManager
+                    teacher={selectedExistingTeacher}
+                    currentSchool={currentSchool}
+                    onAssignmentComplete={(assignment) => {
+                      alert('Assignation créée avec succès !');
+                      setShowMultiSchoolAssignment(false);
+                      resetMultiSchoolWorkflow();
+                    }}
+                    onCancel={() => {
+                      setShowMultiSchoolAssignment(false);
+                      resetMultiSchoolWorkflow();
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Navigation (sauf pour l'étape 3 qui a ses propres boutons) */}
+              {currentStep < 3 && (
+                <div className="flex items-center justify-between pt-6 border-t border-border">
+                  <div className="flex gap-3">
+                    {currentStep > 1 && (
+                      <Button 
+                        variant="outline" 
+                        onClick={prevStep}
+                        iconName="ChevronLeft"
+                        iconPosition="left"
+                      >
+                        Précédent
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="flex gap-3">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setShowMultiSchoolAssignment(false);
+                        resetMultiSchoolWorkflow();
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    
+                    <Button 
+                      onClick={() => {
+                        if (currentStep === 2 && assignationMode === 'new') {
+                          // Valider et créer l'enseignant avant de passer à l'étape 3
+                          if (newTeacher.fullName && newTeacher.email && newTeacher.subject && 
+                              newTeacher.password && newTeacher.confirmPassword) {
+                            
+                            if (!validatePassword(newTeacher.password)) {
+                              alert('Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial');
+                              return;
+                            }
+                            
+                            if (newTeacher.password !== newTeacher.confirmPassword) {
+                              alert('Les mots de passe ne correspondent pas');
+                              return;
+                            }
+                            
+                            // Créer un objet enseignant temporaire pour l'assignation
+                            const tempTeacher = {
+                              id: `temp-${Date.now()}`,
+                              fullName: newTeacher.fullName,
+                              email: newTeacher.email,
+                              phone: newTeacher.phone,
+                              subject: newTeacher.subject,
+                              isNew: true // Marquer comme nouveau
+                            };
+                            setSelectedExistingTeacher(tempTeacher);
+                            nextStep();
+                          } else {
+                            alert('Veuillez remplir tous les champs obligatoires');
+                          }
+                        } else {
+                          nextStep();
+                        }
+                      }}
+                      disabled={
+                        (currentStep === 1 && !assignationMode) ||
+                        (currentStep === 2 && assignationMode === 'existing' && !selectedExistingTeacher)
+                      }
+                      iconName="ChevronRight"
+                      iconPosition="right"
+                    >
+                      {currentStep === 2 && assignationMode === 'new' ? 'Créer et Continuer' : 'Suivant'}
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </div>

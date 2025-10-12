@@ -1,10 +1,12 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import Image from '../../../components/AppImage';
+import CardGenerationModal from './CardGenerationModal';
+import cardService from '../../../services/cardService';
 
 const StudentCardTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -13,84 +15,40 @@ const StudentCardTab = () => {
   const [selectedCards, setSelectedCards] = useState([]);
   const [showPreview, setShowPreview] = useState(false);
   const [previewCard, setPreviewCard] = useState(null);
+  const [showGenerationModal, setShowGenerationModal] = useState(false);
+  const [studentCards, setStudentCards] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
 
-  const studentCards = [
-    {
-      id: 1,
-      studentId: "STU001",
-      studentName: "Amina Nkomo",
-      class: "CM2",
-      photo: "/public/assets/images/no_image.png",
-      cardNumber: "CM2024001",
-      issueDate: "15/11/2024",
-      expiryDate: "30/06/2025",
-      status: "issued",
-      parentName: "Paul Nkomo",
-      emergencyContact: "+237 6 78 90 12 34",
-      bloodType: "O+",
-      medicalNotes: "Aucune allergie connue"
-    },
-    {
-      id: 2,
-      studentId: "STU002",
-      studentName: "Junior Mbarga",
-      class: "CM1",
-      photo: "/public/assets/images/no_image.png",
-      cardNumber: "CM2024002",
-      issueDate: "14/11/2024",
-      expiryDate: "30/06/2025",
-      status: "pending_validation",
-      parentName: "Marie Mbarga",
-      emergencyContact: "+237 6 89 01 23 45",
-      bloodType: "A+",
-      medicalNotes: "Asthme léger"
-    },
-    {
-      id: 3,
-      studentId: "STU003",
-      studentName: "Grace Fouda",
-      class: "CE2",
-      photo: "/public/assets/images/no_image.png",
-      cardNumber: "CM2024003",
-      issueDate: "12/11/2024",
-      expiryDate: "30/06/2025",
-      status: "draft",
-      parentName: "Jean Fouda",
-      emergencyContact: "+237 6 90 12 34 56",
-      bloodType: "B+",
-      medicalNotes: "Allergie aux arachides"
-    },
-    {
-      id: 4,
-      studentId: "STU004",
-      studentName: "Kevin Biya",
-      class: "CM2",
-      photo: "/public/assets/images/no_image.png",
-      cardNumber: "CM2024004",
-      issueDate: "10/11/2024",
-      expiryDate: "30/06/2025",
-      status: "expired",
-      parentName: "Esther Biya",
-      emergencyContact: "+237 6 01 23 45 67",
-      bloodType: "AB+",
-      medicalNotes: "Aucune"
-    },
-    {
-      id: 5,
-      studentId: "STU005",
-      studentName: "Sarah Atangana",
-      class: "CE1",
-      photo: "/public/assets/images/no_image.png",
-      cardNumber: "CM2024005",
-      issueDate: "08/11/2024",
-      expiryDate: "30/06/2025",
-      status: "printed",
-      parentName: "Michel Atangana",
-      emergencyContact: "+237 6 12 34 56 78",
-      bloodType: "O-",
-      medicalNotes: "Diabète type 1"
+  // Chargement des données depuis le service
+  useEffect(() => {
+    loadCards();
+  }, []);
+
+  const loadCards = async () => {
+    try {
+      setIsLoading(true);
+      setError('');
+      const cards = await cardService.getAllCards();
+      setStudentCards(cards);
+    } catch (err) {
+      setError('Erreur lors du chargement des cartes');
+      console.error('Erreur:', err);
+    } finally {
+      setIsLoading(false);
     }
-  ];
+  };
+
+  // Affichage des messages de succès temporaires
+  useEffect(() => {
+    if (successMessage) {
+      const timer = setTimeout(() => {
+        setSuccessMessage('');
+      }, 5000);
+      return () => clearTimeout(timer);
+    }
+  }, [successMessage]);
 
   const classOptions = [
     { value: '', label: 'Toutes les classes' },
@@ -137,20 +95,101 @@ const StudentCardTab = () => {
     return matchesSearch && matchesClass && matchesStatus;
   });
 
-  const handleGenerateCard = (studentId) => {
-    console.log('Generate card for student:', studentId);
+  const handleGenerateCard = () => {
+    setShowGenerationModal(true);
   };
 
-  const handleValidateCard = (cardId) => {
-    console.log('Validate card:', cardId);
+  const handleCardGenerated = (newCard) => {
+    setStudentCards(prev => [...prev, newCard]);
+    setSuccessMessage(`Carte générée avec succès pour ${newCard.studentName}`);
   };
 
-  const handlePrintCard = (cardId) => {
-    console.log('Print card:', cardId);
+  const handleValidateCard = async (cardId) => {
+    try {
+      const updatedCard = await cardService.validateCard(cardId);
+      setStudentCards(prev => 
+        prev.map(card => 
+          card.id === cardId ? updatedCard : card
+        )
+      );
+      setSuccessMessage('Carte validée avec succès');
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la validation');
+    }
   };
 
-  const handleBulkPrint = () => {
-    console.log('Bulk print cards:', selectedCards);
+  const handlePrintCard = async (cardId) => {
+    try {
+      const updatedCard = await cardService.printCard(cardId);
+      setStudentCards(prev => 
+        prev.map(card => 
+          card.id === cardId ? updatedCard : card
+        )
+      );
+      setSuccessMessage('Carte imprimée avec succès');
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l\'impression');
+    }
+  };
+
+  const handleBulkPrint = async () => {
+    if (selectedCards.length === 0) return;
+    
+    try {
+      const updatedCards = await cardService.bulkPrintCards(selectedCards);
+      setStudentCards(prev => 
+        prev.map(card => {
+          const updated = updatedCards.find(u => u.id === card.id);
+          return updated || card;
+        })
+      );
+      setSelectedCards([]);
+      setSuccessMessage(`${updatedCards.length} carte(s) imprimée(s) avec succès`);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de l\'impression en lot');
+    }
+  };
+
+  const handleRegenerateCard = async (studentId) => {
+    try {
+      const newCard = await cardService.regenerateCard(studentId);
+      setStudentCards(prev => 
+        prev.map(card => 
+          card.studentId === studentId && card.status !== 'expired' 
+            ? { ...card, status: 'expired' } 
+            : card
+        ).concat(newCard)
+      );
+      setSuccessMessage('Carte régénérée avec succès');
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la régénération');
+    }
+  };
+
+  const handleBulkValidate = async () => {
+    const validatableCards = selectedCards.filter(cardId => {
+      const card = studentCards.find(c => c.id === cardId);
+      return card && ['draft', 'pending_validation'].includes(card.status);
+    });
+
+    if (validatableCards.length === 0) {
+      setError('Aucune carte sélectionnée ne peut être validée');
+      return;
+    }
+
+    try {
+      const updatedCards = await cardService.bulkValidateCards(validatableCards);
+      setStudentCards(prev => 
+        prev.map(card => {
+          const updated = updatedCards.find(u => u.id === card.id);
+          return updated || card;
+        })
+      );
+      setSelectedCards([]);
+      setSuccessMessage(`${updatedCards.length} carte(s) validée(s) avec succès`);
+    } catch (err) {
+      setError(err.message || 'Erreur lors de la validation en lot');
+    }
   };
 
   const handlePreviewCard = (card) => {
@@ -179,6 +218,45 @@ const StudentCardTab = () => {
 
   return (
     <div className="space-y-6">
+      {/* Messages d'erreur et de succès */}
+      {error && (
+        <div className="p-3 bg-error/10 border border-error/20 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Icon name="AlertCircle" size={16} className="text-error" />
+            <p className="font-body font-body-normal text-sm text-error">
+              {error}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setError('')}
+              className="ml-auto"
+            >
+              <Icon name="X" size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-3 bg-success/10 border border-success/20 rounded-lg">
+          <div className="flex items-center space-x-2">
+            <Icon name="CheckCircle" size={16} className="text-success" />
+            <p className="font-body font-body-normal text-sm text-success">
+              {successMessage}
+            </p>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setSuccessMessage('')}
+              className="ml-auto"
+            >
+              <Icon name="X" size={16} />
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -192,6 +270,15 @@ const StudentCardTab = () => {
         <div className="flex gap-2">
           <Button
             variant="outline"
+            iconName="CheckCircle"
+            iconPosition="left"
+            onClick={handleBulkValidate}
+            disabled={selectedCards.length === 0}
+          >
+            Valider sélection ({selectedCards.length})
+          </Button>
+          <Button
+            variant="outline"
             iconName="Printer"
             iconPosition="left"
             onClick={handleBulkPrint}
@@ -203,7 +290,7 @@ const StudentCardTab = () => {
             variant="default"
             iconName="CreditCard"
             iconPosition="left"
-            onClick={() => handleGenerateCard()}
+            onClick={handleGenerateCard}
           >
             Nouvelle Carte
           </Button>
@@ -212,7 +299,10 @@ const StudentCardTab = () => {
 
       {/* Quick Actions Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-card rounded-lg border border-border p-6">
+        <div 
+          className="bg-card rounded-lg border border-border p-6 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={handleGenerateCard}
+        >
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
               <Icon name="CreditCard" size={24} className="text-primary" />
@@ -228,7 +318,10 @@ const StudentCardTab = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-6">
+        <div 
+          className="bg-card rounded-lg border border-border p-6 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={handleBulkValidate}
+        >
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-warning/10 rounded-lg flex items-center justify-center">
               <Icon name="CheckCircle" size={24} className="text-warning" />
@@ -236,6 +329,11 @@ const StudentCardTab = () => {
             <div>
               <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-1">
                 Validation en lot
+                {selectedCards.length > 0 && (
+                  <span className="ml-2 px-2 py-1 bg-warning/20 text-warning rounded-full text-xs">
+                    {selectedCards.length}
+                  </span>
+                )}
               </h3>
               <p className="font-body font-body-normal text-sm text-text-secondary">
                 Valider plusieurs cartes simultanément
@@ -244,7 +342,10 @@ const StudentCardTab = () => {
           </div>
         </div>
 
-        <div className="bg-card rounded-lg border border-border p-6">
+        <div 
+          className="bg-card rounded-lg border border-border p-6 cursor-pointer hover:bg-muted/30 transition-colors"
+          onClick={handleBulkPrint}
+        >
           <div className="flex items-center space-x-3">
             <div className="w-12 h-12 bg-success/10 rounded-lg flex items-center justify-center">
               <Icon name="Printer" size={24} className="text-success" />
@@ -252,6 +353,11 @@ const StudentCardTab = () => {
             <div>
               <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-1">
                 Impression
+                {selectedCards.length > 0 && (
+                  <span className="ml-2 px-2 py-1 bg-success/20 text-success rounded-full text-xs">
+                    {selectedCards.length}
+                  </span>
+                )}
               </h3>
               <p className="font-body font-body-normal text-sm text-text-secondary">
                 Imprimer les cartes validées
@@ -288,15 +394,25 @@ const StudentCardTab = () => {
 
       {/* Cards Table */}
       <div className="bg-card rounded-lg border border-border overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
+        {isLoading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="flex items-center space-x-3">
+              <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+              <span className="font-body font-body-normal text-text-secondary">
+                Chargement des cartes...
+              </span>
+            </div>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full">
             <thead className="bg-muted">
               <tr>
                 <th className="text-left p-4 w-12">
                   <Checkbox
                     checked={selectedCards.length === filteredCards.length}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
+                    onChange={(e) => {
+                      if (e.target.checked) {
                         setSelectedCards(filteredCards.map(card => card.id));
                       } else {
                         setSelectedCards([]);
@@ -330,7 +446,7 @@ const StudentCardTab = () => {
                   <td className="p-4">
                     <Checkbox
                       checked={selectedCards.includes(card.id)}
-                      onCheckedChange={() => toggleCardSelection(card.id)}
+                      onChange={() => toggleCardSelection(card.id)}
                     />
                   </td>
                   <td className="p-4">
@@ -407,7 +523,7 @@ const StudentCardTab = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleGenerateCard(card?.studentId)}
+                        onClick={() => handleRegenerateCard(card?.studentId)}
                         title="Régénérer"
                       >
                         <Icon name="RotateCcw" size={16} />
@@ -418,15 +534,16 @@ const StudentCardTab = () => {
               ))}
             </tbody>
           </table>
-        </div>
 
-        {filteredCards?.length === 0 && (
-          <div className="p-8 text-center">
-            <Icon name="CreditCard" size={48} className="text-muted-foreground mx-auto mb-4" />
-            <p className="font-body font-body-normal text-text-secondary">
-              Aucune carte trouvée avec les critères de recherche
-            </p>
-          </div>
+          {filteredCards?.length === 0 && (
+            <div className="p-8 text-center">
+              <Icon name="CreditCard" size={48} className="text-muted-foreground mx-auto mb-4" />
+              <p className="font-body font-body-normal text-text-secondary">
+                Aucune carte trouvée avec les critères de recherche
+              </p>
+            </div>
+          )}
+        </div>
         )}
       </div>
 
@@ -600,6 +717,13 @@ const StudentCardTab = () => {
           </div>
         </div>
       </div>
+
+      {/* Card Generation Modal */}
+      <CardGenerationModal
+        isOpen={showGenerationModal}
+        onClose={() => setShowGenerationModal(false)}
+        onCardGenerated={handleCardGenerated}
+      />
     </div>
   );
 };
