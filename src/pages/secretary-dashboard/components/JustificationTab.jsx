@@ -25,9 +25,10 @@ const JustificationTab = () => {
 
   const statusOptions = [
     { value: '', label: 'Tous les statuts' },
-    { value: 'pending', label: 'En attente de justification' },
-    { value: 'justified', label: 'Justifiée' },
-    { value: 'unjustified', label: 'Non justifiée' },
+    { value: 'reported', label: 'Signalée' },
+    { value: 'contacted', label: 'Parents contactés' },
+    { value: 'justified_received', label: 'Justificatif reçu' },
+    { value: 'transmitted', label: 'Transmis à la direction' },
     { value: 'late', label: 'Retard' }
   ];
 
