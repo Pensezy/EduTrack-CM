@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import useDashboardData from '../../../hooks/useDashboardData';
+import dataModeService from '../../../services/dataModeService';
 
 const SchoolYearValidationTab = () => {
   const [activeSection, setActiveSection] = useState('pending');
@@ -11,97 +12,154 @@ const SchoolYearValidationTab = () => {
   const [nextSchoolYear] = useState('2025-2026');
   
   // Hook pour récupérer les données selon le mode (démo/production)
-  const { isDemo, isProduction, dataMode } = useDashboardData();
+  const { isDemo, isProduction, dataMode, user } = useDashboardData();
+  
+  // États pour les données
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [validationStats, setValidationStats] = useState({});
+  const [classTransitions, setClassTransitions] = useState({});
+  const [loading, setLoading] = useState(true);
 
-  // Données DÉMO - Situations fictives pour démonstration
-  const demoPendingRequests = [
-    {
-      id: 1,
-      type: 'nouvelle_inscription',
-      studentName: 'Marie Talla (DÉMO)',
-      parentName: 'Joseph Talla',
-      requestedClass: 'CE1',
-      submittedBy: 'Secrétaire',
-      submittedDate: '2024-09-15',
-      status: 'en_attente',
-      documents: ['Certificat de naissance', 'Carnet de vaccination'],
-      priority: 'normal'
-    },
-    {
-      id: 2,
-      type: 'nouvelle_inscription',
-      studentName: 'Daniel Mbella (DÉMO)',
-      parentName: 'Agnes Mbella',
-      requestedClass: 'CM1',
-      submittedBy: 'Secrétaire',
-      submittedDate: '2024-09-18',
-      status: 'en_attente',
-      documents: ['Bulletins année précédente', 'Certificat de transfert'],
-      priority: 'urgent'
-    },
-    {
-      id: 3,
-      type: 'redoublement',
-      studentName: 'Kevin Atangana (DÉMO)',
-      currentClass: 'CE1',
-      requestedClass: 'CE1',
-      reason: 'Difficultés en mathématiques',
-      teacherRecommendation: 'Recommandé par Mme Nguema',
-      status: 'en_attente',
-      priority: 'normal'
+  // Effet pour charger les données selon le mode
+  useEffect(() => {
+    const loadData = async () => {
+      console.log('🎓 SchoolYearValidation - Début chargement');
+      console.log('  - Mode actuel:', dataMode);
+      console.log('  - Est démo:', isDemo);
+      console.log('  - Utilisateur:', user?.email);
+      console.log('  - Loading state:', loading);
+      
+      setLoading(true);
+      
+      try {
+
+        if (isDemo) {
+          // Mode démo - utiliser les données fictives
+          console.log('📚 Mode DÉMO - Chargement données fictives');
+          
+          // Données directes pour éviter les problèmes avec dataModeService
+          // const demoData = await dataModeService.getData('schoolYear');
+          
+          // Données de demandes en attente (démo)
+          const demoPendingRequests = [
+            {
+              id: 1,
+              type: 'nouvelle_inscription',
+              studentName: 'Marie Talla (DÉMO)',
+              parentName: 'Joseph Talla',
+              requestedClass: 'CE1',
+              submittedBy: 'Secrétaire',
+              submittedDate: '2024-09-15',
+              status: 'en_attente',
+              documents: ['Certificat de naissance', 'Carnet de vaccination'],
+              priority: 'normal'
+            },
+            {
+              id: 2,
+              type: 'nouvelle_inscription',
+              studentName: 'Daniel Mbella (DÉMO)',
+              parentName: 'Agnes Mbella',
+              requestedClass: 'CM1',
+              submittedBy: 'Secrétaire',
+              submittedDate: '2024-09-18',
+              status: 'en_attente',
+              documents: ['Bulletins année précédente', 'Certificat de transfert'],
+              priority: 'urgent'
+            },
+            {
+              id: 3,
+              type: 'redoublement',
+              studentName: 'Kevin Atangana (DÉMO)',
+              currentClass: 'CE1',
+              requestedClass: 'CE1',
+              reason: 'Difficultés en mathématiques',
+              teacherRecommendation: 'Recommandé par Mme Nguema',
+              status: 'en_attente',
+              priority: 'normal'
+            }
+          ];
+
+          const demoValidationStats = {
+            totalDemandes: 15,
+            enAttente: 3,
+            approuvees: 8,
+            refusees: 1,
+            enRevision: 3
+          };
+
+          const demoClassTransitions = {
+            ce1_to_ce2: { total: 8, approved: 6, pending: 2 },
+            ce2_to_cm1: { total: 12, approved: 10, pending: 2 },
+            cm1_to_cm2: { total: 7, approved: 5, pending: 2 },
+            cm2_graduates: { total: 15, approved: 15, pending: 0 }
+          };
+
+          console.log('📚 Données démo prêtes:', { demoPendingRequests, demoValidationStats, demoClassTransitions });
+          
+          setPendingRequests(demoPendingRequests);
+          setValidationStats(demoValidationStats);
+          setClassTransitions(demoClassTransitions);
+          
+        } else {
+          // Mode production - récupérer les vraies données
+          console.log('🏫 Mode PRODUCTION - Chargement données réelles');
+          
+          // Récupérer les vraies données depuis la base de données
+          const realData = await dataModeService.getData('schoolYear', {
+            schoolId: user?.schoolData?.id || user?.current_school_id
+          });
+          
+          console.log('🏫 Données production reçues:', realData);
+
+          // Pour l'instant, données vides en production (à implémenter)
+          const productionPendingRequests = [];
+          const productionValidationStats = {
+            totalDemandes: 0,
+            enAttente: 0,
+            approuvees: 0,
+            refusees: 0,
+            enRevision: 0
+          };
+          const productionClassTransitions = {
+            ce1_to_ce2: { total: 0, approved: 0, pending: 0 },
+            ce2_to_cm1: { total: 0, approved: 0, pending: 0 },
+            cm1_to_cm2: { total: 0, approved: 0, pending: 0 },
+            cm2_graduates: { total: 0, approved: 0, pending: 0 }
+          };
+
+          setPendingRequests(productionPendingRequests);
+          setValidationStats(productionValidationStats);
+          setClassTransitions(productionClassTransitions);
+        }
+
+      } catch (error) {
+        console.error('❌ Erreur chargement données SchoolYear:', error);
+        
+        // Fallback vers données vides
+        setPendingRequests([]);
+        setValidationStats({
+          totalDemandes: 0,
+          enAttente: 0,
+          approuvees: 0,
+          refusees: 0,
+          enRevision: 0
+        });
+        setClassTransitions({});
+      } finally {
+        console.log('🎓 SchoolYearValidation - Fin du chargement');
+        setLoading(false);
+      }
+    };
+
+    // Charger les données quand le mode change
+    console.log('🎓 useEffect conditions - dataMode:', dataMode, 'isDemo:', isDemo);
+    if (dataMode) {
+      console.log('🎓 Déclenchement du chargement des données');
+      loadData();
+    } else {
+      console.log('🎓 Attente du dataMode...');
     }
-  ];
-
-  // Données PRODUCTION - Pas de demandes en attente actuellement
-  const productionPendingRequests = [
-    // Aucune demande en attente pour le moment
-    // Ces données seraient récupérées depuis la base de données Supabase
-  ];
-
-  // Choisir les bonnes données selon le mode
-  const [pendingRequests, setPendingRequests] = useState(
-    isDemo ? demoPendingRequests : productionPendingRequests
-  );
-
-  // Statistiques pour validation - Différentes selon le mode
-  const demoValidationStats = {
-    totalDemandes: 15,
-    enAttente: 3,
-    approuvees: 8,
-    refusees: 1,
-    enRevision: 3
-  };
-
-  const productionValidationStats = {
-    totalDemandes: 0,
-    enAttente: 0,
-    approuvees: 0,
-    refusees: 0,
-    enRevision: 0
-  };
-
-  const [validationStats] = useState(
-    isDemo ? demoValidationStats : productionValidationStats
-  );
-
-  // Passages de classe à valider - Différents selon le mode  
-  const demoClassTransitions = {
-    ce1_to_ce2: { total: 8, approved: 6, pending: 2 },
-    ce2_to_cm1: { total: 12, approved: 10, pending: 2 },
-    cm1_to_cm2: { total: 7, approved: 5, pending: 2 },
-    cm2_graduates: { total: 15, approved: 15, pending: 0 }
-  };
-
-  const productionClassTransitions = {
-    ce1_to_ce2: { total: 0, approved: 0, pending: 0 },
-    ce2_to_cm1: { total: 0, approved: 0, pending: 0 },
-    cm1_to_cm2: { total: 0, approved: 0, pending: 0 },
-    cm2_graduates: { total: 0, approved: 0, pending: 0 }
-  };
-
-  const [classTransitions] = useState(
-    isDemo ? demoClassTransitions : productionClassTransitions
-  );
+  }, [dataMode, isDemo, user]);
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -159,6 +217,22 @@ const SchoolYearValidationTab = () => {
     { id: 'approved', label: 'Validées', icon: 'CheckCircle' },
     { id: 'settings', label: 'Configuration année', icon: 'Settings' }
   ];
+
+  // Affichage de loading
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+            <p className="text-sm text-gray-600">
+              Chargement des données de validation d'année...
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -306,7 +380,7 @@ const SchoolYearValidationTab = () => {
                     <p className="text-sm text-text-secondary max-w-md">
                       {isDemo 
                         ? 'Dans la version de démonstration, toutes les demandes d\'inscription et de redoublement ont été approuvées.'
-                        : 'Il n\'y a actuellement aucune demande de validation en attente. Les nouvelles demandes apparaîtront ici.'
+                        : 'Votre école n\'a actuellement aucune demande de validation d\'année scolaire en attente. Les nouvelles demandes apparaîtront ici automatiquement lorsque votre secrétaire les soumettra.'
                       }
                     </p>
                   </div>

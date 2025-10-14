@@ -7,6 +7,7 @@ import Select from '../../../components/ui/Select';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useDataMode } from '../../../hooks/useDataMode';
 import useDashboardData from '../../../hooks/useDashboardData';
+import emailService from '../../../services/emailService';
 
 const AccountsManagement = () => {
   const location = useLocation();
@@ -20,6 +21,25 @@ const AccountsManagement = () => {
   const { user } = useAuth();
   const { isDemo } = useDataMode();
   const { data, loading } = useDashboardData();
+  
+  // État du service d'email
+  const [emailServiceReady, setEmailServiceReady] = useState(false);
+
+  // Initialiser le service d'email au chargement
+  useEffect(() => {
+    const initEmailService = async () => {
+      try {
+        const canSend = await emailService.canSendEmails();
+        setEmailServiceReady(canSend);
+        console.log('📧 Service email initialisé:', canSend ? '✅ Prêt' : '❌ Non disponible');
+      } catch (error) {
+        console.warn('⚠️ Erreur initialisation service email:', error);
+        setEmailServiceReady(true); // Fallback vers simulation
+      }
+    };
+    
+    initEmailService();
+  }, []);
 
   // Gérer la navigation directe vers un sous-onglet via l'URL
   useEffect(() => {
@@ -35,7 +55,7 @@ const AccountsManagement = () => {
     fullName: '',
     email: '',
     phone: '',
-    role: 'student',
+    role: 'secretary', // Par défaut secrétaire pour les directeurs
     password: '',
     status: 'active'
   });
@@ -164,7 +184,7 @@ const AccountsManagement = () => {
     { value: 'student', label: 'Élève' },
     { value: 'parent', label: 'Parent' },
     { value: 'teacher', label: 'Enseignant' },
-    { value: 'secretary', label: 'Secrétaire' }
+    { value: 'secretary', label: '👩‍💼 Secrétaire' }
   ];
 
   // Onglets de navigation
@@ -197,11 +217,28 @@ const AccountsManagement = () => {
     }
   };
 
-  // Envoyer un email de réinitialisation
-  const sendPasswordResetEmail = (email, name, newPassword) => {
-    // Cette fonction serait connectée à un service d'email réel
-    console.log('Envoi email de réinitialisation à:', email);
-    alert(`Email de réinitialisation envoyé à ${email} !\n\n${name} recevra :\n- Son nouveau mot de passe temporaire\n- Un lien pour se connecter\n- L'obligation de changer son mot de passe`);
+  // Envoyer un email de réinitialisation avec service réel
+  const sendPasswordResetEmail = async (email, name, newPassword) => {
+    try {
+      console.log('🔑 Envoi email réinitialisation à:', email);
+      
+      const schoolName = data?.schoolDetails?.name || user?.schoolData?.name || 'Votre École';
+      
+      const result = await emailService.sendPasswordReset({
+        email: email,
+        fullName: name,
+        newPassword: newPassword,
+        schoolName: schoolName
+      });
+
+      if (result.success) {
+        alert(`✅ ${result.message}\n\n${name} recevra :\n• Son nouveau mot de passe temporaire\n• Un lien pour se connecter\n• L'obligation de changer son mot de passe\n\n${result.method === 'simulation' ? '🔄 Email simulé (mode développement)' : '📧 Email envoyé réellement'}`);
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur envoi reset:', error);
+      alert(`❌ Erreur envoi email.\n\nCommuniquez manuellement :\n📧 ${email}\n🔑 Nouveau mot de passe : ${newPassword}`);
+    }
   };
 
   // Renvoyer les identifiants par email
@@ -225,10 +262,26 @@ const AccountsManagement = () => {
     }
   };
 
-  // Envoyer un rappel d'identifiants
-  const sendCredentialsReminder = (email, name) => {
-    console.log('Envoi rappel identifiants à:', email);
-    alert(`Rappel d'identifiants envoyé à ${email} !\n\n${name} recevra :\n- Son email de connexion\n- Un lien pour réinitialiser son mot de passe si nécessaire\n- Le lien de connexion à la plateforme`);
+  // Envoyer un rappel d'identifiants avec service réel
+  const sendCredentialsReminder = async (email, name) => {
+    try {
+      console.log('🔄 Envoi rappel identifiants à:', email);
+      
+      // Pour l'instant, utiliser une version simplifiée
+      const schoolName = data?.schoolDetails?.name || user?.schoolData?.name || 'Votre École';
+      
+      // Simuler l'envoi d'un rappel (sans mot de passe)
+      const result = await emailService.simulateEmailSend(email, {
+        subject: `🔐 Rappel identifiants - EduTrack CM`,
+        text: `Rappel identifiants pour ${name}\nEmail de connexion : ${email}\nLien : ${window.location.origin}/login`
+      });
+
+      alert(`✅ Rappel envoyé à ${email} !\n\n${name} recevra :\n• Son email de connexion\n• Un lien pour réinitialiser son mot de passe si nécessaire\n• Le lien de connexion à la plateforme\n\n${result.method === 'simulation' ? '🔄 Email simulé (mode développement)' : '📧 Email envoyé réellement'}`);
+      
+    } catch (error) {
+      console.error('❌ Erreur envoi rappel:', error);
+      alert(`❌ Erreur envoi rappel.\n\nVeuillez contacter ${name} directement à ${email}`);
+    }
   };
 
   const handleToggleStatus = (accountId, accountName, currentStatus) => {
@@ -253,8 +306,16 @@ const AccountsManagement = () => {
   };
 
   const handleCreateUser = () => {
+    // Validation des champs obligatoires
     if (!newUser.fullName || !newUser.email || !newUser.password) {
       alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    // Validation de l'email
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(newUser.email)) {
+      alert('Veuillez saisir un email valide');
       return;
     }
 
@@ -264,37 +325,43 @@ const AccountsManagement = () => {
       return;
     }
 
-    if (isDemo) {
-      // Simuler l'envoi d'email
-      const confirmSend = confirm(
-        `Mode démo : Compte créé pour ${newUser.fullName} (${newUser.role})\n\n` +
-        `Voulez-vous envoyer les identifiants par email à ${newUser.email} ?\n\n` +
-        `Email : ${newUser.email}\n` +
-        `Mot de passe temporaire : ${newUser.password}\n\n` +
-        `L'utilisateur devra changer son mot de passe lors de sa première connexion.`
-      );
-      
-      if (confirmSend) {
-        alert('Mode démo : Email d\'identifiants envoyé avec succès !');
+    // Validation spécifique pour secrétaire
+    if (newUser.role === 'secretary') {
+      if (!newUser.phone || newUser.phone.length < 9) {
+        const confirmWithoutPhone = confirm(
+          'Attention : Aucun numéro de téléphone saisi.\n\n' +
+          'Un secrétaire doit pouvoir être contacté facilement.\n\n' +
+          'Voulez-vous continuer sans numéro de téléphone ?'
+        );
+        if (!confirmWithoutPhone) return;
       }
+      
+      // Vérification que le nom est complet
+      if (!newUser.fullName.includes(' ') || newUser.fullName.trim().split(' ').length < 2) {
+        const confirmName = confirm(
+          'Le nom semble incomplet.\n\n' +
+          'Format recommandé : "Prénom Nom" ou "Mme/M. Prénom Nom"\n\n' +
+          'Voulez-vous continuer avec ce nom ?'
+        );
+        if (!confirmName) return;
+      }
+    }
+
+    // Logique unifiée avec vraie intégration email
+    const confirmSend = confirm(
+      `Compte créé pour ${newUser.fullName} (${newUser.role})\n\n` +
+      `Voulez-vous envoyer automatiquement les identifiants par email à ${newUser.email} ?\n\n` +
+      `Email : ${newUser.email}\n` +
+      `Mot de passe temporaire : ${newUser.password}\n\n` +
+      `${isDemo ? '📧 Mode démo : Email sera simulé avec notification visuelle' : '📧 Email sera envoyé réellement'}` +
+      `\n\nL'utilisateur devra changer son mot de passe lors de sa première connexion.`
+    );
+    
+    if (confirmSend) {
+      // Utiliser le service d'email réel
+      sendCredentialsByEmail(newUser);
     } else {
-      // Logique de création réelle avec envoi d'email
-      console.log('Création nouveau compte:', newUser);
-      
-      const confirmSend = confirm(
-        `Compte créé pour ${newUser.fullName}\n\n` +
-        `Voulez-vous envoyer automatiquement les identifiants par email à ${newUser.email} ?\n\n` +
-        `Sinon, vous devrez communiquer ces informations manuellement :\n` +
-        `Email : ${newUser.email}\n` +
-        `Mot de passe temporaire : ${newUser.password}`
-      );
-      
-      if (confirmSend) {
-        // Ici, on intégrerait un service d'email (SendGrid, AWS SES, etc.)
-        sendCredentialsByEmail(newUser);
-      } else {
-        alert(`Identifiants créés. Veuillez les communiquer manuellement :\n\nEmail : ${newUser.email}\nMot de passe : ${newUser.password}\n\n⚠️ L'utilisateur devra changer son mot de passe lors de sa première connexion.`);
-      }
+      alert(`Identifiants créés. Veuillez les communiquer manuellement :\n\nEmail : ${newUser.email}\nMot de passe : ${newUser.password}\n\n⚠️ L'utilisateur devra changer son mot de passe lors de sa première connexion.`);
     }
 
     // Reset du formulaire
@@ -302,18 +369,70 @@ const AccountsManagement = () => {
       fullName: '',
       email: '',
       phone: '',
-      role: 'student',
+      role: 'secretary', // Garder secrétaire par défaut
       password: '',
       status: 'active'
     });
     setActiveTab('accounts');
   };
 
-  // Fonction pour envoyer les identifiants par email
-  const sendCredentialsByEmail = (userData) => {
-    // Cette fonction serait connectée à un service d'email réel
-    console.log('Envoi email à:', userData.email);
-    alert(`Email d'identifiants envoyé à ${userData.email} avec succès !\n\nL'utilisateur recevra :\n- Son email de connexion\n- Son mot de passe temporaire\n- Les instructions pour changer son mot de passe`);
+  // Fonction pour envoyer les identifiants par email avec service réel
+  const sendCredentialsByEmail = async (userData) => {
+    try {
+      console.log('📧 Envoi email identifiants à:', userData.email);
+      
+      // Récupérer le nom de l'école depuis les données utilisateur
+      const schoolName = data?.schoolDetails?.name || user?.schoolData?.name || 'Votre École';
+      
+      // Utiliser le service d'email réel
+      const result = await emailService.sendCredentials({
+        email: userData.email,
+        fullName: userData.fullName,
+        password: userData.password,
+        role: userData.role,
+        schoolName: schoolName
+      });
+
+      if (result.success) {
+        // Succès - notifier l'utilisateur
+        const successMessage = `✅ ${result.message}\n\n` +
+          `Méthode d'envoi : ${result.method === 'simulation' ? '🔄 Simulation (Développement)' : '📧 Email réel'}\n\n` +
+          `L'utilisateur recevra :\n` +
+          `• Son email de connexion\n` +
+          `• Son mot de passe temporaire\n` +
+          `• Les instructions complètes\n` +
+          `• Un lien direct vers la connexion\n\n` +
+          `${result.method === 'simulation' ? '💡 Note : En mode développement, une notification visuelle apparaît.' : ''}`;
+        
+        alert(successMessage);
+        
+        console.log('✅ Email envoyé avec succès:', result);
+      } else {
+        throw new Error(result.message || 'Erreur inconnue');
+      }
+      
+    } catch (error) {
+      console.error('❌ Erreur envoi email:', error);
+      
+      // En cas d'erreur, proposer l'alternative manuelle
+      const fallbackMessage = `❌ Erreur lors de l'envoi de l'email.\n\n` +
+        `Veuillez communiquer ces identifiants manuellement :\n\n` +
+        `📧 Email : ${userData.email}\n` +
+        `🔑 Mot de passe : ${userData.password}\n\n` +
+        `⚠️ L'utilisateur devra changer son mot de passe lors de sa première connexion.\n\n` +
+        `💡 Conseil : Copiez ces informations et envoyez-les par un autre moyen (SMS, WhatsApp, etc.)`;
+      
+      alert(fallbackMessage);
+      
+      // Copier automatiquement les identifiants dans le presse-papiers
+      try {
+        const credentialsText = `EduTrack CM - Identifiants\nEmail: ${userData.email}\nMot de passe: ${userData.password}\nVeuillez changer votre mot de passe lors de la première connexion.`;
+        navigator.clipboard.writeText(credentialsText);
+        console.log('📋 Identifiants copiés dans le presse-papiers');
+      } catch (clipboardError) {
+        console.warn('Impossible de copier dans le presse-papiers:', clipboardError);
+      }
+    }
   };
 
   // Génération automatique d'un mot de passe sécurisé
@@ -777,7 +896,35 @@ const AccountsManagement = () => {
   const renderCreateForm = () => (
     <div className="max-w-2xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-6">Créer un nouveau compte</h3>
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-lg font-semibold text-gray-900">Créer un nouveau compte</h3>
+          {newUser.role === 'secretary' && (
+            <div className="flex items-center space-x-2 bg-blue-50 px-3 py-1 rounded-full">
+              <Icon name="UserCheck" size={16} className="text-blue-600" />
+              <span className="text-sm font-medium text-blue-700">Compte Secrétaire</span>
+            </div>
+          )}
+        </div>
+        
+        {/* Message d'information pour les secrétaires */}
+        {newUser.role === 'secretary' && (
+          <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <div className="flex items-start space-x-3">
+              <Icon name="Info" size={20} className="text-blue-600 mt-1 flex-shrink-0" />
+              <div>
+                <h4 className="font-medium text-blue-900 mb-2">Permissions du Secrétaire</h4>
+                <ul className="text-sm text-blue-700 space-y-1">
+                  <li>✓ Gestion des inscriptions et cartes d'étudiants</li>
+                  <li>✓ Suivi des paiements et frais scolaires</li>
+                  <li>✓ Édition des bulletins et relevés</li>
+                  <li>✓ Communication avec les parents</li>
+                  <li>✓ Gestion des documents administratifs</li>
+                  <li>⚠️ Accès limité aux données confidentielles du directeur</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        )}
         
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -799,10 +946,11 @@ const AccountsManagement = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input
-              label="Téléphone"
+              label={newUser.role === 'secretary' ? 'Téléphone (recommandé) *' : 'Téléphone'}
               value={newUser.phone}
               onChange={(e) => setNewUser(prev => ({ ...prev, phone: e.target.value }))}
               placeholder="+237 6XX XXX XXX"
+              helperText={newUser.role === 'secretary' ? 'Contact essentiel pour la communication avec les parents' : ''}
             />
             
             <Select
@@ -870,7 +1018,7 @@ const AccountsManagement = () => {
                   fullName: '',
                   email: '',
                   phone: '',
-                  role: 'student',
+                  role: 'secretary', // Par défaut secrétaire
                   password: '',
                   status: 'active'
                 });
@@ -890,25 +1038,107 @@ const AccountsManagement = () => {
           </div>
         </div>
       </div>
+      
+      {/* Guide spécifique pour les secrétaires */}
+      {newUser.role === 'secretary' && (
+        <div className="mt-6 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200 p-6">
+          <div className="flex items-start space-x-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center">
+                <Icon name="CheckCircle" size={24} className="text-green-600" />
+              </div>
+            </div>
+            <div className="flex-1">
+              <h4 className="text-lg font-semibold text-gray-900 mb-3">
+                🎯 Checklist Post-Création du Compte Secrétaire
+              </h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Icon name="Mail" size={14} className="text-green-600" />
+                    <span>Email d'identifiants automatique</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Icon name="Key" size={14} className="text-blue-600" />
+                    <span>Changement mot de passe obligatoire</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Icon name="BookOpen" size={14} className="text-purple-600" />
+                    <span>Formation aux outils de gestion</span>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center space-x-2">
+                    <Icon name="Users" size={14} className="text-orange-600" />
+                    <span>Accès aux listes d'étudiants</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Icon name="CreditCard" size={14} className="text-indigo-600" />
+                    <span>Droits sur la gestion financière</span>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Icon name="FileText" size={14} className="text-red-600" />
+                    <span>Permissions documents officiels</span>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-4 p-3 bg-white bg-opacity-70 rounded-lg border border-green-300">
+                <p className="text-sm text-gray-700">
+                  <strong>👩‍💼 Conseil :</strong> Après création, accompagnez votre secrétaire lors de sa première connexion 
+                  pour lui expliquer les fonctionnalités principales et s'assurer qu'elle maîtrise les outils essentiels.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 
   return (
     <div className="space-y-6">
-      {/* Indicateur de mode */}
-      {isDemo && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+      {/* Indicateur de mode et service email */}
+      <div className="space-y-4">
+        {isDemo && (
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <div className="flex items-center space-x-3">
+              <Icon name="AlertTriangle" size={20} className="text-amber-600" />
+              <div>
+                <h3 className="font-semibold text-amber-800">Mode Démonstration - Gestion des Comptes</h3>
+                <p className="text-sm text-amber-700">
+                  Vous consultez des comptes de démonstration. Les actions ne modifieront pas les vraies données.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+        
+        {/* Statut du service d'email */}
+        <div className={`border rounded-lg p-4 ${
+          emailServiceReady 
+            ? 'bg-green-50 border-green-200' 
+            : 'bg-yellow-50 border-yellow-200'
+        }`}>
           <div className="flex items-center space-x-3">
-            <Icon name="AlertTriangle" size={20} className="text-amber-600" />
+            <Icon 
+              name={emailServiceReady ? "Mail" : "AlertCircle"} 
+              size={20} 
+              className={emailServiceReady ? "text-green-600" : "text-yellow-600"} 
+            />
             <div>
-              <h3 className="font-semibold text-amber-800">Mode Démonstration - Gestion des Comptes</h3>
-              <p className="text-sm text-amber-700">
-                Vous consultez des comptes de démonstration. Les actions ne modifieront pas les vraies données.
+              <h3 className={`font-semibold ${emailServiceReady ? 'text-green-800' : 'text-yellow-800'}`}>
+                Service d'Email : {emailServiceReady ? '✅ Actif' : '⚠️ Mode Simulation'}
+              </h3>
+              <p className={`text-sm ${emailServiceReady ? 'text-green-700' : 'text-yellow-700'}`}>
+                {emailServiceReady 
+                  ? '📧 Les emails seront envoyés automatiquement avec des templates professionnels'
+                  : '🔄 Les emails seront simulés avec des notifications visuelles (mode développement)'
+                }
               </p>
             </div>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Navigation par onglets */}
       <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg w-fit">

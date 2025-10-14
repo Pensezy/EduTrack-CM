@@ -34,16 +34,10 @@ class DataModeService {
       return 'demo';
     }
     
-    // Si l'école est initialisée avec des données réelles et utilisateur réel
-    if (isInitialized && userInfo?.current_school_id && userInfo?.email && !userInfo.email.includes('demo')) {
-      console.log('École initialisée et utilisateur réel - Mode réel activé');
+    // Si utilisateur réel (non-démo), utiliser le mode réel
+    if (userInfo?.email && !userInfo.email.includes('demo')) {
+      console.log('Compte réel détecté - Mode réel activé');
       return 'real';
-    }
-    
-    // Si utilisateur réel mais école pas encore initialisée
-    if (userInfo?.current_school_id && userInfo?.email && !userInfo.email.includes('demo') && !isInitialized) {
-      console.log('Utilisateur réel mais école non initialisée - Mode hybride');
-      return 'hybrid';
     }
     
     // Par défaut, mode démo
@@ -58,16 +52,7 @@ class DataModeService {
     return this.currentMode;
   }
 
-  /**
-   * Change le mode de données
-   */
-  setMode(mode) {
-    if (['demo', 'real', 'hybrid'].includes(mode)) {
-      this.currentMode = mode;
-      // Déclencher un événement de changement de mode
-      this.notifyModeChange();
-    }
-  }
+
 
   /**
    * Vérifie si l'école est initialisée
@@ -402,7 +387,34 @@ class DataModeService {
         { id: '2', name: '6ème B', level: '6ème', capacity: 30, currentEnrollment: 25 },
         { id: '3', name: '5ème A', level: '5ème', capacity: 30, currentEnrollment: 27 },
         { id: '4', name: '5ème B', level: '5ème', capacity: 30, currentEnrollment: 29 }
-      ]
+      ],
+      validationRequests: [
+        {
+          id: 1,
+          type: 'nouvelle_inscription',
+          studentName: 'Marie Talla (DÉMO)',
+          parentName: 'Joseph Talla',
+          requestedClass: 'CE1',
+          submittedBy: 'Secrétaire',
+          submittedDate: '2024-09-15',
+          status: 'en_attente',
+          documents: ['Certificat de naissance', 'Carnet de vaccination'],
+          priority: 'normal'
+        }
+      ],
+      statistics: {
+        totalDemandes: 15,
+        enAttente: 3,
+        approuvees: 8,
+        refusees: 1,
+        enRevision: 3
+      },
+      classTransitions: {
+        ce1_to_ce2: { total: 8, approved: 6, pending: 2 },
+        ce2_to_cm1: { total: 12, approved: 10, pending: 2 },
+        cm1_to_cm2: { total: 7, approved: 5, pending: 2 },
+        cm2_graduates: { total: 15, approved: 15, pending: 0 }
+      }
     };
   }
 
@@ -494,8 +506,6 @@ class DataModeService {
         return this.getDemoData(dataType, params);
       case 'real':
         return this.getRealData(dataType, params);
-      case 'hybrid':
-        return this.getHybridData(dataType, params);
       default:
         return this.getDemoData(dataType, params);
     }
@@ -540,6 +550,14 @@ class DataModeService {
           // TODO: Utiliser le service d'étudiants existant
           return [];
           
+        case 'schoolYear':
+          // Récupérer les données réelles d'année scolaire
+          return await this.getRealSchoolYearData(params);
+          
+        case 'teachers':
+          // TODO: Utiliser le service enseignants existant
+          return [];
+          
         case 'teachers':
           // TODO: Utiliser le service de professeurs existant
           return [];
@@ -563,15 +581,100 @@ class DataModeService {
   }
 
   /**
-   * Récupère les données hybrides (mélange demo/réel)
+   * Récupère les données réelles d'année scolaire depuis Supabase
    */
-  async getHybridData(dataType, params) {
-    // Logique pour mélanger données réelles et démo
-    const realData = await this.getRealData(dataType, params);
-    const demoData = await this.getDemoData(dataType, params);
-    
-    // Si pas de données réelles, utiliser démo
-    return realData.length > 0 ? realData : demoData;
+  async getRealSchoolYearData(params) {
+    try {
+      const { supabase } = await import('../lib/supabase');
+      const schoolId = params.schoolId || this.schoolId;
+
+      if (!schoolId) {
+        console.warn('Aucun ID école fourni pour les données d\'année scolaire');
+        return {
+          current: null,
+          classes: [],
+          validationRequests: [],
+          statistics: {
+            totalDemandes: 0,
+            enAttente: 0,
+            approuvees: 0,
+            refusees: 0,
+            enRevision: 0
+          },
+          classTransitions: {}
+        };
+      }
+
+      // Récupérer l'année scolaire courante
+      const { data: currentYear, error: yearError } = await supabase
+        .from('academic_years')
+        .select('*')
+        .eq('school_id', schoolId)
+        .eq('is_current', true)
+        .single();
+
+      if (yearError && yearError.code !== 'PGRST116') {
+        console.error('Erreur lors de la récupération de l\'année scolaire:', yearError);
+      }
+
+      // Récupérer les classes
+      const { data: classes, error: classesError } = await supabase
+        .from('classes')
+        .select(`
+          id,
+          name,
+          level,
+          capacity,
+          current_enrollment
+        `)
+        .eq('school_id', schoolId);
+
+      if (classesError) {
+        console.error('Erreur lors de la récupération des classes:', classesError);
+      }
+
+      // Récupérer les demandes de validation (pour l'instant vides, à implémenter)
+      // Ces données viendraient des tables comme transfers, student_cards, etc.
+      const validationRequests = [];
+
+      // Statistiques de validation (calculées depuis les vraies données)
+      const statistics = {
+        totalDemandes: 0,
+        enAttente: 0,
+        approuvees: 0,
+        refusees: 0,
+        enRevision: 0
+      };
+
+      // Transitions de classes (calculées depuis les grades et classes)
+      const classTransitions = {};
+
+      return {
+        current: currentYear || null,
+        classes: classes || [],
+        validationRequests,
+        statistics,
+        classTransitions
+      };
+
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données d\'année scolaire:', error);
+      
+      // Retourner des données vides en cas d'erreur
+      return {
+        current: null,
+        classes: [],
+        validationRequests: [],
+        statistics: {
+          totalDemandes: 0,
+          enAttente: 0,
+          approuvees: 0,
+          refusees: 0,
+          enRevision: 0
+        },
+        classTransitions: {}
+      };
+    }
   }
 }
 

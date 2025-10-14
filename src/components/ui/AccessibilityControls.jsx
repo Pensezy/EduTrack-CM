@@ -221,40 +221,42 @@ const AccessibilityControls = ({ className = '' }) => {
         </>
       )}
       {/* CSS for accessibility classes */}
-      <style jsx global>{`
-        .high-contrast {
-          --color-background: #000000;
-          --color-foreground: #FFFFFF;
-          --color-card: #1a1a1a;
-          --color-border: #FFFFFF;
-          --color-muted: #333333;
-        }
-        
-        .large-text {
-          font-size: 1.125rem;
-        }
-        
-        .large-text h1 { font-size: 2.5rem; }
-        .large-text h2 { font-size: 2rem; }
-        .large-text h3 { font-size: 1.75rem; }
-        .large-text h4 { font-size: 1.5rem; }
-        .large-text h5 { font-size: 1.25rem; }
-        .large-text h6 { font-size: 1.125rem; }
-        
-        .reduce-motion * {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
-        }
-        
-        @media (prefers-reduced-motion: reduce) {
+      <style dangerouslySetInnerHTML={{
+        __html: `
+          .high-contrast {
+            --color-background: #000000;
+            --color-foreground: #FFFFFF;
+            --color-card: #1a1a1a;
+            --color-border: #FFFFFF;
+            --color-muted: #333333;
+          }
+          
+          .large-text {
+            font-size: 1.125rem;
+          }
+          
+          .large-text h1 { font-size: 2.5rem; }
+          .large-text h2 { font-size: 2rem; }
+          .large-text h3 { font-size: 1.75rem; }
+          .large-text h4 { font-size: 1.5rem; }
+          .large-text h5 { font-size: 1.25rem; }
+          .large-text h6 { font-size: 1.125rem; }
+          
           .reduce-motion * {
             animation-duration: 0.01ms !important;
             animation-iteration-count: 1 !important;
             transition-duration: 0.01ms !important;
           }
-        }
-      `}</style>
+          
+          @media (prefers-reduced-motion: reduce) {
+            .reduce-motion * {
+              animation-duration: 0.01ms !important;
+              animation-iteration-count: 1 !important;
+              transition-duration: 0.01ms !important;
+            }
+          }
+        `
+      }} />
     </div>
   );
 };

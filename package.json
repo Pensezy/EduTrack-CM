@@ -28,6 +28,7 @@
   },
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.10",
+    "@emailjs/browser": "^4.4.1",
     "@prisma/client": "^6.16.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.6.1",
