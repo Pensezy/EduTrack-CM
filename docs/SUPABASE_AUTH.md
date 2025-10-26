@@ -57,12 +57,31 @@ DIRECT_URL=postgresql://...
 
 ## 🏫 **Flux d'Inscription Directeur**
 
-### **Étapes du Processus**
+### **Étapes du Processus (Architecture Hybride)**
 1. **Formulaire d'inscription** (`/school-management`)
 2. **Création compte Supabase Auth** (email + mot de passe)
-3. **Création profil école** (via Prisma)
+   ```javascript
+   const { data, error } = await supabase.auth.signUp({
+     email,
+     password,
+     options: {
+       data: {
+         full_name: directorName,
+         phone,
+         role: 'principal',
+         school: { name, code, type, phone, address, city, country }
+       }
+     }
+   });
+   ```
+3. **Trigger PostgreSQL automatique** (`on_auth_user_created`)
+   - Crée l'utilisateur dans `users`
+   - Crée l'école dans `schools`
+   - Initialise toutes les données par défaut
 4. **Email de confirmation** (si activé)
 5. **Redirection dashboard principal**
+
+**Note** : Plus besoin d'appels Prisma manuels, tout est géré par le trigger !
 
 ### **Gestion des Erreurs**
 ```javascript
@@ -93,8 +112,21 @@ try {
 
 ## 🔒 **Sécurité et RLS**
 
-### **Politiques Row Level Security**
+### **Status Actuel : RLS Désactivé en Développement**
 ```sql
+-- RLS actuellement désactivé pour éviter conflits avec triggers
+ALTER TABLE public.users DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.schools DISABLE ROW LEVEL SECURITY;
+ALTER TABLE public.academic_years DISABLE ROW LEVEL SECURITY;
+```
+
+**Raison** : Le trigger `handle_new_user_automatic()` utilise `SECURITY DEFINER` et nécessite des permissions élevées. RLS peut bloquer ces opérations.
+
+### **Pour Production : Activer RLS avec Politiques**
+```sql
+-- Réactiver RLS
+ALTER TABLE public.schools ENABLE ROW LEVEL SECURITY;
+
 -- Politique pour les écoles - Seul le directeur peut voir/modifier
 CREATE POLICY "Directors can manage their school" ON schools
 FOR ALL USING (director_user_id = auth.uid());
@@ -102,25 +134,12 @@ FOR ALL USING (director_user_id = auth.uid());
 -- Politique pour les utilisateurs - Auto-gestion
 CREATE POLICY "Users can manage themselves" ON users  
 FOR ALL USING (id = auth.uid());
-```
 
-### **Auto-Confirmation Développement** ⚠️
-```sql
--- UNIQUEMENT pour le développement
-CREATE OR REPLACE FUNCTION auto_confirm_principals()
-RETURNS TRIGGER AS $$
-BEGIN
-  IF NEW.raw_user_meta_data->>'role' = 'principal' THEN
-    NEW.email_confirmed_at = NOW();
-  END IF;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Activer le trigger (DEV uniquement)
-CREATE TRIGGER auto_confirm_principals_trigger
-  BEFORE INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION auto_confirm_principals();
+-- Politique pour le trigger (IMPORTANTE!)
+CREATE POLICY "Allow trigger operations" ON schools
+FOR ALL TO authenticated
+USING (true)
+WITH CHECK (true);
 ```
 
 ## 📧 **Configuration Email Production**

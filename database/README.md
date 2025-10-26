@@ -1,76 +1,172 @@
-# 🚀 Guide de Mise à Jour de la Base de Données EduTrack CM
+# � Base de Données EduTrack CM
 
-## 📋 Étapes à Suivre
+## 📁 Structure du dossier
 
-### 1️⃣ **Diagnostic de l'État Actuel**
-1. Allez dans votre **Dashboard Supabase** → **SQL Editor**
-2. Copiez-collez le contenu du fichier `database/diagnostics/database_check.sql`
-3. Exécutez le script pour voir l'état actuel de votre base de données
+```
+database/
+├── sql/                       # Scripts SQL principaux
+│   ├── FIX_TRIGGER_ONLY.sql              # Trigger d'authentification (10.5 KB)
+│   ├── MIGRATION_COMPLETE_22_TABLES.sql  # Schéma complet (31.8 KB)
+│   └── README.md                         # Documentation SQL
+├── migrations/
+│   └── 01_initial_setup.sql   # Version propre du trigger
+└── README.md                  # Ce fichier
+```
 
-### 2️⃣ **Application de la Migration**
-1. Dans le **SQL Editor** de Supabase
-2. Copiez-collez le contenu du fichier `database/migrations/complete_edutrack_schema.sql`
-3. Exécutez le script complet
-4. Vérifiez qu'il n'y a pas d'erreurs (tout devrait être vert ✅)
+## � Installation de la Base de Données
 
-### 3️⃣ **Vérification Post-Migration**
-1. Re-exécutez le script de diagnostic `database_check.sql`
-2. Vérifiez que toutes les tables marquent "✅ Existe"
-3. Vérifiez que les colonnes manquantes ont été ajoutées
+### Première Installation
 
-## 🎯 **Ce qui va être Créé/Ajouté**
+1. **Exécuter le schéma complet** dans Supabase SQL Editor :
+   ```sql
+   -- Copier le contenu de sql/MIGRATION_COMPLETE_22_TABLES.sql
+   -- Exécuter dans Supabase SQL Editor
+   ```
 
-### 📊 **Tables Créées :**
-- ✅ `evaluation_periods` - Périodes d'évaluation (trimestres)
-- ✅ `grade_types` - Types de notes (DS, DM, Contrôle, etc.)
-- ✅ `user_roles` - Rôles utilisateur personnalisés
-- ✅ `attendance_types` - Types de présence
-- ✅ `payment_types` - Types de paiements scolaires
+2. **Configurer le trigger d'authentification** :
+   ```sql
+   -- Copier le contenu de sql/FIX_TRIGGER_ONLY.sql
+   -- Exécuter dans Supabase SQL Editor
+   ```
 
-### 🔧 **Colonnes Ajoutées :**
-- ✅ `subjects.category` - Catégorie des matières
-- ✅ `classes.capacity` - Capacité de la classe
-- ✅ `classes.current_enrollment` - Nombre d'élèves inscrits
-- ✅ `classes.level` - Niveau de la classe
-- ✅ `classes.section` - Section de la classe
-- ✅ `users.photo` - Photo de profil utilisateur
+3. **Synchroniser Prisma** :
+   ```bash
+   npx prisma db pull
+   npx prisma generate
+   ```
 
-### 🔒 **Sécurité Configurée :**
-- ✅ Row Level Security (RLS) sur toutes les nouvelles tables
-- ✅ Politiques d'accès basées sur l'école du directeur
-- ✅ Index pour les performances
-- ✅ Triggers pour updated_at automatique
+Consultez `sql/README.md` pour plus de détails sur les scripts SQL.
 
-## 🎉 **Résultat Final**
+## �🔍 Diagnostic de la Base de Données
 
-Après la migration, votre application EduTrack CM pourra :
+### Vérifier l'état actuel
 
-1. **Créer des comptes directeurs** sans erreurs
-2. **Initialiser toutes les données par défaut** :
-   - Matières avec catégories
-   - Classes avec capacités
-   - Périodes d'évaluation
-   - Types de notes
-   - Types de présence
-3. **Afficher les vrais noms** des directeurs
-4. **Détecter automatiquement le mode production**
-5. **Sauvegarder toutes les informations** du formulaire d'inscription
+Pour diagnostiquer votre base de données Supabase :
 
-## ⚠️ **Important**
+1. Ouvrez **Supabase SQL Editor** : https://supabase.com/dashboard
+2. Copiez-collez le contenu de `diagnostics/database_check.sql`
+3. Exécutez le script
 
-- **Sauvegardez votre base de données** avant d'exécuter la migration
-- Les scripts sont conçus pour être **sécurisés** (IF NOT EXISTS, etc.)
-- Aucune donnée existante ne sera supprimée ou modifiée
-- Seules les structures manquantes seront ajoutées
+### Informations affichées
 
-## 🔍 **En Cas de Problème**
+Le script de diagnostic vous montrera :
 
-Si vous rencontrez une erreur :
-1. Copiez le message d'erreur complet
-2. Vérifiez les permissions de votre utilisateur Supabase
-3. Consultez les logs dans l'interface Supabase
-4. N'hésitez pas à demander de l'aide avec le message d'erreur exact
+- ✅ **Tables existantes** dans le schéma `public`
+- ✅ **Colonnes détaillées** des tables principales (users, schools, subjects, classes)
+- ✅ **Tables manquantes** par rapport au schéma complet
+- ✅ **Politiques RLS** actives
+- ✅ **Contenu des écoles** (10 dernières créées)
+- ✅ **Statistiques générales** (nombre d'enregistrements par table)
+
+## 🗄️ Schéma de Base de Données
+
+### Tables principales (22 tables)
+
+#### Core
+- `users` - Utilisateurs (directeurs, enseignants, secrétaires, élèves, parents)
+- `schools` - Établissements scolaires
+- `academic_years` - Années académiques
+
+#### Académique
+- `classes` - Classes (6ème, 5ème, etc.)
+- `subjects` - Matières enseignées
+- `teachers` - Enseignants
+- `students` - Élèves
+- `class_subjects` - Association classes ↔ matières
+- `teacher_subjects` - Association enseignants ↔ matières
+
+#### Évaluation
+- `grades` - Notes des élèves
+- `grade_types` - Types de notes (Devoir, Interrogation, Examen, etc.)
+- `evaluation_periods` - Périodes d'évaluation (Trimestres/Semestres)
+
+#### Présence
+- `attendances` - Présences/absences
+- `attendance_types` - Types de présence (Présent, Absent, Retard, Excusé)
+
+#### Finance
+- `payments` - Paiements effectués
+- `payment_types` - Types de paiements (Scolarité, Inscription, Uniforme, etc.)
+
+#### Relations
+- `parents` - Informations des parents
+- `parent_student_schools` - Liaison parents ↔ élèves ↔ écoles (multi-école)
+
+#### Administration
+- `secretaries` - Secrétaires
+- `user_roles` - Rôles utilisateur personnalisés
+- `notifications` - Notifications système
+- `audit_logs` - Journal d'audit
+
+## � Configuration Automatique
+
+Lors de la création d'un compte directeur, le système initialise automatiquement :
+
+### 📅 Année académique
+- Format : `2025-2026`
+- Dates : 01 septembre → 31 juillet
+
+### 📝 Types de notes (5 types)
+| Type | Code | Coefficient |
+|------|------|-------------|
+| Devoir | HOMEWORK | 0.3 |
+| Interrogation | QUIZ | 0.2 |
+| Examen | EXAM | 0.5 |
+| Projet | PROJECT | 0.4 |
+| Participation | PARTICIPATION | 0.1 |
+
+### 👥 Types de présence (4 types)
+- Present
+- Absent
+- Retard
+- Absent Excusé
+
+### 💰 Types de paiement (6 types)
+- Frais de scolarité
+- Frais d'inscription
+- Uniforme
+- Livres
+- Cantine
+- Transport
+
+### 📊 Périodes d'évaluation
+**Primaire/Collège** : 3 trimestres
+- 1er Trimestre : 01 sept → 15 déc
+- 2e Trimestre : 16 déc → 31 mars
+- 3e Trimestre : 01 avril → 15 juillet
+
+**Lycée** : 2 semestres
+- 1er Semestre : 01 sept → 31 janvier
+- 2e Semestre : 01 février → 15 juillet
+
+### 🔐 Rôles utilisateur (6 rôles)
+- Administrateur (tous les droits)
+- Directeur (gestion école, enseignants, élèves, rapports)
+- Enseignant (gestion classes, notes, consultation élèves)
+- Secrétaire (gestion élèves, paiements, rapports)
+- Parent (consultation enfants, notes, présences)
+- Élève (consultation notes personnelles, présences)
+
+## 🔒 Sécurité
+
+- **RLS (Row Level Security)** : Désactivé en développement
+- **Trigger automatique** : `on_auth_user_created` avec `SECURITY DEFINER`
+- **Validation des données** : Contraintes UNIQUE, NOT NULL, FOREIGN KEY
+
+## 🚀 Maintenance
+
+### En cas de problème
+
+1. Exécutez `diagnostics/database_check.sql` pour identifier le problème
+2. Vérifiez les logs Supabase
+3. Consultez la documentation Supabase
+
+### Scripts de référence
+
+Les scripts de migration complets sont disponibles à la racine du projet :
+- `MIGRATION_COMPLETE_22_TABLES.sql` - Migration complète (nouveau projet)
+- `FIX_TRIGGER_ONLY.sql` - Correction du trigger automatique (projet existant)
 
 ---
 
-**Une fois la migration terminée, votre système EduTrack CM sera complet et fonctionnel ! 🚀**
+**Base de données opérationnelle et prête pour la production ! ✅**

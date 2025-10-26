@@ -6,16 +6,17 @@ EduTrack-CM a migré de **Supabase SQL natif** vers **Prisma ORM** pour une meil
 
 ## ✅ **Migration Complétée le 27 Septembre 2025**
 
-### **Avant (Système SQL Supabase)**
-- ❌ Migrations SQL manuelles dans `supabase/migrations/`
-- ❌ Fonctions SQL personnalisées (`create_principal_school`, etc.)
-- ❌ Requêtes SQL directes dans les services
-- ❌ Pas de validation TypeScript des requêtes
+### **Architecture Hybride**
+**Supabase pour :**
+- ✅ Authentification (signUp, signIn, session)
+- ✅ Hébergement PostgreSQL
+- ✅ Triggers automatiques (`on_auth_user_created`)
+- ✅ Fonctions SQL personnalisées (auto-initialisation)
 
-### **Après (Système Prisma)**
+**Prisma pour :**
 - ✅ Schéma déclaratif dans `prisma/schema.prisma`
 - ✅ ORM type-safe avec génération automatique du client
-- ✅ Services refactorisés pour utiliser Prisma
+- ✅ Requêtes complexes et relations
 - ✅ Validation TypeScript complète des modèles
 
 ## 🗂️ **Architecture Actuelle**
@@ -23,23 +24,35 @@ EduTrack-CM a migré de **Supabase SQL natif** vers **Prisma ORM** pour une meil
 ### **Structure des Fichiers**
 ```
 ├── prisma/
-│   ├── schema.prisma           # Schéma de base de données principal
-│   └── generated/              # Client Prisma généré
+│   └── schema.prisma              # Schéma de base de données Prisma
+├── database/
+│   ├── diagnostics/
+│   │   └── database_check.sql     # Script de diagnostic
+│   └── migrations/
+│       └── 01_initial_setup.sql   # Migration trigger automatique
 ├── src/
 │   ├── lib/
-│   │   ├── prisma.js          # Configuration client Prisma
-│   │   └── supabase.js        # Client Supabase (auth uniquement)
+│   │   ├── prisma.js              # Configuration client Prisma
+│   │   └── supabase.js            # Client Supabase (auth + database)
 │   └── services/
-│       ├── schoolService.js   # Services Prisma pour les écoles
-│       ├── productionDataService.js  # À migrer vers Prisma
-│       └── edutrackService.js # À migrer vers Prisma
-└── docs/                      # Documentation moderne
+│       ├── schoolService.js       # Services Prisma/Supabase mixtes
+│       ├── productionDataService.js
+│       └── edutrackService.js
+├── MIGRATION_COMPLETE_22_TABLES.sql  # Migration complète (nouveau projet)
+└── FIX_TRIGGER_ONLY.sql           # Fix trigger automatique
 ```
 
-### **Configuration**
-- **`DATABASE_URL`** : Connexion poolée Supabase pour Prisma
-- **`DIRECT_URL`** : Connexion directe pour les migrations
-- **`VITE_SUPABASE_*`** : Variables client Supabase (auth frontend)
+### **Configuration .env**
+```env
+# Supabase Frontend (Auth)
+VITE_SUPABASE_URL=https://votre-projet.supabase.co
+VITE_SUPABASE_ANON_KEY=votre-cle-anon
+SUPABASE_SERVICE_ROLE_KEY=votre-cle-service
+
+# Prisma Backend (Database)
+DATABASE_URL=postgresql://...@...supabase.com:6543/postgres?pgbouncer=true
+DIRECT_URL=postgresql://...@...supabase.com:5432/postgres
+```
 
 ## 🔧 **Commandes Prisma Essentielles**
 
@@ -102,17 +115,51 @@ npx prisma validate
 - ✅ **Évolutivité** : Ajout facile de nouveaux modèles
 - ✅ **Documentation** : Schéma auto-documenté
 
-## 🔄 **Prochaines Étapes**
+## � **Système de Trigger Automatique**
 
-### **Services à Refactoriser**
-1. **`productionDataService.js`** - Remplacer `supabase.from()` par Prisma
-2. **`edutrackService.js`** - Migrer les RPC vers Prisma
-3. **`documentService.js`** - Adapter les logs d'audit
+### **Fonctionnement**
+Lors de la création d'un compte directeur via Supabase Auth, un trigger PostgreSQL s'exécute automatiquement :
 
-### **Fonctionnalités à Ajouter**
-- Middleware Prisma pour l'audit automatique
-- Validation Zod intégrée avec Prisma
-- Système de cache avec Prisma
+```sql
+-- Trigger on_auth_user_created
+-- Fonction: handle_new_user_automatic()
+-- SECURITY DEFINER + SET search_path = public, auth
+```
+
+### **Actions Automatiques**
+1. ✅ Création utilisateur dans `users`
+2. ✅ Création école dans `schools`
+3. ✅ Création année académique
+4. ✅ 5 types de notes (Devoir, Interrogation, Examen, Projet, Participation)
+5. ✅ 4 types de présence (Présent, Absent, Retard, Excusé)
+6. ✅ 6 types de paiement (Scolarité, Inscription, Uniforme, etc.)
+7. ✅ Périodes d'évaluation (Trimestres/Semestres selon type école)
+8. ✅ 6 rôles utilisateur avec permissions
+
+### **Fichiers de Migration**
+- **Nouveau projet** : `MIGRATION_COMPLETE_22_TABLES.sql` (schéma complet + trigger)
+- **Projet existant** : `FIX_TRIGGER_ONLY.sql` (uniquement le trigger)
+- **Diagnostic** : `database/diagnostics/database_check.sql`
+
+## 🔄 **Bonnes Pratiques**
+
+### **Quand Utiliser Prisma**
+- ✅ Requêtes complexes avec relations
+- ✅ Opérations CRUD typiques
+- ✅ Besoin de type-safety TypeScript
+- ✅ Agrégations et statistiques
+
+### **Quand Utiliser SQL Direct (Triggers)**
+- ✅ Automatisations côté serveur
+- ✅ Initialisation de données par défaut
+- ✅ Validations complexes
+- ✅ Performance critique
+
+### **Quand Utiliser Supabase Client**
+- ✅ Authentification (signUp, signIn)
+- ✅ Gestion de session
+- ✅ RLS (Row Level Security)
+- ✅ Realtime subscriptions
 
 ## 📚 **Ressources**
 
@@ -122,4 +169,24 @@ npx prisma validate
 
 ---
 
-**✨ Migration réussie ! EduTrack-CM utilise maintenant Prisma comme ORM principal.**
+## 🚨 **Points d'Attention**
+
+### **RLS (Row Level Security)**
+- **Status actuel** : Désactivé en développement
+- **Raison** : Éviter conflits avec triggers SECURITY DEFINER
+- **Production** : Réactiver avec politiques appropriées
+
+### **Migrations**
+- **Prisma** : Utilisé pour le schéma ORM
+- **SQL Direct** : Utilisé pour les triggers et fonctions
+- **Coordination** : Toujours sync Prisma schema ↔ SQL migrations
+
+### **Multi-Établissements**
+- ✅ **Parents** : Table `parent_student_schools` (relation N-N-N)
+- ✅ **Enseignants** : Support assignations multiples
+- ✅ **Données isolées** : Par `school_id`
+
+---
+
+**✨ Architecture hybride optimale : Prisma pour l'ORM + Supabase pour l'infrastructure !**
+````

@@ -27,6 +27,7 @@ import ProfileSettings from "./pages/profile-settings";
 import PasswordRecovery from "./pages/password-recovery";
 import PasswordReset from "./pages/password-reset";
 import ProductionLogin from "./pages/production-login";
+import AuthCallback from "./pages/AuthCallback";
 
 const Routes = () => {
   return (
@@ -35,6 +36,7 @@ const Routes = () => {
         <ScrollToTop />
         <RouterRoutes>
           <Route path="/" element={<SchoolManagement />} />
+          <Route path="/auth/callback" element={<AuthCallback />} />
           <Route path="/demo" element={<LoginAuthentication />} />
           <Route path="/login-authentication" element={<LoginAuthentication />} />
           <Route path="/staff-login" element={<StaffLogin />} />
