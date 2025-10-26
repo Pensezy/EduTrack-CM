@@ -105,6 +105,7 @@ export const AuthProvider = ({ children }) => {
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [authMode, setAuthMode] = useState('standard'); // 'standard' or 'demo'
 
   useEffect(() => {
     // Charger la session au démarrage
@@ -112,15 +113,89 @@ export const AuthProvider = ({ children }) => {
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        setUser(userData);
-        setUserProfile(userData);
+        // Check if it's a demo account
+        if (demoAccounts[userData.email]) {
+          setAuthMode('demo');
+          setUser(userData);
+          setUserProfile(userData);
+        } else {
+          // For real accounts, verify with Supabase
+          setAuthMode('standard');
+          checkSupabaseSession(userData);
+        }
       } catch (e) {
         console.error('Erreur lors du chargement de la session:', e);
         localStorage.removeItem('edutrack-user');
+        checkSupabaseSession();
       }
+    } else {
+      checkSupabaseSession();
     }
-    setLoading(false);
   }, []);
+
+  const checkSupabaseSession = async (localUser = null) => {
+    try {
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        throw error;
+      }
+      
+      if (session?.user) {
+        // We have a Supabase session, ensure user exists in users table
+        await ensureUserInDatabase(session.user);
+        setUser(session.user);
+        setUserProfile(session.user);
+        setAuthMode('standard');
+        
+        // Save to localStorage
+        localStorage.setItem('edutrack-user', JSON.stringify(session.user));
+      } else if (localUser) {
+        // Try to restore from local user if session is invalid
+        setUser(localUser);
+        setUserProfile(localUser);
+      }
+    } catch (err) {
+      console.warn('⚠️ Error checking Supabase session:', err);
+      // Continue without blocking
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const ensureUserInDatabase = async (authUser) => {
+    try {
+      // Ensure user exists in users table with proper permissions
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .upsert({
+          id: authUser.id,
+          email: authUser.email,
+          full_name: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
+          role: authUser.user_metadata?.role || 'student',
+          phone: authUser.user_metadata?.phone || '',
+          is_active: true,
+          active: true,
+          photo: '/assets/images/no_image.png',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (userError) {
+        console.warn('⚠️ Could not ensure user in database:', userError);
+        // Don't throw error, continue
+      } else {
+        console.log('✅ User ensured in database:', userData);
+      }
+      
+      return userData;
+    } catch (err) {
+      console.warn('⚠️ Exception ensuring user in database:', err);
+      return null;
+    }
+  };
 
   const signInWithPin = async (pin, identifier) => {
     try {
@@ -137,6 +212,7 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('edutrack-user', JSON.stringify(userData));
         setUser(userData);
         setUserProfile(userData);
+        setAuthMode('demo');
         return { user: userData, error: null };
       }
 
@@ -158,6 +234,9 @@ export const AuthProvider = ({ children }) => {
         phone: data[0].user_phone,
         email: data[0].user_email
       };
+
+      // Ensure user exists in database with proper permissions
+      await ensureUserInDatabase(authenticatedUser);
 
       // Valider et corriger les données au moment de la connexion (pour les directeurs)
       if (authenticatedUser.role === 'principal') {
@@ -182,6 +261,7 @@ export const AuthProvider = ({ children }) => {
       
       setUser(authenticatedUser);
       setUserProfile(authenticatedUser);
+      setAuthMode('standard');
       return { user: authenticatedUser, error: null };
 
     } catch (error) {
@@ -198,6 +278,7 @@ export const AuthProvider = ({ children }) => {
       localStorage.removeItem('edutrack-session');
       setUser(null);
       setUserProfile(null);
+      setAuthMode('standard');
       setError(null);
       // Déconnexion Supabase uniquement si une session existe
       const { error } = await supabase.auth.signOut();
@@ -215,7 +296,8 @@ export const AuthProvider = ({ children }) => {
     signInWithPin,
     signOut,
     error,
-    setError
+    setError,
+    authMode // Expose auth mode
   };
 
   return (

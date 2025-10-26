@@ -230,3 +230,124 @@ export const getCurrentDirector = async () => {
     };
   }
 };
+
+export const handlePostConfirmation = async (user) => {
+  try {
+    console.log('🔐 Post-confirmation handler for user:', user);
+    
+    // 1. Ensure user exists in users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .upsert({
+        id: user.id,
+        email: user.email,
+        full_name: user.user_metadata?.full_name || user.email.split('@')[0],
+        role: user.user_metadata?.role || 'student',
+        is_active: true,
+        active: true,
+        photo: '/assets/images/no_image.png',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      console.error('❌ Error ensuring user in users table:', userError);
+      // Don't throw error, continue with process
+    } else {
+      console.log('✅ User ensured in users table:', userData);
+    }
+
+    // 2. Check if user is a principal and has a school
+    if (user.user_metadata?.role === 'principal') {
+      try {
+        const { data: schools, error: schoolError } = await supabase
+          .from('schools')
+          .select('id, name, status')
+          .eq('director_user_id', user.id);
+
+        if (schoolError) {
+          console.warn('⚠️ Error checking existing schools:', schoolError);
+        } else if (schools && schools.length > 0) {
+          console.log('🏫 Existing school found:', schools[0]);
+        } else {
+          console.log('🆕 No existing school found for principal');
+        }
+      } catch (err) {
+        console.warn('⚠️ Exception checking schools:', err);
+      }
+    }
+
+    return { success: true, user: userData || user };
+  } catch (error) {
+    console.error('❌ Error in post-confirmation handler:', error);
+    // Don't block the process even if there are errors
+    return { success: true, user }; // Still return success to allow login
+  }
+};
+
+// Enhanced login function with better error handling
+export const loginWithPin = async (identifier, pin) => {
+  try {
+    console.log('🔐 Login attempt for:', identifier);
+    
+    // First, verify PIN using RPC
+    const { data: verificationData, error: verificationError } = await supabase
+      .rpc('verify_pin', {
+        identifier,
+        pin_input: pin
+      });
+
+    if (verificationError || !verificationData || verificationData.length === 0) {
+      throw new Error('Identifiant ou code PIN incorrect');
+    }
+
+    // Get user data from verification
+    const verifiedUser = verificationData[0];
+    
+    // Ensure user exists in users table
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .upsert({
+        id: verifiedUser.user_id,
+        email: verifiedUser.user_email,
+        full_name: verifiedUser.user_full_name,
+        role: verifiedUser.user_role,
+        phone: verifiedUser.user_phone || '',
+        is_active: true,
+        active: true,
+        photo: '/assets/images/no_image.png',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      })
+      .select()
+      .single();
+
+    if (userError) {
+      console.warn('⚠️ Warning: Could not ensure user in users table:', userError);
+      // Continue anyway as we have the verified data
+    }
+
+    // Build authenticated user object
+    const authenticatedUser = {
+      id: verifiedUser.user_id,
+      email: verifiedUser.user_email,
+      full_name: verifiedUser.user_full_name,
+      role: verifiedUser.user_role,
+      phone: verifiedUser.user_phone || '',
+      ...(userData || {})
+    };
+
+    console.log('✅ Login successful for:', authenticatedUser.email);
+    return { success: true, user: authenticatedUser };
+
+  } catch (error) {
+    console.error('❌ Login error:', error);
+    return { 
+      success: false, 
+      user: null,
+      error: error.message || 'Erreur de connexion'
+    };
+  }
+};

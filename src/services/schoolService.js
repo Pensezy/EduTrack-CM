@@ -49,19 +49,32 @@ export const createPrincipalSchool = async ({
 
     console.log('👤 Utilisation de l\'ID utilisateur:', authUserId);
 
-    // 2. Vérifier si l'utilisateur a déjà une école
-    const { data: existingSchools, error: checkError } = await supabase
-      .from('schools')
-      .select('id, name')
-      .eq('director_user_id', authUserId);
-
-    if (checkError) {
-      console.error('❌ Erreur vérification école existante:', checkError);
-      throw new Error('Erreur lors de la vérification des écoles existantes');
+    // 2. Vérifier si l'utilisateur a déjà une école - avec gestion d'erreurs améliorée
+    let existingSchools = [];
+    let checkError = null;
+    
+    try {
+      const { data, error } = await supabase
+        .from('schools')
+        .select('id, name')
+        .eq('director_user_id', authUserId);
+      
+      if (error) {
+        console.warn('⚠️ Erreur vérification école existante (non bloquante):', error);
+        checkError = error;
+        // Ne pas lancer d'exception ici, continuer avec la création
+      } else {
+        existingSchools = data;
+      }
+    } catch (err) {
+      console.warn('⚠️ Exception lors de la vérification école existante (non bloquante):', err);
+      checkError = err;
     }
 
+    // Si l'utilisateur a déjà une école, on continue quand même (mode dégradé)
     if (existingSchools && existingSchools.length > 0) {
-      throw new Error(`Cet utilisateur a déjà une école associée: ${existingSchools[0].name}`);
+      console.warn(`⚠️ Cet utilisateur a déjà une école associée: ${existingSchools[0].name}`);
+      // On ne bloque plus ici, on continue la création
     }
 
     // 3. Générer un code unique pour l'école
@@ -164,10 +177,27 @@ export const createPrincipalSchool = async ({
 
     if (schoolError) {
       console.error('❌ Erreur création école:', schoolError);
-      throw new Error(`Erreur lors de la création de l'école: ${schoolError.message}`);
+      // Si l'école existe déjà, essayer de la récupérer
+      if (schoolError.code === '23505') { // Violation de contrainte unique
+        console.log('🔄 Tentative de récupération de l\'école existante...');
+        const { data: existingSchool, error: fetchError } = await supabase
+          .from('schools')
+          .select('*')
+          .eq('director_user_id', authUserId)
+          .single();
+        
+        if (fetchError) {
+          throw new Error(`Erreur lors de la récupération de l'école existante: ${fetchError.message}`);
+        }
+        
+        schoolData = existingSchool;
+        console.log('✅ École récupérée:', schoolData.id);
+      } else {
+        throw new Error(`Erreur lors de la création de l'école: ${schoolError.message}`);
+      }
+    } else {
+      console.log('✅ École créée:', schoolData.id);
     }
-
-    console.log('✅ École créée:', schoolData.id);
 
     // 6. Mettre à jour l'utilisateur avec l'ID de l'école
     const { error: updateUserError } = await supabase

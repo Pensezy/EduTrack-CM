@@ -64,7 +64,7 @@ const ProfileSettings = () => {
       </div>
     );
   }
-
+  
   // Validation de la force du mot de passe
   const validatePassword = (password) => {
     const minLength = password.length >= 8;

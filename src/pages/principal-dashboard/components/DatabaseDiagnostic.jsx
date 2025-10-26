@@ -1,181 +1,242 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../../../lib/supabase';
+import DatabaseDiagnosticService from '../../../services/databaseDiagnosticService';
+import Icon from '../../../components/AppIcon';
 
-/**
- * Composant de diagnostic pour vérifier la structure de la base de données
- * À utiliser temporairement pour comprendre quelles tables/colonnes existent
- */
 const DatabaseDiagnostic = () => {
-  const [results, setResults] = useState({});
+  const [diagnostic, setDiagnostic] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [repairing, setRepairing] = useState(false);
 
-  const testTables = async () => {
+  const runDiagnostic = async () => {
     setLoading(true);
-    setError(null);
-    const testResults = {};
-
-    // Liste des tables à tester
-    const tables = ['students', 'teachers', 'attendance', 'payments', 'grades', 'classes', 'subjects'];
-
-    for (const table of tables) {
-      try {
-        console.log(`Testing table: ${table}`);
-        
-        // Test 1: Vérifier si la table existe et récupérer quelques enregistrements
-        const { data, error, count } = await supabase
-          .from(table)
-          .select('*', { count: 'exact' })
-          .limit(3);
-
-        if (error) {
-          testResults[table] = {
-            exists: false,
-            error: error.message,
-            count: 0,
-            columns: [],
-            sampleData: []
-          };
-        } else {
-          // Extraire les noms de colonnes du premier enregistrement
-          const columns = data && data.length > 0 ? Object.keys(data[0]) : [];
-          
-          testResults[table] = {
-            exists: true,
-            error: null,
-            count: count || 0,
-            columns,
-            sampleData: data || []
-          };
-        }
-      } catch (err) {
-        testResults[table] = {
-          exists: false,
-          error: err.message,
-          count: 0,
-          columns: [],
-          sampleData: []
-        };
-      }
+    try {
+      const result = await DatabaseDiagnosticService.runFullDiagnostic();
+      setDiagnostic(result);
+    } catch (error) {
+      console.error('Erreur diagnostic:', error);
+    } finally {
+      setLoading(false);
     }
-
-    setResults(testResults);
-    setLoading(false);
   };
 
-  const TableResult = ({ tableName, result }) => (
-    <div className="border rounded-lg p-4 mb-4">
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="font-semibold text-lg">{tableName}</h3>
-        <span className={`px-2 py-1 rounded text-sm ${
-          result.exists 
-            ? 'bg-green-100 text-green-800' 
-            : 'bg-red-100 text-red-800'
-        }`}>
-          {result.exists ? '✅ Existe' : '❌ Manquante'}
-        </span>
-      </div>
-      
-      {result.exists ? (
-        <>
-          <p className="text-sm text-gray-600 mb-2">
-            <strong>Nombre d'enregistrements :</strong> {result.count}
-          </p>
-          
-          <div className="mb-2">
-            <strong className="text-sm">Colonnes :</strong>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {result.columns.map(col => (
-                <span key={col} className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">
-                  {col}
-                </span>
-              ))}
-            </div>
-          </div>
-          
-          {result.sampleData.length > 0 && (
-            <details className="mt-2">
-              <summary className="cursor-pointer text-sm font-medium">
-                Données d'exemple ({result.sampleData.length})
-              </summary>
-              <pre className="bg-gray-100 p-2 rounded text-xs mt-2 overflow-auto">
-                {JSON.stringify(result.sampleData, null, 2)}
-              </pre>
-            </details>
-          )}
-        </>
-      ) : (
-        <p className="text-red-600 text-sm">
-          <strong>Erreur :</strong> {result.error}
-        </p>
-      )}
-    </div>
-  );
+  const repairPermissions = async () => {
+    setRepairing(true);
+    try {
+      if (diagnostic?.steps?.permissions?.authUser) {
+        const user = diagnostic.steps.permissions.authUser;
+        const result = await DatabaseDiagnosticService.repairUserPermissions(
+          user.id,
+          user.email,
+          user.user_metadata || {}
+        );
+        
+        if (result.success) {
+          // Re-run diagnostic after repair
+          await runDiagnostic();
+        }
+      }
+    } catch (error) {
+      console.error('Erreur réparation:', error);
+    } finally {
+      setRepairing(false);
+    }
+  };
 
   useEffect(() => {
-    testTables();
+    runDiagnostic();
   }, []);
 
+  if (loading && !diagnostic) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <span className="ml-3">Diagnostic en cours...</span>
+      </div>
+    );
+  }
+
+  const permissions = diagnostic?.steps?.permissions;
+
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-2">🔍 Diagnostic Base de Données</h2>
-        <p className="text-gray-600">
-          Vérification de la structure et du contenu des tables Supabase
-        </p>
-        <button
-          onClick={testTables}
-          disabled={loading}
-          className="mt-3 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 disabled:opacity-50"
-        >
-          {loading ? 'Test en cours...' : '🔄 Retester'}
-        </button>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-semibold text-gray-900">Diagnostic Base de Données</h3>
+        <div className="flex space-x-2">
+          <button
+            onClick={runDiagnostic}
+            disabled={loading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+          >
+            <Icon name="RefreshCw" size={16} className="mr-2" />
+            Actualiser
+          </button>
+          {permissions && !permissions?.summary?.userInTable && (
+            <button
+              onClick={repairPermissions}
+              disabled={repairing}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center"
+            >
+              <Icon name="Wrench" size={16} className="mr-2" />
+              {repairing ? 'Réparation...' : 'Réparer'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {loading && (
-        <div className="text-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-2 text-gray-600">Test des tables en cours...</p>
-        </div>
-      )}
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
-          <strong>Erreur globale :</strong> {error}
-        </div>
-      )}
-
-      <div className="space-y-4">
-        {Object.entries(results).map(([tableName, result]) => (
-          <TableResult key={tableName} tableName={tableName} result={result} />
-        ))}
-      </div>
-
-      {Object.keys(results).length > 0 && (
-        <div className="mt-8 p-4 bg-blue-50 rounded-lg">
-          <h3 className="font-semibold mb-2">📊 Résumé</h3>
-          <div className="grid grid-cols-2 gap-4 text-sm">
-            <div>
-              <strong>Tables existantes :</strong>
-              <ul className="list-disc list-inside">
-                {Object.entries(results)
-                  .filter(([_, result]) => result.exists)
-                  .map(([name, result]) => (
-                    <li key={name}>{name} ({result.count} enregistrements)</li>
-                  ))
-                }
-              </ul>
+      {/* Auth Status */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+          <Icon name="User" size={16} className="mr-2" />
+          Statut Authentification
+        </h4>
+        {permissions?.authUser ? (
+          <div className="space-y-2">
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600 w-32">Email:</span>
+              <span className="font-medium">{permissions.authUser.email}</span>
             </div>
-            <div>
-              <strong>Tables manquantes :</strong>
-              <ul className="list-disc list-inside">
-                {Object.entries(results)
-                  .filter(([_, result]) => !result.exists)
-                  .map(([name]) => (
-                    <li key={name} className="text-red-600">{name}</li>
-                  ))
-                }
-              </ul>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600 w-32">ID:</span>
+              <span className="font-mono text-sm">{permissions.authUser.id}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600 w-32">Rôle:</span>
+              <span className="font-medium">{permissions.authUser.user_metadata?.role || 'Non défini'}</span>
+            </div>
+            <div className="flex items-center text-green-600">
+              <Icon name="CheckCircle" size={16} className="mr-2" />
+              <span>Authentifié avec succès</span>
+            </div>
+          </div>
+        ) : (
+          <div className="text-red-600 flex items-center">
+            <Icon name="XCircle" size={16} className="mr-2" />
+            <span>Non authentifié</span>
+          </div>
+        )}
+      </div>
+
+      {/* User Table Status */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+          <Icon name="Database" size={16} className="mr-2" />
+          Table Utilisateurs
+        </h4>
+        {permissions?.tableUser ? (
+          <div className="space-y-2 text-green-600">
+            <div className="flex items-center">
+              <Icon name="CheckCircle" size={16} className="mr-2" />
+              <span>Présent dans la table users</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600 w-32">Nom:</span>
+              <span className="font-medium">{permissions.tableUser.full_name}</span>
+            </div>
+            <div className="flex items-center">
+              <span className="text-sm text-gray-600 w-32">Rôle:</span>
+              <span className="font-medium">{permissions.tableUser.role}</span>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            <div className="flex items-center text-red-600">
+              <Icon name="XCircle" size={16} className="mr-2" />
+              <span>Absent de la table users</span>
+            </div>
+            <p className="text-sm text-gray-600">
+              Cela peut causer des problèmes d'accès aux données. Utilisez le bouton "Réparer" pour corriger.
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Table Access */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+          <Icon name="Table" size={16} className="mr-2" />
+          Accès aux Tables
+        </h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {permissions?.tableAccess && Object.entries(permissions.tableAccess).map(([tableName, access]) => (
+            <div key={tableName} className={`p-3 rounded-lg border ${
+              access.accessible ? 'border-green-200 bg-green-50' : 'border-red-200 bg-red-50'
+            }`}>
+              <div className="flex items-center">
+                <Icon 
+                  name={access.accessible ? "CheckCircle" : "XCircle"} 
+                  size={16} 
+                  className={`mr-2 ${access.accessible ? 'text-green-600' : 'text-red-600'}`} 
+                />
+                <span className="font-medium capitalize">{tableName}</span>
+              </div>
+              {!access.accessible && access.error && (
+                <p className="text-xs text-gray-600 mt-1 truncate">{access.error}</p>
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Schools */}
+      <div className="bg-white rounded-lg border border-gray-200 p-4">
+        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
+          <Icon name="School" size={16} className="mr-2" />
+          Écoles
+        </h4>
+        {permissions?.schoolError ? (
+          <div className="text-red-600">
+            <div className="flex items-center">
+              <Icon name="XCircle" size={16} className="mr-2" />
+              <span>Erreur d'accès: {permissions.schoolError.message}</span>
+            </div>
+            <p className="text-sm text-gray-600 mt-2">
+              Cela est souvent dû à des problèmes de permissions RLS (Row Level Security).
+            </p>
+          </div>
+        ) : permissions?.schools ? (
+          <div>
+            <p className="text-sm text-gray-600">
+              {permissions.schools.length} école(s) trouvée(s) pour ce directeur
+            </p>
+            {permissions.schools.map(school => (
+              <div key={school.id} className="mt-2 p-2 bg-blue-50 rounded">
+                <div className="font-medium">{school.name}</div>
+                <div className="text-sm text-gray-600">ID: {school.id}</div>
+                <div className="text-sm text-gray-600">Statut: {school.status}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-gray-600">
+            <Icon name="Info" size={16} className="inline mr-2" />
+            <span>Aucune école trouvée</span>
+          </div>
+        )}
+      </div>
+
+      {/* Summary */}
+      {permissions?.summary && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <h4 className="font-medium text-blue-900 mb-2">Résumé</h4>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 text-sm">
+            <div className="bg-white p-3 rounded">
+              <div className="text-blue-600 font-medium">
+                {permissions.summary.authenticated ? '✅ Authentifié' : '❌ Non authentifié'}
+              </div>
+              <div className="text-gray-600 text-xs">Statut</div>
+            </div>
+            <div className="bg-white p-3 rounded">
+              <div className="text-blue-600 font-medium">
+                {permissions.summary.userInTable ? '✅ Présent' : '❌ Absent'}
+              </div>
+              <div className="text-gray-600 text-xs">Table users</div>
+            </div>
+            <div className="bg-white p-3 rounded">
+              <div className="text-blue-600 font-medium">
+                {permissions.summary.tablesAccessible}/{permissions.summary.totalTables} tables
+              </div>
+              <div className="text-gray-600 text-xs">Accès OK</div>
             </div>
           </div>
         </div>
