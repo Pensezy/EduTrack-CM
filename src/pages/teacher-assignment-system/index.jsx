@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { ChevronLeft, Plus, Trash2, Users, BookOpen, Calendar, Filter, Search, UserCheck, AlertCircle } from 'lucide-react';
 import { teacherService } from '../../services/teacherService';
 import { useAuth } from '../../contexts/AuthContext';
+import { getCurrentAcademicYear, getAcademicYearOptions } from '../../utils/academicYear';
 
 const TeacherAssignmentSystem = () => {
   const { user } = useAuth();
@@ -16,13 +17,14 @@ const TeacherAssignmentSystem = () => {
     teacher_id: '',
     class_name: '',
     subject: '',
-    school_year: '2024-2025'
+    school_year: getCurrentAcademicYear()
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
   const classes = teacherService?.getAvailableClasses();
   const subjects = teacherService?.getAvailableSubjects();
+  const academicYears = getAcademicYearOptions(5, true, true);
 
   useEffect(() => {
     loadData();
@@ -100,7 +102,7 @@ const TeacherAssignmentSystem = () => {
       teacher_id: '',
       class_name: '',
       subject: '',
-      school_year: '2024-2025'
+      school_year: getCurrentAcademicYear()
     });
   };
 
@@ -474,8 +476,11 @@ const TeacherAssignmentSystem = () => {
                       onChange={(e) => setFormData({ ...formData, school_year: e?.target?.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     >
-                      <option value="2024-2025">2024-2025</option>
-                      <option value="2025-2026">2025-2026</option>
+                      {academicYears.map(year => (
+                        <option key={year.value} value={year.value}>
+                          {year.label}
+                        </option>
+                      ))}
                     </select>
                   </div>
 

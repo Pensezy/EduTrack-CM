@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import prismaService from '../services/prismaService';
+import { getCurrentAcademicYear } from '../utils/academicYear';
 
 const AuthContext = createContext({});
 
@@ -47,7 +48,7 @@ const demoAccounts = {
     class_name: '6e A',
     photo: '/assets/images/no_image.png',
     student_id: 'STU2024001',
-    current_year: '2024-2025'
+    current_year: getCurrentAcademicYear()
   },
 
   // Enseignants  

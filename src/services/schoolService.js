@@ -3,6 +3,7 @@
 
 import { supabase } from '../lib/supabase';
 import prismaService from './prismaService';
+import { getCurrentAcademicYear, getAcademicYearDates } from '../utils/academicYear';
 import ConfigurationService from './configurationService';
 
 /**
@@ -213,13 +214,16 @@ export const createPrincipalSchool = async ({
     }
 
     // 7. Créer l'année académique par défaut
+    const currentYear = getCurrentAcademicYear();
+    const { startDate, endDate } = getAcademicYearDates(currentYear);
+    
     const { data: academicYearData, error: academicYearError } = await supabase
       .from('academic_years')
       .insert({
         school_id: schoolData.id,
-        name: '2024-2025',
-        start_date: '2024-09-01',
-        end_date: '2025-07-31',
+        name: currentYear,
+        start_date: startDate.toISOString().split('T')[0], // Format YYYY-MM-DD
+        end_date: endDate.toISOString().split('T')[0],
         is_current: true,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -230,7 +234,7 @@ export const createPrincipalSchool = async ({
     if (academicYearError) {
       console.warn('⚠️ Impossible de créer l\'année académique:', academicYearError.message);
     } else {
-      console.log('✅ Année académique créée:', academicYearData.id);
+      console.log('✅ Année académique créée:', currentYear, '-', academicYearData.id);
     }
 
     // 8. Initialiser toutes les données par défaut de l'école

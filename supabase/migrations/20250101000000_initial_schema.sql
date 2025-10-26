@@ -511,7 +511,7 @@ BEGIN
             -- 2.2 Lier l'utilisateur a l'ecole
             UPDATE public.users SET current_school_id = school_uuid WHERE id = NEW.id;
             
-            -- 2.3 Creer l'annee academique par defaut (2024-2025)
+            -- 2.3 Creer l'annee academique par defaut (2025-2026)
             current_year := EXTRACT(YEAR FROM NOW())::text;
             next_year := (EXTRACT(YEAR FROM NOW()) + 1)::text;
             academic_year_uuid := gen_random_uuid();
@@ -608,7 +608,7 @@ BEGIN
     RAISE NOTICE 'Tables: users, schools, academic_years, classes, subjects, teachers, students, parents, parent_student_schools, payments, attendances, grades, notifications, audit_logs, evaluation_periods, grade_types, user_roles, attendance_types, payment_types, class_subjects, teacher_subjects, secretaries';
     RAISE NOTICE '==========================================';
     RAISE NOTICE 'Configuration automatique:';
-    RAISE NOTICE '- Annee academique (2024-2025)';
+    RAISE NOTICE '- Annee academique (2025-2026)';
     RAISE NOTICE '- 5 types de notes (Devoir, Interrogation, Examen, Projet, Participation)';
     RAISE NOTICE '- 4 types de presence (Present, Absent, Retard, Excuse)';
     RAISE NOTICE '- 6 types de paiement (Scolarite, Inscription, Uniforme, Livres, Cantine, Transport)';

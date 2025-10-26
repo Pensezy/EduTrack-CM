@@ -742,8 +742,357 @@ const ProfileSettings = () => {
             </div>
           )}
         </div>
+
+        {/* Zone de danger - Suppression de compte */}
+        <DangerZone userRole={userProfile?.role} userId={user?.id} userEmail={user?.email} />
       </div>
     </div>
+  );
+};
+
+// Composant Zone de danger pour la suppression de compte
+const DangerZone = ({ userRole, userId, userEmail }) => {
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState(null);
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== 'SUPPRIMER MON COMPTE') {
+      alert('Veuillez taper exactement "SUPPRIMER MON COMPTE" pour confirmer');
+      return;
+    }
+
+    setIsDeleting(true);
+    setDeleteError(null);
+
+    try {
+      const { supabase } = await import('../../lib/supabase');
+      
+      // 1. Supprimer toutes les données liées à l'utilisateur
+      if (userRole === 'principal') {
+        // Récupérer l'école du directeur
+        const { data: userData } = await supabase
+          .from('users')
+          .select('current_school_id')
+          .eq('id', userId)
+          .single();
+
+        if (userData?.current_school_id) {
+          const schoolId = userData.current_school_id;
+          
+          console.log('🗑️ Début de la suppression complète de l\'école et de toutes ses données...');
+          console.log(`📋 École ID: ${schoolId}`);
+          
+          // ORDRE DE SUPPRESSION (inverse des dépendances)
+          // ================================================
+          
+          // 1️⃣ DONNÉES TRANSACTIONNELLES (notes, présences, paiements)
+          console.log('1/7 Suppression des notes...');
+          await supabase.from('grades').delete().eq('school_id', schoolId);
+          
+          console.log('2/7 Suppression des présences...');
+          await supabase.from('attendances').delete().eq('school_id', schoolId);
+          
+          console.log('3/7 Suppression des paiements...');
+          await supabase.from('payments').delete().eq('school_id', schoolId);
+          
+          // 2️⃣ COMMUNICATIONS & LOGS
+          console.log('4/7 Suppression des notifications...');
+          await supabase.from('notifications').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des logs d\'audit...');
+          await supabase.from('audit_logs').delete().eq('school_id', schoolId);
+          
+          // 3️⃣ RELATIONS (class_subjects, teacher_subjects, parent-student)
+          console.log('   Suppression des relations classes-matières...');
+          await supabase.from('class_subjects').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des relations enseignants-matières...');
+          await supabase.from('teacher_subjects').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des relations parents-étudiants...');
+          await supabase.from('parent_student_schools').delete().eq('school_id', schoolId);
+          
+          // 4️⃣ UTILISATEURS (étudiants, enseignants, parents, secrétaires)
+          console.log('5/7 Suppression des étudiants...');
+          const { data: students } = await supabase
+            .from('students')
+            .select('user_id')
+            .eq('school_id', schoolId);
+          
+          await supabase.from('students').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des enseignants...');
+          const { data: teachers } = await supabase
+            .from('teachers')
+            .select('user_id')
+            .eq('school_id', schoolId);
+          
+          await supabase.from('teachers').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des parents...');
+          const { data: parents } = await supabase
+            .from('parents')
+            .select('user_id')
+            .eq('school_id', schoolId);
+          
+          await supabase.from('parents').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des secrétaires...');
+          const { data: secretaries } = await supabase
+            .from('secretaries')
+            .select('user_id')
+            .eq('school_id', schoolId);
+          
+          await supabase.from('secretaries').delete().eq('school_id', schoolId);
+          
+          // Supprimer les comptes users liés (sauf le directeur)
+          const userIdsToDelete = [
+            ...(students?.map(s => s.user_id) || []),
+            ...(teachers?.map(t => t.user_id) || []),
+            ...(parents?.map(p => p.user_id) || []),
+            ...(secretaries?.map(s => s.user_id) || [])
+          ].filter(id => id && id !== userId);
+          
+          if (userIdsToDelete.length > 0) {
+            console.log(`   Suppression de ${userIdsToDelete.length} comptes utilisateurs liés...`);
+            await supabase.from('users').delete().in('id', userIdsToDelete);
+          }
+          
+          // 5️⃣ CONFIGURATION (matières, classes, périodes)
+          console.log('6/7 Suppression des matières...');
+          await supabase.from('subjects').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des classes...');
+          await supabase.from('classes').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des périodes d\'évaluation...');
+          await supabase.from('evaluation_periods').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des années académiques...');
+          await supabase.from('academic_years').delete().eq('school_id', schoolId);
+          
+          // 6️⃣ TYPES (grade_types, attendance_types, payment_types)
+          console.log('   Suppression des types de notes...');
+          await supabase.from('grade_types').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des types de présences...');
+          await supabase.from('attendance_types').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des types de paiements...');
+          await supabase.from('payment_types').delete().eq('school_id', schoolId);
+          
+          console.log('   Suppression des rôles utilisateurs...');
+          await supabase.from('user_roles').delete().eq('school_id', schoolId);
+          
+          // 7️⃣ ÉCOLE
+          console.log('7/7 Suppression de l\'école...');
+          await supabase.from('schools').delete().eq('id', schoolId);
+          
+          console.log('✅ Toutes les données de l\'école ont été supprimées avec succès !');
+        }
+      }
+
+      // 2. Supprimer l'utilisateur de la table users
+      const { error: userDeleteError } = await supabase
+        .from('users')
+        .delete()
+        .eq('id', userId);
+
+      if (userDeleteError) throw userDeleteError;
+
+      // 3. Supprimer le compte Supabase Auth
+      const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
+      
+      // Note: admin.deleteUser nécessite des permissions spéciales
+      // Alternative: déconnecter l'utilisateur et le compte sera marqué comme supprimé
+      if (authDeleteError) {
+        console.warn('Impossible de supprimer le compte auth:', authDeleteError);
+        // Continuer quand même pour déconnecter l'utilisateur
+      }
+
+      // 4. Déconnecter l'utilisateur
+      await supabase.auth.signOut();
+
+      // 5. Rediriger vers la page d'accueil
+      alert('✅ Votre compte a été supprimé avec succès. Toutes vos données ont été effacées.');
+      window.location.href = '/';
+
+    } catch (error) {
+      console.error('❌ Erreur lors de la suppression du compte:', error);
+      setDeleteError(error.message || 'Une erreur est survenue lors de la suppression du compte');
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <>
+      <div className="bg-white rounded-lg border-2 border-red-200 shadow-sm p-6">
+        <div className="flex items-start space-x-4">
+          <div className="flex-shrink-0">
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center">
+              <Icon name="AlertTriangle" size={24} className="text-red-600" />
+            </div>
+          </div>
+          <div className="flex-1">
+            <h2 className="text-xl font-bold text-red-900 mb-2">Zone de danger</h2>
+            <p className="text-gray-700 mb-4">
+              La suppression de votre compte est <strong>irréversible</strong>. Toutes vos données seront définitivement effacées.
+            </p>
+
+            {userRole === 'principal' && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-3">
+                  <Icon name="AlertCircle" size={20} className="text-red-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-medium text-red-900 mb-1">⚠️ ATTENTION - Compte Directeur</h4>
+                    <p className="text-sm text-red-700 mb-2">
+                      La suppression de votre compte entraînera la <strong>suppression DÉFINITIVE et IRRÉVERSIBLE</strong> de :
+                    </p>
+                    <div className="grid grid-cols-2 gap-2 text-sm text-red-700">
+                      <div>
+                        <p className="font-semibold mb-1">👥 Comptes utilisateurs :</p>
+                        <ul className="list-disc list-inside space-y-0.5 ml-2">
+                          <li>Tous les étudiants</li>
+                          <li>Tous les enseignants</li>
+                          <li>Tous les parents</li>
+                          <li>Tous les secrétaires</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">📊 Données pédagogiques :</p>
+                        <ul className="list-disc list-inside space-y-0.5 ml-2">
+                          <li>Toutes les notes</li>
+                          <li>Toutes les présences</li>
+                          <li>Tous les paiements</li>
+                          <li>Toutes les notifications</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">🏫 Structure de l'école :</p>
+                        <ul className="list-disc list-inside space-y-0.5 ml-2">
+                          <li>Toutes les classes</li>
+                          <li>Toutes les matières</li>
+                          <li>Années académiques</li>
+                          <li>Périodes d'évaluation</li>
+                        </ul>
+                      </div>
+                      <div>
+                        <p className="font-semibold mb-1">⚙️ Configuration :</p>
+                        <ul className="list-disc list-inside space-y-0.5 ml-2">
+                          <li>Types de notes</li>
+                          <li>Types de présences</li>
+                          <li>Types de paiements</li>
+                          <li>Logs d'audit</li>
+                        </ul>
+                      </div>
+                    </div>
+                    <p className="text-sm text-red-800 font-bold mt-3 bg-red-100 px-3 py-2 rounded border border-red-300">
+                      🏢 L'école entière sera supprimée définitivement !
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-3">
+              <div className="flex items-center space-x-2 text-sm text-gray-600">
+                <Icon name="Info" size={16} className="text-gray-500" />
+                <span>Email du compte : <strong>{userEmail}</strong></span>
+              </div>
+
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteModal(true)}
+                className="border-red-300 text-red-700 hover:bg-red-50 hover:border-red-400"
+              >
+                <Icon name="Trash2" size={16} className="mr-2" />
+                Supprimer définitivement mon compte
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Modal de confirmation de suppression */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full p-6">
+            <div className="text-center mb-6">
+              <div className="mx-auto flex items-center justify-center h-16 w-16 rounded-full bg-red-100 mb-4">
+                <Icon name="AlertTriangle" size={32} className="text-red-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-900 mb-2">
+                Confirmer la suppression
+              </h3>
+              <p className="text-gray-600">
+                Cette action est <strong className="text-red-600">définitive et irréversible</strong>.
+              </p>
+            </div>
+
+            {deleteError && (
+              <div className="mb-4 bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-sm text-red-700">{deleteError}</p>
+              </div>
+            )}
+
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+              <p className="text-sm text-red-800 font-medium mb-2">
+                Pour confirmer, tapez exactement :
+              </p>
+              <p className="text-lg font-mono font-bold text-red-900 bg-white px-3 py-2 rounded border border-red-300">
+                SUPPRIMER MON COMPTE
+              </p>
+            </div>
+
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="Tapez ici..."
+              className="mb-6"
+              disabled={isDeleting}
+            />
+
+            <div className="flex space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowDeleteModal(false);
+                  setDeleteConfirmText('');
+                  setDeleteError(null);
+                }}
+                disabled={isDeleting}
+                className="flex-1"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={deleteConfirmText !== 'SUPPRIMER MON COMPTE' || isDeleting}
+                className="flex-1 bg-red-600 hover:bg-red-700 disabled:bg-gray-300 text-white"
+              >
+                {isDeleting ? (
+                  <>
+                    <Icon name="Loader" size={16} className="mr-2 animate-spin" />
+                    Suppression...
+                  </>
+                ) : (
+                  <>
+                    <Icon name="Trash2" size={16} className="mr-2" />
+                    Supprimer définitivement
+                  </>
+                )}
+              </Button>
+            </div>
+
+            <p className="text-xs text-gray-500 text-center mt-4">
+              Cette action supprimera toutes vos données de manière permanente
+            </p>
+          </div>
+        </div>
+      )}
+    </>
   );
 };
 

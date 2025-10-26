@@ -194,6 +194,58 @@ SELECT * FROM pg_trigger WHERE tgname = 'on_auth_user_created';
 npx prisma studio
 ```
 
+---
+
+## 🗑️ Suppression de Compte
+
+### **Documentation Complète**
+
+#### [ACCOUNT_DELETION_OVERVIEW.md](./ACCOUNT_DELETION_OVERVIEW.md)
+**Vue d'Ensemble - Réponses Rapides**
+- ✅ Réponse aux 3 questions clés
+- Visualisation de la suppression
+- Implications concrètes
+- Garanties et limitations
+
+**Pour qui :** Directeurs et utilisateurs finaux
+
+---
+
+#### [ACCOUNT_DELETION.md](./ACCOUNT_DELETION.md)
+**Guide Principal**
+- Fonctionnalité et localisation
+- Processus de suppression
+- Interface utilisateur
+- Tests et personnalisation
+
+**Pour qui :** Développeurs et administrateurs
+
+---
+
+#### [ACCOUNT_DELETION_COMPLETE_LIST.md](./ACCOUNT_DELETION_COMPLETE_LIST.md)
+**Liste Exhaustive des 22 Tables**
+- Détails de chaque table supprimée
+- Ordre de suppression cascade
+- Implications techniques
+- Statistiques de suppression
+
+**Pour qui :** Développeurs et auditeurs techniques
+
+---
+
+#### [ACCOUNT_DELETION_VERIFICATION.md](./ACCOUNT_DELETION_VERIFICATION.md)
+**Checklist de Vérification SQL**
+- Requêtes SQL de vérification
+- Checklist avant/après suppression
+- Dépannage en cas de problème
+- Validation finale
+
+**Pour qui :** Administrateurs base de données
+
+**Status** : ✅ Implémenté et documenté (22 tables affectées)
+
+---
+
 ## 📞 Support
 
 Pour toute question technique :

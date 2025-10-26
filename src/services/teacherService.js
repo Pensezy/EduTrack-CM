@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { getCurrentAcademicYear } from '../utils/academicYear';
 
 class TeacherService {
   // ================== TEACHER ACCOUNT MANAGEMENT ==================
@@ -62,7 +63,7 @@ class TeacherService {
           school_id: assignmentData?.school_id,
           class_name: assignmentData?.class_name,
           subject: assignmentData?.subject,
-          school_year: assignmentData?.school_year || '2024-2025',
+          school_year: assignmentData?.school_year || getCurrentAcademicYear(),
           assigned_by: assignmentData?.assigned_by
         })?.select(`
           *,
