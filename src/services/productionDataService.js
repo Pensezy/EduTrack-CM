@@ -231,6 +231,187 @@ export const productionDataService = {
       console.error("Erreur recuperation classes:", error);
       return { data: [], error };
     }
+  },
+
+  // ==========================================
+  // GESTION DES DEMANDES D'INSCRIPTION
+  // ==========================================
+
+  /**
+   * Récupère les demandes d'inscription/redoublement
+   */
+  async getEnrollmentRequests(schoolId = null, filters = {}) {
+    try {
+      this.ensureContext();
+      const targetSchoolId = schoolId || this.currentSchoolId;
+
+      console.log("Récupération des demandes d'inscription pour l'école:", targetSchoolId);
+
+      let query = supabase
+        .from("enrollment_requests")
+        .select(`
+          *,
+          submitted_by_user:submitted_by(full_name, email),
+          reviewed_by_user:reviewed_by(full_name, email),
+          student:students(first_name, last_name, date_of_birth)
+        `)
+        .eq("school_id", targetSchoolId)
+        .order("submitted_date", { ascending: false });
+
+      // Appliquer les filtres
+      if (filters.status) {
+        query = query.eq("status", filters.status);
+      }
+      if (filters.priority) {
+        query = query.eq("priority", filters.priority);
+      }
+      if (filters.request_type) {
+        query = query.eq("request_type", filters.request_type);
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+
+      console.log(`${data?.length || 0} demandes récupérées`);
+      return { data: data || [], error: null };
+
+    } catch (error) {
+      console.error("Erreur récupération demandes d'inscription:", error);
+      return { data: [], error };
+    }
+  },
+
+  /**
+   * Récupère les statistiques des demandes
+   */
+  async getEnrollmentStats(schoolId = null) {
+    try {
+      this.ensureContext();
+      const targetSchoolId = schoolId || this.currentSchoolId;
+
+      const { data, error } = await supabase
+        .from("enrollment_requests")
+        .select("status, priority, request_type")
+        .eq("school_id", targetSchoolId);
+
+      if (error) throw error;
+
+      const stats = {
+        totalDemandes: data?.length || 0,
+        enAttente: data?.filter(r => r.status === 'en_attente').length || 0,
+        enRevision: data?.filter(r => r.status === 'en_revision').length || 0,
+        approuvees: data?.filter(r => r.status === 'approuvee').length || 0,
+        refusees: data?.filter(r => r.status === 'refusee').length || 0,
+        urgentes: data?.filter(r => r.priority === 'urgent').length || 0,
+        nouvelles: data?.filter(r => r.request_type === 'nouvelle_inscription').length || 0,
+        redoublements: data?.filter(r => r.request_type === 'redoublement').length || 0,
+        transferts: data?.filter(r => r.request_type === 'transfert').length || 0
+      };
+
+      return { data: stats, error: null };
+
+    } catch (error) {
+      console.error("Erreur récupération stats demandes:", error);
+      return { 
+        data: {
+          totalDemandes: 0,
+          enAttente: 0,
+          enRevision: 0,
+          approuvees: 0,
+          refusees: 0,
+          urgentes: 0,
+          nouvelles: 0,
+          redoublements: 0,
+          transferts: 0
+        }, 
+        error 
+      };
+    }
+  },
+
+  /**
+   * Crée une nouvelle demande d'inscription
+   */
+  async createEnrollmentRequest(requestData) {
+    try {
+      this.ensureContext();
+
+      const { data, error } = await supabase
+        .from("enrollment_requests")
+        .insert({
+          ...requestData,
+          school_id: requestData.school_id || this.currentSchoolId,
+          submitted_by: requestData.submitted_by || this.currentUserId,
+          submitted_date: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log("Demande créée:", data.id);
+      return { data, error: null };
+
+    } catch (error) {
+      console.error("Erreur création demande:", error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Met à jour le statut d'une demande (validation/refus)
+   */
+  async updateEnrollmentRequest(requestId, updates) {
+    try {
+      this.ensureContext();
+
+      const { data, error } = await supabase
+        .from("enrollment_requests")
+        .update({
+          ...updates,
+          reviewed_by: updates.reviewed_by || this.currentUserId,
+          reviewed_date: new Date().toISOString()
+        })
+        .eq("id", requestId)
+        .eq("school_id", this.currentSchoolId)
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      console.log("Demande mise à jour:", requestId);
+      return { data, error: null };
+
+    } catch (error) {
+      console.error("Erreur mise à jour demande:", error);
+      return { data: null, error };
+    }
+  },
+
+  /**
+   * Supprime une demande (uniquement si annulée)
+   */
+  async deleteEnrollmentRequest(requestId) {
+    try {
+      this.ensureContext();
+
+      const { error } = await supabase
+        .from("enrollment_requests")
+        .delete()
+        .eq("id", requestId)
+        .eq("school_id", this.currentSchoolId)
+        .eq("status", "annulee");
+
+      if (error) throw error;
+
+      console.log("Demande supprimée:", requestId);
+      return { data: true, error: null };
+
+    } catch (error) {
+      console.error("Erreur suppression demande:", error);
+      return { data: false, error };
+    }
   }
 };
 

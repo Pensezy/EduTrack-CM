@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import NotificationCenter from '../../components/ui/NotificationCenter';
@@ -128,7 +129,8 @@ const PrincipalDashboard = () => {
   // Les métriques proviennent maintenant du hook qui switch automatiquement
   const keyMetrics = data.metrics || [];
 
-    const tabOptions = [
+  // Onglets du dashboard - L'onglet Debug est visible uniquement en mode développement
+  const tabOptions = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'analytics', label: 'Analyses', icon: 'TrendingUp' },
     { id: 'personnel', label: 'Personnel', icon: 'Users' },
@@ -137,7 +139,8 @@ const PrincipalDashboard = () => {
     { id: 'actions', label: 'Actions', icon: 'Zap' },
     { id: 'system', label: 'Système', icon: 'Settings' },
     { id: 'accounts', label: 'Comptes', icon: 'UserCheck' },
-    { id: 'debug', label: 'Debug DB', icon: 'Bug' }
+    // Debug visible uniquement en développement ou via URL directe
+    ...(import.meta.env.DEV || activeTab === 'debug' ? [{ id: 'debug', label: 'Debug DB', icon: 'Bug' }] : [])
   ];
 
   const formatDateTime = (date) => {
@@ -233,6 +236,67 @@ const PrincipalDashboard = () => {
     const success = await handleAddClass(className);
     if (success) {
       setNewClassName('');
+    }
+  };
+
+  // Fonction pour supprimer une classe
+  const handleRemoveClass = async (className) => {
+    // Confirmation avant suppression
+    const confirmDelete = window.confirm(
+      `Êtes-vous sûr de vouloir supprimer la classe "${className}" ?\n\n` +
+      `⚠️ Attention : Cette action supprimera la classe de votre liste. ` +
+      `Si des élèves sont déjà inscrits dans cette classe, vérifiez qu'ils ont été réaffectés avant de continuer.`
+    );
+    
+    if (!confirmDelete) {
+      return;
+    }
+
+    try {
+      setAddingClass(true);
+      setClassError('');
+
+      // Vérifier que schoolData existe
+      if (!schoolData?.id) {
+        setClassError('Erreur : Données de l\'école non disponibles');
+        return;
+      }
+
+      // Récupérer les classes actuelles
+      const currentClasses = schoolData.available_classes || [];
+      
+      // Vérifier que la classe existe
+      if (!currentClasses.includes(className)) {
+        setClassError('Cette classe n\'existe pas dans votre liste');
+        return;
+      }
+
+      // Retirer la classe de la liste
+      const updatedClasses = currentClasses.filter(c => c !== className);
+
+      // Mettre à jour dans Supabase
+      const { error: updateError } = await supabase
+        .from('schools')
+        .update({ available_classes: updatedClasses })
+        .eq('id', schoolData.id);
+
+      if (updateError) {
+        console.error('Erreur Supabase lors de la suppression:', updateError);
+        setClassError('Erreur lors de la suppression de la classe. Veuillez réessayer.');
+        return;
+      }
+
+      // Rafraîchir les données
+      await refresh();
+
+      // Message de succès
+      console.log(`✅ Classe "${className}" supprimée avec succès`);
+      
+    } catch (error) {
+      console.error('Erreur lors de la suppression de la classe:', error);
+      setClassError('Erreur lors de la suppression de la classe. Veuillez réessayer.');
+    } finally {
+      setAddingClass(false);
     }
   };
 
@@ -494,15 +558,29 @@ const PrincipalDashboard = () => {
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {schoolData.available_classes.map((classe, index) => (
-                      <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center hover:bg-green-100 transition-colors cursor-pointer">
+                      <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center hover:bg-green-100 transition-colors group relative">
                         <div className="text-green-800 font-semibold text-lg">{classe}</div>
                         <div className="text-xs text-green-600 mt-1">Prête à utiliser</div>
                         <div className="mt-2 flex justify-center space-x-1">
-                          <button className="p-1 text-green-600 hover:bg-green-200 rounded">
+                          <button 
+                            className="p-1 text-green-600 hover:bg-green-200 rounded"
+                            title="Voir les élèves"
+                          >
                             <Icon name="Users" size={14} />
                           </button>
-                          <button className="p-1 text-green-600 hover:bg-green-200 rounded">
+                          <button 
+                            className="p-1 text-green-600 hover:bg-green-200 rounded"
+                            title="Paramètres de la classe"
+                          >
                             <Icon name="Settings" size={14} />
+                          </button>
+                          <button 
+                            onClick={() => handleRemoveClass(classe)}
+                            disabled={addingClass}
+                            className="p-1 text-red-600 hover:bg-red-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Supprimer cette classe"
+                          >
+                            <Icon name="Trash2" size={14} />
                           </button>
                         </div>
                       </div>
@@ -534,10 +612,25 @@ const PrincipalDashboard = () => {
                     let suggestions = [];
                     let levelDescription = '';
                     
-                    // Suggestions STRICTEMENT selon le type d'établissement
-                    const schoolType = schoolData.type?.toLowerCase().trim();
+                    // Normaliser le type d'établissement (gérer accents, casse, variations)
+                    const normalizeType = (type) => {
+                      if (!type) return '';
+                      return type.toLowerCase()
+                        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Enlever les accents
+                        .trim();
+                    };
                     
-                    if (schoolType === 'primaire' || schoolType === 'école primaire') {
+                    const schoolType = normalizeType(schoolData.type);
+                    
+                    // Suggestions STRICTEMENT selon le type d'établissement
+                    if (schoolType === 'maternelle' || schoolType.includes('maternelle')) {
+                      levelDescription = 'Cycle préscolaire (3-6 ans)';
+                      suggestions = [
+                        'Petite Section', 'Moyenne Section', 'Grande Section',
+                        'PS A', 'PS B', 'MS A', 'MS B', 'GS A', 'GS B'
+                      ];
+                    } 
+                    else if (schoolType === 'primaire' || schoolType.includes('primaire')) {
                       levelDescription = 'Cycle primaire (6-11 ans)';
                       suggestions = [
                         'CP', 'CE1', 'CE2', 'CM1', 'CM2',
@@ -545,7 +638,7 @@ const PrincipalDashboard = () => {
                         'CM1 A', 'CM1 B', 'CM2 A', 'CM2 B'
                       ];
                     } 
-                    else if (schoolType === 'collège' || schoolType === 'college' || schoolType === 'collège d\'enseignement général') {
+                    else if (schoolType === 'college' || schoolType.includes('college')) {
                       levelDescription = 'Cycle secondaire 1er degré (11-15 ans)';
                       suggestions = [
                         '6ème', '5ème', '4ème', '3ème',
@@ -555,7 +648,7 @@ const PrincipalDashboard = () => {
                         '3ème A', '3ème B', '3ème C'
                       ];
                     }
-                    else if (schoolType === 'lycée' || schoolType === 'lycee' || schoolType === 'lycée d\'enseignement général') {
+                    else if (schoolType === 'lycee' || schoolType.includes('lycee')) {
                       levelDescription = 'Cycle secondaire 2nd degré (15-18 ans)';
                       suggestions = [
                         '2nde', '1ère', 'Terminale',
@@ -564,7 +657,19 @@ const PrincipalDashboard = () => {
                         'Terminale A', 'Terminale C', 'Terminale D', 'Terminale L', 'Terminale S', 'Terminale Ti'
                       ];
                     }
-                    else if (schoolType.includes('technique') || schoolType.includes('professionnel') || schoolType === 'lycée technique') {
+                    else if (schoolType === 'college_lycee') {
+                      levelDescription = 'Établissement complet - Collège et Lycée (6ème - Terminale)';
+                      suggestions = [
+                        // Collège
+                        '6ème', '5ème', '4ème', '3ème',
+                        '6ème A', '6ème B', '5ème A', '5ème B', '4ème A', '4ème B', '3ème A', '3ème B',
+                        // Lycée
+                        '2nde', '1ère', 'Terminale',
+                        '2nde A', '2nde C', '1ère A', '1ère C', '1ère D', '1ère L', '1ère S',
+                        'Terminale A', 'Terminale C', 'Terminale D', 'Terminale L', 'Terminale S'
+                      ];
+                    }
+                    else if (schoolType === 'formation_professionnelle' || schoolType.includes('technique') || schoolType.includes('professionnel')) {
                       levelDescription = 'Enseignement technique et professionnel';
                       suggestions = [
                         'CAP 1ère année', 'CAP 2ème année',
@@ -576,21 +681,15 @@ const PrincipalDashboard = () => {
                         'BAC Pro Électricité', 'BAC Pro Mécanique Auto', 'BAC Pro Secrétariat'
                       ];
                     }
-                    else if (schoolType.includes('maternelle') || schoolType === 'école maternelle') {
-                      levelDescription = 'Cycle préscolaire (3-6 ans)';
-                      suggestions = [
-                        'Petite Section', 'Moyenne Section', 'Grande Section',
-                        'PS A', 'PS B', 'MS A', 'MS B', 'GS A', 'GS B'
-                      ];
-                    }
-                    else if (schoolType.includes('supérieur') || schoolType.includes('université') || schoolType.includes('institut')) {
+                    else if (schoolType === 'universite' || schoolType.includes('universite') || schoolType.includes('superieur') || schoolType.includes('institut')) {
                       levelDescription = 'Enseignement supérieur';
                       suggestions = [
                         'Licence 1', 'Licence 2', 'Licence 3',
-                        'Master 1', 'Master 2',
-                        'L1 Informatique', 'L1 Mathématiques', 'L1 Économie',
-                        'L2 Informatique', 'L2 Mathématiques', 'L2 Économie',
-                        'L3 Informatique', 'L3 Mathématiques', 'L3 Économie'
+                        'Master 1', 'Master 2', 'Doctorat',
+                        'L1 Informatique', 'L1 Mathématiques', 'L1 Économie', 'L1 Gestion',
+                        'L2 Informatique', 'L2 Mathématiques', 'L2 Économie', 'L2 Gestion',
+                        'L3 Informatique', 'L3 Mathématiques', 'L3 Économie', 'L3 Gestion',
+                        'M1 Informatique', 'M1 Finance', 'M2 Informatique', 'M2 Finance'
                       ];
                     }
                     else {

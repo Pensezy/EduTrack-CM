@@ -1,107 +1,132 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import useDashboardData from '../../../hooks/useDashboardData';
+import productionDataService from '../../../services/productionDataService';
 
 const SchoolYearValidationTab = () => {
   const [activeSection, setActiveSection] = useState('pending');
   const [currentSchoolYear] = useState('2024-2025');
   const [nextSchoolYear] = useState('2025-2026');
-  
-  // Hook pour récupérer les données selon le mode (démo/production)
-  const { isDemo, isProduction, dataMode } = useDashboardData();
-
-  // Données DÉMO - Situations fictives pour démonstration
-  const demoPendingRequests = [
-    {
-      id: 1,
-      type: 'nouvelle_inscription',
-      studentName: 'Marie Talla (DÉMO)',
-      parentName: 'Joseph Talla',
-      requestedClass: 'CE1',
-      submittedBy: 'Secrétaire',
-      submittedDate: '2024-09-15',
-      status: 'en_attente',
-      documents: ['Certificat de naissance', 'Carnet de vaccination'],
-      priority: 'normal'
-    },
-    {
-      id: 2,
-      type: 'nouvelle_inscription',
-      studentName: 'Daniel Mbella (DÉMO)',
-      parentName: 'Agnes Mbella',
-      requestedClass: 'CM1',
-      submittedBy: 'Secrétaire',
-      submittedDate: '2024-09-18',
-      status: 'en_attente',
-      documents: ['Bulletins année précédente', 'Certificat de transfert'],
-      priority: 'urgent'
-    },
-    {
-      id: 3,
-      type: 'redoublement',
-      studentName: 'Kevin Atangana (DÉMO)',
-      currentClass: 'CE1',
-      requestedClass: 'CE1',
-      reason: 'Difficultés en mathématiques',
-      teacherRecommendation: 'Recommandé par Mme Nguema',
-      status: 'en_attente',
-      priority: 'normal'
-    }
-  ];
-
-  // Données PRODUCTION - Pas de demandes en attente actuellement
-  const productionPendingRequests = [
-    // Aucune demande en attente pour le moment
-    // Ces données seraient récupérées depuis la base de données Supabase
-  ];
-
-  // Choisir les bonnes données selon le mode
-  const [pendingRequests, setPendingRequests] = useState(
-    isDemo ? demoPendingRequests : productionPendingRequests
-  );
-
-  // Statistiques pour validation - Différentes selon le mode
-  const demoValidationStats = {
-    totalDemandes: 15,
-    enAttente: 3,
-    approuvees: 8,
-    refusees: 1,
-    enRevision: 3
-  };
-
-  const productionValidationStats = {
+  const [loading, setLoading] = useState(true);
+  const [pendingRequests, setPendingRequests] = useState([]);
+  const [validationStats, setValidationStats] = useState({
     totalDemandes: 0,
     enAttente: 0,
     approuvees: 0,
     refusees: 0,
     enRevision: 0
+  });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [newRequest, setNewRequest] = useState({
+    request_type: 'nouvelle_inscription',
+    student_first_name: '',
+    student_last_name: '',
+    parent_name: '',
+    parent_phone: '',
+    requested_class: '',
+    priority: 'normal'
+  });
+  
+  // Hook pour récupérer les données selon le mode (démo/production)
+  const { isDemo, isProduction, dataMode, data, user } = useDashboardData();
+
+  // Charger les vraies données depuis Supabase
+  useEffect(() => {
+    const loadEnrollmentData = async () => {
+      if (isProduction && user?.schoolData?.id) {
+        setLoading(true);
+        
+        // Initialiser le contexte
+        if (user.id && user.schoolData.id) {
+          productionDataService.setUserContext(user.id, user.schoolData.id);
+        }
+
+        // Charger les demandes en attente
+        const { data: requests } = await productionDataService.getEnrollmentRequests(
+          user.schoolData.id,
+          { status: 'en_attente' }
+        );
+
+        // Charger les statistiques
+        const { data: stats } = await productionDataService.getEnrollmentStats(user.schoolData.id);
+
+        setPendingRequests(requests || []);
+        setValidationStats(stats || {
+          totalDemandes: 0,
+          enAttente: 0,
+          approuvees: 0,
+          refusees: 0,
+          enRevision: 0
+        });
+
+        setLoading(false);
+      } else if (isDemo) {
+        // Mode démo - utiliser les données fictives
+        loadDemoData();
+      }
+    };
+
+    loadEnrollmentData();
+  }, [isProduction, isDemo, user]);
+
+  // Fonction pour charger les données démo
+  const loadDemoData = () => {
+    const demoPendingRequests = [
+      {
+        id: '1',
+        request_type: 'nouvelle_inscription',
+        student_first_name: 'Marie',
+        student_last_name: 'Talla',
+        parent_name: 'Joseph Talla',
+        requested_class: 'CE1',
+        submitted_by_user: { full_name: 'Secrétaire' },
+        submitted_date: '2024-09-15',
+        status: 'en_attente',
+        documents: [
+          { name: 'Certificat de naissance', uploaded: true },
+          { name: 'Carnet de vaccination', uploaded: true }
+        ],
+        priority: 'normal'
+      },
+      {
+        id: '2',
+        request_type: 'nouvelle_inscription',
+        student_first_name: 'Daniel',
+        student_last_name: 'Mbella',
+        parent_name: 'Agnes Mbella',
+        requested_class: 'CM1',
+        submitted_by_user: { full_name: 'Secrétaire' },
+        submitted_date: '2024-09-18',
+        status: 'en_attente',
+        documents: [
+          { name: 'Bulletins année précédente', uploaded: true },
+          { name: 'Certificat de transfert', uploaded: false }
+        ],
+        priority: 'urgent'
+      }
+    ];
+
+    setPendingRequests(demoPendingRequests);
+    setValidationStats({
+      totalDemandes: 15,
+      enAttente: 3,
+      approuvees: 8,
+      refusees: 1,
+      enRevision: 3
+    });
+    setLoading(false);
   };
 
-  const [validationStats] = useState(
-    isDemo ? demoValidationStats : productionValidationStats
-  );
-
-  // Passages de classe à valider - Différents selon le mode  
-  const demoClassTransitions = {
-    ce1_to_ce2: { total: 8, approved: 6, pending: 2 },
-    ce2_to_cm1: { total: 12, approved: 10, pending: 2 },
-    cm1_to_cm2: { total: 7, approved: 5, pending: 2 },
-    cm2_graduates: { total: 15, approved: 15, pending: 0 }
-  };
-
-  const productionClassTransitions = {
+  // Passages de classe à valider (données fictives pour démo)
+  const [classTransitions] = useState({
     ce1_to_ce2: { total: 0, approved: 0, pending: 0 },
     ce2_to_cm1: { total: 0, approved: 0, pending: 0 },
     cm1_to_cm2: { total: 0, approved: 0, pending: 0 },
     cm2_graduates: { total: 0, approved: 0, pending: 0 }
-  };
-
-  const [classTransitions] = useState(
-    isDemo ? demoClassTransitions : productionClassTransitions
-  );
+  });
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -133,24 +158,73 @@ const SchoolYearValidationTab = () => {
     );
   };
 
-  const handleApproveRequest = (requestId) => {
-    setPendingRequests(prev => 
-      prev.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'approuve' }
-          : req
-      )
-    );
+  const handleApproveRequest = async (requestId) => {
+    const { data, error } = await productionDataService.updateEnrollmentRequest(requestId, {
+      status: 'approuvee'
+    });
+
+    if (!error) {
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      // Recharger les stats
+      const { data: stats } = await productionDataService.getEnrollmentStats(user?.schoolData?.id);
+      setValidationStats(stats || validationStats);
+    }
   };
 
-  const handleRejectRequest = (requestId) => {
-    setPendingRequests(prev => 
-      prev.map(req => 
-        req.id === requestId 
-          ? { ...req, status: 'refuse' }
-          : req
-      )
-    );
+  const handleRejectRequest = async (requestId) => {
+    const notes = prompt('Raison du refus (optionnel):');
+    
+    const { data, error } = await productionDataService.updateEnrollmentRequest(requestId, {
+      status: 'refusee',
+      validation_notes: notes
+    });
+
+    if (!error) {
+      setPendingRequests(prev => prev.filter(req => req.id !== requestId));
+      // Recharger les stats
+      const { data: stats } = await productionDataService.getEnrollmentStats(user?.schoolData?.id);
+      setValidationStats(stats || validationStats);
+    }
+  };
+
+  const handleCreateRequest = async () => {
+    if (!newRequest.student_first_name || !newRequest.student_last_name || !newRequest.requested_class) {
+      alert('Veuillez remplir tous les champs obligatoires');
+      return;
+    }
+
+    setLoading(true);
+    const { data, error } = await productionDataService.createEnrollmentRequest({
+      ...newRequest,
+      school_id: user?.schoolData?.id,
+      submitted_by: user?.id
+    });
+
+    if (!error && data) {
+      // Ajouter à la liste
+      setPendingRequests(prev => [data, ...prev]);
+      
+      // Recharger les stats
+      const { data: stats } = await productionDataService.getEnrollmentStats(user?.schoolData?.id);
+      setValidationStats(stats || validationStats);
+
+      // Réinitialiser le formulaire et fermer le modal
+      setNewRequest({
+        request_type: 'nouvelle_inscription',
+        student_first_name: '',
+        student_last_name: '',
+        parent_name: '',
+        parent_phone: '',
+        requested_class: '',
+        priority: 'normal'
+      });
+      setShowCreateModal(false);
+      alert('Demande créée avec succès !');
+    } else {
+      alert('Erreur lors de la création: ' + (error?.message || 'Erreur inconnue'));
+    }
+    
+    setLoading(false);
   };
 
   const sections = [
@@ -311,7 +385,7 @@ const SchoolYearValidationTab = () => {
                     </p>
                   </div>
                   {isProduction && (
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={() => setShowCreateModal(true)}>
                       <Icon name="Plus" size={16} className="mr-2" />
                       Ajouter une demande manuelle
                     </Button>
@@ -325,22 +399,26 @@ const SchoolYearValidationTab = () => {
                   <div className="flex items-start space-x-4">
                     <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
                       <Icon 
-                        name={request.type === 'nouvelle_inscription' ? 'UserPlus' : 'RotateCcw'} 
+                        name={request.request_type === 'nouvelle_inscription' ? 'UserPlus' : 
+                              request.request_type === 'redoublement' ? 'RotateCcw' : 'ArrowRight'} 
                         size={20} 
                         className="text-primary" 
                       />
                     </div>
                     <div>
                       <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-                        {request.studentName}
+                        {request.student_first_name} {request.student_last_name}
+                        {request.student?.first_name && ` (${request.student.first_name} ${request.student.last_name})`}
                       </h3>
                       <p className="text-sm text-text-secondary">
-                        Parent: {request.parentName}
+                        Parent: {request.parent_name || 'Non renseigné'}
                       </p>
                       <p className="text-sm text-text-secondary">
-                        {request.type === 'nouvelle_inscription' 
-                          ? `Demande d'inscription en ${request.requestedClass}`
-                          : `Redoublement ${request.currentClass} → ${request.requestedClass}`
+                        {request.request_type === 'nouvelle_inscription' 
+                          ? `Demande d'inscription en ${request.requested_class}`
+                          : request.request_type === 'redoublement'
+                          ? `Redoublement ${request.current_class} → ${request.requested_class}`
+                          : `Transfert vers ${request.requested_class}`
                         }
                       </p>
                     </div>
@@ -356,20 +434,25 @@ const SchoolYearValidationTab = () => {
                   <div>
                     <p className="text-sm font-medium text-text-primary mb-2">Informations</p>
                     <div className="space-y-1 text-sm text-text-secondary">
-                      <p>Soumis par: {request.submittedBy}</p>
-                      <p>Date: {request.submittedDate}</p>
+                      <p>Soumis par: {request.submitted_by_user?.full_name || 'Système'}</p>
+                      <p>Date: {new Date(request.submitted_date).toLocaleDateString('fr-FR')}</p>
                       {request.reason && <p>Motif: {request.reason}</p>}
-                      {request.teacherRecommendation && <p>Avis enseignant: {request.teacherRecommendation}</p>}
+                      {request.teacher_recommendation && <p>Avis enseignant: {request.teacher_recommendation}</p>}
+                      {request.previous_school && <p>École précédente: {request.previous_school}</p>}
                     </div>
                   </div>
-                  {request.documents && (
+                  {request.documents && Array.isArray(request.documents) && request.documents.length > 0 && (
                     <div>
                       <p className="text-sm font-medium text-text-primary mb-2">Documents fournis</p>
                       <div className="space-y-1">
                         {request.documents.map((doc, index) => (
                           <div key={index} className="flex items-center space-x-2 text-sm text-text-secondary">
-                            <Icon name="FileCheck" size={14} className="text-success" />
-                            <span>{doc}</span>
+                            <Icon 
+                              name={doc.uploaded ? "FileCheck" : "FileX"} 
+                              size={14} 
+                              className={doc.uploaded ? "text-success" : "text-warning"} 
+                            />
+                            <span>{typeof doc === 'string' ? doc : doc.name}</span>
                           </div>
                         ))}
                       </div>
@@ -418,68 +501,73 @@ const SchoolYearValidationTab = () => {
       {/* Section Passages de classe */}
       {activeSection === 'transitions' && (
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-              Validation des Passages de Classe
-            </h3>
-            <Button>
-              <Icon name="CheckCircle" size={16} className="mr-2" />
-              Approuver tout
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {Object.entries(classTransitions).map(([transition, data]) => {
-              const transitionLabels = {
-                'ce1_to_ce2': 'CE1 → CE2',
-                'ce2_to_cm1': 'CE2 → CM1',
-                'cm1_to_cm2': 'CM1 → CM2',
-                'cm2_graduates': 'CM2 → Fin primaire'
-              };
-
-              return (
-                <div key={transition} className="bg-card border border-border rounded-lg p-6">
-                  <div className="flex items-center justify-between mb-4">
-                    <h4 className="font-heading font-heading-medium text-base text-text-primary">
-                      {transitionLabels[transition]}
-                    </h4>
-                    <span className="text-sm text-text-secondary">
-                      {data.approved}/{data.total} validés
-                    </span>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm text-text-secondary">Progression</span>
-                      <span className="text-sm font-medium text-text-primary">
-                        {Math.round((data.approved / data.total) * 100)}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div 
-                        className="bg-success h-2 rounded-full" 
-                        style={{width: `${(data.approved / data.total) * 100}%`}}
-                      ></div>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-success">✓ {data.approved} approuvés</span>
-                      {data.pending > 0 && (
-                        <span className="text-warning">⏳ {data.pending} en attente</span>
-                      )}
-                    </div>
-                  </div>
-
-                  {data.pending > 0 && (
-                    <div className="mt-4">
-                      <Button variant="outline" size="sm" className="w-full">
-                        <Icon name="Eye" size={14} className="mr-2" />
-                        Voir les cas en attente ({data.pending})
-                      </Button>
-                    </div>
-                  )}
+          <div className="bg-card border border-border rounded-lg p-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
+                <Icon name="TrendingUp" size={32} className="text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-2">
+                  Passages de Classe - En Développement
+                </h3>
+                <p className="text-sm text-text-secondary max-w-2xl">
+                  Cette fonctionnalité permettra de gérer automatiquement les passages de classe 
+                  en fonction des résultats scolaires et des recommandations des enseignants.
+                </p>
+                <div className="mt-4 text-xs text-gray-500">
+                  <p>📋 Fonctionnalités prévues :</p>
+                  <ul className="mt-2 space-y-1 text-left inline-block">
+                    <li>• Calcul automatique des passages selon les moyennes</li>
+                    <li>• Validation des redoublements</li>
+                    <li>• Génération des listes de classes pour l'année suivante</li>
+                    <li>• Notifications aux parents</li>
+                  </ul>
                 </div>
-              );
-            })}
+              </div>
+              {isProduction && (
+                <div className="mt-4 px-4 py-2 bg-blue-50 rounded-lg">
+                  <p className="text-sm text-blue-700">
+                    💡 En attendant, utilisez l'onglet <strong>"Demandes en attente"</strong> pour gérer 
+                    les inscriptions et redoublements manuellement.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Section Demandes approuvées */}
+      {activeSection === 'approved' && (
+        <div className="space-y-6">
+          <div className="bg-card border border-border rounded-lg p-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center">
+                <Icon name="CheckCircle" size={32} className="text-green-600" />
+              </div>
+              <div>
+                <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-2">
+                  Demandes Validées
+                </h3>
+                <p className="text-sm text-text-secondary max-w-2xl">
+                  {isProduction ? (
+                    <>
+                      Vous avez <strong>{validationStats.approuvees || 0} demande(s) approuvée(s)</strong>.
+                      <br />
+                      L'historique complet des validations sera bientôt disponible ici.
+                    </>
+                  ) : (
+                    "L'historique des demandes approuvées s'affichera ici une fois que vous commencerez à valider des demandes."
+                  )}
+                </p>
+              </div>
+              {isProduction && validationStats.approuvees > 0 && (
+                <Button variant="outline">
+                  <Icon name="Download" size={16} className="mr-2" />
+                  Exporter la liste ({validationStats.approuvees})
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       )}
@@ -487,59 +575,179 @@ const SchoolYearValidationTab = () => {
       {/* Section Configuration */}
       {activeSection === 'settings' && (
         <div className="space-y-6">
-          <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-            Configuration Année Scolaire {nextSchoolYear}
-          </h3>
+          <div className="bg-card border border-border rounded-lg p-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center">
+                <Icon name="Settings" size={32} className="text-purple-600" />
+              </div>
+              <div>
+                <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-2">
+                  Configuration Année Scolaire - En Développement
+                </h3>
+                <p className="text-sm text-text-secondary max-w-2xl">
+                  Cette fonctionnalité permettra de configurer les paramètres de l'année scolaire 
+                  et de gérer la transition entre les années académiques.
+                </p>
+                <div className="mt-4 text-xs text-gray-500">
+                  <p>⚙️ Paramètres prévus :</p>
+                  <ul className="mt-2 space-y-1 text-left inline-block">
+                    <li>• Dates de début et fin d'année scolaire</li>
+                    <li>• Configuration des trimestres/semestres</li>
+                    <li>• Génération automatique des listes de classe</li>
+                    <li>• Archivage de l'année précédente</li>
+                    <li>• Migration des données élèves</li>
+                  </ul>
+                </div>
+              </div>
+              {isProduction && (
+                <div className="mt-4 px-4 py-2 bg-purple-50 rounded-lg">
+                  <p className="text-sm text-purple-700">
+                    💡 Pour l'instant, contactez l'administrateur système pour modifier 
+                    les paramètres de l'année scolaire dans la base de données.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h4 className="font-heading font-heading-medium text-base text-text-primary mb-4">
-                Paramètres généraux
-              </h4>
-              <div className="space-y-4">
+      {/* Modal de création de demande */}
+      {showCreateModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-gray-900">
+                  Nouvelle demande d'inscription
+                </h3>
+                <button
+                  onClick={() => setShowCreateModal(false)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  <Icon name="X" size={24} />
+                </button>
+              </div>
+            </div>
+
+            <div className="p-6 space-y-4">
+              {/* Type de demande */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Type de demande *
+                </label>
+                <select
+                  value={newRequest.request_type}
+                  onChange={(e) => setNewRequest({ ...newRequest, request_type: e.target.value })}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="nouvelle_inscription">Nouvelle inscription</option>
+                  <option value="redoublement">Redoublement</option>
+                  <option value="transfert">Transfert</option>
+                </select>
+              </div>
+
+              {/* Informations élève */}
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">
-                    Date début année scolaire
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Prénom de l'élève *
                   </label>
-                  <Input type="date" defaultValue="2025-09-01" />
+                  <input
+                    type="text"
+                    value={newRequest.student_first_name}
+                    onChange={(e) => setNewRequest({ ...newRequest, student_first_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ex: Marie"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">
-                    Date fin année scolaire
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom de l'élève *
                   </label>
-                  <Input type="date" defaultValue="2026-06-30" />
+                  <input
+                    type="text"
+                    value={newRequest.student_last_name}
+                    onChange={(e) => setNewRequest({ ...newRequest, student_last_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ex: Talla"
+                  />
+                </div>
+              </div>
+
+              {/* Informations parent */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Nom du parent/tuteur
+                  </label>
+                  <input
+                    type="text"
+                    value={newRequest.parent_name}
+                    onChange={(e) => setNewRequest({ ...newRequest, parent_name: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ex: Joseph Talla"
+                  />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium text-text-primary mb-2">
-                    Effectif maximum par classe
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Téléphone du parent
                   </label>
-                  <Input type="number" defaultValue="25" />
+                  <input
+                    type="tel"
+                    value={newRequest.parent_phone}
+                    onChange={(e) => setNewRequest({ ...newRequest, parent_phone: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ex: 237 6XX XX XX XX"
+                  />
+                </div>
+              </div>
+
+              {/* Classe demandée */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Classe demandée *
+                  </label>
+                  <input
+                    type="text"
+                    value={newRequest.requested_class}
+                    onChange={(e) => setNewRequest({ ...newRequest, requested_class: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="Ex: CE1, 6ème, 2nde..."
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Priorité
+                  </label>
+                  <select
+                    value={newRequest.priority}
+                    onChange={(e) => setNewRequest({ ...newRequest, priority: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="normal">Normale</option>
+                    <option value="urgent">Urgente</option>
+                    <option value="faible">Faible</option>
+                  </select>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-6">
-              <h4 className="font-heading font-heading-medium text-base text-text-primary mb-4">
-                Actions administratives
-              </h4>
-              <div className="space-y-3">
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="FileText" size={16} className="mr-2" />
-                  Générer listes de classe
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="Download" size={16} className="mr-2" />
-                  Exporter données année précédente
-                </Button>
-                <Button variant="outline" className="w-full justify-start">
-                  <Icon name="Archive" size={16} className="mr-2" />
-                  Archiver année {currentSchoolYear}
-                </Button>
-                <Button className="w-full justify-start bg-success hover:bg-success/90">
-                  <Icon name="CheckCircle" size={16} className="mr-2" />
-                  Finaliser transition d'année
-                </Button>
-              </div>
+            <div className="p-6 border-t border-gray-200 flex justify-end space-x-3">
+              <Button
+                variant="outline"
+                onClick={() => setShowCreateModal(false)}
+                disabled={loading}
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleCreateRequest}
+                disabled={loading}
+              >
+                {loading ? 'Création...' : 'Créer la demande'}
+              </Button>
             </div>
           </div>
         </div>
