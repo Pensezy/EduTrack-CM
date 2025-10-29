@@ -7,6 +7,7 @@ import Select from '../../../components/ui/Select';
 import { useAuth } from '../../../contexts/AuthContext';
 import { useDataMode } from '../../../hooks/useDataMode';
 import useDashboardData from '../../../hooks/useDashboardData';
+import { supabase } from '../../../lib/supabase';
 
 const AccountsManagement = () => {
   const location = useLocation();
@@ -29,6 +30,10 @@ const AccountsManagement = () => {
       setActiveTab(subtabParam);
     }
   }, [location.search]);
+
+  // État pour le chargement des comptes réels
+  const [accounts, setAccounts] = useState([]);
+  const [loadingAccounts, setLoadingAccounts] = useState(false);
 
   // Nouvel utilisateur à créer
   const [newUser, setNewUser] = useState({
@@ -116,13 +121,13 @@ const AccountsManagement = () => {
     }
   ];
 
-  // Comptes selon le mode (démo ou production)
-  const accounts = isDemo ? demoAccounts : (data?.accounts || []);
-
   // Statistiques des comptes
   const accountStats = {
     total: accounts.length,
-    active: accounts.filter(acc => acc.status === 'active').length,
+    active: accounts.filter(acc => {
+      const isActive = acc.is_active !== undefined ? acc.is_active : acc.status === 'active';
+      return isActive;
+    }).length,
     inactive: accounts.filter(acc => acc.status === 'inactive').length,
     locked: accounts.filter(acc => acc.is_locked).length,
     byRole: {
@@ -135,11 +140,19 @@ const AccountsManagement = () => {
   };
 
   // Filtrage des comptes
-  const filteredAccounts = accounts.filter(account => {
+  // Utiliser les comptes réels ou de démo selon le mode
+  const displayAccounts = isDemo ? demoAccounts : accounts;
+
+  const filteredAccounts = displayAccounts.filter(account => {
     const matchesSearch = account.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          account.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || account.role === selectedRole;
-    const matchesStatus = selectedStatus === 'all' || account.status === selectedStatus;
+    
+    // Gérer is_active (Supabase) ou status (démo)
+    const accountStatus = account.is_active !== undefined 
+      ? (account.is_active ? 'active' : 'inactive')
+      : account.status;
+    const matchesStatus = selectedStatus === 'all' || accountStatus === selectedStatus;
     
     return matchesSearch && matchesRole && matchesStatus;
   });
@@ -252,7 +265,7 @@ const AccountsManagement = () => {
     }
   };
 
-  const handleCreateUser = () => {
+  const handleCreateUser = async () => {
     if (!newUser.fullName || !newUser.email || !newUser.password) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
@@ -264,49 +277,278 @@ const AccountsManagement = () => {
       return;
     }
 
-    if (isDemo) {
-      // Simuler l'envoi d'email
-      const confirmSend = confirm(
-        `Mode démo : Compte créé pour ${newUser.fullName} (${newUser.role})\n\n` +
-        `Voulez-vous envoyer les identifiants par email à ${newUser.email} ?\n\n` +
-        `Email : ${newUser.email}\n` +
-        `Mot de passe temporaire : ${newUser.password}\n\n` +
-        `L'utilisateur devra changer son mot de passe lors de sa première connexion.`
-      );
-      
-      if (confirmSend) {
-        alert('Mode démo : Email d\'identifiants envoyé avec succès !');
-      }
-    } else {
-      // Logique de création réelle avec envoi d'email
-      console.log('Création nouveau compte:', newUser);
-      
-      const confirmSend = confirm(
-        `Compte créé pour ${newUser.fullName}\n\n` +
-        `Voulez-vous envoyer automatiquement les identifiants par email à ${newUser.email} ?\n\n` +
-        `Sinon, vous devrez communiquer ces informations manuellement :\n` +
-        `Email : ${newUser.email}\n` +
-        `Mot de passe temporaire : ${newUser.password}`
-      );
-      
-      if (confirmSend) {
-        // Ici, on intégrerait un service d'email (SendGrid, AWS SES, etc.)
-        sendCredentialsByEmail(newUser);
+    setLoadingAccounts(true);
+
+    try {
+      if (isDemo) {
+        // Mode démo - Simulation
+        const confirmSend = confirm(
+          `Mode démo : Compte créé pour ${newUser.fullName} (${newUser.role})\n\n` +
+          `Voulez-vous envoyer les identifiants par email à ${newUser.email} ?\n\n` +
+          `Email : ${newUser.email}\n` +
+          `Mot de passe temporaire : ${newUser.password}\n\n` +
+          `L'utilisateur devra changer son mot de passe lors de sa première connexion.`
+        );
+        
+        if (confirmSend) {
+          alert('Mode démo : Email d\'identifiants envoyé avec succès !');
+        }
+
+        // Reset du formulaire
+        setNewUser({
+          fullName: '',
+          email: '',
+          phone: '',
+          role: 'student',
+          password: '',
+          status: 'active'
+        });
+        setActiveTab('accounts');
+        
       } else {
-        alert(`Identifiants créés. Veuillez les communiquer manuellement :\n\nEmail : ${newUser.email}\nMot de passe : ${newUser.password}\n\n⚠️ L'utilisateur devra changer son mot de passe lors de sa première connexion.`);
+        // ✅ MODE PRODUCTION - Création réelle avec Supabase
+        console.log('Création compte secrétaire avec Supabase...');
+        
+        // Étape 1: Créer le compte dans Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: newUser.email,
+          password: newUser.password,
+          options: {
+            data: {
+              full_name: newUser.fullName,
+              phone: newUser.phone,
+              role: newUser.role,
+              school: {
+                id: user.current_school_id,
+                name: user.school_name || 'École'
+              }
+            }
+          }
+        });
+
+        if (authError) {
+          throw new Error(authError.message);
+        }
+
+        if (!authData.user) {
+          throw new Error('Erreur lors de la création du compte');
+        }
+
+        console.log('✅ Compte créé dans Supabase Auth:', authData.user.id);
+
+        // Étape 2: Mettre à jour la table users avec created_by
+        const { error: updateError } = await supabase
+          .from('users')
+          .update({ 
+            created_by_user_id: user.id,
+            current_school_id: user.current_school_id
+          })
+          .eq('id', authData.user.id);
+
+        if (updateError) {
+          console.warn('⚠️ Erreur mise à jour created_by:', updateError);
+          // Ne pas bloquer, continuer
+        }
+
+        // Étape 3: Afficher confirmation
+        alert(
+          `✅ Compte créé avec succès !\n\n` +
+          `Utilisateur : ${newUser.fullName}\n` +
+          `Email : ${newUser.email}\n` +
+          `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
+          `⚠️ IMPORTANT : Communiquez ces identifiants à l'utilisateur :\n` +
+          `Email : ${newUser.email}\n` +
+          `Mot de passe : ${newUser.password}\n\n` +
+          `L'utilisateur pourra changer son mot de passe après la première connexion.`
+        );
+
+        // Étape 4: Recharger la liste des comptes
+        await loadAccountsFromSupabase();
+
+        // Reset du formulaire
+        setNewUser({
+          fullName: '',
+          email: '',
+          phone: '',
+          role: 'student',
+          password: '',
+          status: 'active'
+        });
+        setActiveTab('accounts');
       }
+      
+    } catch (error) {
+      console.error('❌ Erreur création compte:', error);
+      
+      let errorMessage = error.message;
+      
+      // Messages d'erreur personnalisés
+      if (errorMessage.includes('already registered')) {
+        errorMessage = 'Cet email est déjà utilisé par un autre compte.';
+      } else if (errorMessage.includes('invalid email')) {
+        errorMessage = 'L\'adresse email n\'est pas valide.';
+      } else if (errorMessage.includes('weak password')) {
+        errorMessage = 'Le mot de passe est trop faible. Utilisez au moins 8 caractères.';
+      }
+      
+      alert(`❌ Erreur lors de la création du compte :\n\n${errorMessage}`);
+      
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  // Fonction helper pour les labels de rôles
+  const getRoleLabel = (role) => {
+    const labels = {
+      'secretary': 'Secrétaire',
+      'teacher': 'Enseignant',
+      'student': 'Élève',
+      'parent': 'Parent',
+      'principal': 'Directeur',
+      'admin': 'Administrateur'
+    };
+    return labels[role] || role;
+  };
+
+  // Fonction pour charger les comptes depuis Supabase
+  const loadAccountsFromSupabase = async () => {
+    if (isDemo || !user?.current_school_id) {
+      return;
     }
 
-    // Reset du formulaire
-    setNewUser({
-      fullName: '',
-      email: '',
-      phone: '',
-      role: 'student',
-      password: '',
-      status: 'active'
-    });
-    setActiveTab('accounts');
+    setLoadingAccounts(true);
+
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          email,
+          full_name,
+          phone,
+          role,
+          is_active,
+          created_at,
+          deactivated_at,
+          created_by_user_id,
+          deactivated_by_user_id
+        `)
+        .eq('current_school_id', user.current_school_id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        throw error;
+      }
+
+      console.log('✅ Comptes chargés depuis Supabase:', data?.length || 0);
+      setAccounts(data || []);
+      
+    } catch (error) {
+      console.error('❌ Erreur chargement comptes:', error);
+      // Ne pas afficher d'alerte, juste logger
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  // Charger les comptes au montage du composant
+  useEffect(() => {
+    if (!isDemo && user?.current_school_id) {
+      loadAccountsFromSupabase();
+    }
+  }, [isDemo, user?.current_school_id]);
+
+  // Fonction pour désactiver un compte (pas supprimer)
+  const handleDeactivateAccount = async (accountId, accountName) => {
+    const confirmed = confirm(
+      `⚠️ Désactiver le compte de ${accountName} ?\n\n` +
+      `Le compte sera désactivé mais toutes les données créées par cette personne seront conservées.\n\n` +
+      `Cette action peut être annulée en réactivant le compte.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoadingAccounts(true);
+
+    try {
+      if (isDemo) {
+        alert('Mode démo : Compte désactivé');
+        return;
+      }
+
+      // Appeler la fonction RPC Supabase pour désactiver
+      const { data, error } = await supabase.rpc('deactivate_user_account', {
+        p_user_id: accountId,
+        p_deactivated_by: user.id
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erreur lors de la désactivation');
+      }
+
+      alert(`✅ Compte de ${accountName} désactivé avec succès !`);
+      
+      // Recharger la liste
+      await loadAccountsFromSupabase();
+      
+    } catch (error) {
+      console.error('❌ Erreur désactivation compte:', error);
+      alert(`❌ Erreur lors de la désactivation :\n\n${error.message}`);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
+
+  // Fonction pour réactiver un compte
+  const handleReactivateAccount = async (accountId, accountName) => {
+    const confirmed = confirm(
+      `Réactiver le compte de ${accountName} ?\n\n` +
+      `L'utilisateur pourra à nouveau se connecter.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setLoadingAccounts(true);
+
+    try {
+      if (isDemo) {
+        alert('Mode démo : Compte réactivé');
+        return;
+      }
+
+      const { data, error } = await supabase.rpc('reactivate_user_account', {
+        p_user_id: accountId,
+        p_reactivated_by: user.id
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data && !data.success) {
+        throw new Error(data.error || 'Erreur lors de la réactivation');
+      }
+
+      alert(`✅ Compte de ${accountName} réactivé avec succès !`);
+      
+      // Recharger la liste
+      await loadAccountsFromSupabase();
+      
+    } catch (error) {
+      console.error('❌ Erreur réactivation compte:', error);
+      alert(`❌ Erreur lors de la réactivation :\n\n${error.message}`);
+    } finally {
+      setLoadingAccounts(false);
+    }
   };
 
   // Fonction pour envoyer les identifiants par email
@@ -546,11 +788,27 @@ const AccountsManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
-                      <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                        account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                      }`}>
-                        {account.status === 'active' ? 'Actif' : 'Inactif'}
-                      </span>
+                      {(() => {
+                        // Gérer is_active (Supabase) ou status (démo)
+                        const isActive = account.is_active !== undefined 
+                          ? account.is_active 
+                          : account.status === 'active';
+                        
+                        return (
+                          <>
+                            <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
+                              isActive ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}>
+                              {isActive ? 'Actif' : 'Inactif'}
+                            </span>
+                            {account.deactivated_at && (
+                              <span className="ml-2 text-xs text-gray-500" title={`Désactivé le ${new Date(account.deactivated_at).toLocaleDateString('fr-FR')}`}>
+                                🚫
+                              </span>
+                            )}
+                          </>
+                        );
+                      })()}
                       {account.is_locked && (
                         <Icon name="Lock" size={14} className="ml-2 text-red-500" title="Compte bloqué" />
                       )}
@@ -566,6 +824,7 @@ const AccountsManagement = () => {
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                     <div className="flex space-x-1">
+                      {/* Bouton Réinitialiser mot de passe */}
                       <Button
                         size="sm"
                         variant="outline"
@@ -576,6 +835,7 @@ const AccountsManagement = () => {
                         <Icon name="Key" size={14} />
                       </Button>
                       
+                      {/* Bouton Renvoyer identifiants */}
                       <Button
                         size="sm"
                         variant="outline"
@@ -586,15 +846,30 @@ const AccountsManagement = () => {
                         <Icon name="Mail" size={14} />
                       </Button>
                       
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleToggleStatus(account.id, account.full_name, account.status)}
-                        className={account.status === 'active' ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}
-                        title={account.status === 'active' ? 'Désactiver' : 'Activer'}
-                      >
-                        <Icon name={account.status === 'active' ? 'UserX' : 'UserCheck'} size={14} />
-                      </Button>
+                      {/* Bouton Désactiver/Réactiver */}
+                      {(() => {
+                        const isActive = account.is_active !== undefined 
+                          ? account.is_active 
+                          : account.status === 'active';
+                        
+                        return (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (isActive) {
+                                handleDeactivateAccount(account.id, account.full_name);
+                              } else {
+                                handleReactivateAccount(account.id, account.full_name);
+                              }
+                            }}
+                            className={isActive ? 'text-red-600 hover:text-red-700' : 'text-green-600 hover:text-green-700'}
+                            title={isActive ? 'Désactiver le compte' : 'Réactiver le compte'}
+                          >
+                            <Icon name={isActive ? 'UserX' : 'UserCheck'} size={14} />
+                          </Button>
+                        );
+                      })()}
                       
                       {account.is_locked && (
                         <Button
