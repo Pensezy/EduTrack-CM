@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { supabase } from '../../lib/supabase';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
@@ -25,7 +26,90 @@ const SecretaryDashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Récupérer les informations de l'utilisateur connecté
-  const { user } = useAuth();
+  const { user, authMode } = useAuth();
+  const [isDemo, setIsDemo] = useState(false);
+  const [stats, setStats] = useState({
+    totalStudents: 0,
+    pendingJustifications: 0,
+    latePayments: 0,
+    urgentCalls: 0
+  });
+  const [loadingStats, setLoadingStats] = useState(true);
+
+  // Déterminer si on est en mode démo
+  useEffect(() => {
+    const savedUser = localStorage.getItem('edutrack-user');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        const isDemoAccount = userData.demoAccount === true || authMode === 'demo';
+        setIsDemo(isDemoAccount);
+        
+        if (isDemoAccount) {
+          console.log('🎭 Mode DÉMO');
+        } else {
+          console.log('✅ Mode PRODUCTION:', userData.school_name || 'École');
+        }
+      } catch (e) {
+        console.error('Erreur lecture session:', e);
+      }
+    }
+  }, [authMode]);
+
+  // Charger les statistiques réelles depuis Supabase
+  useEffect(() => {
+    const loadStats = async () => {
+      if (isDemo) {
+        // Données démo
+        setStats({
+          totalStudents: 127,
+          pendingJustifications: 5,
+          latePayments: 12,
+          urgentCalls: 3
+        });
+        setLoadingStats(false);
+        return;
+      }
+
+      try {
+        setLoadingStats(true);
+        const savedUser = localStorage.getItem('edutrack-user');
+        const userData = savedUser ? JSON.parse(savedUser) : null;
+        const schoolId = userData?.current_school_id;
+
+        if (!schoolId) {
+          console.warn('⚠️ Pas d\'école associée');
+          setLoadingStats(false);
+          return;
+        }
+
+        // Compter les élèves
+        const { count: studentCount, error: studentError } = await supabase
+          .from('students')
+          .select('*', { count: 'exact', head: true })
+          .eq('school_id', schoolId)
+          .eq('is_active', true);
+
+        if (studentError) {
+          console.error('Erreur chargement élèves:', studentError);
+        }
+
+        setStats({
+          totalStudents: studentCount || 0,
+          pendingJustifications: 0, // À implémenter quand table existe
+          latePayments: 0, // À implémenter quand table existe
+          urgentCalls: 0 // À implémenter quand table existe
+        });
+
+      } catch (error) {
+        console.error('Erreur chargement statistiques:', error);
+      } finally {
+        setLoadingStats(false);
+      }
+    };
+
+    loadStats();
+  }, [isDemo]);
 
   // Gérer la navigation via les paramètres URL
   useEffect(() => {
@@ -126,28 +210,28 @@ const SecretaryDashboard = () => {
   const quickStats = [
     {
       label: 'Élèves inscrits',
-      value: '127',
+      value: loadingStats ? '...' : stats.totalStudents.toString(),
       icon: 'Users',
       color: 'text-success',
       bgColor: 'bg-success/10'
     },
     {
       label: 'Justificatifs en attente',
-      value: '5',
+      value: loadingStats ? '...' : stats.pendingJustifications.toString(),
       icon: 'FileText',
       color: 'text-warning',
       bgColor: 'bg-warning/10'
     },
     {
       label: 'Paiements en retard',
-      value: '12',
+      value: loadingStats ? '...' : stats.latePayments.toString(),
       icon: 'CreditCard',
       color: 'text-error',
       bgColor: 'bg-error/10'
     },
     {
       label: 'Appels parents urgents',
-      value: '3',
+      value: loadingStats ? '...' : stats.urgentCalls.toString(),
       icon: 'Phone',
       color: 'text-primary',
       bgColor: 'bg-primary/10'
@@ -307,7 +391,7 @@ const SecretaryDashboard = () => {
 
             {/* Tab Content */}
             <div className="p-6">
-              {ActiveComponent && <ActiveComponent />}
+              {ActiveComponent && <ActiveComponent isDemo={isDemo} />}
             </div>
           </div>
 

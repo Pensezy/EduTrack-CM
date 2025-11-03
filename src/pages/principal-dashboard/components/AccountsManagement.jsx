@@ -18,9 +18,70 @@ const AccountsManagement = () => {
   const [showCreateForm, setShowCreateForm] = useState(false);
 
   // Hooks pour la gestion des données
-  const { user } = useAuth();
+  const { user: authUser } = useAuth();
   const { isDemo } = useDataMode();
   const { data, loading } = useDashboardData();
+
+  // État pour les données complètes de l'utilisateur
+  const [user, setUser] = useState(authUser);
+  const [userDataLoaded, setUserDataLoaded] = useState(false);
+
+  // Charger les données complètes du directeur depuis Supabase
+  useEffect(() => {
+    const loadUserData = async () => {
+      if (isDemo) {
+        // En mode démo, utiliser les données du compte démo
+        setUser(authUser);
+        setUserDataLoaded(true);
+        return;
+      }
+
+      if (!authUser?.id) {
+        setUser(authUser);
+        setUserDataLoaded(true);
+        return;
+      }
+
+      try {
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select(`
+            id, 
+            email, 
+            full_name, 
+            role, 
+            phone, 
+            current_school_id,
+            school:schools!users_current_school_id_fkey(id, name)
+          `)
+          .eq('id', authUser.id)
+          .single();
+
+        if (error) {
+          console.error('❌ Erreur chargement données utilisateur:', error);
+          setUser(authUser); // Fallback sur authUser
+        } else {
+          console.log('✅ Données utilisateur chargées:', userData);
+          
+          // Aplatir les données school
+          const userWithSchool = {
+            ...userData,
+            school_id: userData.school?.id || userData.current_school_id,
+            school_name: userData.school?.name || 'École'
+          };
+          
+          setUser(userWithSchool);
+        }
+      } catch (err) {
+        console.error('❌ Exception chargement utilisateur:', err);
+        setUser(authUser); // Fallback sur authUser
+      } finally {
+        setUserDataLoaded(true);
+      }
+    };
+
+    loadUserData();
+  }, [authUser, isDemo]);
 
   // Gérer la navigation directe vers un sous-onglet via l'URL
   useEffect(() => {
@@ -277,6 +338,24 @@ const AccountsManagement = () => {
       return;
     }
 
+    // Vérification de l'utilisateur connecté (mode production)
+    if (!isDemo && !user) {
+      alert('❌ Erreur : Utilisateur non connecté. Veuillez vous reconnecter.');
+      console.error('User is null');
+      return;
+    }
+
+    if (!isDemo && !user.current_school_id) {
+      console.error('❌ current_school_id manquant. User data:', user);
+      alert(
+        `❌ Erreur : Votre compte n'est pas associé à une école.\n\n` +
+        `Email: ${user?.email || 'N/A'}\n` +
+        `Rôle: ${user?.role || 'N/A'}\n\n` +
+        `Veuillez contacter l'administrateur système.`
+      );
+      return;
+    }
+
     setLoadingAccounts(true);
 
     try {
@@ -307,62 +386,148 @@ const AccountsManagement = () => {
         
       } else {
         // ✅ MODE PRODUCTION - Création réelle avec Supabase
-        console.log('Création compte secrétaire avec Supabase...');
+        console.log('Création compte avec Supabase...');
         
-        // Étape 1: Créer le compte dans Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email: newUser.email,
-          password: newUser.password,
-          options: {
-            data: {
-              full_name: newUser.fullName,
-              phone: newUser.phone,
-              role: newUser.role,
-              school: {
-                id: user.current_school_id,
-                name: user.school_name || 'École'
+        // Séparer le nom complet en prénom et nom
+        const nameParts = newUser.fullName.trim().split(' ');
+        const firstName = nameParts[0] || '';
+        const lastName = nameParts.slice(1).join(' ') || firstName;
+
+        let userId = null;
+
+        // Pour le personnel (non-directeur), utiliser l'Edge Function pour éviter l'email automatique
+        if (newUser.role !== 'principal' && newUser.role !== 'admin') {
+          console.log('Création compte personnel via Edge Function...');
+          
+          const { data: staffData, error: staffError } = await supabase.functions.invoke(
+            'create-staff-account',
+            {
+              body: {
+                email: newUser.email,
+                password: newUser.password,
+                fullName: newUser.fullName,
+                phone: newUser.phone,
+                role: newUser.role,
+                schoolId: user.current_school_id,
+                createdByUserId: user.id,
+                firstName,
+                lastName
               }
             }
+          );
+
+          if (staffError || !staffData?.success) {
+            throw new Error(staffError?.message || staffData?.error || 'Erreur création compte personnel');
           }
-        });
 
-        if (authError) {
-          throw new Error(authError.message);
-        }
+          userId = staffData.userId;
+          console.log('✅ Compte personnel créé:', userId);
+          
+        } else {
+          // Pour les directeurs/admins, utiliser signUp normal (avec email automatique)
+          console.log('Création compte directeur/admin via signUp...');
+          
+          const { data: authData, error: authError } = await supabase.auth.signUp({
+            email: newUser.email,
+            password: newUser.password,
+            options: {
+              data: {
+                full_name: newUser.fullName,
+                phone: newUser.phone,
+                role: newUser.role,
+                school: {
+                  id: user.current_school_id,
+                  name: user.school_name || 'École'
+                }
+              }
+            }
+          });
 
-        if (!authData.user) {
-          throw new Error('Erreur lors de la création du compte');
-        }
+          if (authError || !authData.user) {
+            throw new Error(authError?.message || 'Erreur création compte');
+          }
 
-        console.log('✅ Compte créé dans Supabase Auth:', authData.user.id);
+          userId = authData.user.id;
+          console.log('✅ Compte directeur/admin créé:', userId);
 
-        // Étape 2: Mettre à jour la table users avec created_by
-        const { error: updateError } = await supabase
-          .from('users')
-          .update({ 
+          // Créer entrée dans users pour directeurs/admins
+          await supabase.from('users').insert({
+            id: userId,
+            email: newUser.email,
+            full_name: newUser.fullName,
+            phone: newUser.phone,
+            role: newUser.role,
+            current_school_id: user.current_school_id,
             created_by_user_id: user.id,
-            current_school_id: user.current_school_id
-          })
-          .eq('id', authData.user.id);
-
-        if (updateError) {
-          console.warn('⚠️ Erreur mise à jour created_by:', updateError);
-          // Ne pas bloquer, continuer
+            is_active: true
+          });
         }
 
-        // Étape 3: Afficher confirmation
-        alert(
-          `✅ Compte créé avec succès !\n\n` +
-          `Utilisateur : ${newUser.fullName}\n` +
-          `Email : ${newUser.email}\n` +
-          `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
-          `⚠️ IMPORTANT : Communiquez ces identifiants à l'utilisateur :\n` +
-          `Email : ${newUser.email}\n` +
-          `Mot de passe : ${newUser.password}\n\n` +
-          `L'utilisateur pourra changer son mot de passe après la première connexion.`
-        );
+        // Étape 2: Envoyer l'email avec les identifiants (seulement pour le personnel, pas les directeurs)
+        if (newUser.role !== 'principal' && newUser.role !== 'admin') {
+          try {
+          const { data: functionData, error: functionError } = await supabase.functions.invoke(
+            'send-credentials-email',
+            {
+              body: {
+                email: newUser.email,
+                fullName: newUser.fullName,
+                password: newUser.password,
+                role: newUser.role,
+                schoolName: user.school_name || 'École'
+              }
+            }
+          );
 
-        // Étape 4: Recharger la liste des comptes
+          if (functionError) {
+            console.error('⚠️ Erreur envoi email:', functionError);
+            // Ne pas bloquer la création du compte, juste avertir
+            alert(
+              `✅ Compte créé avec succès !\n\n` +
+              `Utilisateur : ${newUser.fullName}\n` +
+              `Email : ${newUser.email}\n` +
+              `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
+              `⚠️ ATTENTION : L'email n'a pas pu être envoyé.\n` +
+              `Veuillez communiquer manuellement ces identifiants :\n\n` +
+              `Email : ${newUser.email}\n` +
+              `Mot de passe : ${newUser.password}`
+            );
+          } else {
+            console.log('✅ Email envoyé avec succès:', functionData);
+            alert(
+              `✅ Compte créé avec succès !\n\n` +
+              `Utilisateur : ${newUser.fullName}\n` +
+              `Email : ${newUser.email}\n` +
+              `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
+              `📧 Un email contenant les identifiants de connexion a été envoyé à ${newUser.email}`
+            );
+          }
+        } catch (emailError) {
+          console.error('⚠️ Exception envoi email:', emailError);
+          // Continuer même si l'email échoue
+          alert(
+            `✅ Compte créé avec succès !\n\n` +
+            `Utilisateur : ${newUser.fullName}\n` +
+            `Email : ${newUser.email}\n` +
+            `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
+            `⚠️ ATTENTION : L'email n'a pas pu être envoyé.\n` +
+            `Veuillez communiquer manuellement ces identifiants :\n\n` +
+            `Email : ${newUser.email}\n` +
+            `Mot de passe : ${newUser.password}`
+          );
+          }
+        } else {
+          // Pour les directeurs/admins, pas d'email custom (ils reçoivent l'email Supabase)
+          alert(
+            `✅ Compte créé avec succès !\n\n` +
+            `Utilisateur : ${newUser.fullName}\n` +
+            `Email : ${newUser.email}\n` +
+            `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
+            `📧 Un email de confirmation a été envoyé à ${newUser.email}`
+          );
+        }
+
+        // Étape 3: Recharger la liste des comptes
         await loadAccountsFromSupabase();
 
         // Reset du formulaire
@@ -435,13 +600,15 @@ const AccountsManagement = () => {
           deactivated_by_user_id
         `)
         .eq('current_school_id', user.current_school_id)
+        .neq('role', 'principal')  // Exclure les directeurs
+        .neq('role', 'admin')      // Exclure les admins
         .order('created_at', { ascending: false });
 
       if (error) {
         throw error;
       }
 
-      console.log('✅ Comptes chargés depuis Supabase:', data?.length || 0);
+      console.log('✅ Comptes personnel chargés depuis Supabase:', data?.length || 0);
       setAccounts(data || []);
       
     } catch (error) {
@@ -1167,6 +1334,18 @@ const AccountsManagement = () => {
       </div>
     </div>
   );
+
+  // Protection contre le rendu tant que les données ne sont pas chargées
+  if (!userDataLoaded) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Chargement...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import Icon from '../../components/AppIcon';
 import Input from '../../components/ui/Input';
 import Button from '../../components/ui/Button';
@@ -15,6 +16,13 @@ const StaffLogin = () => {
   });
   const [error, setError] = useState(null);
   const navigate = useNavigate();
+  const { authMode } = useAuth();
+
+  // Clear any existing session on component mount
+  useEffect(() => {
+    localStorage.removeItem('edutrack-user');
+    localStorage.removeItem('edutrack-session');
+  }, []);
 
   const userTypes = [
     { value: 'teacher', label: 'Enseignant', dashboard: '/teacher-dashboard' },
@@ -51,54 +59,85 @@ const StaffLogin = () => {
         throw new Error('Veuillez remplir tous les champs');
       }
 
-      // Authentification avec notre fonction personnalisée
-      const { data, error: authError } = await supabase.rpc('authenticate_user', {
-        email_input: formData.email,
-        password_input: formData.password
+      console.log('🔐 Tentative de connexion avec Supabase Auth...');
+      
+      // Authentification avec Supabase Auth (méthode standard)
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password
       });
 
       if (authError) {
-        console.error('Auth error:', authError);
-        throw new Error('Erreur de connexion: ' + authError.message);
+        console.error('❌ Auth error:', authError);
+        throw new Error('Email ou mot de passe incorrect');
       }
 
-      if (!data || data.length === 0) {
+      if (!authData.user) {
         throw new Error('Aucune réponse du serveur');
       }
 
-      const authResult = data[0];
+      console.log('✅ Authentification réussie:', authData.user.email);
 
-      if (!authResult.user_id) {
-        throw new Error(authResult.message || 'Identifiants incorrects');
+      // Récupérer les données complètes de l'utilisateur depuis la table users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select(`
+          id,
+          email,
+          full_name,
+          role,
+          phone,
+          current_school_id,
+          is_active,
+          school:schools!users_current_school_id_fkey(id, name)
+        `)
+        .eq('id', authData.user.id)
+        .single();
+
+      if (userError) {
+        console.error('❌ User data error:', userError);
+        throw new Error('Impossible de charger les données utilisateur');
       }
+
+      if (!userData || !userData.is_active) {
+        throw new Error('Compte désactivé. Contactez votre administrateur.');
+      }
+
+      console.log('✅ Données utilisateur chargées:', userData);
 
       // Vérifier que le rôle correspond au type sélectionné
       const expectedRole = formData.userType;
-      if (authResult.role !== expectedRole) {
+      if (userData.role !== expectedRole) {
         const selectedTypeLabel = userTypes.find(t => t.value === expectedRole)?.label;
-        throw new Error(`Ce compte n'est pas un compte ${selectedTypeLabel}. Il s'agit d'un compte ${authResult.role === 'principal' ? 'Directeur' : authResult.role === 'teacher' ? 'Enseignant' : authResult.role === 'student' ? 'Élève' : authResult.role === 'parent' ? 'Parent' : authResult.role === 'secretary' ? 'Secrétaire' : authResult.role}`);
+        const actualRoleLabel = userTypes.find(t => t.value === userData.role)?.label || userData.role;
+        throw new Error(`Ce compte n'est pas un compte ${selectedTypeLabel}. Il s'agit d'un compte ${actualRoleLabel}`);
       }
 
-      // Créer la session utilisateur
+      // Créer la session utilisateur avec toutes les données
       const userSession = {
-        id: authResult.user_id,
-        role: authResult.role,
-        name: authResult.full_name,
-        email: formData.email,
-        schoolId: authResult.school_id,
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.full_name,
+        role: userData.role,
+        phone: userData.phone,
+        current_school_id: userData.current_school_id || userData.school?.id,
+        school_name: userData.school?.name || 'École',
+        is_active: userData.is_active,
         loginTime: new Date().toISOString(),
         sessionId: Math.random().toString(36).substr(2, 9),
         demoAccount: false
       };
 
       localStorage.setItem('edutrack-user', JSON.stringify(userSession));
+      
+      console.log('✅ Mode PRODUCTION:', userSession.school_name);
 
       // Rediriger vers le dashboard approprié
       const dashboardRoute = userTypes.find(t => t.value === expectedRole)?.dashboard;
       navigate(dashboardRoute);
 
     } catch (error) {
-      console.error('Login error:', error.message);
+      console.error('❌ Login error:', error.message);
       setError(error.message || 'Une erreur est survenue lors de la connexion');
     } finally {
       setLoading(false);

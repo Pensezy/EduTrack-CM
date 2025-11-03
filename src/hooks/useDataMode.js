@@ -67,45 +67,60 @@ export const useDataMode = () => {
             modeCache = { dataMode: 'demo', user: user };
             cacheTimestamp = Date.now();
           } else {
-            // Requête optimisée : une seule requête directe sans logs verbeux
-            const { data: schoolData, error: schoolError } = await supabase
-              .from('schools')
+            // Récupérer les données utilisateur depuis la table users
+            const { data: userData, error: userError } = await supabase
+              .from('users')
               .select(`
-                *,
-                users!director_user_id(
+                id,
+                email,
+                full_name,
+                role,
+                phone,
+                current_school_id,
+                is_active,
+                school:schools!users_current_school_id_fkey(
                   id,
-                  email,
-                  full_name,
-                  phone,
-                  role
+                  name,
+                  code,
+                  type
                 )
               `)
-              .eq('director_user_id', user.id)
+              .eq('id', user.id)
               .single();
 
-            if (schoolData && !schoolError) {
-              // École trouvée = mode production
-              console.log('✅ Mode PRODUCTION:', schoolData.name);
+            if (userError || !userData) {
+              console.log('⚠️ Utilisateur non trouvé dans la table users, mode DÉMO activé');
+              setDataMode('demo');
+              setUser(user);
               
-              const userData = { 
-                ...user, 
-                schoolData: { 
-                  ...schoolData, 
-                  director_id: user.id,
-                  user_id: user.id
-                }
+              // Mettre en cache
+              modeCache = { dataMode: 'demo', user: user };
+              cacheTimestamp = Date.now();
+              return;
+            }
+
+            // Si l'utilisateur a une école associée = mode production
+            if (userData.current_school_id && userData.school) {
+              console.log('✅ Mode PRODUCTION:', userData.school.name, '- Rôle:', userData.role);
+              
+              const enrichedUser = { 
+                ...user,
+                ...userData,
+                schoolData: userData.school,
+                school_id: userData.current_school_id,
+                school_name: userData.school.name
               };
               
-              setUser(userData);
+              setUser(enrichedUser);
               setDataMode('production');
               
               // Mettre en cache
-              modeCache = { dataMode: 'production', user: userData };
+              modeCache = { dataMode: 'production', user: enrichedUser };
               cacheTimestamp = Date.now();
               
             } else {
-              // Pas d'école = mode démo
-              console.log('🔄 Mode DÉMO activé');
+              // Pas d'école associée = mode démo
+              console.log('🔄 Mode DÉMO activé (pas d\'école associée)');
               setDataMode('demo');
               setUser(user);
               

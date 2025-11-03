@@ -1,16 +1,18 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 
-const TasksTab = () => {
+const TasksTab = ({ isDemo = false }) => {
   const [filterPriority, setFilterPriority] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [showUrgentCallsModal, setShowUrgentCallsModal] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState({
     title: '',
     description: '',
@@ -38,7 +40,8 @@ const TasksTab = () => {
     { value: 'cancelled', label: 'Annulé' }
   ];
 
-  const [tasks, setTasks] = useState([
+  // Données démo
+  const demoTasks = [
     {
       id: 1,
       title: "Appeler Mme Mbarga pour justificatif d'absence",
@@ -123,7 +126,72 @@ const TasksTab = () => {
       contact: "",
       estimatedDuration: "2 heures"
     }
-  ]);
+  ];
+
+  const [tasks, setTasks] = useState([]);
+
+  // Charger les tâches au montage
+  useEffect(() => {
+    loadTasks();
+  }, [isDemo]);
+
+  const loadTasks = async () => {
+    if (isDemo) {
+      // Mode démo : utiliser les données statiques
+      setTasks(demoTasks);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const savedUser = localStorage.getItem('edutrack-user');
+      const userData = savedUser ? JSON.parse(savedUser) : null;
+      const schoolId = userData?.current_school_id;
+
+      if (!schoolId) {
+        console.warn('⚠️ Pas d\'école associée');
+        setTasks([]);
+        setLoading(false);
+        return;
+      }
+
+      // Charger les tâches depuis Supabase
+      const { data, error } = await supabase
+        .from('tasks')
+        .select('*')
+        .eq('school_id', schoolId)
+        .order('due_date', { ascending: true });
+
+      if (error) {
+        console.error('Erreur chargement tâches:', error);
+        // Si la table n'existe pas encore, utiliser un tableau vide
+        setTasks([]);
+      } else {
+        // Transformer les données Supabase au format attendu
+        const formattedTasks = data.map(task => ({
+          id: task.id,
+          title: task.title,
+          description: task.description,
+          priority: task.priority,
+          status: task.status,
+          dueDate: task.due_date,
+          dueTime: task.due_time,
+          category: task.category,
+          assignedTo: "Secrétariat",
+          studentRelated: task.student_related || "",
+          contact: task.contact || "",
+          estimatedDuration: task.estimated_duration || ""
+        }));
+        setTasks(formattedTasks);
+      }
+    } catch (error) {
+      console.error('Exception chargement tâches:', error);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const getPriorityConfig = (priority) => {
     const configs = {
@@ -216,18 +284,62 @@ const TasksTab = () => {
     return matchesSearch && matchesPriority && matchesStatus;
   });
 
-  const handleTaskStatusChange = (taskId, newStatus) => {
-    setTasks(tasks.map(task => 
-      task.id === taskId ? { ...task, status: newStatus } : task
-    ));
+  const handleTaskStatusChange = async (taskId, newStatus) => {
+    if (isDemo) {
+      // Mode démo : modification locale uniquement
+      setTasks(tasks.map(task => 
+        task.id === taskId ? { ...task, status: newStatus } : task
+      ));
+      return;
+    }
+
+    // Mode production : mettre à jour dans Supabase
+    try {
+      const updateData = {
+        status: newStatus,
+        updated_at: new Date().toISOString()
+      };
+
+      // Si le statut est "completed", enregistrer la date de complétion
+      if (newStatus === 'completed') {
+        updateData.completed_at = new Date().toISOString();
+      }
+
+      const { error } = await supabase
+        .from('tasks')
+        .update(updateData)
+        .eq('id', taskId);
+
+      if (error) {
+        console.error('Erreur mise à jour statut:', error);
+        alert('Erreur lors de la mise à jour du statut');
+        return;
+      }
+
+      // Mettre à jour l'état local
+      setTasks(tasks.map(task => 
+        task.id === taskId ? { ...task, status: newStatus } : task
+      ));
+
+      console.log('✅ Statut de la tâche mis à jour');
+    } catch (error) {
+      console.error('Exception mise à jour statut:', error);
+      alert('Erreur lors de la mise à jour du statut');
+    }
   };
 
   const handleAddTask = () => {
     setShowAddTaskModal(true);
   };
 
-  const handleSaveNewTask = () => {
-    if (newTask.title && newTask.description) {
+  const handleSaveNewTask = async () => {
+    if (!newTask.title || !newTask.description) {
+      alert('Veuillez remplir le titre et la description');
+      return;
+    }
+
+    if (isDemo) {
+      // Mode démo : ajouter localement uniquement
       const task = {
         id: tasks.length + 1,
         title: newTask.title,
@@ -254,6 +366,67 @@ const TasksTab = () => {
         studentRelated: ''
       });
       setShowAddTaskModal(false);
+      return;
+    }
+
+    // Mode production : sauvegarder dans Supabase
+    try {
+      const savedUser = localStorage.getItem('edutrack-user');
+      const userData = savedUser ? JSON.parse(savedUser) : null;
+      const schoolId = userData?.current_school_id;
+      const userId = userData?.id;
+
+      if (!schoolId) {
+        alert('Erreur: Pas d\'école associée');
+        return;
+      }
+
+      const { data, error } = await supabase
+        .from('tasks')
+        .insert({
+          title: newTask.title,
+          description: newTask.description,
+          priority: newTask.priority,
+          status: 'pending',
+          due_date: newTask.dueDate || null,
+          due_time: newTask.dueTime || null,
+          category: newTask.category,
+          school_id: schoolId,
+          assigned_to_user_id: userId,
+          student_related: newTask.studentRelated || null,
+          contact: newTask.contact || null,
+          estimated_duration: '30 min',
+          created_by_user_id: userId
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur création tâche:', error);
+        alert('Erreur lors de la création de la tâche: ' + error.message);
+        return;
+      }
+
+      // Recharger les tâches
+      await loadTasks();
+
+      // Réinitialiser le formulaire
+      setNewTask({
+        title: '',
+        description: '',
+        priority: 'medium',
+        dueDate: '',
+        dueTime: '',
+        category: 'general',
+        contact: '',
+        studentRelated: ''
+      });
+      setShowAddTaskModal(false);
+      
+      console.log('✅ Tâche créée avec succès:', data);
+    } catch (error) {
+      console.error('Exception création tâche:', error);
+      alert('Erreur lors de la création de la tâche');
     }
   };
 
@@ -265,8 +438,37 @@ const TasksTab = () => {
     console.log('Edit task:', taskId);
   };
 
-  const handleDeleteTask = (taskId) => {
-    setTasks(tasks.filter(task => task.id !== taskId));
+  const handleDeleteTask = async (taskId) => {
+    if (!confirm('Êtes-vous sûr de vouloir supprimer cette tâche ?')) {
+      return;
+    }
+
+    if (isDemo) {
+      // Mode démo : suppression locale uniquement
+      setTasks(tasks.filter(task => task.id !== taskId));
+      return;
+    }
+
+    // Mode production : supprimer de Supabase
+    try {
+      const { error } = await supabase
+        .from('tasks')
+        .delete()
+        .eq('id', taskId);
+
+      if (error) {
+        console.error('Erreur suppression tâche:', error);
+        alert('Erreur lors de la suppression de la tâche');
+        return;
+      }
+
+      // Supprimer de l'état local
+      setTasks(tasks.filter(task => task.id !== taskId));
+      console.log('✅ Tâche supprimée avec succès');
+    } catch (error) {
+      console.error('Exception suppression tâche:', error);
+      alert('Erreur lors de la suppression de la tâche');
+    }
   };
 
   const handleCallContact = (contact) => {
@@ -281,13 +483,43 @@ const TasksTab = () => {
     completed: tasks.filter(t => t.status === 'completed').length
   };
 
+  // Indicateur de chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-text-secondary">Chargement des tâches...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Mode indicator */}
+      {!isDemo && tasks.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+          <div className="flex items-start space-x-3">
+            <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-body font-body-semibold text-blue-900 mb-1">
+                Mode Production - Aucune tâche
+              </h4>
+              <p className="text-sm text-blue-700">
+                Vous êtes en mode production mais aucune tâche n'a encore été créée. 
+                Cliquez sur "Nouvelle tâche" pour commencer.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
-            Tâches Quotidiennes
+            Tâches Quotidiennes {!isDemo && <span className="text-sm text-success">(Production)</span>}
           </h2>
           <p className="font-body font-body-normal text-text-secondary mt-1">
             Gestion des tâches administratives et suivi des actions prioritaires
@@ -387,8 +619,6 @@ const TasksTab = () => {
             placeholder="Rechercher une tâche..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            iconName="Search"
-            iconPosition="left"
           />
           <Select
             options={priorityOptions}
