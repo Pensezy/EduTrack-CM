@@ -1,5 +1,31 @@
-// Service de démonstration pour la gestion des cartes scolaires
-// En production, ces données viendraient d'une base de données
+// Service pour la gestion des cartes scolaires
+// Gère à la fois les données démo et les données production (Supabase)
+
+import { supabase } from '../lib/supabase';
+
+// Vérifier si on est en mode démo
+const isDemo = () => {
+  try {
+    const savedUser = localStorage.getItem('edutrack-user');
+    if (!savedUser) return true;
+    const userData = JSON.parse(savedUser);
+    return userData.demoAccount === true;
+  } catch {
+    return true;
+  }
+};
+
+// Obtenir l'école actuelle
+const getCurrentSchoolId = () => {
+  try {
+    const savedUser = localStorage.getItem('edutrack-user');
+    if (!savedUser) return null;
+    const userData = JSON.parse(savedUser);
+    return userData.current_school_id || null;
+  } catch {
+    return null;
+  }
+};
 
 // Données d'exemple pour les étudiants
 const studentsData = [
@@ -156,9 +182,79 @@ const getExpiryDate = () => {
 export const cardService = {
   // Obtenir toutes les cartes
   getAllCards: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...cardsData]), 300);
-    });
+    // Mode démo : retourner les données statiques
+    if (isDemo()) {
+      return new Promise((resolve) => {
+        setTimeout(() => resolve([...cardsData]), 300);
+      });
+    }
+
+    // Mode production : charger depuis Supabase
+    try {
+      const schoolId = getCurrentSchoolId();
+      if (!schoolId) {
+        throw new Error('Pas d\'école associée');
+      }
+
+      const { data, error } = await supabase
+        .from('student_cards')
+        .select(`
+          id,
+          card_number,
+          issue_date,
+          expiry_date,
+          status,
+          printed_at,
+          validated_at,
+          created_at,
+          students:student_id (
+            id,
+            user_id,
+            first_name,
+            last_name,
+            class_name,
+            photo,
+            date_of_birth,
+            parents:parent_id (
+              first_name,
+              last_name,
+              phone,
+              email
+            )
+          )
+        `)
+        .eq('school_id', schoolId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Transformer au format attendu
+      const formattedCards = data.map(card => ({
+        id: card.id,
+        studentId: card.students?.user_id || card.students?.id,
+        studentName: `${card.students?.first_name || ''} ${card.students?.last_name || ''}`.trim(),
+        class: card.students?.class_name || 'Non assigné',
+        photo: card.students?.photo || '/public/assets/images/no_image.png',
+        cardNumber: card.card_number,
+        issueDate: card.issue_date ? new Date(card.issue_date).toLocaleDateString('fr-FR') : '',
+        expiryDate: card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('fr-FR') : '',
+        status: card.status,
+        parentName: card.students?.parents 
+          ? `${card.students.parents.first_name} ${card.students.parents.last_name}` 
+          : 'Non renseigné',
+        emergencyContact: card.students?.parents?.phone || 'Non renseigné',
+        bloodType: 'Non renseigné', // À ajouter dans la table students si nécessaire
+        medicalNotes: 'Aucune' // À ajouter dans la table students si nécessaire
+      }));
+
+      return formattedCards;
+    } catch (error) {
+      console.error('❌ Erreur chargement cartes Supabase:', error);
+      console.error('Code erreur:', error.code);
+      console.error('Message:', error.message);
+      console.error('Details:', error.details);
+      throw error;
+    }
   },
 
   // Obtenir une carte par ID

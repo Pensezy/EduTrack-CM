@@ -8,7 +8,7 @@ import Image from '../../../components/AppImage';
 import CardGenerationModal from './CardGenerationModal';
 import cardService from '../../../services/cardService';
 
-const StudentCardTab = () => {
+const StudentCardTab = ({ isDemo = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -33,8 +33,16 @@ const StudentCardTab = () => {
       const cards = await cardService.getAllCards();
       setStudentCards(cards);
     } catch (err) {
-      setError('Erreur lors du chargement des cartes');
-      console.error('Erreur:', err);
+      console.error('Erreur chargement cartes:', err);
+      
+      // Vérifier si c'est une erreur de table manquante
+      if (err.message?.includes('relation') || err.code === '42P01') {
+        setError('⚠️ Table student_cards non trouvée. Veuillez exécuter la migration SQL dans Supabase.');
+      } else if (err.message?.includes('école')) {
+        setError('❌ Aucune école associée à votre compte.');
+      } else {
+        setError(`Erreur: ${err.message || 'Impossible de charger les cartes'}`);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -216,8 +224,38 @@ const StudentCardTab = () => {
     return date.toLocaleDateString('fr-FR');
   };
 
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-text-secondary">Chargement des cartes scolaires...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Production mode info - No cards */}
+      {!isDemo && studentCards.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-body font-body-semibold text-blue-900 mb-1">
+                Mode Production - Aucune carte scolaire
+              </h4>
+              <p className="text-sm text-blue-700">
+                Vous êtes en mode production mais aucune carte n'a encore été générée. 
+                Utilisez le bouton "Générer Carte" pour créer des cartes scolaires pour vos élèves.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Messages d'erreur et de succès */}
       {error && (
         <div className="p-3 bg-error/10 border border-error/20 rounded-lg">
@@ -262,6 +300,11 @@ const StudentCardTab = () => {
         <div>
           <h2 className="font-heading font-heading-bold text-xl text-text-primary">
             Cartes Scolaires
+            {!isDemo && (
+              <span className="ml-2 text-sm font-body font-body-semibold text-success">
+                (Production)
+              </span>
+            )}
           </h2>
           <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
             Gérez la génération et validation des cartes d'identité étudiante

@@ -11,6 +11,8 @@ const TasksTab = ({ isDemo = false }) => {
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showEditTaskModal, setShowEditTaskModal] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
   const [showUrgentCallsModal, setShowUrgentCallsModal] = useState(false);
   const [loading, setLoading] = useState(true);
   const [newTask, setNewTask] = useState({
@@ -435,7 +437,113 @@ const TasksTab = ({ isDemo = false }) => {
   };
 
   const handleEditTask = (taskId) => {
-    console.log('Edit task:', taskId);
+    const taskToEdit = tasks.find(task => task.id === taskId);
+    if (!taskToEdit) {
+      alert('Tâche introuvable');
+      return;
+    }
+
+    // Charger les données de la tâche dans le formulaire
+    setEditingTask(taskToEdit);
+    setNewTask({
+      title: taskToEdit.title || '',
+      description: taskToEdit.description || '',
+      priority: taskToEdit.priority || 'medium',
+      dueDate: taskToEdit.dueDate || '',
+      dueTime: taskToEdit.dueTime || '',
+      category: taskToEdit.category || 'general',
+      contact: taskToEdit.contact || '',
+      studentRelated: taskToEdit.studentRelated || ''
+    });
+    setShowEditTaskModal(true);
+  };
+
+  const handleSaveEditTask = async () => {
+    if (!editingTask) return;
+
+    // Validation
+    if (!newTask.title.trim()) {
+      alert('Le titre est obligatoire');
+      return;
+    }
+    if (!newTask.dueDate) {
+      alert('La date d\'échéance est obligatoire');
+      return;
+    }
+
+    if (isDemo) {
+      // Mode démo : mise à jour locale uniquement
+      setTasks(tasks.map(task => 
+        task.id === editingTask.id 
+          ? {
+              ...task,
+              ...newTask,
+              lastModified: new Date().toISOString()
+            }
+          : task
+      ));
+      setShowEditTaskModal(false);
+      setEditingTask(null);
+      setNewTask({
+        title: '',
+        description: '',
+        priority: 'medium',
+        dueDate: '',
+        dueTime: '',
+        category: 'general',
+        contact: '',
+        studentRelated: ''
+      });
+      return;
+    }
+
+    // Mode production : mettre à jour dans Supabase
+    try {
+      const { data, error } = await supabase
+        .from('tasks')
+        .update({
+          title: newTask.title.trim(),
+          description: newTask.description.trim(),
+          priority: newTask.priority,
+          due_date: newTask.dueDate,
+          due_time: newTask.dueTime || null,
+          category: newTask.category,
+          contact: newTask.contact.trim() || null,
+          student_related: newTask.studentRelated.trim() || null,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingTask.id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Erreur mise à jour tâche:', error);
+        alert('Erreur lors de la mise à jour de la tâche');
+        return;
+      }
+
+      console.log('✅ Tâche mise à jour avec succès:', data);
+      
+      // Recharger les tâches
+      await loadTasks();
+      
+      // Fermer le modal et réinitialiser
+      setShowEditTaskModal(false);
+      setEditingTask(null);
+      setNewTask({
+        title: '',
+        description: '',
+        priority: 'medium',
+        dueDate: '',
+        dueTime: '',
+        category: 'general',
+        contact: '',
+        studentRelated: ''
+      });
+    } catch (error) {
+      console.error('Exception mise à jour tâche:', error);
+      alert('Erreur lors de la mise à jour de la tâche');
+    }
   };
 
   const handleDeleteTask = async (taskId) => {
@@ -874,6 +982,115 @@ const TasksTab = ({ isDemo = false }) => {
                 Créer la tâche
               </Button>
               <Button variant="outline" onClick={() => setShowAddTaskModal(false)}>
+                Annuler
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Modifier Tâche */}
+      {showEditTaskModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                Modifier la tâche
+              </h3>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  setShowEditTaskModal(false);
+                  setEditingTask(null);
+                }}
+              >
+                <Icon name="X" size={20} />
+              </Button>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="md:col-span-2">
+                  <Input
+                    label="Titre de la tâche"
+                    placeholder="Ex: Appeler les parents de..."
+                    value={newTask.title}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                    required
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <Input
+                    label="Description"
+                    placeholder="Détails de la tâche à effectuer"
+                    value={newTask.description}
+                    onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                    required
+                  />
+                </div>
+                <Select
+                  label="Priorité"
+                  options={[
+                    { value: 'urgent', label: 'Urgent' },
+                    { value: 'high', label: 'Important' },
+                    { value: 'medium', label: 'Normal' },
+                    { value: 'low', label: 'Faible' }
+                  ]}
+                  value={newTask.priority}
+                  onChange={(value) => setNewTask(prev => ({ ...prev, priority: value }))}
+                />
+                <Select
+                  label="Catégorie"
+                  options={[
+                    { value: 'appels', label: 'Appels' },
+                    { value: 'documents', label: 'Documents' },
+                    { value: 'paiements', label: 'Paiements' },
+                    { value: 'inscriptions', label: 'Inscriptions' },
+                    { value: 'planning', label: 'Planning' },
+                    { value: 'general', label: 'Général' }
+                  ]}
+                  value={newTask.category}
+                  onChange={(value) => setNewTask(prev => ({ ...prev, category: value }))}
+                />
+                <Input
+                  label="Date d'échéance"
+                  type="date"
+                  value={newTask.dueDate}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+                <Input
+                  label="Heure d'échéance"
+                  type="time"
+                  value={newTask.dueTime}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, dueTime: e.target.value }))}
+                />
+                <Input
+                  label="Élève concerné (optionnel)"
+                  placeholder="Ex: Marie Dubois - CM2"
+                  value={newTask.studentRelated}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, studentRelated: e.target.value }))}
+                />
+                <Input
+                  label="Contact (optionnel)"
+                  placeholder="+237 6XX XX XX XX"
+                  value={newTask.contact}
+                  onChange={(e) => setNewTask(prev => ({ ...prev, contact: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-border">
+              <Button variant="default" onClick={handleSaveEditTask}>
+                Enregistrer les modifications
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => {
+                  setShowEditTaskModal(false);
+                  setEditingTask(null);
+                }}
+              >
                 Annuler
               </Button>
             </div>

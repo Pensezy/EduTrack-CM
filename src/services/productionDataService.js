@@ -87,8 +87,113 @@ export const productionDataService = {
   async getPersonnel() {
     try {
       this.ensureContext();
-      return { data: [], error: null };
+      const targetSchoolId = this.currentSchoolId;
+      
+      console.log('🔍 Récupération du personnel pour l\'école:', targetSchoolId);
+
+      // Récupérer les enseignants
+      const { data: teachersData, error: teachersError } = await supabase
+        .from('teachers')
+        .select(`
+          id,
+          user_id,
+          first_name,
+          last_name,
+          specialty,
+          hire_date,
+          is_active,
+          school_id,
+          users:user_id (
+            id,
+            email,
+            phone,
+            full_name
+          )
+        `)
+        .eq('school_id', targetSchoolId);
+
+      if (teachersError) {
+        console.error('Erreur récupération enseignants:', teachersError);
+      }
+
+      // Récupérer les secrétaires
+      const { data: secretariesData, error: secretariesError } = await supabase
+        .from('secretaries')
+        .select(`
+          id,
+          user_id,
+          first_name,
+          last_name,
+          hire_date,
+          is_active,
+          school_id,
+          users:user_id (
+            id,
+            email,
+            phone,
+            full_name
+          )
+        `)
+        .eq('school_id', targetSchoolId);
+
+      if (secretariesError) {
+        console.error('Erreur récupération secrétaires:', secretariesError);
+      }
+
+      const personnel = [];
+
+      // Transformer les données des enseignants
+      if (teachersData && teachersData.length > 0) {
+        teachersData.forEach(teacher => {
+          const experienceYears = teacher.hire_date 
+            ? Math.floor((new Date() - new Date(teacher.hire_date)) / (1000 * 60 * 60 * 24 * 365))
+            : 0;
+
+          personnel.push({
+            id: teacher.id,
+            name: teacher.users?.full_name || `${teacher.first_name} ${teacher.last_name}`,
+            email: teacher.users?.email || 'Non renseigné',
+            phone: teacher.users?.phone || 'Non renseigné',
+            subject: teacher.specialty || 'Non spécifié',
+            type: 'teacher',
+            status: teacher.is_active ? 'active' : 'inactive',
+            experience: `${experienceYears} an${experienceYears > 1 ? 's' : ''}`,
+            hireDate: teacher.hire_date,
+            evaluation: 4.5 // Valeur par défaut, peut être améliorée plus tard
+          });
+        });
+      }
+
+      // Transformer les données des secrétaires
+      if (secretariesData && secretariesData.length > 0) {
+        secretariesData.forEach(secretary => {
+          const experienceYears = secretary.hire_date 
+            ? Math.floor((new Date() - new Date(secretary.hire_date)) / (1000 * 60 * 60 * 24 * 365))
+            : 0;
+
+          personnel.push({
+            id: secretary.id,
+            name: secretary.users?.full_name || `${secretary.first_name} ${secretary.last_name}`,
+            email: secretary.users?.email || 'Non renseigné',
+            phone: secretary.users?.phone || 'Non renseigné',
+            role: 'Secrétaire',
+            type: 'secretary',
+            status: secretary.is_active ? 'active' : 'inactive',
+            experience: `${experienceYears} an${experienceYears > 1 ? 's' : ''}`,
+            hireDate: secretary.hire_date,
+            permissions: ['student_management', 'document_management'] // Permissions par défaut
+          });
+        });
+      }
+
+      console.log('✅ Personnel récupéré:', personnel.length, 'membres');
+      console.log('  - Enseignants:', personnel.filter(p => p.type === 'teacher').length);
+      console.log('  - Secrétaires:', personnel.filter(p => p.type === 'secretary').length);
+
+      return { data: personnel, error: null };
+
     } catch (error) {
+      console.error('❌ Erreur récupération personnel:', error);
       return { data: [], error };
     }
   },
@@ -245,12 +350,39 @@ export const productionDataService = {
       this.ensureContext();
       const targetSchoolId = schoolId || this.currentSchoolId;
 
-      console.log("Récupération des demandes d'inscription pour l'école:", targetSchoolId);
+      console.log("🔍 Récupération des demandes d'inscription pour l'école:", targetSchoolId);
 
       let query = supabase
         .from("enrollment_requests")
         .select(`
-          *,
+          id,
+          school_id,
+          academic_year_id,
+          request_type,
+          student_id,
+          student_first_name,
+          student_last_name,
+          student_date_of_birth,
+          student_gender,
+          parent_name,
+          parent_phone,
+          parent_email,
+          parent_address,
+          current_class,
+          requested_class,
+          reason,
+          teacher_recommendation,
+          previous_school,
+          documents,
+          status,
+          priority,
+          submitted_by,
+          submitted_date,
+          reviewed_by,
+          reviewed_date,
+          validation_notes,
+          created_at,
+          updated_at,
           submitted_by_user:submitted_by(full_name, email),
           reviewed_by_user:reviewed_by(full_name, email),
           student:students(first_name, last_name, date_of_birth)
@@ -273,11 +405,11 @@ export const productionDataService = {
 
       if (error) throw error;
 
-      console.log(`${data?.length || 0} demandes récupérées`);
+      console.log(`✅ ${data?.length || 0} demandes d'inscription récupérées`);
       return { data: data || [], error: null };
 
     } catch (error) {
-      console.error("Erreur récupération demandes d'inscription:", error);
+      console.error("❌ Erreur récupération demandes d'inscription:", error);
       return { data: [], error };
     }
   },

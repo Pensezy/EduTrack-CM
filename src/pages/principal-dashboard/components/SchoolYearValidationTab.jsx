@@ -31,46 +31,100 @@ const SchoolYearValidationTab = () => {
   });
   
   // Hook pour récupérer les données selon le mode (démo/production)
-  const { isDemo, isProduction, dataMode, data, user } = useDashboardData();
+  const { isDemo, isProduction, dataMode, data, user, modeLoading } = useDashboardData();
+
+  // Debug: Afficher l'état du mode
+  useEffect(() => {
+    console.log('📊 SchoolYearValidationTab - État du mode:');
+    console.log('  - dataMode:', dataMode);
+    console.log('  - isDemo:', isDemo);
+    console.log('  - isProduction:', isProduction);
+    console.log('  - modeLoading:', modeLoading);
+    console.log('  - user:', user);
+  }, [dataMode, isDemo, isProduction, modeLoading, user]);
 
   // Charger les vraies données depuis Supabase
   useEffect(() => {
     const loadEnrollmentData = async () => {
-      if (isProduction && user?.schoolData?.id) {
+      // Attendre que le mode soit déterminé
+      if (modeLoading) {
+        console.log('⏳ Attente de la détermination du mode...');
+        return;
+      }
+
+      console.log('🔍 Chargement des demandes d\'inscription...');
+      console.log('  - Mode déterminé:', dataMode);
+      console.log('  - École utilisateur:', user?.schoolData?.id);
+
+      if (dataMode === 'production' && user?.schoolData?.id) {
+        console.log('🏫 Mode PRODUCTION détecté - Chargement depuis Supabase');
         setLoading(true);
         
         // Initialiser le contexte
         if (user.id && user.schoolData.id) {
+          console.log('🔐 Initialisation du contexte:', user.id, user.schoolData.id);
           productionDataService.setUserContext(user.id, user.schoolData.id);
         }
 
-        // Charger les demandes en attente
-        const { data: requests } = await productionDataService.getEnrollmentRequests(
-          user.schoolData.id,
-          { status: 'en_attente' }
-        );
+        try {
+          // Charger les demandes en attente
+          console.log('📥 Récupération des demandes en attente...');
+          const { data: requests, error: requestsError } = await productionDataService.getEnrollmentRequests(
+            user.schoolData.id,
+            { status: 'en_attente' }
+          );
 
-        // Charger les statistiques
-        const { data: stats } = await productionDataService.getEnrollmentStats(user.schoolData.id);
+          if (requestsError) {
+            console.error('❌ Erreur lors du chargement des demandes:', requestsError);
+          } else {
+            console.log('✅ Demandes récupérées:', requests?.length || 0);
+          }
 
-        setPendingRequests(requests || []);
-        setValidationStats(stats || {
-          totalDemandes: 0,
-          enAttente: 0,
-          approuvees: 0,
-          refusees: 0,
-          enRevision: 0
-        });
+          // Charger les statistiques
+          console.log('📊 Récupération des statistiques...');
+          const { data: stats, error: statsError } = await productionDataService.getEnrollmentStats(user.schoolData.id);
+
+          if (statsError) {
+            console.error('❌ Erreur lors du chargement des stats:', statsError);
+          } else {
+            console.log('✅ Statistiques récupérées:', stats);
+          }
+
+          setPendingRequests(requests || []);
+          setValidationStats(stats || {
+            totalDemandes: 0,
+            enAttente: 0,
+            approuvees: 0,
+            refusees: 0,
+            enRevision: 0
+          });
+
+        } catch (error) {
+          console.error('❌ Erreur lors du chargement des données d\'inscription:', error);
+          setPendingRequests([]);
+          setValidationStats({
+            totalDemandes: 0,
+            enAttente: 0,
+            approuvees: 0,
+            refusees: 0,
+            enRevision: 0
+          });
+        }
 
         setLoading(false);
-      } else if (isDemo) {
+      } else if (dataMode === 'demo') {
+        console.log('🎭 Mode DÉMO détecté - Chargement des données fictives');
         // Mode démo - utiliser les données fictives
         loadDemoData();
+      } else {
+        console.log('⚠️ Mode non déterminé ou données utilisateur manquantes');
+        console.log('  - dataMode:', dataMode);
+        console.log('  - user.schoolData:', user?.schoolData);
       }
     };
 
     loadEnrollmentData();
-  }, [isProduction, isDemo, user]);
+  }, [dataMode, modeLoading, user]);
 
   // Fonction pour charger les données démo
   const loadDemoData = () => {

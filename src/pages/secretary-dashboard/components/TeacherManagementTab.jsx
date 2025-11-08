@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -8,10 +9,11 @@ import TeacherSearchSelector from './TeacherSearchSelector';
 import TeacherAssignmentManager from './TeacherAssignmentManager';
 import teacherMultiSchoolServiceDemo from '../../../services/teacherMultiSchoolServiceDemo';
 
-const TeacherManagementTab = () => {
+const TeacherManagementTab = ({ isDemo = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
+  const [loading, setLoading] = useState(true);
 
   const [showEditModal, setShowEditModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
@@ -92,7 +94,83 @@ const TeacherManagementTab = () => {
     }
   ];
 
-  const [teachers, setTeachers] = useState(initialTeachers);
+  const [teachers, setTeachers] = useState([]);
+
+  // Charger les enseignants au montage
+  useEffect(() => {
+    loadTeachers();
+  }, [isDemo]);
+
+  const loadTeachers = async () => {
+    if (isDemo) {
+      // Mode démo : utiliser les données statiques
+      setTeachers(initialTeachers);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const savedUser = localStorage.getItem('edutrack-user');
+      const userData = savedUser ? JSON.parse(savedUser) : null;
+      const schoolId = userData?.current_school_id;
+
+      if (!schoolId) {
+        console.warn('⚠️ Pas d\'école associée');
+        setTeachers([]);
+        setLoading(false);
+        return;
+      }
+
+      // Charger les enseignants depuis Supabase
+      const { data, error } = await supabase
+        .from('teachers')
+        .select(`
+          id,
+          user_id,
+          first_name,
+          last_name,
+          specialty,
+          hire_date,
+          is_active,
+          school_id,
+          users:user_id (
+            id,
+            email,
+            phone,
+            full_name
+          )
+        `)
+        .eq('school_id', schoolId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur chargement enseignants:', error);
+        setTeachers([]);
+      } else {
+        // Transformer les données Supabase au format attendu
+        const formattedTeachers = data.map(teacher => ({
+          id: teacher.id,
+          fullName: teacher.users?.full_name || `${teacher.first_name} ${teacher.last_name}`,
+          email: teacher.users?.email || 'Non renseigné',
+          phone: teacher.users?.phone || 'Non renseigné',
+          subject: teacher.specialty || 'Non assigné',
+          className: 'Non assigné', // À compléter avec une table d'assignation
+          status: teacher.is_active ? 'active' : 'inactive',
+          joinDate: teacher.hire_date ? new Date(teacher.hire_date).toLocaleDateString('fr-FR') : 'Non renseignée',
+          teacherId: teacher.user_id || `PROF${teacher.id.substring(0, 6)}`,
+          avatar: '/public/assets/images/no_image.png'
+        }));
+        setTeachers(formattedTeachers);
+        console.log(`✅ ${formattedTeachers.length} enseignant(s) chargé(s)`);
+      }
+    } catch (error) {
+      console.error('Exception chargement enseignants:', error);
+      setTeachers([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const subjectOptions = [
     { value: '', label: 'Toutes les matières' },
@@ -287,13 +365,43 @@ const TeacherManagementTab = () => {
     }));
   };
 
+  // Indicateur de chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-text-secondary">Chargement des enseignants...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Mode indicator */}
+      {!isDemo && teachers.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-body font-body-semibold text-blue-900 mb-1">
+                Mode Production - Aucun enseignant
+              </h4>
+              <p className="text-sm text-blue-700">
+                Vous êtes en mode production mais aucun enseignant n'a encore été créé. 
+                Cliquez sur "Assigner Enseignant" pour commencer.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-xl text-text-primary">
-            Gestion des Enseignants
+            Gestion des Enseignants {!isDemo && <span className="text-sm text-success">(Production)</span>}
           </h2>
           <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
             Gérez les comptes et affectations des enseignants

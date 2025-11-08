@@ -28,6 +28,7 @@ const SecretaryDashboard = () => {
   // Récupérer les informations de l'utilisateur connecté
   const { user, authMode } = useAuth();
   const [isDemo, setIsDemo] = useState(false);
+  const [secretaryName, setSecretaryName] = useState('');
   const [stats, setStats] = useState({
     totalStudents: 0,
     pendingJustifications: 0,
@@ -36,25 +37,50 @@ const SecretaryDashboard = () => {
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
-  // Déterminer si on est en mode démo
+  // Déterminer si on est en mode démo et charger le nom de la secrétaire
   useEffect(() => {
-    const savedUser = localStorage.getItem('edutrack-user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        const isDemoAccount = userData.demoAccount === true || authMode === 'demo';
-        setIsDemo(isDemoAccount);
-        
-        if (isDemoAccount) {
-          console.log('🎭 Mode DÉMO');
-        } else {
-          console.log('✅ Mode PRODUCTION:', userData.school_name || 'École');
+    const loadUserData = async () => {
+      const savedUser = localStorage.getItem('edutrack-user');
+      if (savedUser) {
+        try {
+          const userData = JSON.parse(savedUser);
+          const isDemoAccount = userData.demoAccount === true || authMode === 'demo';
+          setIsDemo(isDemoAccount);
+          
+          if (isDemoAccount) {
+            console.log('🎭 Mode DÉMO');
+            setSecretaryName('Secrétaire Démo');
+          } else {
+            console.log('✅ Mode PRODUCTION:', userData.school_name || 'École');
+            
+            // Charger le nom complet depuis Supabase
+            if (user?.id) {
+              const { data: secretaryData, error } = await supabase
+                .from('secretaries')
+                .select('first_name, last_name')
+                .eq('user_id', user.id)
+                .single();
+
+              if (secretaryData && !error) {
+                const fullName = `${secretaryData.first_name} ${secretaryData.last_name}`;
+                setSecretaryName(fullName);
+                console.log('👤 Nom secrétaire:', fullName);
+              } else if (error) {
+                console.warn('⚠️ Erreur chargement nom secrétaire:', error);
+                // Fallback sur le nom de l'utilisateur
+                setSecretaryName(user?.full_name || user?.email || 'Secrétaire');
+              }
+            }
+          }
+        } catch (e) {
+          console.error('Erreur lecture session:', e);
+          setSecretaryName('Secrétaire');
         }
-      } catch (e) {
-        console.error('Erreur lecture session:', e);
       }
-    }
-  }, [authMode]);
+    };
+
+    loadUserData();
+  }, [authMode, user]);
 
   // Charger les statistiques réelles depuis Supabase
   useEffect(() => {
@@ -243,7 +269,7 @@ const SecretaryDashboard = () => {
       {/* Header */}
       <Header 
         userRole={user?.role || "secretary"} 
-        userName={user?.full_name || user?.name || "Utilisateur"}
+        userName={secretaryName || user?.full_name || user?.name || "Secrétaire"}
         onToggleSidebar={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       {/* Sidebar */}
@@ -262,10 +288,10 @@ const SecretaryDashboard = () => {
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
               <div>
                 <h1 className="font-heading font-heading-bold text-3xl text-text-primary">
-                  Tableau de Bord Secrétariat
+                  Bienvenue, {secretaryName || 'Secrétaire'}
                 </h1>
                 <p className="font-body font-body-normal text-text-secondary mt-2">
-                  Gestion administrative complète de l'établissement scolaire
+                  Tableau de Bord Secrétariat - Gestion administrative complète de l'établissement scolaire
                 </p>
               </div>
               <div className="flex items-center space-x-3">

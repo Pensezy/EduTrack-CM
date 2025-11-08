@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
@@ -6,7 +7,7 @@ import Select from '../../../components/ui/Select';
 import Image from '../../../components/AppImage';
 import ParentSearchSelector from './ParentSearchSelector';
 
-const StudentManagementTab = () => {
+const StudentManagementTab = ({ isDemo = false }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -14,6 +15,7 @@ const StudentManagementTab = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showTransferModal, setShowTransferModal] = useState(false);
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [loading, setLoading] = useState(true);
   
   // États pour le nouveau workflow multi-étapes
   const [currentStep, setCurrentStep] = useState(1);
@@ -118,7 +120,88 @@ const StudentManagementTab = () => {
     }
   ];
 
-  const [students, setStudents] = useState(initialStudents);
+  const [students, setStudents] = useState([]);
+
+  // Charger les élèves au montage
+  useEffect(() => {
+    loadStudents();
+  }, [isDemo]);
+
+  const loadStudents = async () => {
+    if (isDemo) {
+      // Mode démo : utiliser les données statiques
+      setStudents(initialStudents);
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const savedUser = localStorage.getItem('edutrack-user');
+      const userData = savedUser ? JSON.parse(savedUser) : null;
+      const schoolId = userData?.current_school_id;
+
+      if (!schoolId) {
+        console.warn('⚠️ Pas d\'école associée');
+        setStudents([]);
+        setLoading(false);
+        return;
+      }
+
+      // Charger les élèves depuis Supabase avec les infos du parent
+      const { data, error } = await supabase
+        .from('students')
+        .select(`
+          id,
+          user_id,
+          first_name,
+          last_name,
+          date_of_birth,
+          enrollment_date,
+          class_name,
+          is_active,
+          photo,
+          school_id,
+          parent_id,
+          parents:parent_id (
+            id,
+            user_id,
+            first_name,
+            last_name,
+            email,
+            phone
+          )
+        `)
+        .eq('school_id', schoolId)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Erreur chargement élèves:', error);
+        setStudents([]);
+      } else {
+        // Transformer les données Supabase au format attendu
+        const formattedStudents = data.map(student => ({
+          id: student.id,
+          name: `${student.first_name} ${student.last_name}`,
+          class: student.class_name || 'Non assigné',
+          enrollmentStatus: student.is_active ? 'active' : 'transferred',
+          photo: student.photo || '/public/assets/images/no_image.png',
+          parentName: student.parents ? `${student.parents.first_name} ${student.parents.last_name}` : 'Non renseigné',
+          parentPhone: student.parents?.phone || 'Non renseigné',
+          parentEmail: student.parents?.email || 'Non renseigné',
+          enrollmentDate: student.enrollment_date ? new Date(student.enrollment_date).toLocaleDateString('fr-FR') : 'Non renseignée',
+          studentId: student.user_id || `STU${student.id.substring(0, 6)}`
+        }));
+        setStudents(formattedStudents);
+        console.log(`✅ ${formattedStudents.length} élève(s) chargé(s)`);
+      }
+    } catch (error) {
+      console.error('Exception chargement élèves:', error);
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const classOptions = [
     { value: '', label: 'Toutes les classes' },
@@ -525,13 +608,43 @@ const StudentManagementTab = () => {
     }
   };
 
+  // Indicateur de chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-text-secondary">Chargement des élèves...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
+      {/* Mode indicator */}
+      {!isDemo && students.length === 0 && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <div className="flex items-start space-x-3">
+            <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-body font-body-semibold text-blue-900 mb-1">
+                Mode Production - Aucun élève
+              </h4>
+              <p className="text-sm text-blue-700">
+                Vous êtes en mode production mais aucun élève n'a encore été inscrit. 
+                Cliquez sur "Nouvel Élève" pour commencer les inscriptions.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header with Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-xl text-text-primary">
-            Gestion des Élèves
+            Gestion des Élèves {!isDemo && <span className="text-sm text-success">(Production)</span>}
           </h2>
           <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
             Gérez les inscriptions et profils des élèves
