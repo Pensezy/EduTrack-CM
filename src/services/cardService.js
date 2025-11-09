@@ -16,13 +16,45 @@ const isDemo = () => {
 };
 
 // Obtenir l'école actuelle
-const getCurrentSchoolId = () => {
+const getCurrentSchoolId = async () => {
   try {
+    // 1. Essayer le localStorage d'abord
     const savedUser = localStorage.getItem('edutrack-user');
-    if (!savedUser) return null;
-    const userData = JSON.parse(savedUser);
-    return userData.current_school_id || null;
-  } catch {
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      if (userData.current_school_id) {
+        return userData.current_school_id;
+      }
+    }
+
+    // 2. Si pas dans localStorage, récupérer depuis Supabase
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.warn('⚠️ Utilisateur non authentifié');
+      return null;
+    }
+
+    // Récupérer l'école depuis la table users
+    const { data: userData, error } = await supabase
+      .from('users')
+      .select('current_school_id, schools:current_school_id(id, name)')
+      .eq('id', user.id)
+      .single();
+
+    if (error) {
+      console.error('❌ Erreur récupération école utilisateur:', error);
+      return null;
+    }
+
+    if (userData?.current_school_id) {
+      console.log('✅ École trouvée:', userData.current_school_id, userData.schools?.name);
+      return userData.current_school_id;
+    }
+
+    console.warn('⚠️ Aucune école associée à l\'utilisateur');
+    return null;
+  } catch (error) {
+    console.error('❌ Erreur getCurrentSchoolId:', error);
     return null;
   }
 };
@@ -191,7 +223,7 @@ export const cardService = {
 
     // Mode production : charger depuis Supabase
     try {
-      const schoolId = getCurrentSchoolId();
+      const schoolId = await getCurrentSchoolId();
       if (!schoolId) {
         throw new Error('Pas d\'école associée');
       }
@@ -214,13 +246,7 @@ export const cardService = {
             last_name,
             class_name,
             photo,
-            date_of_birth,
-            parents:parent_id (
-              first_name,
-              last_name,
-              phone,
-              email
-            )
+            date_of_birth
           )
         `)
         .eq('school_id', schoolId)
@@ -239,10 +265,8 @@ export const cardService = {
         issueDate: card.issue_date ? new Date(card.issue_date).toLocaleDateString('fr-FR') : '',
         expiryDate: card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('fr-FR') : '',
         status: card.status,
-        parentName: card.students?.parents 
-          ? `${card.students.parents.first_name} ${card.students.parents.last_name}` 
-          : 'Non renseigné',
-        emergencyContact: card.students?.parents?.phone || 'Non renseigné',
+        parentName: 'Non renseigné', // Parents relation à implémenter plus tard
+        emergencyContact: 'Non renseigné', // Parents relation à implémenter plus tard
         bloodType: 'Non renseigné', // À ajouter dans la table students si nécessaire
         medicalNotes: 'Aucune' // À ajouter dans la table students si nécessaire
       }));
@@ -509,5 +533,8 @@ export const cardService = {
     });
   }
 };
+
+// Exporter la fonction getCurrentSchoolId pour utilisation dans d'autres services
+export { getCurrentSchoolId };
 
 export default cardService;

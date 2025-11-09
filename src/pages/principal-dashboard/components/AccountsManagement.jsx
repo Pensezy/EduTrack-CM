@@ -90,7 +90,12 @@ const AccountsManagement = () => {
     if (subtabParam && ['overview', 'accounts', 'create', 'security'].includes(subtabParam)) {
       setActiveTab(subtabParam);
     }
-  }, [location.search]);
+    
+    // Réinitialiser le filtre de rôle s'il contient 'principal' (plus disponible)
+    if (selectedRole === 'principal') {
+      setSelectedRole('all');
+    }
+  }, [location.search, selectedRole]);
 
   // État pour le chargement des comptes réels
   const [accounts, setAccounts] = useState([]);
@@ -221,7 +226,6 @@ const AccountsManagement = () => {
   // Options pour les filtres
   const roleOptions = [
     { value: 'all', label: 'Tous les rôles' },
-    { value: 'principal', label: 'Directeur' },
     { value: 'teacher', label: 'Enseignant' },
     { value: 'secretary', label: 'Secrétaire' },
     { value: 'student', label: 'Élève' },
@@ -820,16 +824,22 @@ const AccountsManagement = () => {
       {/* Répartition par rôle */}
       <div className="bg-white rounded-lg border border-gray-200 p-6">
         <h3 className="text-lg font-semibold text-gray-900 mb-4">Répartition par rôle</h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-          {Object.entries(accountStats.byRole).map(([role, count]) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          {Object.entries(accountStats.byRole)
+            .filter(([role]) => role !== 'principal') // Exclure les directeurs
+            .map(([role, count]) => (
             <div key={role} className="text-center p-4 bg-gray-50 rounded-lg">
               <Icon name={
-                role === 'principal' ? 'Crown' :
                 role === 'teacher' ? 'GraduationCap' :
                 role === 'secretary' ? 'UserCheck' :
                 role === 'student' ? 'User' : 'Users'
               } size={20} className="mx-auto mb-2 text-gray-600" />
-              <p className="text-sm font-medium text-gray-600 capitalize">{role}</p>
+              <p className="text-sm font-medium text-gray-600 capitalize">
+                {role === 'teacher' ? 'Enseignants' :
+                 role === 'secretary' ? 'Secrétaires' :
+                 role === 'student' ? 'Élèves' :
+                 role === 'parent' ? 'Parents' : role}
+              </p>
               <p className="text-xl font-bold text-gray-900">{count}</p>
             </div>
           ))}

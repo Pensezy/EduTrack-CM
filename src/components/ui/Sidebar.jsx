@@ -7,6 +7,19 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
   const location = useLocation();
   const navigate = useNavigate();
 
+  // Détecter le vrai rôle basé sur l'URL si userRole n'est pas correct
+  const detectRoleFromUrl = () => {
+    if (location.pathname.includes('/secretary-dashboard')) return 'secretary';
+    if (location.pathname.includes('/principal-dashboard')) return 'principal';
+    if (location.pathname.includes('/teacher-dashboard')) return 'teacher';
+    if (location.pathname.includes('/student-dashboard')) return 'student';
+    if (location.pathname.includes('/parent-dashboard')) return 'parent';
+    if (location.pathname.includes('/admin-dashboard')) return 'admin';
+    return userRole;
+  };
+
+  const actualUserRole = detectRoleFromUrl();
+
   const navigationItems = {
     student: [
       { label: 'Dashboard', path: '/student-dashboard', icon: 'Home', description: 'Aperçu et actions rapides' },
@@ -21,17 +34,15 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Documents', path: '/document-management-hub', icon: 'Files', description: 'Ressources pédagogiques' }
     ],
     secretary: [
-      { label: 'Gestion Élèves', path: '/secretary-dashboard?tab=students', icon: 'Users', description: 'Inscriptions et profils' },
-      { label: 'Tâches du Jour', path: '/secretary-dashboard?tab=tasks', icon: 'CheckSquare', description: 'Actions prioritaires' },
-      { label: 'Justificatifs', path: '/secretary-dashboard?tab=justifications', icon: 'FileCheck', description: 'Absences et retards' },
-      { label: 'Paiements', path: '/secretary-dashboard?tab=payments', icon: 'CreditCard', description: 'Frais de scolarité' }
+      { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home', description: 'Retour à l\'accueil' },
+      { label: 'Transferts', path: '/secretary-dashboard?tab=transfers', icon: 'ArrowRightLeft', description: 'Changements d\'école' },
+      { label: 'Documents', path: '/secretary-dashboard?tab=documents', icon: 'FileText', description: 'Certificats & attestations' },
+      { label: 'Année Scolaire', path: '/secretary-dashboard?tab=schoolyear', icon: 'RotateCcw', description: 'Transition d\'année' }
     ],
     principal: [
-      { label: 'Vue d\'ensemble', path: '/principal-dashboard', icon: 'Home', description: 'Dashboard principal' },
-      { label: 'Analyses', path: '/principal-dashboard?tab=analytics', icon: 'TrendingUp', description: 'Rapports & tendances' },
-      { label: 'Personnel', path: '/principal-dashboard?tab=personnel', icon: 'Users', description: 'Gestion du personnel' },
-      { label: 'Actions Rapides', path: '/principal-dashboard?tab=actions', icon: 'Zap', description: 'Outils de gestion' },
-      { label: 'Paramètres', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration' }
+      { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home', description: 'Dashboard principal' },
+      { label: 'Comptes', path: '/principal-dashboard?tab=accounts', icon: 'UserCheck', description: 'Gestion des comptes' },
+      { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration avancée' }
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home', description: 'Aperçu système' },
@@ -53,8 +64,11 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Emploi du temps', icon: 'Calendar', path: '/teacher-dashboard' },
     ],
     secretary: [
-      { label: 'Planning', icon: 'Calendar', path: '/secretary-dashboard?tab=planning' },
-      { label: 'Communication', icon: 'MessageCircle', path: '/secretary-dashboard?tab=communications' }
+      { label: 'Nouvel Élève', icon: 'UserPlus', path: '/secretary-dashboard?tab=students' },
+      { label: 'Nouveau Paiement', icon: 'Plus', path: '/secretary-dashboard?tab=payments' },
+      { label: 'Imprimer Cartes', icon: 'Printer', path: '/secretary-dashboard?tab=cards' },
+      { label: 'Planifier RDV', icon: 'Calendar', path: '/secretary-dashboard?tab=planning' },
+      { label: 'Envoyer SMS', icon: 'MessageCircle', path: '/secretary-dashboard?tab=communications' }
     ],
     principal: [
       { label: 'Créer compte personnel', icon: 'UserPlus', path: '/principal-dashboard?tab=accounts&subtab=create' },
@@ -70,8 +84,17 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
     ]
   };
 
-  const currentNavItems = navigationItems?.[userRole] || navigationItems?.student;
-  const currentQuickActions = quickActions?.[userRole] || quickActions?.student;
+  const currentNavItems = navigationItems?.[actualUserRole] || navigationItems?.student;
+  const currentQuickActions = quickActions?.[actualUserRole] || quickActions?.student;
+
+  // Debug pour vérifier la détection du rôle
+  console.log('🔍 Sidebar Debug:', { 
+    userRole, 
+    actualUserRole,
+    pathname: location.pathname,
+    navItemsCount: currentNavItems?.length,
+    quickActionsCount: currentQuickActions?.length 
+  });
 
   // Ajouter le CSS pour la scrollbar personnalisée
   useEffect(() => {

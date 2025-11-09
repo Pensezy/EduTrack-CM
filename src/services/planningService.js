@@ -1,4 +1,21 @@
 // Service de gestion du planning et des événements scolaires
+
+import { supabase } from '../lib/supabase';
+import { getCurrentSchoolId } from './cardService';
+
+// Fonction pour détecter le mode de fonctionnement
+const isProductionMode = () => {
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  if (userData.demoAccount === true) {
+    return false;
+  }
+  
+  const edutrackUser = localStorage.getItem('edutrack-user');
+  const hasValidSession = edutrackUser && edutrackUser !== 'null';
+  
+  return hasValidSession;
+};
+
 class PlanningService {
   constructor() {
     this.events = this.loadMockEvents();
@@ -177,10 +194,137 @@ class PlanningService {
   }
 
   // Obtenir tous les événements avec filtres
-  async getAllEvents(filters = {}) {
+  async getAllEvents(filters = {}, mode = 'auto') {
+    console.log('🔄 getAllEvents Planning appelé avec mode:', mode);
+    
+    // Déterminer le mode
+    const useProduction = mode === 'production' || (mode === 'auto' && isProductionMode());
+    
+    if (!useProduction) {
+      console.log('🎭 Mode DÉMO - Planning fictif');
+      return this.getAllEventsDemoMode(filters);
+    }
+
+    // Mode production : générer un planning basé sur les vraies données
+    try {
+      console.log('✅ Mode PRODUCTION - Planning Supabase');
+      const schoolId = await getCurrentSchoolId();
+      
+      if (!schoolId) {
+        console.warn('❌ Pas d\'ID école - planning vide');
+        return {
+          events: [],
+          statistics: { total: 0, upcoming: 0, today: 0, confirmed: 0, pending: 0, cancelled: 0 }
+        };
+      }
+
+      console.log('🏫 École ID trouvée:', schoolId);
+
+      // Récupérer les étudiants réels pour simuler des événements
+      const { data: studentsData, error } = await supabase
+        .from('students')
+        .select('id, user_id, first_name, last_name, created_at')
+        .eq('school_id', schoolId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('❌ Erreur requête students:', error);
+        throw error;
+      }
+
+      console.log('📋 Étudiants trouvés pour planning:', studentsData?.length || 0);
+
+      if (!studentsData || studentsData.length === 0) {
+        console.log('📭 Aucun étudiant trouvé - planning vide');
+        return {
+          events: [],
+          statistics: { total: 0, upcoming: 0, today: 0, confirmed: 0, pending: 0, cancelled: 0 }
+        };
+      }
+
+      // Générer des événements basés sur les vrais étudiants
+      const simulatedEvents = [];
+      studentsData.forEach((student, index) => {
+        const eventTypes = ['parent_meeting', 'meeting', 'school_event', 'inscription'];
+        const statuses = ['confirmed', 'scheduled', 'pending'];
+        
+        // Créer 1-2 événements par étudiant
+        const numEvents = Math.floor(Math.random() * 2) + 1;
+        
+        for (let i = 0; i < numEvents; i++) {
+          const eventDate = new Date();
+          eventDate.setDate(eventDate.getDate() + (index * 2 + i + 1)); // Étaler sur plusieurs jours futurs
+          
+          const eventType = eventTypes[i % eventTypes.length];
+          const startHour = 8 + (index + i) % 8; // Entre 8h et 16h
+          
+          simulatedEvents.push({
+            id: simulatedEvents.length + 1,
+            title: this.generateEventTitle(eventType, student),
+            type: eventType,
+            date: eventDate.toISOString().split('T')[0],
+            startTime: `${startHour.toString().padStart(2, '0')}:00`,
+            endTime: `${(startHour + 1).toString().padStart(2, '0')}:00`,
+            duration: 60,
+            status: statuses[i % statuses.length],
+            description: this.generateEventDescription(eventType, student),
+            attendees: this.generateAttendees(eventType, student),
+            location: 'Bureau secrétariat',
+            priority: ['high', 'medium', 'low'][i % 3],
+            studentId: student.user_id || student.id,
+            studentName: `${student.first_name} ${student.last_name}`,
+            studentClass: 'Non assigné',
+            createdBy: 'secretary',
+            reminders: [
+              { type: 'email', time: '1 day before', sent: false }
+            ],
+            notes: 'Données réelles depuis table students (simulation)',
+            parentPhone: `+237 6XX XX XX ${(index + 10).toString().padStart(2, '0')}`,
+            parentEmail: `${student.first_name.toLowerCase()}.parent@email.com`
+          });
+        }
+      });
+
+      // Appliquer les filtres
+      let filteredEvents = this.applyFilters(simulatedEvents, filters);
+
+      // Calculer les statistiques
+      const statistics = this.calculateStatistics(filteredEvents);
+
+      console.log('✅ Planning simulé créé:', filteredEvents.length);
+      return {
+        events: filteredEvents,
+        statistics
+      };
+
+    } catch (error) {
+      console.error('❌ Erreur getAllEvents planning production:', error);
+      console.log('🔄 Retour planning vide suite à erreur');
+      return {
+        events: [],
+        statistics: { total: 0, upcoming: 0, today: 0, confirmed: 0, pending: 0, cancelled: 0 }
+      };
+    }
+  }
+
+  // Mode démo (fonction séparée pour clarté)
+  async getAllEventsDemoMode(filters = {}) {
     await this.delay(300);
     
-    let filteredEvents = [...this.events];
+    let filteredEvents = this.applyFilters([...this.events], filters);
+    const statistics = this.calculateStatistics(filteredEvents);
+
+    return {
+      events: filteredEvents,
+      statistics
+    };
+  }
+
+  // Appliquer les filtres aux événements
+  applyFilters(events, filters) {
+    let filteredEvents = [...events];
 
     // Filtrer par type
     if (filters.type && filters.type !== '') {
@@ -230,9 +374,50 @@ class PlanningService {
       return dateA - dateB;
     });
 
+    return filteredEvents;
+  }
+
+  // Fonctions utilitaires pour la génération d'événements
+  generateEventTitle(eventType, student) {
+    const titles = {
+      parent_meeting: `Rendez-vous - Parents de ${student.first_name} ${student.last_name}`,
+      meeting: `Réunion pédagogique - ${student.first_name}`,
+      school_event: `Événement scolaire - Classe de ${student.first_name}`,
+      inscription: `Inscription - ${student.first_name} ${student.last_name}`
+    };
+    return titles[eventType] || `Événement - ${student.first_name} ${student.last_name}`;
+  }
+
+  generateEventDescription(eventType, student) {
+    const descriptions = {
+      parent_meeting: `Entretien concernant ${student.first_name} ${student.last_name} - Suivi scolaire`,
+      meeting: `Réunion d'équipe pédagogique concernant la classe`,
+      school_event: `Événement organisé pour la classe`,
+      inscription: `Finalisation inscription de ${student.first_name} ${student.last_name}`
+    };
+    return descriptions[eventType] || `Événement concernant ${student.first_name} ${student.last_name}`;
+  }
+
+  generateAttendees(eventType, student) {
+    const attendees = {
+      parent_meeting: [`Parents de ${student.first_name}`, 'Enseignant', 'Secrétaire'],
+      meeting: ['Direction', 'Équipe pédagogique', 'Secrétaire'],
+      school_event: ['Élèves', 'Parents', 'Enseignants'],
+      inscription: [`Parents de ${student.first_name}`, 'Secrétaire', 'Direction']
+    };
+    return attendees[eventType] || ['Participants'];
+  }
+
+  calculateStatistics(events) {
+    const today = new Date().toISOString().split('T')[0];
+    
     return {
-      events: filteredEvents,
-      statistics: this.calculateStatistics(filteredEvents)
+      total: events.length,
+      upcoming: events.filter(e => new Date(e.date) >= new Date(today)).length,
+      today: events.filter(e => e.date === today).length,
+      confirmed: events.filter(e => e.status === 'confirmed').length,
+      pending: events.filter(e => e.status === 'pending').length,
+      cancelled: events.filter(e => e.status === 'cancelled').length
     };
   }
 

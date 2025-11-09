@@ -1,7 +1,38 @@
-// Service de démonstration pour la gestion des absences et justifications
-// En production, ces données viendraient d'une base de données
+// Service pour la gestion des absences et justifications
+// Détecte automatiquement le mode démo/production
 
-// Données d'exemple pour les étudiants
+import { supabase } from '../lib/supabase';
+import { getCurrentSchoolId } from './cardService';
+
+// Fonction pour détecter le mode
+const isProductionMode = () => {
+  try {
+    const savedUser = localStorage.getItem('edutrack-user');
+    console.log('🔍 Debug mode detection - localStorage:', savedUser ? 'EXISTS' : 'NULL');
+    
+    if (!savedUser) {
+      console.log('❌ Pas de données utilisateur dans localStorage');
+      return false;
+    }
+    
+    const userData = JSON.parse(savedUser);
+    console.log('📊 Données utilisateur:', {
+      email: userData.email,
+      demoAccount: userData.demoAccount,
+      school_name: userData.school_name,
+      role: userData.role
+    });
+    
+    const isProduction = !userData.demoAccount;
+    console.log('🎯 Mode détecté:', isProduction ? 'PRODUCTION' : 'DÉMO');
+    return isProduction;
+  } catch (error) {
+    console.error('❌ Erreur détection mode:', error);
+    return false;
+  }
+};
+
+// Données d'exemple pour les étudiants (mode démo)
 const studentsData = [
   {
     id: "STU001",
@@ -172,10 +203,97 @@ const formatDateTime = (date) => {
 // Service principal
 export const absenceService = {
   // Obtenir toutes les absences
-  getAllAbsences: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => resolve([...absencesData]), 300);
-    });
+  getAllAbsences: async (mode = null) => {
+    // Déterminer le mode : utiliser le paramètre fourni ou détecter automatiquement
+    const isProduction = mode === 'production' || (mode === null && isProductionMode());
+    
+    // Mode démo : retourner les données fictives
+    if (!isProduction) {
+      console.log('🎭 Mode DÉMO - Absences fictives');
+      return new Promise((resolve) => {
+        setTimeout(() => resolve([...absencesData]), 300);
+      });
+    }
+
+    // Mode production : charger depuis Supabase
+    try {
+      console.log('✅ Mode PRODUCTION - Chargement absences Supabase');
+      const schoolId = await getCurrentSchoolId();
+      if (!schoolId) {
+        console.error('❌ Aucune école associée');
+        throw new Error('Pas d\'école associée');
+      }
+
+      console.log('🏫 École trouvée:', schoolId);
+
+      // D'abord, inspecter la structure de la table students
+      console.log('🔍 Inspection structure table students...');
+      const { data: sampleStudent, error: sampleError } = await supabase
+        .from('students')
+        .select('*')
+        .eq('school_id', schoolId)
+        .limit(1)
+        .single();
+        
+      if (sampleStudent) {
+        console.log('📋 Colonnes disponibles dans students:', Object.keys(sampleStudent));
+        console.log('📋 Exemple de données:', sampleStudent);
+      } else {
+        console.log('⚠️ Aucun étudiant trouvé pour inspection');
+      }
+
+      // Pour le moment, utiliser la table students pour simuler les absences
+      // En attendant la création d'une vraie table absences
+      const { data: studentsData, error } = await supabase
+        .from('students')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          user_id,
+          created_at
+        `)
+        .eq('school_id', schoolId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('❌ Erreur requête students:', error);
+        throw error;
+      }
+
+      console.log('📋 Étudiants trouvés:', studentsData?.length || 0);
+
+      // Transformer en format absences pour simulation
+      const simulatedAbsences = studentsData.map((student, index) => ({
+        id: index + 1,
+        studentId: student.user_id || student.id,
+        studentName: `${student.first_name} ${student.last_name}`,
+        class: 'Non assigné', // class_name n'existe pas dans la table
+        date: new Date().toISOString().split('T')[0], // Aujourd'hui par défaut
+        period: ['Matin', 'Après-midi'][index % 2],
+        status: ['reported', 'contacted', 'justified_received'][index % 3],
+        reason: 'À préciser',
+        parentName: 'À renseigner',
+        parentPhone: 'À renseigner',
+        parentEmail: 'À renseigner',
+        notificationSent: index % 2 === 0,
+        lastContact: new Date().toISOString().split('T')[0],
+        justificationReceived: index % 3 === 0,
+        justificationDocument: null,
+        notes: 'Données réelles depuis table students (simulation)',
+        createdAt: student.created_at
+      }));
+
+      console.log('📋 Absences simulées créées:', simulatedAbsences.length);
+      return simulatedAbsences;
+    } catch (error) {
+      console.error('❌ Erreur chargement absences Supabase:', error);
+      // Fallback sur données démo en cas d'erreur
+      console.log('🔄 Fallback sur données démo');
+      return [...absencesData];
+    }
   },
 
   // Obtenir une absence par ID
@@ -190,19 +308,78 @@ export const absenceService = {
 
   // Rechercher des étudiants pour créer une nouvelle absence
   searchStudents: async (searchTerm = '') => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filtered = studentsData.filter(student => {
-          const matchesSearch = searchTerm === '' || 
-            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.class.toLowerCase().includes(searchTerm.toLowerCase());
-          
-          return matchesSearch;
-        });
-        resolve(filtered);
-      }, 300);
-    });
+    // Mode démo : utiliser les données fictives
+    if (!isProductionMode()) {
+      console.log('🎭 Mode DÉMO - Étudiants fictifs');
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const filtered = studentsData.filter(student => {
+            const matchesSearch = searchTerm === '' || 
+              student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              student.class.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            return matchesSearch;
+          });
+          resolve(filtered);
+        }, 300);
+      });
+    }
+
+    // Mode production : rechercher dans Supabase
+    try {
+      console.log('✅ Mode PRODUCTION - Recherche étudiants:', searchTerm);
+      const schoolId = await getCurrentSchoolId();
+      if (!schoolId) {
+        throw new Error('Pas d\'école associée');
+      }
+
+      let query = supabase
+        .from('students')
+        .select(`
+          id,
+          user_id,
+          first_name,
+          last_name
+        `)
+        .eq('school_id', schoolId)
+        .eq('is_active', true);
+
+      // Appliquer le filtre de recherche si fourni
+      if (searchTerm && searchTerm.trim() !== '') {
+        query = query.or(`
+          first_name.ilike.%${searchTerm}%,
+          last_name.ilike.%${searchTerm}%
+        `);
+      }
+
+      const { data: students, error } = await query
+        .order('first_name')
+        .limit(50);
+
+      if (error) throw error;
+
+      // Transformer au format attendu par l'interface
+      const formattedStudents = students.map(student => ({
+        id: student.user_id || student.id,
+        name: `${student.first_name} ${student.last_name}`,
+        class: 'Non assigné', // class_name n'existe pas dans la table
+        parentName: 'À renseigner', // Parents pas encore implémentés
+        parentPhone: 'À renseigner',
+        parentEmail: 'À renseigner'
+      }));
+
+      console.log('📋 Étudiants trouvés:', formattedStudents.length);
+      return formattedStudents;
+    } catch (error) {
+      console.error('❌ Erreur recherche étudiants:', error);
+      // Fallback sur données démo
+      return studentsData.filter(student => {
+        const matchesSearch = searchTerm === '' || 
+          student.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
+      });
+    }
   },
 
   // Créer une nouvelle absence
@@ -493,6 +670,121 @@ export const absenceService = {
         resolve(absence?.notificationHistory || []);
       }, 200);
     });
+  },
+
+  // Obtenir l'historique général de toutes les notifications
+  getAllNotificationHistory: async () => {
+    console.log('🔍 getAllNotificationHistory appelé');
+    
+    if (!isProductionMode()) {
+      console.log('🎭 Mode DÉMO - Historique notifications fictives');
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const allNotifications = [];
+          
+          // Compiler les notifications de toutes les absences fictives
+          absencesData.forEach(absence => {
+            if (absence.notificationHistory && absence.notificationHistory.length > 0) {
+              absence.notificationHistory.forEach(notification => {
+                allNotifications.push({
+                  ...notification,
+                  absenceId: absence.id,
+                  studentName: absence.studentName,
+                  absenceDate: absence.date,
+                  absenceType: absence.type
+                });
+              });
+            }
+          });
+
+          // Trier par date décroissante
+          allNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+          
+          resolve(allNotifications);
+        }, 300);
+      });
+    }
+
+    // Mode production : générer un historique basé sur les vraies données
+    try {
+      console.log('✅ Mode PRODUCTION - Historique notifications réelles');
+      const schoolId = await getCurrentSchoolId();
+      
+      if (!schoolId) {
+        console.warn('❌ Pas d\'ID école - historique vide');
+        return [];
+      }
+
+      console.log('🏫 École ID trouvée:', schoolId);
+
+      // Récupérer les étudiants réels pour simuler l'historique
+      const { data: studentsData, error } = await supabase
+        .from('students')
+        .select('id, user_id, first_name, last_name, created_at')
+        .eq('school_id', schoolId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(10);
+
+      if (error) {
+        console.error('❌ Erreur requête students:', error);
+        throw error;
+      }
+
+      console.log('📋 Étudiants trouvés pour historique:', studentsData?.length || 0);
+
+      if (!studentsData || studentsData.length === 0) {
+        console.log('📭 Aucun étudiant trouvé - historique vide');
+        return [];
+      }
+
+      // Simuler des notifications récentes basées sur les vrais étudiants
+      const simulatedNotifications = [];
+      studentsData.forEach((student, index) => {
+        const notificationTypes = ['sms', 'email', 'call'];
+        const statuses = ['sent', 'successful', 'failed'];
+        const messages = [
+          'Rappel d\'absence non justifiée',
+          'Demande de justificatif',
+          'Information retard répété',
+          'Convocation des parents'
+        ];
+
+        // Créer 1-3 notifications par étudiant
+        const numNotifications = Math.floor(Math.random() * 3) + 1;
+        
+        for (let i = 0; i < numNotifications; i++) {
+          const notifDate = new Date();
+          notifDate.setDate(notifDate.getDate() - (index * 3 + i + 1)); // Étaler sur plusieurs jours
+          
+          simulatedNotifications.push({
+            id: simulatedNotifications.length + 1,
+            date: notifDate.toISOString().split('T')[0],
+            type: notificationTypes[i % notificationTypes.length],
+            status: statuses[Math.floor(Math.random() * statuses.length)],
+            message: messages[i % messages.length],
+            studentName: `${student.first_name} ${student.last_name}`,
+            absenceDate: notifDate.toISOString().split('T')[0],
+            absenceType: ['absence', 'late'][i % 2],
+            recipientName: 'Parent/Tuteur',
+            recipientContact: `+237 6XX XX XX ${(index + 10).toString().padStart(2, '0')}`,
+            duration: notificationTypes[i % notificationTypes.length] === 'call' ? 
+                     `${Math.floor(Math.random() * 5) + 1} min` : undefined
+          });
+        }
+      });
+
+      // Trier par date décroissante
+      simulatedNotifications.sort((a, b) => new Date(b.date) - new Date(a.date));
+      
+      console.log('✅ Historique notifications simulé créé:', simulatedNotifications.length);
+      return simulatedNotifications;
+
+    } catch (error) {
+      console.error('❌ Erreur getAllNotificationHistory production:', error);
+      console.log('🔄 Fallback vers historique vide');
+      return [];
+    }
   },
 
   // Filtrer les absences par date

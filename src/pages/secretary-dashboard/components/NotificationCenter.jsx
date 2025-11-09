@@ -1,164 +1,112 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-
+import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
+import { communicationService } from '../../../services/communicationService';
+import { useDataMode } from '../../../hooks/useDataMode';
 
 const NotificationCenter = () => {
   const [selectedTab, setSelectedTab] = useState('send');
-  const [messageType, setMessageType] = useState('sms');
-  const [recipients, setRecipients] = useState([]);
+  const [messageType, setMessageType] = useState('both');
   const [message, setMessage] = useState('');
-  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [subject, setSubject] = useState('');
+  const [selectedTemplate, setSelectedTemplate] = useState('custom');
+  const [recipients, setRecipients] = useState([]);
+  const [sending, setSending] = useState(false);
 
-  const messageTypeOptions = [
-    { value: 'sms', label: 'SMS' },
-    { value: 'email', label: 'Email' },
-    { value: 'both', label: 'SMS + Email' }
-  ];
+  // Real data state
+  const [parents, setParents] = useState([]);
+  const [sentMessages, setSentMessages] = useState([]);
+  const [templates, setTemplates] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { dataMode } = useDataMode();
 
-  const templateOptions = [
-    { value: '', label: 'Message personnalisé' },
-    { value: 'absence', label: 'Notification d\'absence' },
-    { value: 'payment', label: 'Rappel de paiement' },
-    { value: 'meeting', label: 'Convocation réunion' },
-    { value: 'grades', label: 'Nouvelles notes disponibles' },
-    { value: 'event', label: 'Événement scolaire' }
-  ];
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        const [parentsRes, historyRes, templatesRes] = await Promise.all([
+          communicationService.getParentsBySchool(),
+          communicationService.getCommunicationsHistory(),
+          communicationService.getMessageTemplates()
+        ]);
 
-  const templates = {
-    absence: `Bonjour,\n\nNous vous informons que votre enfant {STUDENT_NAME} a été absent(e) aujourd'hui.\n\nSi cette absence était prévue, merci de nous en informer.\n\nCordialement,\nL'équipe pédagogique`,
-    payment: `Bonjour,\n\nNous vous rappelons que le paiement des frais de scolarité pour {STUDENT_NAME} est dû le {DUE_DATE}.\n\nMontant: {AMOUNT} FCFA\n\nMerci de régulariser votre situation.\n\nCordialement,\nLe secrétariat`,
-    meeting: `Bonjour,\n\nVous êtes convié(e) à une réunion concernant {STUDENT_NAME}.\n\nDate: {DATE}\nHeure: {TIME}\nLieu: {LOCATION}\n\nMerci de confirmer votre présence.\n\nCordialement,\nL'équipe pédagogique`,
-    grades: `Bonjour,\n\nDe nouvelles notes sont disponibles pour {STUDENT_NAME} dans votre espace parent.\n\nConnectez-vous pour les consulter.\n\nCordialement,\nL'équipe pédagogique`,
-    event: `Bonjour,\n\nNous vous informons qu'un événement scolaire aura lieu:\n\n{EVENT_NAME}\nDate: {DATE}\nHeure: {TIME}\n\nPlus d'informations à suivre.\n\nCordialement,\nL'équipe pédagogique`
-  };
+        setParents(parentsRes || []);
+        setSentMessages(historyRes || []);
+        setTemplates(templatesRes || []);
+      } catch (error) {
+        console.error('Error loading communication data:', error);
+        setParents([]);
+        setSentMessages([]);
+        setTemplates([]);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  const parents = [
-    {
-      id: 1,
-      name: "Paul Nkomo",
-      phone: "+237 6 78 90 12 34",
-      email: "p.nkomo@gmail.com",
-      studentName: "Amina Nkomo",
-      class: "CM2"
-    },
-    {
-      id: 2,
-      name: "Marie Mbarga",
-      phone: "+237 6 89 01 23 45",
-      email: "marie.mbarga@yahoo.fr",
-      studentName: "Junior Mbarga",
-      class: "CM1"
-    },
-    {
-      id: 3,
-      name: "Jean Fouda",
-      phone: "+237 6 90 12 34 56",
-      email: "j.fouda@outlook.com",
-      studentName: "Grace Fouda",
-      class: "CE2"
-    },
-    {
-      id: 4,
-      name: "Esther Biya",
-      phone: "+237 6 01 23 45 67",
-      email: "esther.biya@hotmail.com",
-      studentName: "Kevin Biya",
-      class: "CM2"
-    },
-    {
-      id: 5,
-      name: "Michel Atangana",
-      phone: "+237 6 12 34 56 78",
-      email: "m.atangana@gmail.com",
-      studentName: "Sarah Atangana",
-      class: "CE1"
-    }
-  ];
-
-  const sentMessages = [
-    {
-      id: 1,
-      type: 'sms',
-      subject: 'Absence non justifiée',
-      recipients: ['Paul Nkomo', 'Marie Mbarga'],
-      sentDate: '11/12/2024 14:30',
-      status: 'delivered',
-      deliveryCount: 2
-    },
-    {
-      id: 2,
-      type: 'email',
-      subject: 'Rappel paiement frais de scolarité',
-      recipients: ['Jean Fouda'],
-      sentDate: '11/12/2024 09:15',
-      status: 'delivered',
-      deliveryCount: 1
-    },
-    {
-      id: 3,
-      type: 'both',
-      subject: 'Réunion parents-professeurs',
-      recipients: ['Esther Biya', 'Michel Atangana', 'Paul Nkomo'],
-      sentDate: '10/12/2024 16:45',
-      status: 'delivered',
-      deliveryCount: 6
-    },
-    {
-      id: 4,
-      type: 'sms',
-      subject: 'Nouvelles notes disponibles',
-      recipients: ['Marie Mbarga', 'Esther Biya'],
-      sentDate: '10/12/2024 11:20',
-      status: 'failed',
-      deliveryCount: 1
-    }
-  ];
-
-  const handleTemplateChange = (templateKey) => {
-    setSelectedTemplate(templateKey);
-    if (templateKey && templates?.[templateKey]) {
-      setMessage(templates?.[templateKey]);
-    } else {
-      setMessage('');
-    }
-  };
-
-  const handleRecipientToggle = (parentId) => {
-    setRecipients(prev => 
-      prev?.includes(parentId) 
-        ? prev?.filter(id => id !== parentId)
-        : [...prev, parentId]
-    );
-  };
+    loadData();
+  }, []);
 
   const handleSelectAll = () => {
-    if (recipients?.length === parents?.length) {
+    if (recipients.length === parents.length) {
       setRecipients([]);
     } else {
       setRecipients(parents?.map(p => p?.id));
     }
   };
 
-  const handleSendMessage = () => {
-    if (recipients?.length === 0 || !message?.trim()) {
-      alert('Veuillez sélectionner des destinataires et saisir un message');
+  const handleRecipientToggle = (parentId) => {
+    if (recipients.includes(parentId)) {
+      setRecipients(recipients.filter(id => id !== parentId));
+    } else {
+      setRecipients([...recipients, parentId]);
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!message || recipients.length === 0) {
+      alert('Veuillez saisir un message et sélectionner au moins un destinataire.');
       return;
     }
-    
-    console.log('Send message:', {
-      type: messageType,
-      recipients: recipients,
-      message: message,
-      template: selectedTemplate
-    });
-    
-    // Reset form
-    setRecipients([]);
-    setMessage('');
-    setSelectedTemplate('');
+
+    try {
+      setSending(true);
+      const selectedParents = parents.filter(parent => recipients.includes(parent?.id));
+      const recipientsData = selectedParents.map(parent => ({
+        id: parent?.id,
+        name: parent?.name || `${parent?.first_name} ${parent?.last_name}`,
+        phone: parent?.phone,
+        email: parent?.email,
+        studentName: parent?.studentName || (parent?.students && parent?.students?.first_name + ' ' + parent?.students?.last_name)
+      }));
+
+      await communicationService.sendMessage({
+        type: messageType,
+        subject: subject || 'Message important',
+        message,
+        recipients: recipientsData
+      });
+
+      // Reset form
+      setMessage('');
+      setSubject('');
+      setRecipients([]);
+      setSelectedTemplate('custom');
+      
+      alert('Message envoyé avec succès !');
+      
+      // Reload history
+      const historyRes = await communicationService.getCommunicationsHistory();
+      setSentMessages(historyRes || []);
+    } catch (error) {
+      console.error('Error sending message:', error);
+      alert('Erreur lors de l\'envoi du message.');
+    } finally {
+      setSending(false);
+    }
   };
 
   const getStatusIcon = (status) => {
@@ -167,10 +115,8 @@ const NotificationCenter = () => {
         return { icon: 'CheckCircle', className: 'text-success' };
       case 'failed':
         return { icon: 'XCircle', className: 'text-error' };
-      case 'pending':
-        return { icon: 'Clock', className: 'text-warning' };
       default:
-        return { icon: 'Clock', className: 'text-muted-foreground' };
+        return { icon: 'Clock', className: 'text-warning' };
     }
   };
 
@@ -187,6 +133,18 @@ const NotificationCenter = () => {
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2 text-text-secondary">
+          <Icon name="Loader2" size={20} className="animate-spin" />
+          <span>Chargement des communications...</span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -198,13 +156,16 @@ const NotificationCenter = () => {
           Envoyez des messages SMS et emails aux parents
         </p>
       </div>
+
       {/* Tabs */}
       <div className="border-b border-border">
         <nav className="flex space-x-8">
           <button
             onClick={() => setSelectedTab('send')}
             className={`py-2 px-1 border-b-2 font-body font-body-semibold text-sm transition-micro ${
-              selectedTab === 'send' ?'border-primary text-primary' :'border-transparent text-text-secondary hover:text-text-primary'
+              selectedTab === 'send' 
+                ? 'border-primary text-primary' 
+                : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
           >
             <div className="flex items-center space-x-2">
@@ -215,7 +176,9 @@ const NotificationCenter = () => {
           <button
             onClick={() => setSelectedTab('history')}
             className={`py-2 px-1 border-b-2 font-body font-body-semibold text-sm transition-micro ${
-              selectedTab === 'history' ?'border-primary text-primary' :'border-transparent text-text-secondary hover:text-text-primary'
+              selectedTab === 'history' 
+                ? 'border-primary text-primary' 
+                : 'border-transparent text-text-secondary hover:text-text-primary'
             }`}
           >
             <div className="flex items-center space-x-2">
@@ -225,6 +188,7 @@ const NotificationCenter = () => {
           </button>
         </nav>
       </div>
+
       {/* Send Message Tab */}
       {selectedTab === 'send' && (
         <div className="space-y-6">
@@ -237,33 +201,43 @@ const NotificationCenter = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
               <Select
                 label="Type de message"
-                options={messageTypeOptions}
                 value={messageType}
                 onChange={setMessageType}
+                options={[
+                  { value: 'sms', label: 'SMS uniquement' },
+                  { value: 'email', label: 'Email uniquement' },
+                  { value: 'both', label: 'SMS + Email' }
+                ]}
               />
+              
               <Select
-                label="Modèle de message"
-                options={templateOptions}
+                label="Modèle"
                 value={selectedTemplate}
-                onChange={handleTemplateChange}
+                onChange={setSelectedTemplate}
+                options={templates.map(t => ({ value: t.value, label: t.label }))}
               />
             </div>
-
+            
             <div className="space-y-4">
               <div>
-                <label className="block font-body font-body-semibold text-sm text-text-primary mb-2">
+                <Input
+                  label="Sujet (optionnel)"
+                  value={subject}
+                  onChange={setSubject}
+                  placeholder="Sujet du message"
+                />
+              </div>
+              
+              <div>
+                <label className="block font-body font-body-medium text-sm text-text-primary mb-2">
                   Message
                 </label>
                 <textarea
                   value={message}
-                  onChange={(e) => setMessage(e?.target?.value)}
-                  placeholder="Saisissez votre message..."
-                  rows={6}
-                  className="w-full px-3 py-2 border border-border rounded-md bg-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Tapez votre message ici..."
+                  className="w-full h-32 p-3 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
                 />
-                <p className="font-caption font-caption-normal text-xs text-text-secondary mt-1">
-                  {message?.length}/160 caractères {messageType === 'sms' && '(SMS)'}
-                </p>
               </div>
             </div>
           </div>
@@ -272,42 +246,54 @@ const NotificationCenter = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-                Destinataires ({recipients?.length}/{parents?.length})
+                Destinataires ({parents?.length})
               </h3>
               <Button
                 variant="outline"
                 size="sm"
                 onClick={handleSelectAll}
               >
-                {recipients?.length === parents?.length ? 'Désélectionner tout' : 'Sélectionner tout'}
+                {recipients.length === parents.length ? 'Désélectionner tout' : 'Sélectionner tout'}
               </Button>
             </div>
-
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {parents?.map((parent) => (
-                <div key={parent?.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg">
-                  <Checkbox
-                    checked={recipients?.includes(parent?.id)}
-                    onChange={() => handleRecipientToggle(parent?.id)}
-                  />
-                  <div className="flex-1">
-                    <p className="font-body font-body-semibold text-sm text-text-primary">
-                      {parent?.name}
-                    </p>
-                    <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                      {parent?.studentName} ({parent?.class})
-                    </p>
-                    <div className="flex items-center space-x-4 mt-1">
-                      <span className="font-caption font-caption-normal text-xs text-text-secondary">
-                        📱 {parent?.phone}
-                      </span>
-                      <span className="font-caption font-caption-normal text-xs text-text-secondary">
-                        ✉️ {parent?.email}
-                      </span>
+              {parents?.length === 0 ? (
+                <div className="col-span-full text-center py-8">
+                  <Icon name="Users" size={32} className="text-muted-foreground mx-auto mb-4" />
+                  <h4 className="font-heading font-heading-medium text-base text-text-primary mb-2">
+                    Aucun parent trouvé
+                  </h4>
+                  <p className="text-text-secondary">
+                    Aucun parent n'est enregistré dans la base de données pour cette école.
+                  </p>
+                </div>
+              ) : (
+                parents?.map((parent) => (
+                  <div key={parent?.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg">
+                    <Checkbox
+                      checked={recipients?.includes(parent?.id)}
+                      onChange={() => handleRecipientToggle(parent?.id)}
+                    />
+                    <div className="flex-1">
+                      <p className="font-body font-body-semibold text-sm text-text-primary">
+                        {parent?.name || `${parent?.first_name} ${parent?.last_name}`}
+                      </p>
+                      <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                        {parent?.studentName || (parent?.students && `${parent?.students?.first_name} ${parent?.students?.last_name}`)} ({parent?.class || parent?.students?.current_class})
+                      </p>
+                      <div className="flex items-center space-x-4 mt-1">
+                        <span className="font-caption font-caption-normal text-xs text-text-secondary">
+                          📱 {parent?.phone}
+                        </span>
+                        <span className="font-caption font-caption-normal text-xs text-text-secondary">
+                          ✉️ {parent?.email}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                ))
+              )}
             </div>
           </div>
 
@@ -315,16 +301,17 @@ const NotificationCenter = () => {
           <div className="flex justify-end">
             <Button
               variant="default"
-              iconName="Send"
-              iconPosition="left"
+              iconName={sending ? "Loader2" : "Send"}
+              iconClassName={sending ? "animate-spin" : ""}
               onClick={handleSendMessage}
-              disabled={recipients?.length === 0 || !message?.trim()}
+              disabled={sending || !message || recipients.length === 0}
             >
-              Envoyer le message
+              {sending ? 'Envoi en cours...' : 'Envoyer le message'}
             </Button>
           </div>
         </div>
       )}
+
       {/* History Tab */}
       {selectedTab === 'history' && (
         <div className="space-y-6">
@@ -336,112 +323,115 @@ const NotificationCenter = () => {
             </div>
 
             <div className="divide-y divide-border">
-              {sentMessages?.map((msg) => {
-                const statusConfig = getStatusIcon(msg?.status);
-                
-                return (
-                  <div key={msg?.id} className="p-4">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Icon name={getTypeIcon(msg?.type)} size={20} className="text-primary" />
-                        </div>
-                        <div>
-                          <p className="font-body font-body-semibold text-sm text-text-primary">
-                            {msg?.subject}
-                          </p>
-                          <p className="font-caption font-caption-normal text-xs text-text-secondary mt-1">
-                            Destinataires: {msg?.recipients?.join(', ')}
-                          </p>
-                          <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                            Envoyé le {msg?.sentDate}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center space-x-3">
-                        <div className="text-right">
-                          <div className={`flex items-center space-x-1 ${statusConfig?.className}`}>
-                            <Icon name={statusConfig?.icon} size={16} />
-                            <span className="font-caption font-caption-normal text-xs">
-                              {msg?.status === 'delivered' ? 'Livré' : 
-                               msg?.status === 'failed' ? 'Échec' : 'En cours'}
-                            </span>
+              {sentMessages?.length === 0 ? (
+                <div className="p-8 text-center">
+                  <Icon name="MessageCircle" size={32} className="text-muted-foreground mx-auto mb-4" />
+                  <h4 className="font-heading font-heading-medium text-base text-text-primary mb-2">
+                    Aucun message envoyé
+                  </h4>
+                  <p className="text-text-secondary">
+                    L'historique de vos communications apparaîtra ici une fois que vous aurez envoyé des messages.
+                  </p>
+                </div>
+              ) : (
+                sentMessages?.map((msg) => {
+                  const statusConfig = getStatusIcon(msg?.status);
+                  
+                  return (
+                    <div key={msg?.id} className="p-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-start space-x-3">
+                          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Icon name={getTypeIcon(msg?.type)} size={20} className="text-primary" />
                           </div>
-                          <p className="font-caption font-caption-normal text-xs text-text-secondary mt-1">
-                            {msg?.deliveryCount} message(s)
-                          </p>
+                          <div>
+                            <p className="font-body font-body-semibold text-sm text-text-primary">
+                              {msg?.subject}
+                            </p>
+                            <p className="font-caption font-caption-normal text-xs text-text-secondary mt-1">
+                              Destinataires: {msg?.recipients?.join(', ')}
+                            </p>
+                            <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                              Envoyé le {msg?.sentDate}
+                            </p>
+                          </div>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          title="Voir les détails"
-                        >
-                          <Icon name="Eye" size={16} />
-                        </Button>
+
+                        <div className="flex items-center space-x-3">
+                          <div className="text-right">
+                            <div className={`flex items-center space-x-1 ${statusConfig?.className}`}>
+                              <Icon name={statusConfig?.icon} size={16} />
+                              <span className="font-caption font-caption-normal text-xs">
+                                {msg?.status === 'delivered' ? 'Livré' : 
+                                 msg?.status === 'failed' ? 'Échec' : 'En cours'}
+                              </span>
+                            </div>
+                            <p className="font-caption font-caption-normal text-xs text-text-secondary mt-1">
+                              {msg?.deliveryCount} message(s)
+                            </p>
+                          </div>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            title="Voir les détails"
+                          >
+                            <Icon name="Eye" size={16} />
+                          </Button>
+                        </div>
                       </div>
                     </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Statistics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4 bg-background/50">
+              <div className="bg-card rounded-lg border border-border p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Icon name="Send" size={20} className="text-primary" />
                   </div>
-                );
-              })}
-            </div>
+                  <div>
+                    <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                      {sentMessages?.length || 0}
+                    </p>
+                    <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                      Messages envoyés
+                    </p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-card rounded-lg border border-border p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
+                    <Icon name="CheckCircle" size={20} className="text-success" />
+                  </div>
+                  <div>
+                    <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                      {sentMessages?.filter(m => m?.status === 'delivered')?.length || 0}
+                    </p>
+                    <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                      Messages livrés
+                    </p>
+                  </div>
+                </div>
+              </div>
 
-            {sentMessages?.length === 0 && (
-              <div className="p-8 text-center">
-                <Icon name="MessageSquare" size={48} className="text-muted-foreground mx-auto mb-4" />
-                <p className="font-body font-body-normal text-text-secondary">
-                  Aucun message envoyé pour le moment
-                </p>
-              </div>
-            )}
-          </div>
-
-          {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="bg-card rounded-lg border border-border p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Send" size={20} className="text-primary" />
-                </div>
-                <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                    {sentMessages?.length}
-                  </p>
-                  <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    Messages envoyés
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-card rounded-lg border border-border p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                  <Icon name="CheckCircle" size={20} className="text-success" />
-                </div>
-                <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                    {sentMessages?.filter(m => m?.status === 'delivered')?.length}
-                  </p>
-                  <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    Livrés avec succès
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            <div className="bg-card rounded-lg border border-border p-4">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-error/10 rounded-lg flex items-center justify-center">
-                  <Icon name="XCircle" size={20} className="text-error" />
-                </div>
-                <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                    {sentMessages?.filter(m => m?.status === 'failed')?.length}
-                  </p>
-                  <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    Échecs de livraison
-                  </p>
+              <div className="bg-card rounded-lg border border-border p-4">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-error/10 rounded-lg flex items-center justify-center">
+                    <Icon name="XCircle" size={20} className="text-error" />
+                  </div>
+                  <div>
+                    <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                      {sentMessages?.filter(m => m?.status === 'failed')?.length || 0}
+                    </p>
+                    <p className="font-caption font-caption-normal text-xs text-text-secondary">
+                      Échecs de livraison
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -12,7 +12,6 @@ import AttendanceChart from './components/AttendanceChart';
 import PaymentStatusChart from './components/PaymentStatusChart';
 import QuickActions from './components/QuickActions';
 import SystemStatus from './components/SystemStatus';
-import PersonnelManagement from './components/PersonnelManagement';
 import AccountsManagement from './components/AccountsManagement';
 import DatabaseDiagnostic from './components/DatabaseDiagnostic';
 import SchoolYearValidationTab from './components/SchoolYearValidationTab';
@@ -85,12 +84,19 @@ const PrincipalDashboard = () => {
   useEffect(() => {
     const urlParams = new URLSearchParams(location.search);
     const tabParam = urlParams.get('tab');
-    if (tabParam && ['overview', 'analytics', 'personnel', 'school-year', 'school-info', 'actions', 'system', 'accounts', 'debug'].includes(tabParam)) {
+    
+    // Rediriger 'analytics' vers 'overview' (onglet supprimé pour éviter redondance)
+    if (tabParam === 'analytics') {
+      navigate('/principal-dashboard?tab=overview', { replace: true });
+      return;
+    }
+    
+    if (tabParam && ['overview', 'school-year', 'school-info', 'actions', 'system', 'accounts', 'debug'].includes(tabParam)) {
       setActiveTab(tabParam);
     } else {
       setActiveTab('overview'); // Par défaut si pas de paramètre ou paramètre invalide
     }
-  }, [location.search]); // Se déclenche à chaque changement d'URL
+  }, [location.search, navigate]); // Se déclenche à chaque changement d'URL
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -132,8 +138,6 @@ const PrincipalDashboard = () => {
   // Onglets du dashboard - L'onglet Debug est visible uniquement en mode développement
   const tabOptions = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
-    { id: 'analytics', label: 'Analyses', icon: 'TrendingUp' },
-    { id: 'personnel', label: 'Personnel', icon: 'Users' },
     { id: 'school-year', label: 'Validation Année', icon: 'Calendar' },
     { id: 'school-info', label: 'École', icon: 'School' },
     { id: 'actions', label: 'Actions', icon: 'Zap' },
@@ -343,50 +347,6 @@ const PrincipalDashboard = () => {
             </div>
           </div>
         );
-      case 'analytics':
-        return (
-          <div className="space-y-4 sm:space-y-6 lg:space-y-8">
-            {/* Header Section - Responsive */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 border border-blue-100">
-              <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                  <Icon name="TrendingUp" size={20} className="text-blue-600 sm:size-6" />
-                </div>
-                <div className="min-w-0">
-                  <h2 className="text-lg sm:text-xl font-bold text-gray-900">
-                    Analyses Détaillées
-                  </h2>
-                  <p className="text-sm sm:text-base text-gray-600">
-                    Rapports et tendances de performance
-                  </p>
-                </div>
-              </div>
-            </div>
-            
-            {/* Charts Grid - Responsive */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-                <div className="min-h-[250px] sm:min-h-[300px]">
-                  <ClassAverageChart />
-                </div>
-              </div>
-              <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-                <div className="min-h-[250px] sm:min-h-[300px]">
-                  <AttendanceChart />
-                </div>
-              </div>
-            </div>
-            
-            {/* Payment Analytics - Responsive */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-              <div className="min-h-[200px] sm:min-h-[250px]">
-                <PaymentStatusChart />
-              </div>
-            </div>
-          </div>
-        );
-      case 'personnel':
-        return <PersonnelManagement />;
       case 'school-year':
         return <SchoolYearValidationTab />;
       case 'actions':
@@ -1102,8 +1062,7 @@ const PrincipalDashboard = () => {
                     <Icon name={tabOptions?.find(t => t.id === activeTab)?.icon} size={16} />
                     <span>{tabOptions?.find(t => t.id === activeTab)?.label}</span>
                     {/* Indicateur d'alertes */}
-                    {((activeTab === 'personnel' && true) || 
-                      (activeTab === 'system' && true) || 
+                    {((activeTab === 'system' && true) || 
                       (activeTab === 'school-year' && true)) && (
                       <div className="w-2 h-2 bg-warning rounded-full"></div>
                     )}

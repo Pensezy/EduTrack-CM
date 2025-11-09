@@ -8,8 +8,10 @@ import NewAbsenceModal from './NewAbsenceModal';
 import NotificationHistoryModal from './NotificationHistoryModal';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import absenceService from '../../../services/absenceService';
+import useDataMode from '../../../hooks/useDataMode';
 
 const JustificationTab = () => {
+  const { isDemo, isProduction } = useDataMode();
   const [selectedDate, setSelectedDate] = useState(new Date()?.toISOString()?.split('T')?.[0]);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -35,13 +37,20 @@ const JustificationTab = () => {
   // Chargement des données depuis le service
   useEffect(() => {
     loadAbsences();
-  }, []);
+  }, [isDemo, isProduction]);
 
   const loadAbsences = async () => {
     try {
       setIsLoading(true);
       setError('');
-      const absences = await absenceService.getAllAbsences();
+      
+      console.log('🔍 Debug JustificationTab - Mode détecté:', { isDemo, isProduction });
+      
+      // Passer le mode au service
+      const mode = isProduction ? 'production' : 'demo';
+      const absences = await absenceService.getAllAbsences(mode);
+      
+      console.log('📋 Absences reçues:', absences?.length || 0, absences?.[0] || 'AUCUNE');
       setAbsenceData(absences);
     } catch (err) {
       setError('Erreur lors du chargement des absences');
@@ -265,43 +274,76 @@ const JustificationTab = () => {
       )}
 
       {/* Header */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-        <div>
-          <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
-            Gestion des Justificatifs
-          </h2>
-          <p className="font-body font-body-normal text-text-secondary mt-1">
-            Suivi des absences et retards, justifications et relances parents
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
+              Gestion des Absences
+            </h2>
+            <p className="font-body font-body-normal text-text-secondary mt-1">
+              Suivi des absences et retards, justifications et relances parents
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="default"
+              iconName="Plus"
+              iconPosition="left"
+              onClick={() => setShowNewAbsenceModal(true)}
+            >
+              Nouvelle Absence
+            </Button>
+            <Button
+              variant="outline"
+              iconName="History"
+              iconPosition="left"
+              onClick={() => setShowNotificationHistoryModal(true)}
+            >
+              Historique
+            </Button>
+          </div>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            iconName="CheckCircle"
-            iconPosition="left"
-            onClick={handleBulkJustify}
-            disabled={selectedAbsences.length === 0}
-          >
-            Justifier sélection ({selectedAbsences.length})
-          </Button>
-          <Button
-            variant="outline"
-            iconName="Mail"
-            iconPosition="left"
-            onClick={handleBulkReminders}
-            disabled={selectedAbsences.length === 0}
-          >
-            Rappels sélection ({selectedAbsences.length})
-          </Button>
-          <Button
-            variant="default"
-            iconName="UserX"
-            iconPosition="left"
-            onClick={() => setShowNewAbsenceModal(true)}
-          >
-            Nouvelle Absence
-          </Button>
-        </div>
+
+        {/* Actions groupées */}
+        {selectedAbsences.length > 0 && (
+          <div className="bg-accent/5 border border-accent/20 rounded-lg p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <Icon name="CheckSquare" size={20} className="text-accent" />
+                <span className="font-body font-body-medium text-text-primary">
+                  {selectedAbsences.length} absence(s) sélectionnée(s)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  iconName="CheckCircle"
+                  iconPosition="left"
+                  onClick={handleBulkJustify}
+                >
+                  Justifier la sélection
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  iconName="Mail"
+                  iconPosition="left"
+                  onClick={handleBulkReminders}
+                >
+                  Envoyer des rappels
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  iconName="X"
+                  onClick={() => setSelectedAbsences([])}
+                  title="Désélectionner tout"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Quick Stats */}
@@ -395,6 +437,33 @@ const JustificationTab = () => {
             iconPosition="left"
           />
         </div>
+        
+        {/* Actions de sélection */}
+        {filteredAbsences.length > 0 && (
+          <div className="flex items-center gap-2 mt-4 pt-4 border-t border-border">
+            <span className="text-sm text-text-secondary">Sélection :</span>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => {
+                const allIds = filteredAbsences.map(a => a.id);
+                setSelectedAbsences(allIds);
+              }}
+            >
+              Tout sélectionner
+            </Button>
+            <Button
+              variant="ghost"
+              size="xs"
+              onClick={() => setSelectedAbsences([])}
+            >
+              Tout désélectionner
+            </Button>
+            <span className="text-sm text-text-secondary ml-2">
+              {filteredAbsences.length} absence(s) affichée(s)
+            </span>
+          </div>
+        )}
       </div>
 
       {/* Absences List */}

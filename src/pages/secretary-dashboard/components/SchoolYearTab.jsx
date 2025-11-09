@@ -1,42 +1,119 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { useDataMode } from '../../../hooks/useEduTrackData';
+import schoolYearService from '../../../services/schoolYearService';
 
 const SchoolYearTab = () => {
   const [activeSection, setActiveSection] = useState('dashboard');
   const [currentSchoolYear] = useState('2024-2025');
   const [nextSchoolYear] = useState('2025-2026');
+  const [loading, setLoading] = useState(true);
 
-  // Données simulées pour l'année en cours
-  const [studentsData] = useState({
-    ce1: [
-      { id: 1, name: 'Amina Nkomo', status: 'passe', nextClass: 'CE2' },
-      { id: 2, name: 'Kevin Atangana', status: 'redouble', nextClass: 'CE1' }
-    ],
-    ce2: [
-      { id: 3, name: 'Grace Fouda', status: 'passe', nextClass: 'CM1' },
-      { id: 4, name: 'Junior Mbarga', status: 'passe', nextClass: 'CM1' }
-    ],
-    cm1: [
-      { id: 5, name: 'Sarah Biya', status: 'passe', nextClass: 'CM2' }
-    ],
-    cm2: [
-      { id: 6, name: 'Paul Nguema', status: 'sortant', nextClass: 'Fin primaire' }
-    ]
+  // États pour les données réelles
+  const [studentsData, setStudentsData] = useState({});
+  const [reinscriptions, setReinscriptions] = useState([]);
+  const [newInscriptions, setNewInscriptions] = useState([]);
+  const [statistics, setStatistics] = useState({
+    totalRequests: 0,
+    pendingRequests: 0,
+    approvedRequests: 0,
+    rejectedRequests: 0,
+    reinscriptions: 0,
+    newInscriptions: 0,
+    transfers: 0
   });
 
-  const [reinscriptions, setReinscriptions] = useState([
-    { id: 1, studentName: 'Amina Nkomo', parentName: 'Paul Nkomo', status: 'en_attente', phone: '+237 6 78 90 12 34' },
-    { id: 2, studentName: 'Grace Fouda', parentName: 'Jean Fouda', status: 'confirme', phone: '+237 6 90 12 34 56' },
-    { id: 3, studentName: 'Junior Mbarga', parentName: 'Marie Mbarga', status: 'en_attente', phone: '+237 6 89 01 23 45' }
-  ]);
+  const { dataMode } = useDataMode();
 
-  const [newInscriptions, setNewInscriptions] = useState([
-    { id: 1, studentName: 'Marie Talla', parentName: 'Joseph Talla', class: 'CE1', status: 'en_preparation', phone: '+237 6 55 44 33 22' },
-    { id: 2, studentName: 'Daniel Mbella', parentName: 'Agnes Mbella', class: 'CM1', status: 'soumis_validation', phone: '+237 6 77 88 99 00' }
-  ]);
+  // Chargement des données au montage du composant
+  useEffect(() => {
+    const loadSchoolYearData = async () => {
+      try {
+        setLoading(true);
+        
+        console.log('SchoolYearTab: Chargement des données en mode production - UNIQUEMENT les vraies données');
+        
+        const [studentsRes, reinscriptionsRes, newInscriptionsRes, statisticsRes] = await Promise.all([
+          schoolYearService.getCurrentStudents(),
+          schoolYearService.getReinscriptions(),
+          schoolYearService.getNewInscriptions(),
+          schoolYearService.getSchoolYearStatistics()
+        ]);
+
+        setStudentsData(studentsRes);
+        setReinscriptions(reinscriptionsRes);
+        setNewInscriptions(newInscriptionsRes);
+        setStatistics(statisticsRes);
+
+        console.log('SchoolYearTab: Données chargées:', {
+          students: Object.keys(studentsRes).length,
+          reinscriptions: reinscriptionsRes.length,
+          newInscriptions: newInscriptionsRes.length,
+          statistics: statisticsRes
+        });
+
+        // Si aucune donnée trouvée, afficher un message informatif
+        if (reinscriptionsRes.length === 0 && newInscriptionsRes.length === 0 && Object.keys(studentsRes).length === 0) {
+          console.log('SchoolYearTab: Aucune donnée trouvée - affichage des états vides');
+        }
+      } catch (error) {
+        console.error('SchoolYearTab: Erreur lors du chargement des données de l\'année scolaire:', error);
+        // En cas d'erreur, utiliser des données vides
+        setStudentsData({});
+        setReinscriptions([]);
+        setNewInscriptions([]);
+        setStatistics({
+          totalRequests: 0,
+          pendingRequests: 0,
+          approvedRequests: 0,
+          rejectedRequests: 0,
+          reinscriptions: 0,
+          newInscriptions: 0,
+          transfers: 0
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadSchoolYearData();
+  }, [dataMode]);
+
+  // Gestionnaire de mise à jour de statut
+  const handleStatusUpdate = async (requestId, newStatus, notes = null) => {
+    try {
+      const result = await schoolYearService.updateEnrollmentRequestStatus(requestId, newStatus, notes);
+      if (result.success) {
+        // Recharger les données après mise à jour
+        const [reinscriptionsRes, newInscriptionsRes] = await Promise.all([
+          schoolYearService.getReinscriptions(),
+          schoolYearService.getNewInscriptions()
+        ]);
+        setReinscriptions(reinscriptionsRes);
+        setNewInscriptions(newInscriptionsRes);
+        console.log('SchoolYearTab: Statut mis à jour avec succès');
+      } else {
+        console.error('Erreur lors de la mise à jour du statut:', result.error);
+      }
+    } catch (error) {
+      console.error('Erreur lors de la mise à jour du statut:', error);
+    }
+  };
+
+  // Afficher un indicateur de chargement
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="flex items-center space-x-2 text-text-secondary">
+          <Icon name="Loader2" size={20} className="animate-spin" />
+          <span>Chargement des données de l'année scolaire...</span>
+        </div>
+      </div>
+    );
+  }
 
   const getStatusBadge = (status) => {
     const statusConfig = {
@@ -118,10 +195,10 @@ const SchoolYearTab = () => {
                 </div>
                 <div>
                   <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                    {reinscriptions.filter(r => r.status === 'confirme').length}
+                    {statistics.approvedRequests}
                   </p>
                   <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    Réinscriptions confirmées
+                    Demandes approuvées
                   </p>
                 </div>
               </div>
@@ -134,10 +211,10 @@ const SchoolYearTab = () => {
                 </div>
                 <div>
                   <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                    {reinscriptions.filter(r => r.status === 'en_attente').length}
+                    {statistics.pendingRequests}
                   </p>
                   <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    En attente de réponse
+                    En attente de traitement
                   </p>
                 </div>
               </div>
@@ -150,7 +227,7 @@ const SchoolYearTab = () => {
                 </div>
                 <div>
                   <p className="font-heading font-heading-semibold text-lg text-text-primary">
-                    {newInscriptions.length}
+                    {statistics.newInscriptions}
                   </p>
                   <p className="font-caption font-caption-normal text-xs text-text-secondary">
                     Nouvelles demandes
@@ -244,7 +321,7 @@ const SchoolYearTab = () => {
                       Parent
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
-                      Contact
+                      Classe
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-text-secondary uppercase tracking-wider">
                       Statut
@@ -255,42 +332,57 @@ const SchoolYearTab = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {reinscriptions.map((reinscription) => (
-                    <tr key={reinscription.id} className="hover:bg-muted/20">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                            <Icon name="User" size={14} className="text-primary" />
-                          </div>
-                          <span className="font-medium text-text-primary">
-                            {reinscription.studentName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-text-secondary">
-                        {reinscription.parentName}
-                      </td>
-                      <td className="px-4 py-3 text-text-secondary">
-                        {reinscription.phone}
-                      </td>
-                      <td className="px-4 py-3">
-                        {getStatusBadge(reinscription.status)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-2">
-                          {reinscription.status === 'en_attente' && (
-                            <Button variant="outline" size="sm">
-                              <Icon name="Phone" size={14} className="mr-1" />
-                              Relancer
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="sm">
-                            <Icon name="Eye" size={14} />
-                          </Button>
+                  {reinscriptions.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-4 py-8 text-center text-text-secondary">
+                        <div className="flex flex-col items-center space-y-2">
+                          <Icon name="Users" size={24} className="text-muted-foreground" />
+                          <span>Aucune demande de réinscription en cours</span>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    reinscriptions.map((reinscription) => (
+                      <tr key={reinscription.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                              <Icon name="User" size={14} className="text-primary" />
+                            </div>
+                            <span className="font-medium text-text-primary">
+                              {reinscription.studentName}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-text-secondary">
+                          {reinscription.parentName}
+                        </td>
+                        <td className="px-4 py-3 text-text-secondary">
+                          {reinscription.currentClass ? `${reinscription.currentClass} → ${reinscription.requestedClass}` : reinscription.requestedClass}
+                        </td>
+                        <td className="px-4 py-3">
+                          {getStatusBadge(reinscription.status)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            {reinscription.status === 'en_attente' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleStatusUpdate(reinscription.id, 'confirme')}
+                              >
+                                <Icon name="Check" size={14} className="mr-1" />
+                                Confirmer
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm">
+                              <Icon name="Eye" size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -334,42 +426,79 @@ const SchoolYearTab = () => {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
-                  {newInscriptions.map((inscription) => (
-                    <tr key={inscription.id} className="hover:bg-muted/20">
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
-                            <Icon name="UserPlus" size={14} className="text-success" />
-                          </div>
-                          <span className="font-medium text-text-primary">
-                            {inscription.studentName}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 text-text-secondary">
-                        {inscription.parentName}
-                      </td>
-                      <td className="px-4 py-3">
-                        <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">
-                          {inscription.class}
-                        </span>
-                      </td>
-                      <td className="px-4 py-3">
-                        {getStatusBadge(inscription.status)}
-                      </td>
-                      <td className="px-4 py-3">
-                        <div className="flex items-center space-x-2">
-                          <Button variant="outline" size="sm">
-                            <Icon name="Edit" size={14} className="mr-1" />
-                            Modifier
-                          </Button>
-                          <Button variant="ghost" size="sm">
-                            <Icon name="Eye" size={14} />
-                          </Button>
+                  {newInscriptions.length === 0 ? (
+                    <tr>
+                      <td colSpan="5" className="px-4 py-8 text-center text-text-secondary">
+                        <div className="flex flex-col items-center space-y-2">
+                          <Icon name="UserPlus" size={24} className="text-muted-foreground" />
+                          <span>Aucune nouvelle inscription en cours</span>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    newInscriptions.map((inscription) => (
+                      <tr key={inscription.id} className="hover:bg-muted/20">
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-3">
+                            <div className="w-8 h-8 bg-success/10 rounded-full flex items-center justify-center">
+                              <Icon name="UserPlus" size={14} className="text-success" />
+                            </div>
+                            <div>
+                              <span className="font-medium text-text-primary">
+                                {inscription.studentName}
+                              </span>
+                              {inscription.birthDate && (
+                                <p className="text-xs text-text-secondary">
+                                  Né(e) le {inscription.birthDate}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div>
+                            <div className="text-text-primary">{inscription.parentName}</div>
+                            {inscription.parentPhone && (
+                              <div className="text-xs text-text-secondary">{inscription.parentPhone}</div>
+                            )}
+                            {inscription.parentEmail && (
+                              <div className="text-xs text-text-secondary">{inscription.parentEmail}</div>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 bg-primary/10 text-primary rounded text-sm">
+                            {inscription.requestedClass}
+                          </span>
+                          {inscription.previousSchool && (
+                            <p className="text-xs text-text-secondary mt-1">
+                              De: {inscription.previousSchool}
+                            </p>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
+                          {getStatusBadge(inscription.status)}
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center space-x-2">
+                            {inscription.status === 'soumis' && (
+                              <Button 
+                                variant="outline" 
+                                size="sm"
+                                onClick={() => handleStatusUpdate(inscription.id, 'accepte')}
+                              >
+                                <Icon name="Check" size={14} className="mr-1" />
+                                Accepter
+                              </Button>
+                            )}
+                            <Button variant="ghost" size="sm">
+                              <Icon name="Eye" size={14} />
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -389,33 +518,45 @@ const SchoolYearTab = () => {
             </div>
           </div>
 
-          {Object.entries(studentsData).map(([classe, students]) => (
-            <div key={classe} className="bg-card rounded-lg border border-border p-4">
-              <h4 className="font-heading font-heading-medium text-base text-text-primary mb-4">
-                Classe {classe.toUpperCase()} - {students.length} élève{students.length > 1 ? 's' : ''}
+          {Object.entries(studentsData).length === 0 ? (
+            <div className="bg-card rounded-lg border border-border p-8 text-center">
+              <Icon name="Users" size={32} className="text-muted-foreground mx-auto mb-4" />
+              <h4 className="font-heading font-heading-medium text-base text-text-primary mb-2">
+                Aucun étudiant trouvé
               </h4>
-              <div className="space-y-3">
-                {students.map((student) => (
-                  <div key={student.id} className="flex items-center justify-between p-3 bg-background rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
-                        <Icon name="User" size={14} className="text-primary" />
-                      </div>
-                      <span className="font-medium text-text-primary">
-                        {student.name}
-                      </span>
-                    </div>
-                    <div className="flex items-center space-x-3">
-                      <span className="text-sm text-text-secondary">
-                        → {student.nextClass}
-                      </span>
-                      {getStatusBadge(student.status)}
-                    </div>
-                  </div>
-                ))}
-              </div>
+              <p className="text-text-secondary">
+                Les passages de classe seront préparés une fois que les étudiants seront ajoutés au système.
+              </p>
             </div>
-          ))}
+          ) : (
+            Object.entries(studentsData).map(([classe, students]) => (
+              <div key={classe} className="bg-card rounded-lg border border-border p-4">
+                <h4 className="font-heading font-heading-medium text-base text-text-primary mb-4">
+                  Classe {classe.toUpperCase()} - {students.length} élève{students.length > 1 ? 's' : ''}
+                </h4>
+                <div className="space-y-3">
+                  {students.map((student) => (
+                    <div key={student.id} className="flex items-center justify-between p-3 bg-background rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-full flex items-center justify-center">
+                          <Icon name="User" size={14} className="text-primary" />
+                        </div>
+                        <span className="font-medium text-text-primary">
+                          {student.name}
+                        </span>
+                      </div>
+                      <div className="flex items-center space-x-3">
+                        <span className="text-sm text-text-secondary">
+                          → {student.nextClass}
+                        </span>
+                        {getStatusBadge(student.status)}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))
+          )}
         </div>
       )}
 
@@ -452,16 +593,47 @@ const SchoolYearTab = () => {
               </h4>
               <div className="space-y-3">
                 {[
-                  'Finaliser les réinscriptions',
-                  'Soumettre au Principal',
-                  'Attendre la validation',
-                  'Exécuter les changements'
+                  { 
+                    text: 'Finaliser les réinscriptions', 
+                    completed: statistics.approvedRequests > 0,
+                    count: statistics.approvedRequests 
+                  },
+                  { 
+                    text: 'Traiter nouvelles inscriptions', 
+                    completed: statistics.newInscriptions > 0,
+                    count: statistics.newInscriptions 
+                  },
+                  { 
+                    text: 'Soumettre au Principal', 
+                    completed: false,
+                    count: statistics.totalRequests 
+                  },
+                  { 
+                    text: 'Attendre la validation', 
+                    completed: false,
+                    count: 0 
+                  }
                 ].map((etape, index) => (
-                  <div key={index} className="flex items-center space-x-3">
-                    <div className="w-4 h-4 rounded-full bg-muted flex items-center justify-center">
-                      <span className="text-xs font-medium text-muted-foreground">{index + 1}</span>
+                  <div key={index} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-4 h-4 rounded-full flex items-center justify-center ${
+                        etape.completed ? 'bg-success' : 'bg-muted'
+                      }`}>
+                        {etape.completed ? (
+                          <Icon name="Check" size={10} className="text-white" />
+                        ) : (
+                          <span className="text-xs font-medium text-muted-foreground">{index + 1}</span>
+                        )}
+                      </div>
+                      <span className={`text-sm ${etape.completed ? 'text-text-primary' : 'text-text-secondary'}`}>
+                        {etape.text}
+                      </span>
                     </div>
-                    <span className="text-sm text-text-secondary">{etape}</span>
+                    {etape.count > 0 && (
+                      <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
+                        {etape.count}
+                      </span>
+                    )}
                   </div>
                 ))}
               </div>

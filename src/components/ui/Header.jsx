@@ -9,46 +9,93 @@ import AccessibilityControls from './AccessibilityControls';
 const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, onToggleSidebar }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [loadingNotifications, setLoadingNotifications] = useState(false);
   const location = useLocation();
   
   // Hook pour détecter le mode de données
   const { isDemo, isProduction, user } = useDataMode();
 
+  // Détecter le vrai rôle basé sur l'URL si userRole n'est pas correct
+  const detectRoleFromUrl = () => {
+    if (location.pathname.includes('/secretary-dashboard')) return 'secretary';
+    if (location.pathname.includes('/principal-dashboard')) return 'principal';
+    if (location.pathname.includes('/teacher-dashboard')) return 'teacher';
+    if (location.pathname.includes('/student-dashboard')) return 'student';
+    if (location.pathname.includes('/parent-dashboard')) return 'parent';
+    if (location.pathname.includes('/admin-dashboard')) return 'admin';
+    return userRole;
+  };
+
+  const actualUserRole = detectRoleFromUrl();
+
+  // Charger les notifications selon le mode
+  useEffect(() => {
+    const loadNotifications = async () => {
+      if (isProduction) {
+        // Mode production : afficher un état vide (les vraies notifications seront implémentées plus tard)
+        setNotifications([]);
+      } else if (isDemo) {
+        // Mode démo : utiliser les données fictives avec traduction française
+        const demoNotifications = [
+          { id: 1, title: 'Note ajoutée', message: 'Mathématiques - Devoir 3', time: 'il y a 2 min', type: 'success' },
+          { id: 2, title: 'Réunion parent programmée', message: 'Demain à 14h00', time: 'il y a 1h', type: 'warning' },
+          { id: 3, title: 'Maintenance système', message: 'Programmée ce soir', time: 'il y a 3h', type: 'info' },
+        ];
+        setNotifications(demoNotifications);
+      }
+    };
+
+    loadNotifications();
+  }, [isDemo, isProduction]);
+
   const navigationItems = {
     student: [
       { label: 'Dashboard', path: '/student-dashboard', icon: 'Home' },
-      { label: 'Profile', path: '/student-profile-management', icon: 'User' },
-      { label: 'Grades', path: '/grade-management-system', icon: 'BookOpen' },
+      { label: 'Profil', path: '/student-profile-management', icon: 'User' },
+      { label: 'Notes', path: '/grade-management-system', icon: 'BookOpen' },
+    ],
+    parent: [
+      { label: 'Dashboard', path: '/parent-dashboard', icon: 'Home' },
+      { label: 'Enfants', path: '/parent-dashboard', icon: 'Users' },
+      { label: 'Communications', path: '/parent-dashboard', icon: 'MessageCircle' },
     ],
     teacher: [
       { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home' },
-      { label: 'Assignments', path: '/teacher-assignment-system', icon: 'FileText' },
-      { label: 'Account', path: '/teacher-account-management', icon: 'User' },
+      { label: 'Affectations', path: '/teacher-assignment-system', icon: 'FileText' },
+      { label: 'Compte', path: '/teacher-account-management', icon: 'User' },
     ],
     secretary: [
-      { label: 'Paiements', path: '/secretary-dashboard?tab=payments', icon: 'CreditCard' },
-      { label: 'Communication', path: '/secretary-dashboard?tab=communications', icon: 'MessageCircle' },
-      { label: 'Documents', path: '/secretary-dashboard?tab=documents', icon: 'FileText' },
+      { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home' },
+      { label: 'Urgences', path: '/secretary-dashboard?tab=justifications', icon: 'AlertCircle' },
+      { label: 'Communications', path: '/secretary-dashboard?tab=communications', icon: 'MessageCircle' },
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home' },
-      { label: 'Documents', path: '/document-management-hub?mode=principal', icon: 'FileText' },
+      { label: 'Comptes', path: '/principal-dashboard?tab=accounts', icon: 'UserCheck' },
+      { label: 'Validation Année', path: '/principal-dashboard?tab=school-year', icon: 'Calendar' },
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home' },
-      { label: 'System Management', path: '/admin-dashboard', icon: 'Settings' },
-      { label: 'User Management', path: '/admin-dashboard', icon: 'Users' },
-      { label: 'Analytics', path: '/admin-dashboard', icon: 'BarChart3' },
+      { label: 'Utilisateurs', path: '/admin-dashboard?tab=users', icon: 'Users' },
+      { label: 'Analytics', path: '/admin-dashboard?tab=analytics', icon: 'TrendingUp' },
+      { label: 'Journal Audit', path: '/admin-dashboard?tab=audit', icon: 'FileText' },
     ]
   };
 
-  const currentNavItems = navigationItems?.[userRole] || navigationItems?.student;
+  const currentNavItems = navigationItems?.[actualUserRole] || navigationItems?.student;
 
-  const notifications = [
-    { id: 1, title: 'New grade posted', message: 'Mathematics - Assignment 3', time: '2 min ago', type: 'success' },
-    { id: 2, title: 'Parent meeting scheduled', message: 'Tomorrow at 2:00 PM', time: '1 hour ago', type: 'warning' },
-    { id: 3, title: 'System maintenance', message: 'Scheduled for tonight', time: '3 hours ago', type: 'info' },
-  ];
+  // Debug pour identifier les problèmes de rôle
+  useEffect(() => {
+    console.log('🔍 Header Debug:', {
+      userRole,
+      actualUserRole,
+      pathname: location.pathname,
+      userName,
+      hasNavItems: !!navigationItems?.[actualUserRole],
+      currentNavItems: currentNavItems?.map(item => item.label)
+    });
+  }, [userRole, userName, currentNavItems]);
 
   const handleNotificationClick = () => {
     setIsNotificationOpen(!isNotificationOpen);
@@ -159,35 +206,57 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
               {isNotificationOpen && (
                 <div className="absolute right-0 top-12 w-80 bg-popover border border-border rounded-lg shadow-modal z-notification">
                   <div className="p-4 border-b border-border">
-                    <h3 className="font-heading font-heading-semibold text-sm text-popover-foreground">
-                      Notifications
-                    </h3>
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-heading font-heading-semibold text-sm text-popover-foreground">
+                        Notifications
+                      </h3>
+                      {/* Indicateur de mode */}
+                      <div className={`px-2 py-1 rounded text-xs font-medium ${
+                        isDemo 
+                          ? 'bg-amber-100 text-amber-800' 
+                          : 'bg-green-100 text-green-800'
+                      }`}>
+                        {isDemo ? 'Démo' : 'Prod'}
+                      </div>
+                    </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
-                    {notifications?.map((notification) => (
-                      <div
-                        key={notification?.id}
-                        className="p-4 border-b border-border last:border-b-0 hover:bg-muted transition-micro cursor-pointer"
-                      >
-                        <div className="flex items-start space-x-3">
-                          <div className={`w-2 h-2 rounded-full mt-2 ${
-                            notification?.type === 'success' ? 'bg-success' :
-                            notification?.type === 'warning' ? 'bg-warning' : 'bg-primary'
-                          }`} />
-                          <div className="flex-1 min-w-0">
-                            <p className="font-body font-body-semibold text-sm text-popover-foreground">
-                              {notification?.title}
-                            </p>
-                            <p className="font-body font-body-normal text-sm text-muted-foreground mt-1">
-                              {notification?.message}
-                            </p>
-                            <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
-                              {notification?.time}
-                            </p>
+                    {notifications?.length > 0 ? (
+                      notifications.map((notification) => (
+                        <div
+                          key={notification?.id}
+                          className="p-4 border-b border-border last:border-b-0 hover:bg-muted transition-micro cursor-pointer"
+                        >
+                          <div className="flex items-start space-x-3">
+                            <div className={`w-2 h-2 rounded-full mt-2 ${
+                              notification?.type === 'success' ? 'bg-success' :
+                              notification?.type === 'warning' ? 'bg-warning' : 'bg-primary'
+                            }`} />
+                            <div className="flex-1 min-w-0">
+                              <p className="font-body font-body-semibold text-sm text-popover-foreground">
+                                {notification?.title}
+                              </p>
+                              <p className="font-body font-body-normal text-sm text-muted-foreground mt-1">
+                                {notification?.message}
+                              </p>
+                              <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
+                                {notification?.time}
+                              </p>
+                            </div>
                           </div>
                         </div>
+                      ))
+                    ) : (
+                      <div className="p-6 text-center">
+                        <AppIcon name="Bell" size={24} className="text-muted-foreground mx-auto mb-2" />
+                        <p className="text-sm text-muted-foreground">
+                          {isProduction 
+                            ? 'Aucune notification' 
+                            : 'Pas de notifications'
+                          }
+                        </p>
                       </div>
-                    ))}
+                    )}
                   </div>
                   <div className="p-3 border-t border-border">
                     <Button variant="ghost" size="sm" className="w-full">
@@ -224,12 +293,12 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                       {userName}
                     </p>
                     <p className="text-xs text-gray-500 capitalize">
-                      {userRole === 'secretary' ? 'Secrétaire' : 
-                       userRole === 'principal' ? 'Directeur' :
-                       userRole === 'teacher' ? 'Enseignant' :
-                       userRole === 'student' ? 'Élève' :
-                       userRole === 'parent' ? 'Parent' :
-                       userRole === 'admin' ? 'Administrateur' : userRole}
+                      {actualUserRole === 'secretary' ? 'Secrétaire' : 
+                       actualUserRole === 'principal' ? 'Directeur' :
+                       actualUserRole === 'teacher' ? 'Enseignant' :
+                       actualUserRole === 'student' ? 'Élève' :
+                       actualUserRole === 'parent' ? 'Parent' :
+                       actualUserRole === 'admin' ? 'Administrateur' : actualUserRole}
                     </p>
                   </div>
                   

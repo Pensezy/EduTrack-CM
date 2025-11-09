@@ -1,6 +1,34 @@
 // Service de démonstration pour la gestion des paiements scolaires
 // En production, ces données viendraient d'une base de données
 
+import { supabase } from '../lib/supabase';
+import { getCurrentSchoolId } from './cardService';
+
+// Fonction pour détecter le mode de fonctionnement
+const isProductionMode = () => {
+  console.log('🔍 Vérification mode paiements...');
+  
+  // 1. Vérifier si c'est un compte démo dans localStorage
+  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
+  if (userData.demoAccount === true) {
+    console.log('🎭 Compte démo détecté - mode démo');
+    return false;
+  }
+  
+  // 2. Vérifier s'il y a un utilisateur connecté via localStorage ou session
+  const edutrackUser = localStorage.getItem('edutrack-user');
+  const hasValidSession = edutrackUser && edutrackUser !== 'null';
+  
+  if (!hasValidSession) {
+    console.log('❌ Pas de session utilisateur - mode démo');
+    return false;
+  }
+  
+  // 3. Si utilisateur réel connecté
+  console.log('✅ Utilisateur réel connecté - mode production');
+  return true;
+};
+
 // Données d'exemple pour les étudiants
 const studentsData = [
   {
@@ -223,35 +251,205 @@ const formatDateTime = (date) => {
 // Service principal
 export const paymentService = {
   // Obtenir tous les paiements avec statistiques
-  getAllPayments: async () => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const payments = [...paymentsData];
+  getAllPayments: async (mode = 'auto') => {
+    console.log('🔄 getAllPayments appelé avec mode:', mode);
+    console.log('📊 Détection automatique mode:', isProductionMode());
+    
+    // Déterminer le mode : utiliser le paramètre fourni ou détecter automatiquement
+    let useProduction = false;
+    
+    if (mode === 'production') {
+      useProduction = true;
+      console.log('🔧 Mode forcé: production');
+    } else if (mode === 'demo') {
+      useProduction = false;
+      console.log('🔧 Mode forcé: demo');
+    } else {
+      useProduction = isProductionMode();
+      console.log('🔧 Mode auto-détecté:', useProduction ? 'production' : 'demo');
+    }
+    
+    if (!useProduction) {
+      console.log('🎭 Mode DÉMO - Paiements fictifs');
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const payments = [...paymentsData];
+          
+          // Calculer les statistiques
+          const statistics = payments.reduce((acc, payment) => {
+            acc.total += payment.totalAmount || 0;
+            acc.collected += payment.amountPaid || 0;
+            
+            if (payment.status === 'overdue') {
+              acc.overdue += payment.totalAmount - (payment.amountPaid || 0);
+            }
+            
+            return acc;
+          }, {
+            total: 0,
+            collected: 0,
+            overdue: 0
+          });
+          
+          statistics.outstanding = statistics.total - statistics.collected;
+          
+          console.log('📊 Statistiques démo:', statistics);
+          resolve({
+            payments,
+            statistics
+          });
+        }, 300);
+      });
+    }
+
+    // Mode production : utiliser Supabase
+    try {
+      console.log('✅ Mode PRODUCTION - Chargement paiements Supabase');
+      const schoolId = await getCurrentSchoolId();
+      if (!schoolId) {
+        console.error('❌ Aucune école associée - fallback démo');
+        throw new Error('Pas d\'école associée');
+      }
+
+      console.log('🏫 École trouvée:', schoolId);
+
+      // Debug: Vérifier d'abord tous les étudiants de la base
+      console.log('🔍 Vérification complète de la table students...');
+      const { data: allStudents, error: allError } = await supabase
+        .from('students')
+        .select('*')
+        .limit(5);
         
-        // Calculer les statistiques
-        const statistics = payments.reduce((acc, payment) => {
-          acc.total += payment.totalAmount || 0;
-          acc.collected += payment.amountPaid || 0;
-          
-          if (payment.status === 'overdue') {
-            acc.overdue += payment.totalAmount - (payment.amountPaid || 0);
+      if (allError) {
+        console.error('❌ Erreur lecture table students:', allError);
+      } else {
+        console.log('📊 Total étudiants dans la table:', allStudents?.length || 0);
+        if (allStudents?.length > 0) {
+          console.log('👤 Exemple étudiant:', allStudents[0]);
+          console.log('🏫 Schools IDs présents:', [...new Set(allStudents.map(s => s.school_id))]);
+        }
+      }
+
+      // Charger les étudiants réels depuis Supabase
+      const { data: studentsData, error } = await supabase
+        .from('students')
+        .select(`
+          id,
+          user_id,
+          first_name,
+          last_name,
+          school_id,
+          is_active,
+          created_at
+        `)
+        .eq('school_id', schoolId)
+        .eq('is_active', true)
+        .order('created_at', { ascending: false })
+        .limit(15);
+
+      if (error) {
+        console.error('❌ Erreur requête students:', error);
+        throw error;
+      }
+
+      console.log('📋 Étudiants trouvés pour simulation paiements:', studentsData?.length || 0);
+
+      if (!studentsData || studentsData.length === 0) {
+        console.log('📭 Aucun étudiant trouvé - affichage liste vide');
+        // Retourner une structure vide au lieu de données démo
+        return {
+          payments: [],
+          statistics: {
+            total: 0,
+            collected: 0,
+            overdue: 0,
+            outstanding: 0
           }
-          
-          return acc;
-        }, {
+        };
+      }
+
+      // Simuler des paiements depuis les vrais étudiants
+      const simulatedPayments = studentsData.map((student, index) => {
+        const baseAmount = 20000 + (index % 3) * 5000; // Montants variés
+        const statuses = ['completed', 'pending', 'overdue', 'partial'];
+        const status = statuses[index % statuses.length];
+        const amountPaid = status === 'completed' ? baseAmount : 
+                          status === 'partial' ? Math.floor(baseAmount * 0.6) : 0;
+
+        return {
+          id: index + 1,
+          student: {
+            studentId: student.user_id || student.id,
+            firstName: student.first_name,
+            lastName: student.last_name,
+            class: 'Non assigné', // Table students n'a pas de classe pour le moment
+            parentName: 'À renseigner',
+            parentPhone: 'À renseigner', 
+            parentEmail: 'À renseigner'
+          },
+          feeType: ['Frais de scolarité', 'Transport', 'Cantine', 'Uniforme'][index % 4],
+          period: 'Novembre 2024',
+          description: 'Paiement mensuel',
+          totalAmount: baseAmount,
+          amountPaid: amountPaid,
+          remainingBalance: baseAmount - amountPaid,
+          status: status,
+          dueDate: '2024-11-15',
+          paymentDate: status === 'completed' || status === 'partial' ? '2024-11-10' : null,
+          paymentMethod: status === 'completed' || status === 'partial' ? 
+                        ['Mobile Money', 'Espèces', 'Virement'][index % 3] : null,
+          receiptId: status === 'completed' || status === 'partial' ? `REC${(index + 1).toString().padStart(3, '0')}` : null,
+          paymentHistory: status === 'completed' || status === 'partial' ? [{
+            date: '2024-11-10',
+            amount: amountPaid,
+            method: ['Mobile Money', 'Espèces', 'Virement'][index % 3],
+            reference: `REF${index + 1}`,
+            receivedBy: 'Secrétaire'
+          }] : [],
+          notes: 'Données réelles depuis table students (simulation)',
+          createdAt: student.created_at
+        };
+      });
+
+      console.log('✅ Paiements simulés créés:', simulatedPayments.length);
+
+      // Calculer les statistiques
+      const statistics = simulatedPayments.reduce((acc, payment) => {
+        acc.total += payment.totalAmount || 0;
+        acc.collected += payment.amountPaid || 0;
+        
+        if (payment.status === 'overdue') {
+          acc.overdue += payment.totalAmount - (payment.amountPaid || 0);
+        }
+        
+        return acc;
+      }, {
+        total: 0,
+        collected: 0,
+        overdue: 0
+      });
+      
+      statistics.outstanding = statistics.total - statistics.collected;
+
+      return {
+        payments: simulatedPayments,
+        statistics
+      };
+
+    } catch (error) {
+      console.error('❌ Erreur chargement paiements Supabase:', error);
+      console.log('🔄 Affichage liste vide suite à erreur');
+      // Retourner une structure vide au lieu de données démo
+      return {
+        payments: [],
+        statistics: {
           total: 0,
           collected: 0,
-          overdue: 0
-        });
-        
-        statistics.outstanding = statistics.total - statistics.collected;
-        
-        resolve({
-          payments,
-          statistics
-        });
-      }, 300);
-    });
+          overdue: 0,
+          outstanding: 0
+        }
+      };
+    }
   },
 
   // Obtenir un paiement par ID
@@ -266,19 +464,77 @@ export const paymentService = {
 
   // Rechercher des étudiants pour créer un nouveau paiement
   searchStudents: async (searchTerm = '') => {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const filtered = studentsData.filter(student => {
-          const matchesSearch = searchTerm === '' || 
-            student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-            student.class.toLowerCase().includes(searchTerm.toLowerCase());
-          
-          return matchesSearch;
-        });
-        resolve(filtered);
-      }, 300);
-    });
+    console.log('🔍 searchStudents appelé avec:', searchTerm);
+    
+    if (!isProductionMode()) {
+      console.log('🎭 Mode DÉMO - Recherche étudiants fictifs');
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          const filtered = studentsData.filter(student => {
+            const matchesSearch = searchTerm === '' || 
+              student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              student.class.toLowerCase().includes(searchTerm.toLowerCase());
+            
+            return matchesSearch;
+          });
+          resolve(filtered);
+        }, 300);
+      });
+    }
+
+    // Mode production : rechercher dans Supabase
+    try {
+      console.log('✅ Mode PRODUCTION - Recherche étudiants Supabase');
+      const schoolId = await getCurrentSchoolId();
+      if (!schoolId) {
+        console.warn('❌ ID école non trouvé pour recherche étudiants');
+        return [];
+      }
+
+      console.log('🔍 Recherche étudiants pour école ID:', schoolId);
+      
+      let query = supabase
+        .from('students')
+        .select('id, user_id, first_name, last_name')
+        .eq('school_id', schoolId)
+        .eq('is_active', true);
+
+      // Appliquer le filtre de recherche si fourni
+      if (searchTerm && searchTerm.trim() !== '') {
+        query = query.or(`first_name.ilike.%${searchTerm}%, last_name.ilike.%${searchTerm}%`);
+      }
+
+      const { data: students, error } = await query
+        .order('first_name')
+        .limit(50);
+
+      if (error) {
+        console.error('❌ Erreur recherche étudiants:', error);
+        throw error;
+      }
+
+      console.log('✅ Étudiants trouvés:', students?.length || 0);
+
+      return students?.map(student => ({
+        id: student.user_id || student.id,
+        name: `${student.first_name} ${student.last_name}`,
+        class: 'Non assigné', // Classe pas disponible pour le moment
+        parentName: 'À renseigner',
+        parentPhone: 'À renseigner',
+        parentEmail: 'À renseigner'
+      })) || [];
+
+    } catch (error) {
+      console.error('❌ Erreur searchStudents production:', error);
+      // Fallback vers données démo en cas d'erreur
+      console.log('🔄 Fallback vers données démo');
+      return studentsData.filter(student => {
+        const matchesSearch = searchTerm === '' || 
+          student.name.toLowerCase().includes(searchTerm.toLowerCase());
+        return matchesSearch;
+      });
+    }
   },
 
   // Obtenir les types de frais

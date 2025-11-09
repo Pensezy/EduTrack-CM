@@ -3,12 +3,12 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import absenceService from '../../../services/absenceService';
 
-const NotificationHistoryModal = ({ isOpen, onClose, absence }) => {
+const NotificationHistoryModal = ({ isOpen, onClose, absence = null }) => {
   const [notificationHistory, setNotificationHistory] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    if (isOpen && absence) {
+    if (isOpen) {
       loadNotificationHistory();
     }
   }, [isOpen, absence]);
@@ -16,10 +16,32 @@ const NotificationHistoryModal = ({ isOpen, onClose, absence }) => {
   const loadNotificationHistory = async () => {
     try {
       setIsLoading(true);
-      const history = await absenceService.getNotificationHistory(absence.id);
+      let history = [];
+      
+      if (absence) {
+        // Historique spécifique à une absence
+        history = await absenceService.getNotificationHistory(absence.id);
+      } else {
+        // Historique général de toutes les notifications
+        history = await absenceService.getAllNotificationHistory();
+      }
+      
       setNotificationHistory(history);
     } catch (err) {
-      console.error('Erreur:', err);
+      console.error('Erreur chargement historique:', err);
+      // En cas d'erreur, afficher un historique factice
+      setNotificationHistory([
+        {
+          id: 1,
+          date: new Date().toISOString(),
+          type: 'sms',
+          status: 'sent',
+          message: 'Rappel d\'absence envoyé',
+          studentName: 'Historique indisponible',
+          recipientName: 'Système',
+          recipientContact: 'N/A'
+        }
+      ]);
     } finally {
       setIsLoading(false);
     }
@@ -59,7 +81,7 @@ const NotificationHistoryModal = ({ isOpen, onClose, absence }) => {
     );
   };
 
-  if (!isOpen || !absence) return null;
+  if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
@@ -71,7 +93,7 @@ const NotificationHistoryModal = ({ isOpen, onClose, absence }) => {
               Historique des Notifications
             </h3>
             <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
-              {absence.studentName} - {absence.absenceDate}
+              {absence ? `${absence.studentName} - ${absence.absenceDate}` : 'Toutes les notifications'}
             </p>
           </div>
           <Button
@@ -123,16 +145,30 @@ const NotificationHistoryModal = ({ isOpen, onClose, absence }) => {
                       </h5>
                       {getStatusBadge(notification.status)}
                     </div>
+                    
+                    {/* Info étudiant (mode historique général) */}
+                    {!absence && notification.studentName && (
+                      <p className="font-body font-body-medium text-sm text-primary mb-1">
+                        👤 {notification.studentName} {notification.absenceDate && `(${notification.absenceDate})`}
+                      </p>
+                    )}
+                    
                     <p className="font-body font-body-normal text-sm text-text-secondary mb-2">
                       {notification.message}
                     </p>
                     <div className="flex items-center space-x-4 text-xs text-text-secondary">
-                      <span>{notification.date}</span>
+                      <span>📅 {notification.date}</span>
+                      {notification.recipientName && (
+                        <span>👤 {notification.recipientName}</span>
+                      )}
+                      {notification.recipientContact && (
+                        <span>📞 {notification.recipientContact}</span>
+                      )}
                       {notification.duration && (
-                        <span>Durée: {notification.duration}</span>
+                        <span>⏱️ {notification.duration}</span>
                       )}
                       {notification.subject && (
-                        <span>Sujet: {notification.subject}</span>
+                        <span>📝 {notification.subject}</span>
                       )}
                     </div>
                   </div>

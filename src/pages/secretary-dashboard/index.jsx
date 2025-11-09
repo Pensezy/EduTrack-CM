@@ -40,6 +40,114 @@ const SecretaryDashboard = () => {
   // Déterminer si on est en mode démo et charger le nom de la secrétaire
   useEffect(() => {
     const loadUserData = async () => {
+      try {
+        // 1. D'abord, récupérer l'utilisateur authentifié depuis Supabase
+        const { data: { user: authUser } } = await supabase.auth.getUser();
+        
+        if (authUser) {
+          console.log('🔐 Utilisateur Supabase Auth:', authUser.email, 'ID:', authUser.id);
+          
+          // 2. Récupérer les données complètes depuis la table users
+          const { data: userData, error } = await supabase
+            .from('users')
+            .select(`
+              id,
+              email,
+              full_name,
+              role,
+              current_school_id,
+              school:schools!users_current_school_id_fkey(id, name)
+            `)
+            .eq('id', authUser.id)
+            .single();
+            
+          if (error) {
+            console.error('❌ Erreur chargement données utilisateur:', error);
+            // Fallback sur localStorage si erreur Supabase
+            loadFromLocalStorage();
+            return;
+          }
+          
+          console.log('✅ Données utilisateur depuis Supabase:', userData);
+          console.log('🎯 EMAIL ATTENDU: pensezy.si@gmail.com');
+          console.log('📧 EMAIL TROUVÉ:', userData.email);
+          console.log('👤 RÔLE ATTENDU: secretary');  
+          console.log('🎭 RÔLE TROUVÉ:', userData.role);
+          
+          // 3. VÉRIFICATION CRITIQUE : Est-ce bien le bon compte ?
+          if (userData.email !== 'pensezy.si@gmail.com') {
+            console.error('❌ PROBLÈME MAJEUR: Mauvais utilisateur connecté !');
+            console.error('   Attendu: pensezy.si@gmail.com');
+            console.error('   Trouvé:', userData.email);
+            console.error('   🔒 DÉCONNEXION REQUISE');
+            
+            // Forcer la déconnexion car mauvais compte
+            await supabase.auth.signOut();
+            localStorage.removeItem('edutrack-user');
+            window.location.href = '/staff-login';
+            return;
+          }
+          
+          // 4. Vérifier que c'est bien un compte secrétaire
+          if (userData.role !== 'secretary') {
+            console.error('❌ RÔLE INCORRECT:', userData.role, 'au lieu de secretary');
+          }
+          
+          // 5. Debug: Lister tous les secrétaires pour voir s'il en existe
+          console.log('🔍 Liste de tous les secrétaires dans la base:');
+          const { data: allSecretaries, error: secError } = await supabase
+            .from('secretaries')
+            .select('id, first_name, last_name, user_id, users:user_id(email, role)')
+            .order('id');
+            
+          console.log('📋 Secrétaires trouvés:', allSecretaries);
+          if (secError) console.error('❌ Erreur liste secrétaires:', secError);
+          
+          // 6. Debug: Lister tous les utilisateurs pour voir les emails
+          const { data: allUsers, error: usersError } = await supabase
+            .from('users')
+            .select('id, email, role, full_name')
+            .order('email');
+            
+          console.log('📋 Tous les utilisateurs:', allUsers);
+          if (usersError) console.error('❌ Erreur liste utilisateurs:', usersError);
+          
+          setIsDemo(false);
+          
+          // 4. Charger le nom complet depuis la table secretaries
+          if (userData.id) {
+            console.log('🔍 Recherche secrétaire avec user_id:', userData.id);
+            
+            const { data: secretaryData, error: secretaryError } = await supabase
+              .from('secretaries')
+              .select('first_name, last_name, id')
+              .eq('user_id', userData.id)
+              .single();
+
+            console.log('📊 Résultat requête secretaries:', { secretaryData, error: secretaryError });
+
+            if (secretaryData && !secretaryError) {
+              const fullName = `${secretaryData.first_name} ${secretaryData.last_name}`;
+              setSecretaryName(fullName);
+              console.log('👤 Nom secrétaire trouvé:', fullName);
+            } else {
+              // Fallback sur userData de la table users
+              const fullName = userData.full_name || userData.email;
+              setSecretaryName(fullName);
+              console.log('� Nom depuis users:', fullName);
+            }
+          }
+        } else {
+          console.log('❌ Aucun utilisateur authentifié, fallback localStorage');
+          loadFromLocalStorage();
+        }
+      } catch (error) {
+        console.error('❌ Erreur loadUserData:', error);
+        loadFromLocalStorage();
+      }
+    };
+
+    const loadFromLocalStorage = () => {
       const savedUser = localStorage.getItem('edutrack-user');
       if (savedUser) {
         try {
@@ -48,29 +156,11 @@ const SecretaryDashboard = () => {
           setIsDemo(isDemoAccount);
           
           if (isDemoAccount) {
-            console.log('🎭 Mode DÉMO');
+            console.log('🎭 Mode DÉMO (localStorage)');
             setSecretaryName('Secrétaire Démo');
           } else {
-            console.log('✅ Mode PRODUCTION:', userData.school_name || 'École');
-            
-            // Charger le nom complet depuis Supabase
-            if (user?.id) {
-              const { data: secretaryData, error } = await supabase
-                .from('secretaries')
-                .select('first_name, last_name')
-                .eq('user_id', user.id)
-                .single();
-
-              if (secretaryData && !error) {
-                const fullName = `${secretaryData.first_name} ${secretaryData.last_name}`;
-                setSecretaryName(fullName);
-                console.log('👤 Nom secrétaire:', fullName);
-              } else if (error) {
-                console.warn('⚠️ Erreur chargement nom secrétaire:', error);
-                // Fallback sur le nom de l'utilisateur
-                setSecretaryName(user?.full_name || user?.email || 'Secrétaire');
-              }
-            }
+            console.log('✅ Mode PRODUCTION (localStorage):', userData.school_name || 'École', '- Rôle:', userData.role);
+            setSecretaryName(userData.full_name || userData.email || 'Secrétaire');
           }
         } catch (e) {
           console.error('Erreur lecture session:', e);
