@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
@@ -14,6 +14,8 @@ import UpcomingEvents from './components/UpcomingEvents';
 import MultiSchoolChildrenOverview from './components/MultiSchoolChildrenOverview';
 
 const ParentDashboard = () => {
+  const [searchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'dashboard';
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedChild, setSelectedChild] = useState(null);
   const [selectedSchool, setSelectedSchool] = useState(null);
@@ -303,6 +305,196 @@ const ParentDashboard = () => {
     return parentData?.children?.filter(child => child?.schoolId === schoolId) || [];
   };
 
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'children':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mes Enfants</h2>
+            <ChildSelector
+              children={parentData?.children}
+              schools={getSchools()}
+              selectedChild={selectedChild}
+              selectedSchool={selectedSchool}
+              onChildSelect={handleChildSelect}
+              onSchoolChange={handleSchoolChange}
+            />
+            {selectedChild && (
+              <ChildOverviewCard child={selectedChild} />
+            )}
+          </div>
+        );
+
+      case 'grades':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Notes et Résultats</h2>
+            {selectedChild ? (
+              <GradesOverview 
+                child={selectedChild}
+                grades={gradesData?.[selectedChild?.id] || []}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="BookOpen" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez un enfant pour voir les notes</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'attendance':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Présences et Absences</h2>
+            {selectedChild ? (
+              <AttendanceTracker 
+                child={selectedChild}
+                attendance={attendanceData?.[selectedChild?.id] || {}}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="Calendar" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez un enfant pour voir les présences</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'payments':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Paiements et Frais</h2>
+            {selectedChild ? (
+              <PaymentStatus 
+                child={selectedChild}
+                payments={paymentData?.[selectedChild?.id] || []}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="CreditCard" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez un enfant pour voir les paiements</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'messages':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Communications</h2>
+            {selectedChild ? (
+              <CommunicationCenter 
+                child={selectedChild}
+                notifications={notificationsData?.[selectedChild?.id] || []}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="MessageCircle" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez un enfant pour voir les communications</p>
+              </div>
+            )}
+          </div>
+        );
+
+      default: // 'dashboard'
+        return (
+          <>
+            {/* Sélecteur de mode de vue */}
+            <div className="flex items-center justify-between bg-white rounded-lg p-4 border border-gray-200">
+              <div>
+                <h3 className="font-semibold text-gray-800">Mode d'affichage</h3>
+                <p className="text-sm text-gray-600">
+                  Choisissez comment voir vos enfants
+                </p>
+              </div>
+              <div className="flex bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setViewMode('traditional')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'traditional'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Icon name="Users" size={16} className="mr-2 inline" />
+                  Vue Traditionnelle
+                </button>
+                <button
+                  onClick={() => setViewMode('multischool')}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    viewMode === 'multischool'
+                      ? 'bg-white text-blue-600 shadow-sm'
+                      : 'text-gray-600 hover:text-gray-800'
+                  }`}
+                >
+                  <Icon name="Globe" size={16} className="mr-2 inline" />
+                  Multi-Établissements
+                </button>
+              </div>
+            </div>
+
+            {/* Vue Multi-Établissements */}
+            {viewMode === 'multischool' && (
+              <MultiSchoolChildrenOverview parentGlobalId="global-parent-1" />
+            )}
+
+            {/* Vue Traditionnelle */}
+            {viewMode === 'traditional' && (
+              <>
+                {/* Multi-School Child Selector */}
+                <ChildSelector
+                  children={parentData?.children}
+                  schools={getSchools()}
+                  selectedChild={selectedChild}
+                  selectedSchool={selectedSchool}
+                  onChildSelect={handleChildSelect}
+                  onSchoolChange={handleSchoolChange}
+                />
+
+                {/* Child Overview Card */}
+                {selectedChild && (
+                  <ChildOverviewCard child={selectedChild} />
+                )}
+
+                {/* Main Dashboard Content */}
+                {selectedChild && (
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    {/* Left Column - Grades and Attendance */}
+                    <div className="xl:col-span-2 space-y-6">
+                      <GradesOverview 
+                        child={selectedChild}
+                        grades={gradesData?.[selectedChild?.id] || []}
+                      />
+                      <AttendanceTracker 
+                        child={selectedChild}
+                        attendance={attendanceData?.[selectedChild?.id] || {}}
+                      />
+                    </div>
+
+                    {/* Right Column - Payment and Communication */}
+                    <div className="space-y-6">
+                      <PaymentStatus 
+                        child={selectedChild}
+                        payments={paymentData?.[selectedChild?.id] || []}
+                      />
+                      <CommunicationCenter 
+                        child={selectedChild}
+                        notifications={notificationsData?.[selectedChild?.id] || []}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Upcoming Events */}
+                <UpcomingEvents events={upcomingEvents} />
+              </>
+            )}
+          </>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -401,129 +593,8 @@ const ParentDashboard = () => {
             </div>
           </div>
 
-          {/* Vue Multi-Établissements */}
-          {viewMode === 'multischool' && (
-            <MultiSchoolChildrenOverview parentGlobalId="global-parent-1" />
-          )}
-
-          {/* Vue Traditionnelle */}
-          {viewMode === 'traditional' && (
-            <>
-              {/* Multi-School Child Selector */}
-              <ChildSelector
-                children={parentData?.children}
-                schools={getSchools()}
-                selectedChild={selectedChild}
-                selectedSchool={selectedSchool}
-                onChildSelect={handleChildSelect}
-                onSchoolChange={handleSchoolChange}
-                getChildrenBySchool={getChildrenBySchool}
-              />
-
-          {/* Selected Child Overview */}
-          {selectedChild && (
-            <ChildOverviewCard child={selectedChild} />
-          )}
-
-          {/* Main Dashboard Content */}
-          {selectedChild && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Left Column - Academic Info */}
-              <div className="xl:col-span-2 space-y-6">
-                <GradesOverview grades={gradesData?.[selectedChild?.id] || []} />
-                <AttendanceTracker 
-                  attendance={attendanceData?.[selectedChild?.id] || {}}
-                  childName={selectedChild?.name}
-                />
-              </div>
-
-              {/* Right Column - Payments and Communications */}
-              <div className="space-y-6">
-                <PaymentStatus payments={paymentData?.[selectedChild?.id] || []} />
-                <CommunicationCenter 
-                  notifications={notificationsData?.[selectedChild?.id] || []}
-                  childName={selectedChild?.name}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Upcoming Events */}
-          <UpcomingEvents 
-            events={upcomingEvents}
-            selectedSchool={selectedSchool}
-            selectedChild={selectedChild}
-          />
-
-          {/* Quick Actions */}
-          <div className="bg-card rounded-lg shadow-card border border-border p-6">
-            <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
-              Actions Rapides
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Link
-                to="/student-profile-management"
-                className="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-micro group"
-              >
-                <Icon name="Users" size={24} className="text-primary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Profils enfants
-                </span>
-              </Link>
-              
-              <Link
-                to="/grade-management-system"
-                className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group"
-              >
-                <Icon name="FileBarChart" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Notes et bulletins
-                </span>
-              </Link>
-
-              <Link
-                to="/parent-dashboard?tab=payments"
-                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
-              >
-                <Icon name="CreditCard" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Paiements
-                </span>
-              </Link>
-
-              <Link
-                to="/parent-dashboard?tab=messages"
-                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
-              >
-                <Icon name="MessageSquare" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Messages
-                </span>
-              </Link>
-
-              <Link
-                to="/parent-dashboard?tab=calendar"
-                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
-              >
-                <Icon name="Calendar" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Calendrier
-                </span>
-              </Link>
-
-              <Link
-                to="/parent-dashboard?tab=attendance"
-                className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
-              >
-                <Icon name="UserCheck" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Présences
-                </span>
-              </Link>
-            </div>
-          </div>
-            </>
-          )}
+          {/* Tab Content */}
+          {renderTabContent()}
         </div>
       </main>
     </div>

@@ -22,18 +22,20 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
 
   const navigationItems = {
     student: [
-      { label: 'Dashboard', path: '/student-dashboard', icon: 'Home', description: 'Aperçu et actions rapides' },
-      { label: 'Mon Profil', path: '/student-dashboard?tab=profile', icon: 'User', description: 'Informations personnelles' },
+      { label: 'Tableau de bord', path: '/student-dashboard', icon: 'Home', description: 'Vue d\'ensemble' },
       { label: 'Mes Notes', path: '/student-dashboard?tab=grades', icon: 'BookOpen', description: 'Performance académique' },
-      { label: 'Emploi du temps', path: '/student-dashboard?tab=schedule', icon: 'Calendar', description: 'Planning de la semaine' },
-      { label: 'Documents', path: '/student-dashboard?tab=documents', icon: 'FileText', description: 'Documents et ressources' },
-      { label: 'Messages', path: '/student-dashboard?tab=messages', icon: 'MessageSquare', description: 'Messagerie' }
+      { label: 'Mes Devoirs', path: '/student-dashboard?tab=assignments', icon: 'FileText', description: 'Travaux à rendre' },
+      { label: 'Présences', path: '/student-dashboard?tab=attendance', icon: 'Calendar', description: 'Historique de présence' },
+      { label: 'Emploi du temps', path: '/student-dashboard?tab=schedule', icon: 'Clock', description: 'Planning hebdomadaire' },
+      { label: 'Mon Profil', path: '/student-dashboard?tab=profile', icon: 'User', description: 'Informations personnelles' }
     ],
     teacher: [
       { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home', description: 'Aperçu des classes' },
-      { label: 'Devoirs & Notes', path: '/teacher-assignment-system', icon: 'FileText', description: 'Gestion des devoirs' },
-      { label: 'Mon Compte', path: '/teacher-account-management', icon: 'User', description: 'Gestion du compte' },
-      { label: 'Documents', path: '/document-management-hub', icon: 'Files', description: 'Ressources pédagogiques' }
+      { label: 'Mes Classes', path: '/teacher-dashboard?tab=classes', icon: 'Users', description: 'Gestion des classes' },
+      { label: 'Notes', path: '/teacher-dashboard?tab=grades', icon: 'BookOpen', description: 'Saisie des notes' },
+      { label: 'Présences', path: '/teacher-dashboard?tab=attendance', icon: 'Calendar', description: 'Prise de présence' },
+      { label: 'Documents', path: '/teacher-dashboard?tab=documents', icon: 'Files', description: 'Ressources pédagogiques' },
+      { label: 'Mon Compte', path: '/teacher-dashboard?tab=account', icon: 'User', description: 'Gestion du compte' }
     ],
     secretary: [
       { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home', description: 'Retour à l\'accueil' },
@@ -46,6 +48,14 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Comptes', path: '/principal-dashboard?tab=accounts', icon: 'UserCheck', description: 'Gestion des comptes' },
       { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration avancée' }
     ],
+    parent: [
+      { label: 'Dashboard', path: '/parent-dashboard', icon: 'Home', description: 'Vue d\'ensemble' },
+      { label: 'Mes Enfants', path: '/parent-dashboard?tab=children', icon: 'Users', description: 'Suivi des enfants' },
+      { label: 'Notes', path: '/parent-dashboard?tab=grades', icon: 'BookOpen', description: 'Résultats scolaires' },
+      { label: 'Présences', path: '/parent-dashboard?tab=attendance', icon: 'Calendar', description: 'Assiduité' },
+      { label: 'Paiements', path: '/parent-dashboard?tab=payments', icon: 'CreditCard', description: 'Frais scolaires' },
+      { label: 'Messages', path: '/parent-dashboard?tab=messages', icon: 'MessageCircle', description: 'Communications' }
+    ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home', description: 'Aperçu système' },
       { label: 'Système', path: '/admin-dashboard', icon: 'Settings', description: 'Configuration système' },
@@ -56,15 +66,16 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
 
   const quickActions = {
     student: [
-      { label: 'Mes devoirs', icon: 'FileText', path: '/student-dashboard?tab=assignments' },
-      { label: 'Présences', icon: 'Calendar', path: '/student-dashboard?tab=attendance' },
-      { label: 'Mes notes', icon: 'BookOpen', path: '/student-dashboard?tab=grades' },
-      { label: 'Emploi du temps', icon: 'Clock', path: '/student-dashboard?tab=schedule' },
+      { label: 'Devoirs en retard', icon: 'AlertCircle', path: '/student-dashboard?tab=assignments' },
+      { label: 'Dernières notes', icon: 'TrendingUp', path: '/student-dashboard?tab=grades' },
+      { label: 'Mes badges', icon: 'Award', path: '/student-dashboard' },
+      { label: 'Messages non lus', icon: 'Mail', path: '/student-dashboard?tab=messages' },
     ],
     teacher: [
-      { label: 'Nouvelle note', icon: 'Plus', path: '/grade-management-system' },
-      { label: 'Documents', icon: 'FileText', path: '/document-management-hub' },
-      { label: 'Emploi du temps', icon: 'Calendar', path: '/teacher-dashboard' },
+      { label: 'Nouvelle note', icon: 'Plus', path: '/teacher-dashboard?tab=grades' },
+      { label: 'Prendre présence', icon: 'CheckSquare', path: '/teacher-dashboard?tab=attendance' },
+      { label: 'Mes documents', icon: 'FileText', path: '/teacher-dashboard?tab=documents' },
+      { label: 'Voir mes classes', icon: 'Users', path: '/teacher-dashboard?tab=classes' },
     ],
     secretary: [
       { label: 'Nouvel Élève', icon: 'UserPlus', path: '/secretary-dashboard?tab=students' },
@@ -78,6 +89,12 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Nouveau message', icon: 'Mail', path: '/notification-management' },
       { label: 'Créer rapport', icon: 'FileBarChart', path: '/report-generation' },
       { label: 'Sauvegarde', icon: 'Database', path: '/data-backup' },
+    ],
+    parent: [
+      { label: 'Voir les notes', icon: 'BookOpen', path: '/parent-dashboard?tab=grades' },
+      { label: 'Consulter présences', icon: 'Calendar', path: '/parent-dashboard?tab=attendance' },
+      { label: 'Effectuer paiement', icon: 'CreditCard', path: '/parent-dashboard?tab=payments' },
+      { label: 'Messages enseignants', icon: 'Mail', path: '/parent-dashboard?tab=messages' },
     ],
     admin: [
       { label: 'Système', icon: 'Settings', path: '/admin-dashboard' },

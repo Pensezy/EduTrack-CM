@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
@@ -14,6 +14,8 @@ import TeacherSchedule from './components/TeacherSchedule';
 import TeacherMultiSchoolOverview from './components/TeacherMultiSchoolOverview';
 
 const TeacherDashboard = () => {
+  const [searchParams] = useSearchParams();
+  const currentTab = searchParams.get('tab') || 'dashboard';
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
@@ -253,6 +255,218 @@ const TeacherDashboard = () => {
     });
   };
 
+  const renderTabContent = () => {
+    switch (currentTab) {
+      case 'classes':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mes Classes</h2>
+            <ClassSelector
+              classes={teacherData?.assignedClasses}
+              selectedClass={selectedClass}
+              onClassSelect={handleClassSelect}
+            />
+            <AssignedClassesOverview 
+              classes={teacherData?.assignedClasses}
+              selectedClass={selectedClass}
+            />
+          </div>
+        );
+
+      case 'grades':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Gestion des Notes</h2>
+            {selectedClass ? (
+              <GradeEntryPanel 
+                classData={selectedClass}
+                students={studentsData?.[selectedClass?.id] || []}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="BookOpen" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez une classe pour gérer les notes</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'attendance':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Gestion des Présences</h2>
+            {selectedClass ? (
+              <AttendanceManager
+                classData={selectedClass}
+                students={studentsData?.[selectedClass?.id] || []}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="Calendar" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez une classe pour gérer les présences</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'documents':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mes Documents</h2>
+            {selectedClass ? (
+              <DocumentManager 
+                classData={selectedClass}
+                documents={documentsData?.[selectedClass?.id] || []}
+              />
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="Files" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Sélectionnez une classe pour gérer les documents</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'account':
+        return (
+          <div className="space-y-6">
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mon Compte</h2>
+            <div className="bg-card rounded-lg border border-border p-6">
+              <div className="flex items-center space-x-4 mb-6">
+                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
+                  <Icon name="User" size={40} className="text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-heading font-heading-semibold text-xl">{teacherData?.name}</h3>
+                  <p className="text-text-secondary">{teacherData?.email}</p>
+                  <p className="text-sm text-muted-foreground">Matricule: {teacherData?.employeeId}</p>
+                </div>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="bg-muted rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground mb-1">Spécialité</div>
+                  <div className="font-heading font-heading-medium">{teacherData?.specialty}</div>
+                </div>
+                <div className="bg-muted rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground mb-1">Classes assignées</div>
+                  <div className="font-heading font-heading-medium">{teacherData?.assignedClasses?.length}</div>
+                </div>
+                <div className="bg-muted rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground mb-1">Total élèves</div>
+                  <div className="font-heading font-heading-medium">{getTotalStudents()}</div>
+                </div>
+                <div className="bg-muted rounded-lg p-4">
+                  <div className="text-sm text-muted-foreground mb-1">Statut</div>
+                  <div className="font-heading font-heading-medium text-success">Actif</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        );
+
+      default: // 'dashboard'
+        return (
+          <>
+            {/* Mode Selector */}
+            <div className="bg-card rounded-lg border border-border p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-heading font-heading-medium text-base text-text-primary mb-1">
+                    Mode d'affichage
+                  </h3>
+                  <p className="text-sm text-text-secondary">
+                    Choisissez entre vue établissement unique ou multi-établissements
+                  </p>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => setViewMode('single')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      viewMode === 'single'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Icon name="School" size={16} className="mr-2 inline" />
+                    Vue Simple
+                  </button>
+                  <button
+                    onClick={() => setViewMode('multi-school')}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      viewMode === 'multi-school'
+                        ? 'bg-primary text-primary-foreground'
+                        : 'bg-muted text-text-secondary hover:text-text-primary'
+                    }`}
+                  >
+                    <Icon name="Building" size={16} className="mr-2 inline" />
+                    Multi-Établissements
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Vue Multi-Établissements */}
+            {viewMode === 'multi-school' && (
+              <TeacherMultiSchoolOverview teacherGlobalId="global-teacher-1" />
+            )}
+
+            {/* Vue Simple - Contenu existant */}
+            {viewMode === 'single' && (
+              <>
+                {/* Class Selector */}
+                <ClassSelector
+                  classes={teacherData?.assignedClasses}
+                  selectedClass={selectedClass}
+                  onClassSelect={handleClassSelect}
+                />
+
+                {/* Assigned Classes Overview */}
+                <AssignedClassesOverview 
+                  classes={teacherData?.assignedClasses}
+                  selectedClass={selectedClass}
+                />
+
+                {/* Main Dashboard Content */}
+                {selectedClass && (
+                  <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    {/* Left Column - Grade Entry and Attendance */}
+                    <div className="xl:col-span-2 space-y-6">
+                      <GradeEntryPanel 
+                        classData={selectedClass}
+                        students={studentsData?.[selectedClass?.id] || []}
+                      />
+                      <AttendanceManager
+                        classData={selectedClass}
+                        students={studentsData?.[selectedClass?.id] || []}
+                      />
+                    </div>
+
+                    {/* Right Column - Documents and Communication */}
+                    <div className="space-y-6">
+                      <DocumentManager 
+                        classData={selectedClass}
+                        documents={documentsData?.[selectedClass?.id] || []}
+                      />
+                      <StudentCommunication 
+                        classData={selectedClass}
+                        students={studentsData?.[selectedClass?.id] || []}
+                      />
+                    </div>
+                  </div>
+                )}
+
+                {/* Teacher Schedule */}
+                <TeacherSchedule 
+                  schedule={getCurrentWeekSchedule()}
+                  teacherName={teacherData?.name}
+                />
+              </>
+            )}
+          </>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -317,169 +531,8 @@ const TeacherDashboard = () => {
             </div>
           </div>
 
-          {/* Mode Selector */}
-          <div className="bg-card rounded-lg border border-border p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="font-heading font-heading-medium text-base text-text-primary mb-1">
-                  Mode d'affichage
-                </h3>
-                <p className="text-sm text-text-secondary">
-                  Choisissez entre vue établissement unique ou multi-établissements
-                </p>
-              </div>
-              <div className="flex items-center space-x-2">
-                <button
-                  onClick={() => setViewMode('single')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    viewMode === 'single'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <Icon name="School" size={16} className="mr-2 inline" />
-                  Vue Simple
-                </button>
-                <button
-                  onClick={() => setViewMode('multi-school')}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    viewMode === 'multi-school'
-                      ? 'bg-primary text-primary-foreground'
-                      : 'bg-muted text-text-secondary hover:text-text-primary'
-                  }`}
-                >
-                  <Icon name="Building" size={16} className="mr-2 inline" />
-                  Multi-Établissements
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Vue Multi-Établissements */}
-          {viewMode === 'multi-school' && (
-            <TeacherMultiSchoolOverview teacherGlobalId="global-teacher-1" />
-          )}
-
-          {/* Vue Simple - Contenu existant */}
-          {viewMode === 'single' && (
-            <>
-              {/* Class Selector */}
-          <ClassSelector
-            classes={teacherData?.assignedClasses}
-            selectedClass={selectedClass}
-            onClassSelect={handleClassSelect}
-          />
-
-          {/* Assigned Classes Overview */}
-          <AssignedClassesOverview 
-            classes={teacherData?.assignedClasses}
-            selectedClass={selectedClass}
-          />
-
-          {/* Main Dashboard Content */}
-          {selectedClass && (
-            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              {/* Left Column - Grade Entry and Attendance */}
-              <div className="xl:col-span-2 space-y-6">
-                <GradeEntryPanel 
-                  classData={selectedClass}
-                  students={studentsData?.[selectedClass?.id] || []}
-                />
-                <AttendanceManager
-                  classData={selectedClass}
-                  students={studentsData?.[selectedClass?.id] || []}
-                />
-              </div>
-
-              {/* Right Column - Documents and Communication */}
-              <div className="space-y-6">
-                <DocumentManager 
-                  classData={selectedClass}
-                  documents={documentsData?.[selectedClass?.id] || []}
-                />
-                <StudentCommunication 
-                  classData={selectedClass}
-                  students={studentsData?.[selectedClass?.id] || []}
-                />
-              </div>
-            </div>
-          )}
-
-          {/* Teacher Schedule */}
-          <TeacherSchedule 
-            schedule={getCurrentWeekSchedule()}
-            teacherName={teacherData?.name}
-          />
-
-          {/* Quick Actions */}
-          <div className="bg-card rounded-lg shadow-card border border-border p-6">
-            <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
-              Actions Rapides
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-              <Link
-                to="/grade-management-system"
-                className="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-micro group"
-              >
-                <Icon name="BookOpen" size={24} className="text-primary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Notes et évaluations
-                </span>
-              </Link>
-              
-              <Link
-                to="/document-management-hub"
-                className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group"
-              >
-                <Icon name="FileText" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Documents de cours
-                </span>
-              </Link>
-
-              <Link
-                to="/teacher-dashboard?tab=attendance"
-                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
-              >
-                <Icon name="Calendar" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Présences
-                </span>
-              </Link>
-
-              <Link
-                to="/teacher-dashboard?tab=schedule"
-                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
-              >
-                <Icon name="Clock" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Planning des cours
-                </span>
-              </Link>
-
-              <Link
-                to="/teacher-dashboard?tab=communication"
-                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
-              >
-                <Icon name="MessageSquare" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Communication
-                </span>
-              </Link>
-
-              <Link
-                to="/teacher-dashboard?tab=reports"
-                className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
-              >
-                <Icon name="FileBarChart" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Rapports
-                </span>
-              </Link>
-            </div>
-          </div>
-            </>
-          )}
+          {/* Tab Content */}
+          {renderTabContent()}
         </div>
       </main>
     </div>

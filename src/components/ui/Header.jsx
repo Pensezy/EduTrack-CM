@@ -51,20 +51,22 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
 
   const navigationItems = {
     student: [
-      { label: 'Dashboard', path: '/student-dashboard', icon: 'Home' },
-      { label: 'Profil', path: '/student-dashboard?tab=profile', icon: 'User' },
+      { label: 'Tableau de bord', path: '/student-dashboard', icon: 'Home' },
       { label: 'Notes', path: '/student-dashboard?tab=grades', icon: 'BookOpen' },
-      { label: 'Messages', path: '/student-dashboard?tab=messages', icon: 'MessageCircle' },
+      { label: 'Devoirs', path: '/student-dashboard?tab=assignments', icon: 'FileText' },
+      { label: 'Profil', path: '/student-dashboard?tab=profile', icon: 'User' },
     ],
     parent: [
       { label: 'Dashboard', path: '/parent-dashboard', icon: 'Home' },
-      { label: 'Enfants', path: '/parent-dashboard', icon: 'Users' },
-      { label: 'Communications', path: '/parent-dashboard', icon: 'MessageCircle' },
+      { label: 'Enfants', path: '/parent-dashboard?tab=children', icon: 'Users' },
+      { label: 'Notes', path: '/parent-dashboard?tab=grades', icon: 'BookOpen' },
+      { label: 'Messages', path: '/parent-dashboard?tab=messages', icon: 'MessageCircle' },
     ],
     teacher: [
       { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home' },
-      { label: 'Affectations', path: '/teacher-assignment-system', icon: 'FileText' },
-      { label: 'Compte', path: '/teacher-account-management', icon: 'User' },
+      { label: 'Classes', path: '/teacher-dashboard?tab=classes', icon: 'Users' },
+      { label: 'Notes', path: '/teacher-dashboard?tab=grades', icon: 'BookOpen' },
+      { label: 'Compte', path: '/teacher-dashboard?tab=account', icon: 'User' },
     ],
     secretary: [
       { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home' },
