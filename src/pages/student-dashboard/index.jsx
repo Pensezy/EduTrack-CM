@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
@@ -15,6 +15,8 @@ import AchievementBadges from './components/AchievementBadges';
 const StudentDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get('tab') || 'dashboard';
 
   // Mock student data
   const studentData = {
@@ -296,6 +298,98 @@ const StudentDashboard = () => {
     return "Bonsoir";
   };
 
+  const renderTabContent = () => {
+    switch(activeTab) {
+      case 'profile':
+        return (
+          <div className="space-y-6">
+            <ProfileCard 
+              student={studentData}
+              onPhotoUpdate={handlePhotoUpdate}
+            />
+            <BehaviorAssessment behaviorData={behaviorData} />
+          </div>
+        );
+      
+      case 'grades':
+        return (
+          <div className="space-y-6">
+            <GradesPanel grades={gradesData} />
+            <AchievementBadges achievements={achievementsData} />
+          </div>
+        );
+      
+      case 'assignments':
+        return <UpcomingAssignments assignments={assignmentsData} />;
+      
+      case 'attendance':
+        return <AttendanceCalendar attendanceData={attendanceData} />;
+      
+      case 'schedule':
+        return (
+          <div className="bg-card rounded-lg shadow-card border border-border p-6">
+            <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+              📅 Emploi du temps
+            </h3>
+            <p className="text-muted-foreground">Fonctionnalité en cours de développement...</p>
+          </div>
+        );
+      
+      case 'documents':
+        return (
+          <div className="bg-card rounded-lg shadow-card border border-border p-6">
+            <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+              📄 Mes documents
+            </h3>
+            <p className="text-muted-foreground">Fonctionnalité en cours de développement...</p>
+          </div>
+        );
+      
+      case 'messages':
+        return (
+          <div className="bg-card rounded-lg shadow-card border border-border p-6">
+            <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+              💬 Messages
+            </h3>
+            <p className="text-muted-foreground">Fonctionnalité en cours de développement...</p>
+          </div>
+        );
+      
+      default:
+        // Dashboard complet
+        return (
+          <>
+            {/* Profile Card */}
+            <ProfileCard 
+              student={studentData}
+              onPhotoUpdate={handlePhotoUpdate}
+            />
+
+            {/* Main Content Grid */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              {/* Left Column - Grades and Assignments */}
+              <div className="xl:col-span-2 space-y-6">
+                <GradesPanel grades={gradesData} />
+                <UpcomingAssignments assignments={assignmentsData} />
+              </div>
+
+              {/* Right Column - Attendance and Notifications */}
+              <div className="space-y-6">
+                <AttendanceCalendar attendanceData={attendanceData} />
+                <NotificationsPanel notifications={notificationsData} />
+              </div>
+            </div>
+
+            {/* Secondary Content Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <BehaviorAssessment behaviorData={behaviorData} />
+              <AchievementBadges achievements={achievementsData} />
+            </div>
+          </>
+        );
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <Header 
@@ -343,41 +437,17 @@ const StudentDashboard = () => {
             </div>
           </div>
 
-          {/* Profile Card */}
-          <ProfileCard 
-            student={studentData}
-            onPhotoUpdate={handlePhotoUpdate}
-          />
+          {/* Tab Content */}
+          {renderTabContent()}
 
-          {/* Main Content Grid */}
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-            {/* Left Column - Grades and Assignments */}
-            <div className="xl:col-span-2 space-y-6">
-              <GradesPanel grades={gradesData} />
-              <UpcomingAssignments assignments={assignmentsData} />
-            </div>
-
-            {/* Right Column - Attendance and Notifications */}
-            <div className="space-y-6">
-              <AttendanceCalendar attendanceData={attendanceData} />
-              <NotificationsPanel notifications={notificationsData} />
-            </div>
-          </div>
-
-          {/* Secondary Content Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <BehaviorAssessment behaviorData={behaviorData} />
-            <AchievementBadges achievements={achievementsData} />
-          </div>
-
-          {/* Quick Actions */}
+          {/* Quick Actions - Toujours visible */}
           <div className="bg-card rounded-lg shadow-card border border-border p-6">
             <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
               Actions Rapides
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
               <Link
-                to="/student-profile-management"
+                to="/student-dashboard?tab=profile"
                 className="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-micro group"
               >
                 <Icon name="User" size={24} className="text-primary mb-2 group-hover:scale-110 transition-transform" />
@@ -387,20 +457,30 @@ const StudentDashboard = () => {
               </Link>
               
               <Link
-                to="/grade-management-system"
+                to="/student-dashboard?tab=grades"
                 className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group"
               >
                 <Icon name="FileBarChart" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Notes et devoirs
+                  Mes notes
+                </span>
+              </Link>
+
+              <Link
+                to="/student-dashboard?tab=assignments"
+                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
+              >
+                <Icon name="FileText" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
+                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
+                  Mes devoirs
                 </span>
               </Link>
 
               <Link
                 to="/student-dashboard?tab=schedule"
-                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
+                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
               >
-                <Icon name="Calendar" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
+                <Icon name="Calendar" size={24} className="text-accent mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Emploi du temps
                 </span>
@@ -408,31 +488,21 @@ const StudentDashboard = () => {
 
               <Link
                 to="/student-dashboard?tab=messages"
-                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
+                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
               >
-                <Icon name="MessageSquare" size={24} className="text-accent-foreground mb-2 group-hover:scale-110 transition-transform" />
+                <Icon name="MessageSquare" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
                   Messages
                 </span>
               </Link>
 
               <Link
-                to="/document-management-hub"
-                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
-              >
-                <Icon name="Library" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Bibliothèque
-                </span>
-              </Link>
-
-              <Link
-                to="/student-dashboard?tab=help"
+                to="/student-dashboard?tab=documents"
                 className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
               >
-                <Icon name="HelpCircle" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
+                <Icon name="Library" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
                 <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Aide
+                  Documents
                 </span>
               </Link>
             </div>

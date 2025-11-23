@@ -4,6 +4,7 @@ import { createPrincipalSchool } from '../../../services/schoolService';
 import SimpleInput from '../../../components/ui/SimpleInput';
 import SimpleSelect from '../../../components/ui/SimpleSelect';
 import Button from '../../../components/ui/Button';
+import Icon from '../../../components/AppIcon';
 import { getCountryPhoneCode, formatPhoneWithCountryCode, validatePhoneNumber } from '../../../utils/countryPhoneCodes';
 
 const SchoolRegistrationForm = ({ onSuccess }) => {
@@ -22,6 +23,8 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
     availableClasses: []
   });
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Debug - pour voir les changements
   useEffect(() => {
@@ -334,14 +337,41 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
     try {
       console.log('🏗️ Création du compte directeur avec toutes les données...');
       
-      // 1. Créer l'utilisateur d'authentification Supabase
+      // Préparer les classes sélectionnées
+      const selectedClasses = formData.availableClasses && formData.availableClasses.length > 0
+        ? formData.availableClasses
+            .filter(cls => cls.isActive)
+            .map(cls => cls.level)
+        : [];
+
+      console.log('📚 Classes sélectionnées:', selectedClasses);
+
+      // Générer un code unique pour l'école
+      const prefix = formData.schoolName.replace(/\s+/g, '').substring(0, 3).toUpperCase();
+      const year = new Date().getFullYear();
+      const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+      const schoolCode = `${prefix}-${year}-${random}`;
+
+      // 1. Créer l'utilisateur d'authentification Supabase avec TOUTES les données d'école dans metadata
+      // Le trigger handle_new_user_automatic créera automatiquement l'école
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
         options: {
           data: {
             role: 'principal',
-            full_name: formData.directorName
+            full_name: formData.directorName,
+            phone: formData.phone,
+            school: {
+              name: formData.schoolName,
+              code: schoolCode,
+              type: formData.schoolType,
+              phone: formData.phone,
+              address: formData.address,
+              city: formData.city,
+              country: formData.country,
+              available_classes: selectedClasses
+            }
           }
         }
       });
@@ -353,42 +383,15 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
       }
 
       console.log('✅ Utilisateur auth créé:', authData.user.id);
+      console.log('📧 Email de confirmation envoyé. Le trigger créera l\'école automatiquement lors de la confirmation.');
 
-      // 2. Préparer les classes sélectionnées
-      const selectedClasses = formData.availableClasses && formData.availableClasses.length > 0
-        ? formData.availableClasses
-            .filter(cls => cls.isActive)
-            .map(cls => cls.level)
-        : [];
-
-      console.log('📚 Classes sélectionnées:', selectedClasses);
-
-      // 3. Utiliser le service complet de création d'école avec toutes les données
-      const schoolCreationData = {
-        authUserId: authData.user.id,
-        email: formData.email,
-        directorName: formData.directorName,
-        phone: formData.phone,
-        schoolName: formData.schoolName,
-        schoolType: formData.schoolType,
-        address: formData.address,
-        city: formData.city,
-        country: formData.country,
-        availableClasses: selectedClasses
-      };
-
-      console.log('🏛️ Données école à créer:', schoolCreationData);
-
-      const creationResult = await createPrincipalSchool(schoolCreationData);
-
-      if (!creationResult.success) {
-        throw new Error(creationResult.message || 'Erreur lors de la création de l\'école');
-      }
-
-      console.log('🎉 École créée avec succès !');
-      console.log('   - École:', creationResult.data.school.name);
-      console.log('   - Directeur:', creationResult.data.user.full_name);
-      console.log('   - Classes créées:', creationResult.data.initialization?.created);
+      // NE PLUS APPELER createPrincipalSchool ici - le trigger le fait automatiquement
+      
+      console.log('🎉 Inscription réussie !');
+      console.log('   - Email:', formData.email);
+      console.log('   - Directeur:', formData.directorName);
+      console.log('   - École:', formData.schoolName, `(${schoolCode})`);
+      console.log('   ⏳ En attente de confirmation email...');
 
       // Appeler le callback de succès
       onSuccess?.();
@@ -454,23 +457,43 @@ const SchoolRegistrationForm = ({ onSuccess }) => {
           )}
         </div>
 
-        <SimpleInput
-          label="Mot de passe"
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          required
-        />
+        <div className="relative">
+          <SimpleInput
+            label="Mot de passe"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700 focus:outline-none"
+            tabIndex={-1}
+          >
+            <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} />
+          </button>
+        </div>
 
-        <SimpleInput
-          label="Confirmer le mot de passe"
-          type="password"
-          name="confirmPassword"
-          value={formData.confirmPassword}
-          onChange={handleChange}
-          required
-        />
+        <div className="relative">
+          <SimpleInput
+            label="Confirmer le mot de passe"
+            type={showConfirmPassword ? "text" : "password"}
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+          />
+          <button
+            type="button"
+            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+            className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700 focus:outline-none"
+            tabIndex={-1}
+          >
+            <Icon name={showConfirmPassword ? "EyeOff" : "Eye"} size={20} />
+          </button>
+        </div>
 
         <SimpleSelect
           label="Type d'établissement"

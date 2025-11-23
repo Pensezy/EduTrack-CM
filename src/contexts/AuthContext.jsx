@@ -237,6 +237,58 @@ export const AuthProvider = ({ children }) => {
       };
 
       // Ensure user exists in database with proper permissions
+      // If the returned user_id looks like a legacy numeric id (e.g. 1),
+      // attempt to resolve a proper UUID from the `users` table by email.
+      // If none exists, create a new users row with a generated UUID.
+      try {
+        const { data: existingUser, error: existingError } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', authenticatedUser.email)
+          .single();
+
+        if (existingError) {
+          // If the select failed because no row, existingUser will be null.
+          console.warn('⚠️ No existing users row found by email (or select error):', existingError?.message || existingError);
+        }
+
+        if (existingUser && existingUser.id) {
+          authenticatedUser.id = existingUser.id;
+        } else {
+          // If the RPC returned a numeric id or no matching users row exists,
+          // generate a UUID for the new users entry to match the DB schema.
+          const newUuid = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : null;
+          const generatedId = newUuid || `gen-${Date.now()}-${Math.floor(Math.random()*1000)}`;
+
+          // Upsert the users row with a valid id
+          const { data: upserted, error: upsertError } = await supabase
+            .from('users')
+            .upsert({
+              id: generatedId,
+              email: authenticatedUser.email,
+              full_name: authenticatedUser.full_name || authenticatedUser.email.split('@')[0],
+              role: authenticatedUser.role || 'student',
+              phone: authenticatedUser.phone || '',
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (upsertError) {
+            console.warn('⚠️ Could not create users row with generated UUID:', upsertError);
+          } else if (upserted && upserted.id) {
+            authenticatedUser.id = upserted.id;
+          } else {
+            // As a fallback, keep the original id but log a warning
+            console.warn('⚠️ No id returned after upsert; keeping original id:', authenticatedUser.id);
+          }
+        }
+      } catch (resolveErr) {
+        console.warn('⚠️ Exception while resolving user id for sign-in:', resolveErr);
+      }
+
       await ensureUserInDatabase(authenticatedUser);
 
       // Valider et corriger les données au moment de la connexion (pour les directeurs)

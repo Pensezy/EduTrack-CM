@@ -16,6 +16,7 @@ const ProductionLogin = () => {
   });
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -162,16 +163,26 @@ const ProductionLogin = () => {
               required
             />
 
-            <Input
-              label="Mot de passe"
-              type="password"
-              name="password"
-              value={formData.password}
-              onChange={handleInputChange}
-              placeholder="••••••••••••"
-              icon="Lock"
-              required
-            />
+            <div className="relative">
+              <Input
+                label="Mot de passe"
+                type={showPassword ? "text" : "password"}
+                name="password"
+                value={formData.password}
+                onChange={handleInputChange}
+                placeholder="••••••••••••"
+                icon="Lock"
+                required
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700 focus:outline-none"
+                tabIndex={-1}
+              >
+                <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} />
+              </button>
+            </div>
 
             <Button
               type="submit"

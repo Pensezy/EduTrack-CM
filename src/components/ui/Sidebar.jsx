@@ -23,9 +23,11 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
   const navigationItems = {
     student: [
       { label: 'Dashboard', path: '/student-dashboard', icon: 'Home', description: 'Aperçu et actions rapides' },
-      { label: 'Mon Profil', path: '/student-profile-management', icon: 'User', description: 'Informations personnelles' },
-      { label: 'Mes Notes', path: '/grade-management-system', icon: 'BookOpen', description: 'Performance académique' },
-      { label: 'Documents', path: '/document-management-hub', icon: 'FileText', description: 'Documents et ressources' }
+      { label: 'Mon Profil', path: '/student-dashboard?tab=profile', icon: 'User', description: 'Informations personnelles' },
+      { label: 'Mes Notes', path: '/student-dashboard?tab=grades', icon: 'BookOpen', description: 'Performance académique' },
+      { label: 'Emploi du temps', path: '/student-dashboard?tab=schedule', icon: 'Calendar', description: 'Planning de la semaine' },
+      { label: 'Documents', path: '/student-dashboard?tab=documents', icon: 'FileText', description: 'Documents et ressources' },
+      { label: 'Messages', path: '/student-dashboard?tab=messages', icon: 'MessageSquare', description: 'Messagerie' }
     ],
     teacher: [
       { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home', description: 'Aperçu des classes' },
@@ -54,9 +56,10 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
 
   const quickActions = {
     student: [
-      { label: 'Voir les devoirs', icon: 'FileText', path: '/grade-management-system' },
-      { label: 'Présences', icon: 'Calendar', path: '/student-dashboard' },
-      { label: 'Bulletins', icon: 'FileBarChart', path: '/grade-management-system' },
+      { label: 'Mes devoirs', icon: 'FileText', path: '/student-dashboard?tab=assignments' },
+      { label: 'Présences', icon: 'Calendar', path: '/student-dashboard?tab=attendance' },
+      { label: 'Mes notes', icon: 'BookOpen', path: '/student-dashboard?tab=grades' },
+      { label: 'Emploi du temps', icon: 'Clock', path: '/student-dashboard?tab=schedule' },
     ],
     teacher: [
       { label: 'Nouvelle note', icon: 'Plus', path: '/grade-management-system' },

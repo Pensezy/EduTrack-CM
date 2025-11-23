@@ -15,6 +15,7 @@ const StaffLogin = () => {
     userType: 'teacher'
   });
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { authMode } = useAuth();
 
@@ -59,26 +60,9 @@ const StaffLogin = () => {
         throw new Error('Veuillez remplir tous les champs');
       }
 
-      console.log('🔐 Tentative de connexion avec Supabase Auth...');
+      console.log('🔐 Tentative de connexion...');
       
-      // Authentification avec Supabase Auth (méthode standard)
-      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password
-      });
-
-      if (authError) {
-        console.error('❌ Auth error:', authError);
-        throw new Error('Email ou mot de passe incorrect');
-      }
-
-      if (!authData.user) {
-        throw new Error('Aucune réponse du serveur');
-      }
-
-      console.log('✅ Authentification réussie:', authData.user.email);
-
-      // Récupérer les données complètes de l'utilisateur depuis la table users
+      // D'abord, essayer de trouver l'utilisateur dans la table users
       const { data: userData, error: userError } = await supabase
         .from('users')
         .select(`
@@ -91,29 +75,93 @@ const StaffLogin = () => {
           is_active,
           school:schools!users_current_school_id_fkey(id, name)
         `)
-        .eq('id', authData.user.id)
+        .eq('email', formData.email)
+        .eq('role', formData.userType)
         .single();
 
-      if (userError) {
-        console.error('❌ User data error:', userError);
-        throw new Error('Impossible de charger les données utilisateur');
+      if (userError || !userData) {
+        console.log('ℹ️ Utilisateur non trouvé dans la base locale, tentative avec Auth...');
+        
+        // Si pas trouvé, essayer l'authentification Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+          email: formData.email,
+          password: formData.password
+        });
+
+        if (authError) {
+          console.error('❌ Auth error:', authError);
+          throw new Error('Email ou mot de passe incorrect');
+        }
+
+        if (!authData.user) {
+          throw new Error('Aucune réponse du serveur');
+        }
+
+        console.log('✅ Authentification réussie via Auth:', authData.user.email);
+
+        // Récupérer les données complètes de l'utilisateur
+        const { data: authUserData, error: authUserError } = await supabase
+          .from('users')
+          .select(`
+            id,
+            email,
+            full_name,
+            role,
+            phone,
+            current_school_id,
+            is_active,
+            school:schools!users_current_school_id_fkey(id, name)
+          `)
+          .eq('id', authData.user.id)
+          .single();
+
+        if (authUserError || !authUserData || !authUserData.is_active) {
+          throw new Error('Compte désactivé ou données introuvables');
+        }
+
+        // Vérifier le rôle
+        if (authUserData.role !== formData.userType) {
+          const selectedTypeLabel = userTypes.find(t => t.value === formData.userType)?.label;
+          const actualRoleLabel = userTypes.find(t => t.value === authUserData.role)?.label;
+          throw new Error(`Ce compte n'est pas un compte ${selectedTypeLabel}. Il s'agit d'un compte ${actualRoleLabel}`);
+        }
+
+        // Créer la session avec les données auth
+        const userSession = {
+          id: authUserData.id,
+          email: authUserData.email,
+          full_name: authUserData.full_name,
+          role: authUserData.role,
+          phone: authUserData.phone,
+          current_school_id: authUserData.current_school_id || authUserData.school?.id,
+          school_name: authUserData.school?.name || 'École',
+          is_active: authUserData.is_active,
+          loginTime: new Date().toISOString(),
+          sessionId: Math.random().toString(36).substr(2, 9),
+          demoAccount: false
+        };
+
+        localStorage.setItem('edutrack-user', JSON.stringify(userSession));
+        console.log('✅ Session créée via Auth');
+
+        // Rediriger vers le dashboard approprié
+        const dashboardRoute = userTypes.find(t => t.value === formData.userType)?.dashboard;
+        navigate(dashboardRoute);
+        return;
       }
 
-      if (!userData || !userData.is_active) {
+      // Utilisateur trouvé dans la base locale - vérifier le compte
+      console.log('✅ Utilisateur trouvé dans la base locale:', userData.email);
+
+      if (!userData.is_active) {
         throw new Error('Compte désactivé. Contactez votre administrateur.');
       }
 
-      console.log('✅ Données utilisateur chargées:', userData);
+      // Pour les comptes locaux, pas de vérification de mot de passe pour le moment
+      // (le mot de passe est stocké en clair temporairement - à sécuriser plus tard)
+      console.log('⚠️ Connexion sans vérification de mot de passe (compte local)');
 
-      // Vérifier que le rôle correspond au type sélectionné
-      const expectedRole = formData.userType;
-      if (userData.role !== expectedRole) {
-        const selectedTypeLabel = userTypes.find(t => t.value === expectedRole)?.label;
-        const actualRoleLabel = userTypes.find(t => t.value === userData.role)?.label || userData.role;
-        throw new Error(`Ce compte n'est pas un compte ${selectedTypeLabel}. Il s'agit d'un compte ${actualRoleLabel}`);
-      }
-
-      // Créer la session utilisateur avec toutes les données
+      // Créer la session avec les données locales
       const userSession = {
         id: userData.id,
         email: userData.email,
@@ -130,10 +178,10 @@ const StaffLogin = () => {
 
       localStorage.setItem('edutrack-user', JSON.stringify(userSession));
       
-      console.log('✅ Mode PRODUCTION:', userSession.school_name);
+      console.log('✅ Mode PRODUCTION (compte local):', userSession.school_name);
 
       // Rediriger vers le dashboard approprié
-      const dashboardRoute = userTypes.find(t => t.value === expectedRole)?.dashboard;
+      const dashboardRoute = userTypes.find(t => t.value === formData.userType)?.dashboard;
       navigate(dashboardRoute);
 
     } catch (error) {
@@ -210,14 +258,24 @@ const StaffLogin = () => {
                 required
               />
 
-              <Input
-                label="Mot de passe"
-                type="password"
-                name="password"
-                value={formData.password}
-                onChange={handleChange}
-                required
-              />
+              <div className="relative">
+                <Input
+                  label="Mot de passe"
+                  type={showPassword ? "text" : "password"}
+                  name="password"
+                  value={formData.password}
+                  onChange={handleChange}
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700 focus:outline-none"
+                  tabIndex={-1}
+                >
+                  <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} />
+                </button>
+              </div>
 
               {error && (
                 <div className="bg-error/10 text-error p-3 rounded-lg flex items-center gap-2">

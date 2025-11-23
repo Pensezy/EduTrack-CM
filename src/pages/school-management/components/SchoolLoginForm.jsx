@@ -13,6 +13,7 @@ const SchoolLoginForm = ({ onSuccess }) => {
   const [error, setError] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -145,16 +146,26 @@ const SchoolLoginForm = ({ onSuccess }) => {
       </div>
 
       <div>
-        <Input
-          label="Mot de passe"
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          onBlur={handleBlur}
-          required
-          placeholder="Votre mot de passe"
-        />
+        <div className="relative">
+          <Input
+            label="Mot de passe"
+            type={showPassword ? "text" : "password"}
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            onBlur={handleBlur}
+            required
+            placeholder="Votre mot de passe"
+          />
+          <button
+            type="button"
+            onClick={() => setShowPassword(!showPassword)}
+            className="absolute right-3 top-[38px] text-gray-500 hover:text-gray-700 focus:outline-none"
+            tabIndex={-1}
+          >
+            <Icon name={showPassword ? "EyeOff" : "Eye"} size={20} />
+          </button>
+        </div>
         {touched.password && fieldErrors.password && (
           <div className="mt-1 text-sm text-red-600 flex items-center gap-1">
             <Icon name="AlertCircle" size={14} />

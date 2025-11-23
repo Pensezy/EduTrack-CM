@@ -772,11 +772,16 @@ const DangerZone = ({ userRole, userId, userEmail }) => {
       // 1. Supprimer toutes les données liées à l'utilisateur
       if (userRole === 'principal') {
         // Récupérer l'école du directeur
-        const { data: userData } = await supabase
+        const { data: userData, error: userDataError } = await supabase
           .from('users')
           .select('current_school_id')
           .eq('id', userId)
           .single();
+
+        if (userDataError) {
+          console.error('❌ Erreur lors de la récupération des données utilisateur:', userDataError);
+          throw new Error(`Impossible de récupérer les données utilisateur: ${userDataError.message}`);
+        }
 
         if (userData?.current_school_id) {
           const schoolId = userData.current_school_id;
@@ -787,65 +792,93 @@ const DangerZone = ({ userRole, userId, userEmail }) => {
           // ORDRE DE SUPPRESSION (inverse des dépendances)
           // ================================================
           
-          // 1️⃣ DONNÉES TRANSACTIONNELLES (notes, présences, paiements)
-          console.log('1/7 Suppression des notes...');
-          await supabase.from('grades').delete().eq('school_id', schoolId);
+          try {
+            // 1️⃣ DONNÉES TRANSACTIONNELLES (notes, présences, paiements)
+            console.log('1/7 Suppression des notes...');
+            const { error: gradesError } = await supabase.from('grades').delete().eq('school_id', schoolId);
+            if (gradesError) console.error('Erreur suppression notes:', gradesError);
+            
+            console.log('2/7 Suppression des présences...');
+            const { error: attendancesError } = await supabase.from('attendances').delete().eq('school_id', schoolId);
+            if (attendancesError) console.error('Erreur suppression présences:', attendancesError);
+            
+            console.log('3/7 Suppression des paiements...');
+            const { error: paymentsError } = await supabase.from('payments').delete().eq('school_id', schoolId);
+            if (paymentsError) console.error('Erreur suppression paiements:', paymentsError);
           
-          console.log('2/7 Suppression des présences...');
-          await supabase.from('attendances').delete().eq('school_id', schoolId);
-          
-          console.log('3/7 Suppression des paiements...');
-          await supabase.from('payments').delete().eq('school_id', schoolId);
-          
-          // 2️⃣ COMMUNICATIONS & LOGS
-          console.log('4/7 Suppression des notifications...');
-          await supabase.from('notifications').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des logs d\'audit...');
-          await supabase.from('audit_logs').delete().eq('school_id', schoolId);
-          
-          // 3️⃣ RELATIONS (class_subjects, teacher_subjects, parent-student)
-          console.log('   Suppression des relations classes-matières...');
-          await supabase.from('class_subjects').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des relations enseignants-matières...');
-          await supabase.from('teacher_subjects').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des relations parents-étudiants...');
-          await supabase.from('parent_student_schools').delete().eq('school_id', schoolId);
-          
-          // 4️⃣ UTILISATEURS (étudiants, enseignants, parents, secrétaires)
+            
+            // 2️⃣ COMMUNICATIONS & LOGS
+            console.log('4/7 Suppression des notifications...');
+            const { error: notificationsError } = await supabase.from('notifications').delete().eq('school_id', schoolId);
+            if (notificationsError) console.error('Erreur suppression notifications:', notificationsError);
+            
+            console.log('   Suppression des communications...');
+            const { error: communicationsError } = await supabase.from('communications').delete().eq('school_id', schoolId);
+            if (communicationsError) console.error('Erreur suppression communications:', communicationsError);
+            
+            console.log('   Suppression des modèles de messages...');
+            const { error: templatesError } = await supabase.from('message_templates').delete().eq('school_id', schoolId);
+            if (templatesError) console.error('Erreur suppression modèles messages:', templatesError);
+            
+            console.log('   Suppression des logs d\'audit...');
+            const { error: auditError } = await supabase.from('audit_logs').delete().eq('school_id', schoolId);
+            if (auditError) console.error('Erreur suppression audit logs:', auditError);
+            
+            // 3️⃣ RELATIONS (class_subjects, teacher_subjects, parent-student)
+            console.log('   Suppression des relations classes-matières...');
+            const { error: classSubjectsError } = await supabase.from('class_subjects').delete().eq('school_id', schoolId);
+            if (classSubjectsError) console.error('Erreur suppression class_subjects:', classSubjectsError);
+            
+            console.log('   Suppression des relations enseignants-matières...');
+            const { error: teacherSubjectsError } = await supabase.from('teacher_subjects').delete().eq('school_id', schoolId);
+            if (teacherSubjectsError) console.error('Erreur suppression teacher_subjects:', teacherSubjectsError);
+            
+            console.log('   Suppression des relations parents-étudiants...');
+            const { error: parentStudentError } = await supabase.from('parent_student_schools').delete().eq('school_id', schoolId);
+            if (parentStudentError) console.error('Erreur suppression parent_student_schools:', parentStudentError);          // 4️⃣ UTILISATEURS (étudiants, enseignants, parents, secrétaires)
           console.log('5/7 Suppression des étudiants...');
-          const { data: students } = await supabase
+          const { data: students, error: studentsSelectError } = await supabase
             .from('students')
             .select('user_id')
             .eq('school_id', schoolId);
           
-          await supabase.from('students').delete().eq('school_id', schoolId);
+          if (studentsSelectError) console.error('Erreur récupération étudiants:', studentsSelectError);
+          
+          const { error: studentsDeleteError } = await supabase.from('students').delete().eq('school_id', schoolId);
+          if (studentsDeleteError) console.error('Erreur suppression étudiants:', studentsDeleteError);
           
           console.log('   Suppression des enseignants...');
-          const { data: teachers } = await supabase
+          const { data: teachers, error: teachersSelectError } = await supabase
             .from('teachers')
             .select('user_id')
             .eq('school_id', schoolId);
           
-          await supabase.from('teachers').delete().eq('school_id', schoolId);
+          if (teachersSelectError) console.error('Erreur récupération enseignants:', teachersSelectError);
+          
+          const { error: teachersDeleteError } = await supabase.from('teachers').delete().eq('school_id', schoolId);
+          if (teachersDeleteError) console.error('Erreur suppression enseignants:', teachersDeleteError);
           
           console.log('   Suppression des parents...');
-          const { data: parents } = await supabase
+          const { data: parents, error: parentsSelectError } = await supabase
             .from('parents')
             .select('user_id')
             .eq('school_id', schoolId);
           
-          await supabase.from('parents').delete().eq('school_id', schoolId);
+          if (parentsSelectError) console.error('Erreur récupération parents:', parentsSelectError);
+          
+          const { error: parentsDeleteError } = await supabase.from('parents').delete().eq('school_id', schoolId);
+          if (parentsDeleteError) console.error('Erreur suppression parents:', parentsDeleteError);
           
           console.log('   Suppression des secrétaires...');
-          const { data: secretaries } = await supabase
+          const { data: secretaries, error: secretariesSelectError } = await supabase
             .from('secretaries')
             .select('user_id')
             .eq('school_id', schoolId);
           
-          await supabase.from('secretaries').delete().eq('school_id', schoolId);
+          if (secretariesSelectError) console.error('Erreur récupération secrétaires:', secretariesSelectError);
+          
+          const { error: secretariesDeleteError } = await supabase.from('secretaries').delete().eq('school_id', schoolId);
+          if (secretariesDeleteError) console.error('Erreur suppression secrétaires:', secretariesDeleteError);
           
           // Supprimer les comptes users liés (sauf le directeur)
           const userIdsToDelete = [
@@ -857,44 +890,76 @@ const DangerZone = ({ userRole, userId, userEmail }) => {
           
           if (userIdsToDelete.length > 0) {
             console.log(`   Suppression de ${userIdsToDelete.length} comptes utilisateurs liés...`);
-            await supabase.from('users').delete().in('id', userIdsToDelete);
+            const { error: usersDeleteError } = await supabase.from('users').delete().in('id', userIdsToDelete);
+            if (usersDeleteError) console.error('Erreur suppression comptes users:', usersDeleteError);
           }
           
-          // 5️⃣ CONFIGURATION (matières, classes, périodes)
-          console.log('6/7 Suppression des matières...');
-          await supabase.from('subjects').delete().eq('school_id', schoolId);
+            // 5️⃣ CONFIGURATION (matières, classes, périodes)
+            console.log('6/7 Suppression des matières...');
+            const { error: subjectsError } = await supabase.from('subjects').delete().eq('school_id', schoolId);
+            if (subjectsError) console.error('Erreur suppression matières:', subjectsError);
+            
+            console.log('   Suppression des classes...');
+            const { error: classesError } = await supabase.from('classes').delete().eq('school_id', schoolId);
+            if (classesError) console.error('Erreur suppression classes:', classesError);
+            
+            console.log('   Suppression des périodes d\'évaluation...');
+            const { error: evaluationPeriodsError } = await supabase.from('evaluation_periods').delete().eq('school_id', schoolId);
+            if (evaluationPeriodsError) console.error('Erreur suppression périodes évaluation:', evaluationPeriodsError);
+            
+            console.log('   Suppression des années académiques...');
+            const { error: academicYearsError } = await supabase.from('academic_years').delete().eq('school_id', schoolId);
+            if (academicYearsError) console.error('Erreur suppression années académiques:', academicYearsError);
+            
+            // 6️⃣ TYPES (grade_types, attendance_types, payment_types)
+            console.log('   Suppression des types de notes...');
+            const { error: gradeTypesError } = await supabase.from('grade_types').delete().eq('school_id', schoolId);
+            if (gradeTypesError) console.error('Erreur suppression types notes:', gradeTypesError);
+            
+            console.log('   Suppression des types de présences...');
+            const { error: attendanceTypesError } = await supabase.from('attendance_types').delete().eq('school_id', schoolId);
+            if (attendanceTypesError) console.error('Erreur suppression types présences:', attendanceTypesError);
+            
+            console.log('   Suppression des types de paiements...');
+            const { error: paymentTypesError } = await supabase.from('payment_types').delete().eq('school_id', schoolId);
+            if (paymentTypesError) console.error('Erreur suppression types paiements:', paymentTypesError);
+            
+            console.log('   Suppression des rôles utilisateurs...');
+            const { error: userRolesError } = await supabase.from('user_roles').delete().eq('school_id', schoolId);
+            if (userRolesError) console.error('Erreur suppression rôles utilisateurs:', userRolesError);
+            
+            // 7️⃣ ÉCOLE
+            console.log('7/7 Suppression de l\'école...');
+            const { error: schoolError } = await supabase.from('schools').delete().eq('id', schoolId);
+            if (schoolError) {
+              console.error('❌ ERREUR CRITIQUE - Impossible de supprimer l\'école:', schoolError);
+              throw new Error(`Échec de suppression de l'école: ${schoolError.message}`);
+            }
+            
+            console.log('✅ Toutes les données de l\'école ont été supprimées avec succès !');
           
-          console.log('   Suppression des classes...');
-          await supabase.from('classes').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des périodes d\'évaluation...');
-          await supabase.from('evaluation_periods').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des années académiques...');
-          await supabase.from('academic_years').delete().eq('school_id', schoolId);
-          
-          // 6️⃣ TYPES (grade_types, attendance_types, payment_types)
-          console.log('   Suppression des types de notes...');
-          await supabase.from('grade_types').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des types de présences...');
-          await supabase.from('attendance_types').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des types de paiements...');
-          await supabase.from('payment_types').delete().eq('school_id', schoolId);
-          
-          console.log('   Suppression des rôles utilisateurs...');
-          await supabase.from('user_roles').delete().eq('school_id', schoolId);
-          
-          // 7️⃣ ÉCOLE
-          console.log('7/7 Suppression de l\'école...');
-          await supabase.from('schools').delete().eq('id', schoolId);
-          
-          console.log('✅ Toutes les données de l\'école ont été supprimées avec succès !');
+          } catch (schoolDeletionError) {
+            console.error('❌ ERREUR pendant la suppression des données école:', schoolDeletionError);
+            throw new Error(`Erreur lors de la suppression des données de l'école: ${schoolDeletionError.message}`);
+          }
+        } else {
+          console.log('⚠️ Aucune école associée trouvée pour ce directeur');
         }
       }
 
-      // 2. Supprimer l'utilisateur de la table users
+      // 2. Supprimer les références spécifiques à cet utilisateur (hors école)
+      console.log('🗑️ Nettoyage des références utilisateur...');
+      
+      // Supprimer les modèles de messages créés par cet utilisateur
+      await supabase.from('message_templates').delete().eq('created_by', userId);
+      
+      // Supprimer les communications envoyées par cet utilisateur  
+      await supabase.from('communications').delete().eq('sent_by_user_id', userId);
+      
+      // Supprimer les notifications créées par cet utilisateur
+      await supabase.from('notifications').delete().eq('created_by_user_id', userId);
+
+      // 3. Supprimer l'utilisateur de la table users
       const { error: userDeleteError } = await supabase
         .from('users')
         .delete()
@@ -902,7 +967,7 @@ const DangerZone = ({ userRole, userId, userEmail }) => {
 
       if (userDeleteError) throw userDeleteError;
 
-      // 3. Supprimer le compte Supabase Auth
+      // 4. Supprimer le compte Supabase Auth
       const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
       
       // Note: admin.deleteUser nécessite des permissions spéciales
@@ -912,10 +977,10 @@ const DangerZone = ({ userRole, userId, userEmail }) => {
         // Continuer quand même pour déconnecter l'utilisateur
       }
 
-      // 4. Déconnecter l'utilisateur
+      // 5. Déconnecter l'utilisateur
       await supabase.auth.signOut();
 
-      // 5. Rediriger vers la page d'accueil
+      // 6. Rediriger vers la page d'accueil
       alert('✅ Votre compte a été supprimé avec succès. Toutes vos données ont été effacées.');
       window.location.href = '/';
 

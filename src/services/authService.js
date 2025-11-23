@@ -53,6 +53,12 @@ export const loginDirector = async (email, password) => {
     // 2. Données d'école gérées automatiquement par Prisma - pas besoin de finalisation manuelle
 
     // 3. Récupérer les données de l'école (structure Prisma)
+    console.log('🔍 Recherche école pour utilisateur:', {
+      userId: authData.user.id,
+      userEmail: authData.user.email,
+      metadata: authData.user.user_metadata
+    });
+
     const { data: schoolData, error: schoolError } = await supabase
       .from('schools')
       .select(`
@@ -79,7 +85,96 @@ export const loginDirector = async (email, password) => {
       .eq('director_user_id', authData.user.id)
       .single();
 
+    console.log('🏫 Résultat requête école:', {
+      schoolData,
+      schoolError,
+      userId: authData.user.id
+    });
+
     if (schoolError) {
+      console.error('❌ Erreur lors de la recherche école:', schoolError);
+      
+      // Debug : lister toutes les écoles pour voir ce qui existe
+      const { data: allSchools, error: debugError } = await supabase
+        .from('schools')
+        .select('id, name, director_user_id, director_name, status');
+      
+      console.log('🔍 DEBUG - Toutes les écoles dans la base:', allSchools);
+      console.log('🔍 DEBUG - Erreur de la requête debug:', debugError);
+      console.log('🔍 DEBUG - ID utilisateur recherché:', authData.user.id);
+      
+      // Si PGRST116 (aucune ligne), tenter de trouver l'école via current_school_id
+      if (schoolError.code === 'PGRST116' && allSchools && allSchools.length > 0) {
+        console.log('🔄 Tentative de récupération via current_school_id...');
+        
+        // Récupérer les données utilisateur pour avoir current_school_id
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('current_school_id, full_name, email')
+          .eq('id', authData.user.id)
+          .single();
+        
+        console.log('👤 Données utilisateur:', userData, userError);
+        
+        if (userData?.current_school_id) {
+          // Essayer de récupérer l'école via current_school_id
+          const { data: schoolByCurrentId, error: schoolByIdError } = await supabase
+            .from('schools')
+            .select(`
+              id,
+              name,
+              code,
+              type,
+              director_name,
+              phone,
+              email,
+              address,
+              city,
+              country,
+              website,
+              logo,
+              description,
+              available_classes,
+              settings,
+              status,
+              director_user_id,
+              created_at,
+              updated_at
+            `)
+            .eq('id', userData.current_school_id)
+            .single();
+          
+          console.log('🏫 École trouvée via current_school_id:', schoolByCurrentId, schoolByIdError);
+          
+          if (schoolByCurrentId && !schoolByIdError) {
+            // Vérifier si director_user_id est null ou incorrect
+            if (!schoolByCurrentId.director_user_id || schoolByCurrentId.director_user_id !== authData.user.id) {
+              console.warn('⚠️ director_user_id incorrect ou manquant, correction en cours...');
+              
+              // Corriger le director_user_id
+              const { error: updateError } = await supabase
+                .from('schools')
+                .update({ director_user_id: authData.user.id })
+                .eq('id', userData.current_school_id);
+              
+              if (updateError) {
+                console.error('❌ Erreur correction director_user_id:', updateError);
+              } else {
+                console.log('✅ director_user_id corrigé avec succès');
+                schoolByCurrentId.director_user_id = authData.user.id;
+              }
+            }
+            
+            // Utiliser cette école pour continuer la connexion
+            return {
+              success: true,
+              user: authData.user,
+              school: schoolByCurrentId
+            };
+          }
+        }
+      }
+      
       // Gestion spécifique des erreurs
       if (schoolError.code === 'PGRST116') {
         throw new Error('Aucune école associée à ce compte. Vérifiez que votre compte a bien été créé comme directeur d\'établissement.');

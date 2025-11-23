@@ -1,0 +1,209 @@
+<!-- 
+  Template EmailJS pour l'envoi des identifiants
+  Copiez ce HTML dans EmailJS > Email Templates > Content (en mode HTML)
+-->
+
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .header h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .content {
+            padding: 30px;
+        }
+        .greeting {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #2c3e50;
+        }
+        .info-box {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .credentials {
+            background: #fff3cd;
+            border: 2px solid #ffc107;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .credentials-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+        }
+        .credential-item {
+            margin: 10px 0;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+        }
+        .credential-label {
+            font-weight: 600;
+            color: #495057;
+            display: inline-block;
+            width: 120px;
+        }
+        .credential-value {
+            color: #212529;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+        }
+        .button {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            font-weight: 600;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .button:hover {
+            opacity: 0.9;
+        }
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 5px;
+        }
+        .warning-title {
+            font-weight: 600;
+            color: #856404;
+            margin-bottom: 10px;
+        }
+        .warning ul {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        .warning li {
+            color: #856404;
+            margin: 5px 0;
+        }
+        .footer {
+            background: #f8f9fa;
+            padding: 20px;
+            text-align: center;
+            color: #6c757d;
+            font-size: 14px;
+        }
+        .footer-divider {
+            border-top: 1px solid #dee2e6;
+            margin: 15px 0;
+        }
+        .icon {
+            margin-right: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <h1>🎓 EduTrack-CM</h1>
+            <p style="margin: 5px 0 0 0; font-size: 16px; opacity: 0.9;">Système de Gestion Scolaire</p>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <div class="greeting">
+                Bonjour <strong>{{to_name}}</strong>,
+            </div>
+
+            <div class="info-box">
+                <p>Bienvenue sur <strong>EduTrack-CM</strong> !</p>
+                <p><strong>{{principal_name}}</strong> vous a créé un compte en tant que <strong>{{role}}</strong> pour <strong>{{school_name}}</strong>.</p>
+                <p>Vous pouvez maintenant accéder à votre espace personnel et commencer à utiliser tous les outils mis à votre disposition.</p>
+            </div>
+
+            <!-- Credentials -->
+            <div class="credentials">
+                <div class="credentials-title">
+                    <span class="icon">🔐</span> VOS IDENTIFIANTS DE CONNEXION
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">📧 Email :</span>
+                    <span class="credential-value">{{login_email}}</span>
+                </div>
+                <div class="credential-item">
+                    <span class="credential-label">🔑 Mot de passe :</span>
+                    <span class="credential-value">{{login_password}}</span>
+                </div>
+            </div>
+
+            <!-- Login Button -->
+            <div style="text-align: center;">
+                <a href="{{login_url}}" class="button">
+                    🌐 Se connecter maintenant
+                </a>
+            </div>
+
+            <!-- Security Warning -->
+            <div class="warning">
+                <div class="warning-title">⚠️ IMPORTANT - Sécurité</div>
+                <ul>
+                    <li>Conservez ces identifiants en lieu sûr</li>
+                    <li>Changez votre mot de passe après votre première connexion</li>
+                    <li>Ne partagez jamais vos identifiants avec qui que ce soit</li>
+                    <li>En cas de problème, contactez <strong>{{principal_name}}</strong></li>
+                </ul>
+            </div>
+
+            <p style="margin-top: 30px; color: #6c757d;">
+                Si vous avez des questions ou rencontrez des difficultés, n'hésitez pas à contacter votre directeur.
+            </p>
+
+            <p style="color: #6c757d;">
+                Cordialement,<br>
+                <strong>L'équipe EduTrack-CM</strong>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="footer-divider"></div>
+            <p>© {{current_year}} EduTrack-CM - Système de Gestion Scolaire</p>
+            <p style="font-size: 12px; margin-top: 10px; color: #adb5bd;">
+                Cet email a été envoyé automatiquement. Veuillez ne pas y répondre.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

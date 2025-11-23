@@ -8,6 +8,7 @@ import { useAuth } from '../../../contexts/AuthContext';
 import { useDataMode } from '../../../hooks/useDataMode';
 import useDashboardData from '../../../hooks/useDashboardData';
 import { supabase } from '../../../lib/supabase';
+import { sendCredentialsEmail, isEmailConfigured } from '../../../services/emailService';
 
 const AccountsManagement = () => {
   const location = useLocation();
@@ -399,32 +400,77 @@ const AccountsManagement = () => {
 
         let userId = null;
 
-        // Pour le personnel (non-directeur), utiliser l'Edge Function pour éviter l'email automatique
+        // Pour le personnel (non-directeur), créer directement dans la base sans auth
         if (newUser.role !== 'principal' && newUser.role !== 'admin') {
-          console.log('Création compte personnel via Edge Function...');
+          console.log('Création compte personnel...');
           
-          const { data: staffData, error: staffError } = await supabase.functions.invoke(
-            'create-staff-account',
-            {
-              body: {
-                email: newUser.email,
-                password: newUser.password,
-                fullName: newUser.fullName,
-                phone: newUser.phone,
-                role: newUser.role,
-                schoolId: user.current_school_id,
-                createdByUserId: user.id,
-                firstName,
-                lastName
-              }
-            }
-          );
+          // Générer un UUID pour le nouvel utilisateur
+          const newUserId = crypto.randomUUID();
+          
+          // 1. Créer l'utilisateur dans la table users
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .insert({
+              id: newUserId,
+              email: newUser.email,
+              full_name: newUser.fullName,
+              phone: newUser.phone,
+              role: newUser.role,
+              current_school_id: user.current_school_id,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select()
+            .single();
 
-          if (staffError || !staffData?.success) {
-            throw new Error(staffError?.message || staffData?.error || 'Erreur création compte personnel');
+          if (userError) {
+            throw new Error(`Erreur création utilisateur: ${userError.message}`);
           }
 
-          userId = staffData.userId;
+          userId = userData.id;
+          console.log('✅ Utilisateur créé:', userId);
+
+          // 2. Créer l'entrée dans la table spécifique (teachers ou secretaries)
+          if (newUser.role === 'teacher') {
+            const { error: teacherError } = await supabase
+              .from('teachers')
+              .insert({
+                school_id: user.current_school_id,
+                user_id: userId,
+                first_name: firstName,
+                last_name: lastName,
+                specialty: newUser.specialty || '',
+                hire_date: new Date().toISOString(),
+                is_active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+
+            if (teacherError) {
+              console.error('Erreur création enseignant:', teacherError);
+              // Ne pas bloquer, l'utilisateur est créé
+            }
+          } else if (newUser.role === 'secretary') {
+            const { error: secretaryError } = await supabase
+              .from('secretaries')
+              .insert({
+                school_id: user.current_school_id,
+                user_id: userId,
+                first_name: firstName,
+                last_name: lastName,
+                hire_date: new Date().toISOString(),
+                is_active: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+              });
+
+            if (secretaryError) {
+              console.error('Erreur création secrétaire:', secretaryError);
+              // Ne pas bloquer, l'utilisateur est créé
+            }
+          }
+
           console.log('✅ Compte personnel créé:', userId);
           
         } else {
@@ -467,61 +513,58 @@ const AccountsManagement = () => {
           });
         }
 
-        // Étape 2: Envoyer l'email avec les identifiants (seulement pour le personnel, pas les directeurs)
+        // Étape 2: Envoyer l'email avec les identifiants (pour le personnel uniquement)
         if (newUser.role !== 'principal' && newUser.role !== 'admin') {
-          try {
-          const { data: functionData, error: functionError } = await supabase.functions.invoke(
-            'send-credentials-email',
-            {
-              body: {
-                email: newUser.email,
-                fullName: newUser.fullName,
-                password: newUser.password,
-                role: newUser.role,
-                schoolName: user.school_name || 'École'
-              }
-            }
-          );
+          console.log('📧 Envoi de l\'email avec les identifiants...');
+          
+          const emailResult = await sendCredentialsEmail({
+            recipientEmail: newUser.email,
+            recipientName: newUser.fullName,
+            role: getRoleLabel(newUser.role),
+            email: newUser.email,
+            password: newUser.password,
+            schoolName: user.school_name || 'Votre établissement',
+            principalName: user.full_name || 'Le Directeur',
+          });
 
-          if (functionError) {
-            console.error('⚠️ Erreur envoi email:', functionError);
-            // Ne pas bloquer la création du compte, juste avertir
+          if (emailResult.success) {
+            // Email envoyé avec succès
             alert(
               `✅ Compte créé avec succès !\n\n` +
               `Utilisateur : ${newUser.fullName}\n` +
               `Email : ${newUser.email}\n` +
               `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
-              `⚠️ ATTENTION : L'email n'a pas pu être envoyé.\n` +
-              `Veuillez communiquer manuellement ces identifiants :\n\n` +
-              `Email : ${newUser.email}\n` +
-              `Mot de passe : ${newUser.password}`
+              `📧 Un email a été envoyé à ${newUser.email} avec les identifiants de connexion.\n\n` +
+              `L'utilisateur recevra :\n` +
+              `• Son email de connexion\n` +
+              `• Son mot de passe temporaire\n` +
+              `• Le lien pour se connecter`
             );
-          } else {
-            console.log('✅ Email envoyé avec succès:', functionData);
+          } else if (emailResult.fallback) {
+            // Fallback: afficher les identifiants si l'email n'a pas pu être envoyé
+            const configMessage = !isEmailConfigured() 
+              ? '\n\n⚙️ Pour activer l\'envoi automatique d\'emails, configurez EmailJS dans vos variables d\'environnement.'
+              : '';
+            
             alert(
               `✅ Compte créé avec succès !\n\n` +
               `Utilisateur : ${newUser.fullName}\n` +
               `Email : ${newUser.email}\n` +
               `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
-              `📧 Un email contenant les identifiants de connexion a été envoyé à ${newUser.email}`
+              `⚠️ L'email n'a pas pu être envoyé automatiquement.\n\n` +
+              `📋 IDENTIFIANTS À COMMUNIQUER :\n\n` +
+              `Email : ${newUser.email}\n` +
+              `Mot de passe : ${newUser.password}\n\n` +
+              `⚠️ IMPORTANT :\n` +
+              `• Notez ces identifiants en lieu sûr\n` +
+              `• Communiquez-les directement à ${newUser.fullName}\n` +
+              `• L'utilisateur pourra se connecter avec ces identifiants\n` +
+              `• Ces identifiants ne seront plus affichés après fermeture` +
+              configMessage
             );
-          }
-        } catch (emailError) {
-          console.error('⚠️ Exception envoi email:', emailError);
-          // Continuer même si l'email échoue
-          alert(
-            `✅ Compte créé avec succès !\n\n` +
-            `Utilisateur : ${newUser.fullName}\n` +
-            `Email : ${newUser.email}\n` +
-            `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
-            `⚠️ ATTENTION : L'email n'a pas pu être envoyé.\n` +
-            `Veuillez communiquer manuellement ces identifiants :\n\n` +
-            `Email : ${newUser.email}\n` +
-            `Mot de passe : ${newUser.password}`
-          );
           }
         } else {
-          // Pour les directeurs/admins, pas d'email custom (ils reçoivent l'email Supabase)
+          // Pour les directeurs/admins
           alert(
             `✅ Compte créé avec succès !\n\n` +
             `Utilisateur : ${newUser.fullName}\n` +
@@ -589,31 +632,108 @@ const AccountsManagement = () => {
     setLoadingAccounts(true);
 
     try {
-      const { data, error } = await supabase
-        .from('users')
+      // Récupérer les enseignants
+      const { data: teachersData, error: teachersError } = await supabase
+        .from('teachers')
         .select(`
           id,
-          email,
-          full_name,
-          phone,
-          role,
+          first_name,
+          last_name,
+          specialty,
+          hire_date,
           is_active,
           created_at,
-          deactivated_at,
-          created_by_user_id,
-          deactivated_by_user_id
+          users!inner (
+            id,
+            email,
+            full_name,
+            phone,
+            role
+          )
         `)
-        .eq('current_school_id', user.current_school_id)
-        .neq('role', 'principal')  // Exclure les directeurs
-        .neq('role', 'admin')      // Exclure les admins
-        .order('created_at', { ascending: false });
+        .eq('school_id', user.current_school_id)
+        .eq('is_active', true);
 
-      if (error) {
-        throw error;
+      if (teachersError) {
+        console.error('Erreur lors du chargement des enseignants:', teachersError);
       }
 
-      console.log('✅ Comptes personnel chargés depuis Supabase:', data?.length || 0);
-      setAccounts(data || []);
+      // Récupérer les secrétaires
+      const { data: secretariesData, error: secretariesError } = await supabase
+        .from('secretaries')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          hire_date,
+          is_active,
+          created_at,
+          users!inner (
+            id,
+            email,
+            full_name,
+            phone,
+            role
+          )
+        `)
+        .eq('school_id', user.current_school_id)
+        .eq('is_active', true);
+
+      if (secretariesError) {
+        console.error('Erreur lors du chargement des secrétaires:', secretariesError);
+      }
+
+      // Combiner et formater les données
+      const allPersonnel = [];
+      
+      // Ajouter les enseignants
+      if (teachersData) {
+        teachersData.forEach(teacher => {
+          allPersonnel.push({
+            id: teacher.users.id,
+            email: teacher.users.email,
+            full_name: teacher.users.full_name || `${teacher.first_name} ${teacher.last_name}`,
+            phone: teacher.users.phone,
+            role: 'teacher',
+            specialty: teacher.specialty,
+            is_active: teacher.is_active,
+            created_at: teacher.created_at,
+            hire_date: teacher.hire_date,
+            personnel_id: teacher.id
+          });
+        });
+      }
+
+      // Ajouter les secrétaires
+      if (secretariesData) {
+        secretariesData.forEach(secretary => {
+          allPersonnel.push({
+            id: secretary.users.id,
+            email: secretary.users.email,
+            full_name: secretary.users.full_name || `${secretary.first_name} ${secretary.last_name}`,
+            phone: secretary.users.phone,
+            role: 'secretary',
+            is_active: secretary.is_active,
+            created_at: secretary.created_at,
+            hire_date: secretary.hire_date,
+            personnel_id: secretary.id
+          });
+        });
+      }
+
+      // Trier par date de création
+      const sortedPersonnel = allPersonnel.sort((a, b) => 
+        new Date(b.created_at) - new Date(a.created_at)
+      );
+
+      console.log('✅ Comptes personnel chargés depuis Supabase:', sortedPersonnel.length);
+      console.log('📊 Détail personnel:', {
+        teachers: teachersData?.length || 0,
+        secretaries: secretariesData?.length || 0,
+        total: sortedPersonnel.length
+      });
+      
+      setAccounts(sortedPersonnel);
       
     } catch (error) {
       console.error('❌ Erreur chargement comptes:', error);
@@ -843,6 +963,35 @@ const AccountsManagement = () => {
               <p className="text-xl font-bold text-gray-900">{count}</p>
             </div>
           ))}
+        </div>
+      </div>
+
+      {/* Indicateur de configuration Email */}
+      <div className={`rounded-lg border p-4 flex items-start space-x-3 ${
+        isEmailConfigured() 
+          ? 'bg-green-50 border-green-200' 
+          : 'bg-yellow-50 border-yellow-200'
+      }`}>
+        <Icon 
+          name={isEmailConfigured() ? "CheckCircle" : "AlertTriangle"} 
+          size={20} 
+          className={isEmailConfigured() ? "text-green-600 mt-0.5" : "text-yellow-600 mt-0.5"} 
+        />
+        <div className="flex-1">
+          <div className="flex items-center space-x-2 mb-1">
+            <Icon name="Mail" size={16} className={isEmailConfigured() ? "text-green-600" : "text-yellow-600"} />
+            <h4 className={`text-sm font-semibold ${
+              isEmailConfigured() ? 'text-green-900' : 'text-yellow-900'
+            }`}>
+              {isEmailConfigured() ? '✅ Envoi automatique d\'emails activé' : '⚠️ Envoi automatique d\'emails désactivé'}
+            </h4>
+          </div>
+          <p className={`text-sm ${isEmailConfigured() ? 'text-green-700' : 'text-yellow-700'}`}>
+            {isEmailConfigured() 
+              ? 'Les identifiants seront automatiquement envoyés par email au personnel lors de la création de leur compte.'
+              : 'Les identifiants seront affichés à l\'écran pour communication manuelle. Pour activer l\'envoi automatique, consultez docs/GUIDE_RAPIDE_EMAIL.md'
+            }
+          </p>
         </div>
       </div>
 

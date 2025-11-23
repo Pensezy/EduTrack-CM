@@ -52,8 +52,9 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
   const navigationItems = {
     student: [
       { label: 'Dashboard', path: '/student-dashboard', icon: 'Home' },
-      { label: 'Profil', path: '/student-profile-management', icon: 'User' },
-      { label: 'Notes', path: '/grade-management-system', icon: 'BookOpen' },
+      { label: 'Profil', path: '/student-dashboard?tab=profile', icon: 'User' },
+      { label: 'Notes', path: '/student-dashboard?tab=grades', icon: 'BookOpen' },
+      { label: 'Messages', path: '/student-dashboard?tab=messages', icon: 'MessageCircle' },
     ],
     parent: [
       { label: 'Dashboard', path: '/parent-dashboard', icon: 'Home' },
