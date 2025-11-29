@@ -1,5 +1,5 @@
 // Service optimisé pour les opérations base de données
-// Utilise Supabase client côté navigateur (Prisma est côté serveur seulement)
+// Utilise Supabase client pour toutes les opérations
 
 import { supabase } from '../lib/supabase.js';
 
@@ -16,7 +16,7 @@ class DatabaseService {
    */
   async initializeSchoolDefaults(schoolId, academicYearId) {
     try {
-      console.log('🏗️ Initialisation des données par défaut avec Prisma pour l\'école:', schoolId);
+      console.log('🏭 Initialisation des données par défaut pour l\'école:', schoolId);
       
       const results = {
         success: true,
@@ -305,8 +305,8 @@ const databaseService = new DatabaseService();
 
 export default databaseService;
 
-// Exports nommés pour la compatibilité
+// Export nommé pour la compatibilité
 export {
-  databaseService as prismaService,
-  DatabaseService as PrismaService
+  databaseService,
+  DatabaseService
 };

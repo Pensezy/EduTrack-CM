@@ -377,7 +377,7 @@ const WorkingSchoolRegistrationForm = ({ onSuccess }) => {
       return false;
     }
 
-    // 5. Validation du type d'école (Prisma compatibility)
+    // 5. Validation du type d'école
     const validSchoolTypes = ['maternelle', 'primaire', 'college', 'lycee', 'college_lycee', 'universite', 'formation_professionnelle'];
     if (!validSchoolTypes.includes(formData.schoolType)) {
       setError('Type d\'établissement invalide');

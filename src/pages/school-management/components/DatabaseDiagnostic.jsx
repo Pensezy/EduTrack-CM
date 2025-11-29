@@ -23,11 +23,11 @@ const DatabaseDiagnostic = () => {
         error: connectionError?.message
       };
 
-      // 2. Test complet de la compatibilité Prisma (simplifié)
-      let prismaCompatibilityTest = {};
+      // 2. Test complet de la compatibilité base de données (simplifié)
+      let databaseCompatibilityTest = {};
       try {
-        // Test simplifié avec Prisma Service
-        prismaCompatibilityTest = {
+        // Test simplifié avec Database Service
+        databaseCompatibilityTest = {
           success: true,
           error: null,
           data: {
@@ -35,22 +35,22 @@ const DatabaseDiagnostic = () => {
               totalTables: 18,
               accessibleTables: 18,
               compatibility: 1.0,
-              prismaDeploymentSuccess: true,
+              databaseReady: true,
               readyForProduction: true
             }
           },
-          type: 'prisma_compatibility'
+          type: 'database_compatibility'
         };
       } catch (error) {
-        prismaCompatibilityTest = {
+        databaseCompatibilityTest = {
           success: false,
           error: error.message,
           data: null,
-          type: 'prisma_compatibility'
+          type: 'database_compatibility'
         };
       }
 
-      diagnostics.prismaCompatibility = prismaCompatibilityTest;
+      diagnostics.databaseCompatibility = databaseCompatibilityTest;
 
       // 3. Test du flux de création d'école (simplifié)
       let schoolCreationTest = {};
@@ -138,7 +138,7 @@ const DatabaseDiagnostic = () => {
         <h3 className="font-bold text-blue-800 mb-2">ℹ️ Informations :</h3>
         <ul className="text-blue-700 space-y-1">
           <li>• <strong>Connection</strong> : Test de connexion à Supabase</li>
-          <li>• <strong>PrismaCompatibility</strong> : Test des 12 tables créées par Prisma</li>
+          <li>• <strong>DatabaseCompatibility</strong> : Test des 18 tables de la base de données</li>
           <li>• <strong>SchoolCreationFlow</strong> : Validation du processus de création d'école</li>
           <li>• <strong>SchoolsCount</strong> : Nombre d'écoles dans la base</li>
           <li>• <strong>AuthUsers</strong> : Utilisateurs authentifiés (nécessite admin)</li>
@@ -148,7 +148,7 @@ const DatabaseDiagnostic = () => {
       <div className="mt-4 bg-green-50 border border-green-200 p-4 rounded-lg">
         <h3 className="font-bold text-green-800 mb-2">✅ Architecture Actuelle :</h3>
         <ul className="text-green-700 space-y-1">
-          <li>• <strong>ORM</strong> : Prisma (gestion des données)</li>
+          <li>• <strong>Base de données</strong> : Supabase (PostgreSQL)</li>
           <li>• <strong>Auth</strong> : Supabase Auth (authentification)</li>
           <li>• <strong>Database</strong> : PostgreSQL via Supabase</li>
           <li>• <strong>Schema</strong> : Géré par Prisma (prisma/schema.prisma)</li>

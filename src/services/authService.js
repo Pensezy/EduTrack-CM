@@ -1,5 +1,5 @@
-// Service de connexion compatible avec Prisma
-// Utilise Supabase pour l'auth et vérifie les données Prisma
+// Service de connexion
+// Utilise Supabase pour l'authentification et la gestion des données
 
 import { supabase } from '../lib/supabase.js';
 
@@ -50,9 +50,9 @@ export const loginDirector = async (email, password) => {
 
     console.log('✅ Connexion réussie pour:', authData.user.email);
 
-    // 2. Données d'école gérées automatiquement par Prisma - pas besoin de finalisation manuelle
+    // 2. Données d'école gérées automatiquement - pas besoin de finalisation manuelle
 
-    // 3. Récupérer les données de l'école (structure Prisma)
+    // 3. Récupérer les données de l'école
     console.log('🔍 Recherche école pour utilisateur:', {
       userId: authData.user.id,
       userEmail: authData.user.email,
@@ -199,7 +199,7 @@ export const loginDirector = async (email, password) => {
       throw new Error(`Statut du compte: ${schoolData.status}. Contactez l\'administrateur.`);
     }
 
-    // 4. Récupérer les données utilisateur (structure Prisma)
+    // 4. Récupérer les données utilisateur
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select(`
@@ -217,7 +217,7 @@ export const loginDirector = async (email, password) => {
       .single();
 
     // Si l'utilisateur n'existe pas dans la table users, on continue quand même
-    // (peut arriver si la migration Prisma n'a pas encore créé l'enregistrement)
+    // (peut arriver si l'enregistrement n'a pas encore été créé)
     if (userError && userError.code !== 'PGRST116') {
       console.warn('Utilisateur non trouvé dans la table users:', userError.message);
     }

@@ -1,8 +1,8 @@
 // Service principal pour l'authentification et la gestion des écoles
-// Utilise Supabase pour les opérations côté client (Prisma ne fonctionne que côté serveur)
+// Utilise Supabase pour les opérations côté client
 
 import { supabase } from '../lib/supabase';
-import prismaService from './prismaService';
+import databaseService from './databaseService';
 import { getCurrentAcademicYear, getAcademicYearDates } from '../utils/academicYear';
 import ConfigurationService from './configurationService';
 
@@ -243,7 +243,7 @@ export const createPrincipalSchool = async ({
     
     if (academicYearData) {
       console.log('🏗️ Initialisation des données par défaut...');
-      initializationResult = await prismaService.initializeSchoolDefaults(schoolData.id, academicYearData.id);
+      initializationResult = await databaseService.initializeSchoolDefaults(schoolData.id, academicYearData.id);
       
       if (initializationResult.success) {
         console.log('✅ Données par défaut initialisées:', initializationResult.created);

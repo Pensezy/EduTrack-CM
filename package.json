@@ -1,8 +1,9 @@
 {
+  "$schema": "",
   "name": "edutrack-cm",
   "version": "0.1.0",
   "private": true,
-  "rocketCritical": {
+  "Critical": {
     "dependencies": [
       "@dhiwise/component-tagger",
       "react",
@@ -29,7 +30,6 @@
   "dependencies": {
     "@dhiwise/component-tagger": "^1.0.10",
     "@emailjs/browser": "^4.4.1",
-    "@prisma/client": "^6.16.2",
     "@radix-ui/react-slot": "^1.2.3",
     "@reduxjs/toolkit": "^2.6.1",
     "@supabase/supabase-js": "^2.39.0",
@@ -47,7 +47,6 @@
     "express": "^5.1.0",
     "framer-motion": "^10.16.4",
     "lucide-react": "^0.484.0",
-    "prisma": "^6.16.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-helmet": "^6.1.0",

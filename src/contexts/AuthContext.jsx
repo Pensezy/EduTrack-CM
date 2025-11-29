@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import prismaService from '../services/prismaService';
+import databaseService from '../services/databaseService';
 import { getCurrentAcademicYear } from '../utils/academicYear';
 
 const AuthContext = createContext({});
@@ -294,7 +294,7 @@ export const AuthProvider = ({ children }) => {
       // Valider et corriger les données au moment de la connexion (pour les directeurs)
       if (authenticatedUser.role === 'principal') {
         try {
-          const validationResult = await prismaService.validateDirectorData(authenticatedUser.id, authenticatedUser.email);
+          const validationResult = await databaseService.validateDirectorData(authenticatedUser.id, authenticatedUser.email);
           if (validationResult.corrections && validationResult.corrections.length > 0) {
             console.log('✅ Données corrigées lors de la connexion:', validationResult.corrections);
           }

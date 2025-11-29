@@ -74,7 +74,7 @@ const SchoolLoginForm = ({ onSuccess }) => {
         throw new Error('Veuillez saisir une adresse email valide');
       }
 
-      // Utiliser le nouveau service d'authentification compatible Prisma
+      // Utiliser le service d'authentification
       const { loginDirector } = await import('../../../services/authService.js');
       
       const result = await loginDirector(formData.email, formData.password);
