@@ -57,10 +57,12 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Messages', path: '/parent-dashboard?tab=messages', icon: 'MessageCircle', description: 'Communications' }
     ],
     admin: [
-      { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home', description: 'Aperçu système' },
-      { label: 'Système', path: '/admin-dashboard', icon: 'Settings', description: 'Configuration système' },
-      { label: 'Utilisateurs', path: '/admin-dashboard', icon: 'Users', description: 'Gestion utilisateurs' },
-      { label: 'Analytics', path: '/admin-dashboard', icon: 'BarChart3', description: 'Statistiques globales' }
+      { label: 'Dashboard', path: '/admin-dashboard?tab=overview', icon: 'Home', description: 'Aperçu système' },
+      { label: 'Utilisateurs', path: '/admin-dashboard?tab=users', icon: 'Users', description: 'Gestion utilisateurs' },
+      { label: 'Établissements', path: '/admin-dashboard?tab=schools', icon: 'School', description: 'Gestion établissements' },
+      { label: 'Finances', path: '/admin-dashboard?tab=finances', icon: 'DollarSign', description: 'Gestion financière' },
+      { label: 'Analytics', path: '/admin-dashboard?tab=analytics', icon: 'BarChart3', description: 'Statistiques' },
+      { label: 'Sécurité', path: '/admin-dashboard?tab=security', icon: 'Shield', description: 'Sécurité système' }
     ]
   };
 
@@ -97,10 +99,10 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Messages enseignants', icon: 'Mail', path: '/parent-dashboard?tab=messages' },
     ],
     admin: [
-      { label: 'Système', icon: 'Settings', path: '/admin-dashboard' },
-      { label: 'Sécurité', icon: 'Shield', path: '/admin-dashboard' },
-      { label: 'Backups', icon: 'Database', path: '/data-backup' },
-      { label: 'Logs', icon: 'FileText', path: '/admin-dashboard' },
+      { label: 'Utilisateurs', icon: 'Users', path: '/admin-dashboard?tab=users' },
+      { label: 'Finances', icon: 'DollarSign', path: '/admin-dashboard?tab=finances' },
+      { label: 'Analytics', icon: 'TrendingUp', path: '/admin-dashboard?tab=analytics' },
+      { label: 'Sécurité', icon: 'Shield', path: '/admin-dashboard?tab=security' }
     ]
   };
 

@@ -79,10 +79,12 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
       { label: 'Validation Année', path: '/principal-dashboard?tab=school-year', icon: 'Calendar' },
     ],
     admin: [
-      { label: 'Dashboard', path: '/admin-dashboard', icon: 'Home' },
+      { label: 'Dashboard', path: '/admin-dashboard?tab=overview', icon: 'Home' },
       { label: 'Utilisateurs', path: '/admin-dashboard?tab=users', icon: 'Users' },
+      { label: 'Établissements', path: '/admin-dashboard?tab=schools', icon: 'School' },
+      { label: 'Finances', path: '/admin-dashboard?tab=finances', icon: 'DollarSign' },
       { label: 'Analytics', path: '/admin-dashboard?tab=analytics', icon: 'TrendingUp' },
-      { label: 'Journal Audit', path: '/admin-dashboard?tab=audit', icon: 'FileText' },
+      { label: 'Sécurité', path: '/admin-dashboard?tab=security', icon: 'Shield' }
     ]
   };
 

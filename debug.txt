@@ -1,3 +1,0 @@
-Analyse des DIV dans NotificationCenter.jsx
-
-=== OUVERTURES ===

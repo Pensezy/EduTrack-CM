@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import useDataMode from './useDataMode';
+import { useDataMode } from './useDataMode';
 import demoDataService from '../services/demoDataService';
 import productionDataService from '../services/productionDataService';
 
