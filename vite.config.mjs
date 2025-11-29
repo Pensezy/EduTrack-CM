@@ -16,6 +16,6 @@ export default defineConfig({
     port: "4028",
     host: "0.0.0.0",
     strictPort: true,
-    allowedHosts //je déploie en local, 
+    // je déploie en local
   }
 });

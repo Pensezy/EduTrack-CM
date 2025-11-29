@@ -3,6 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
+import { useDataMode } from '../../hooks/useDataMode';
+import { supabase } from '../../lib/supabase';
 
 import ClassSelector from './components/ClassSelector';
 import AssignedClassesOverview from './components/AssignedClassesOverview';
@@ -21,9 +23,18 @@ const TeacherDashboard = () => {
   const [selectedSubject, setSelectedSubject] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [viewMode, setViewMode] = useState('single'); // 'single' ou 'multi-school'
+  
+  // Mode démo/production
+  const { isDemo, isProduction, dataMode, user } = useDataMode();
+  
+  // États pour les données réelles
+  const [teacherData, setTeacherData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [studentsData, setStudentsData] = useState({});
+  const [documentsData, setDocumentsData] = useState({});
 
-  // Mock teacher data with assigned classes
-  const teacherData = {
+  // Mock teacher data (utilisé uniquement en mode démo)
+  const mockTeacherData = {
     id: "teacher-001",
     name: "Mme Tchoukoua Rose",
     email: "rose.tchoukoua@demo.cm",
@@ -73,7 +84,7 @@ const TeacherDashboard = () => {
   };
 
   // Mock students data by class
-  const studentsData = {
+  const mockStudentsData = {
     "class-001": [
       { 
         id: "student-001", 
@@ -127,7 +138,7 @@ const TeacherDashboard = () => {
   };
 
   // Mock documents data by class
-  const documentsData = {
+  const mockDocumentsData = {
     "class-001": [
       {
         id: "doc-001",
@@ -210,6 +221,180 @@ const TeacherDashboard = () => {
     }
   ];
 
+  // Charger les données réelles depuis Supabase en mode production
+  useEffect(() => {
+    const loadTeacherData = async () => {
+      if (isDemo) {
+        // En mode démo, utiliser les données mock
+        console.log('🎭 Mode DÉMO - Utilisation des données fictives');
+        setTeacherData(mockTeacherData);
+        setStudentsData(mockStudentsData);
+        setDocumentsData(mockDocumentsData);
+        setLoading(false);
+        return;
+      }
+
+      if (!user || !user.id) {
+        console.log('⚠️ Pas d\'utilisateur connecté');
+        setLoading(false);
+        return;
+      }
+
+      try {
+        console.log('✅ Mode PRODUCTION - Chargement des données réelles...');
+        console.log('  - User ID:', user.id);
+        console.log('  - School ID:', user.current_school_id);
+        
+        setLoading(true);
+
+        // 1. Récupérer les infos de l'enseignant depuis la table teachers
+        const { data: teacherInfo, error: teacherError } = await supabase
+          .from('teachers')
+          .select(`
+            id,
+            user_id,
+            first_name,
+            last_name,
+            specialty,
+            hire_date,
+            is_active,
+            users!teachers_user_id_fkey (
+              id,
+              email,
+              full_name,
+              phone,
+              current_school_id
+            ),
+            schools!teachers_school_id_fkey (
+              id,
+              name,
+              code
+            )
+          `)
+          .eq('user_id', user.id)
+          .eq('is_active', true)
+          .single();
+
+        if (teacherError) {
+          console.error('❌ Erreur chargement enseignant:', teacherError);
+          throw teacherError;
+        }
+
+        console.log('✅ Infos enseignant chargées:', teacherInfo);
+
+        // 2. Récupérer les assignations (classes assignées)
+        const { data: assignments, error: assignmentsError } = await supabase
+          .from('teacher_assignments')
+          .select(`
+            id,
+            class_id,
+            subject_id,
+            class_name,
+            subject_name,
+            schedule,
+            is_active,
+            classes!teacher_assignments_class_id_fkey (
+              id,
+              name,
+              level,
+              section
+            ),
+            subjects!teacher_assignments_subject_id_fkey (
+              id,
+              name,
+              code
+            )
+          `)
+          .eq('teacher_id', teacherInfo.id)
+          .eq('is_active', true);
+
+        if (assignmentsError) {
+          console.error('❌ Erreur chargement assignations:', assignmentsError);
+          throw assignmentsError;
+        }
+
+        console.log('✅ Assignations chargées:', assignments?.length || 0);
+
+        // 3. Pour chaque classe, récupérer les élèves
+        const studentsDataByClass = {};
+        
+        if (assignments && assignments.length > 0) {
+          for (const assignment of assignments) {
+            const classId = assignment.class_id;
+            
+            const { data: students, error: studentsError } = await supabase
+              .from('students')
+              .select(`
+                id,
+                matricule,
+                user_id,
+                class_id,
+                users!students_user_id_fkey (
+                  id,
+                  full_name,
+                  email,
+                  phone
+                )
+              `)
+              .eq('class_id', classId)
+              .eq('is_active', true);
+
+            if (!studentsError && students) {
+              studentsDataByClass[assignment.id] = students.map(student => ({
+                id: student.id,
+                name: student.users?.full_name || 'Élève',
+                matricule: student.matricule,
+                email: student.users?.email,
+                phone: student.users?.phone,
+                recentGrades: [], // À charger séparément si nécessaire
+                attendance: { present: 0, absent: 0, late: 0 } // À calculer séparément
+              }));
+            }
+          }
+        }
+
+        console.log('✅ Élèves chargés pour', Object.keys(studentsDataByClass).length, 'classes');
+
+        // 4. Formatter les données pour correspondre au format attendu
+        const formattedTeacherData = {
+          id: teacherInfo.id,
+          name: teacherInfo.users?.full_name || `${teacherInfo.first_name} ${teacherInfo.last_name}`,
+          email: teacherInfo.users?.email,
+          phone: teacherInfo.users?.phone,
+          specialty: teacherInfo.specialty,
+          employeeId: `ENS-${teacherInfo.id}`,
+          assignedClasses: (assignments || []).map(assignment => ({
+            id: assignment.id,
+            name: assignment.class_name || assignment.classes?.name,
+            level: assignment.classes?.level,
+            section: assignment.classes?.section,
+            school: teacherInfo.schools?.name,
+            subject: assignment.subject_name || assignment.subjects?.name,
+            students: studentsDataByClass[assignment.id]?.length || 0,
+            schedule: assignment.schedule || []
+          }))
+        };
+
+        console.log('✅ Données formatées:', formattedTeacherData);
+
+        setTeacherData(formattedTeacherData);
+        setStudentsData(studentsDataByClass);
+
+      } catch (error) {
+        console.error('❌ Erreur chargement données enseignant:', error);
+        // En cas d'erreur, fallback sur les données mock
+        console.log('⚠️ Utilisation des données de démonstration (fallback)');
+        setTeacherData(mockTeacherData);
+        setStudentsData(mockStudentsData);
+        setDocumentsData(mockDocumentsData);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadTeacherData();
+  }, [isDemo, user]);
+
   useEffect(() => {
     const timer = setInterval(() => {
       setCurrentTime(new Date());
@@ -224,7 +409,7 @@ const TeacherDashboard = () => {
       setSelectedClass(teacherData?.assignedClasses?.[0]);
       setSelectedSubject(teacherData?.assignedClasses?.[0]?.subject);
     }
-  }, []);
+  }, [teacherData]);
 
   const handleClassSelect = (classData) => {
     setSelectedClass(classData);
@@ -471,7 +656,7 @@ const TeacherDashboard = () => {
     <div className="min-h-screen bg-background">
       <Header 
         userRole="teacher" 
-        userName={teacherData?.name}
+        userName={teacherData?.name || 'Enseignant'}
         onToggleSidebar={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
       <Sidebar 
@@ -483,16 +668,49 @@ const TeacherDashboard = () => {
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         <div className="p-4 lg:p-6 space-y-6">
+          
+          {/* Indicateur de chargement */}
+          {loading && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
+              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+              <p className="text-blue-700 font-medium">Chargement de vos données...</p>
+            </div>
+          )}
+
+          {/* Indicateur de mode */}
+          {!loading && (
+            <div className={`rounded-lg p-3 ${
+              isProduction 
+                ? 'bg-green-50 border border-green-200' 
+                : 'bg-orange-50 border border-orange-200'
+            }`}>
+              <div className="flex items-center space-x-2">
+                <Icon 
+                  name={isProduction ? "CheckCircle2" : "AlertCircle"} 
+                  size={18} 
+                  className={isProduction ? "text-green-600" : "text-orange-600"} 
+                />
+                <span className={`text-sm font-medium ${
+                  isProduction ? 'text-green-800' : 'text-orange-800'
+                }`}>
+                  {isProduction ? '✅ Mode PRODUCTION - Données réelles' : '🎭 Mode DÉMO - Données fictives'}
+                </span>
+              </div>
+            </div>
+          )}
+
           {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-primary to-secondary rounded-lg p-6 text-white">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
-                  {getGreeting()}, {teacherData?.name} ! 👩‍🏫
-                </h1>
-                <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
-                  Gérez vos classes, évaluations et documents pédagogiques efficacement.
-                </p>
+          {!loading && teacherData && (
+            <div className="bg-gradient-to-r from-primary to-secondary rounded-lg p-6 text-white">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
+                    {getGreeting()}, {teacherData?.name} ! 👩‍🏫
+                  </h1>
+                  <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
+                    Gérez vos classes, évaluations et documents pédagogiques efficacement.
+                  </p>
+                </div>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
@@ -507,6 +725,16 @@ const TeacherDashboard = () => {
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
                       {teacherData?.specialty}
+                    </span>
+                  </div>
+                  {/* Indicateur de mode */}
+                  <div className={`rounded-lg px-3 py-1 ${
+                    isProduction 
+                      ? 'bg-green-500/30 border border-green-300' 
+                      : 'bg-orange-500/30 border border-orange-300'
+                  }`}>
+                    <span className="font-caption font-caption-semibold text-sm">
+                      {isProduction ? '✅ Production' : '🎭 Démo'}
                     </span>
                   </div>
                 </div>
@@ -529,10 +757,21 @@ const TeacherDashboard = () => {
                 </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Tab Content */}
-          {renderTabContent()}
+          {!loading && teacherData && renderTabContent()}
+          
+          {/* Message si pas de données */}
+          {!loading && !teacherData && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+              <Icon name="AlertTriangle" size={48} className="text-yellow-600 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Aucune donnée disponible</h3>
+              <p className="text-yellow-700">
+                Veuillez contacter votre directeur pour configurer votre compte enseignant.
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>

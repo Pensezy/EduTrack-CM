@@ -228,6 +228,7 @@ export const cardService = {
         throw new Error('Pas d\'école associée');
       }
 
+      // Récupérer les cartes avec les informations des étudiants
       const { data, error } = await supabase
         .from('student_cards')
         .select(`
@@ -236,17 +237,18 @@ export const cardService = {
           issue_date,
           expiry_date,
           status,
-          printed_at,
-          validated_at,
           created_at,
+          updated_at,
+          student_id,
           students:student_id (
             id,
             user_id,
             first_name,
             last_name,
-            class_name,
-            photo,
-            date_of_birth
+            date_of_birth,
+            users:user_id (
+              photo
+            )
           )
         `)
         .eq('school_id', schoolId)
@@ -254,17 +256,44 @@ export const cardService = {
 
       if (error) throw error;
 
+      // Récupérer les classes des étudiants via les attendances récentes
+      const studentIds = data.map(card => card.student_id).filter(Boolean);
+      
+      let studentClasses = {};
+      if (studentIds.length > 0) {
+        const { data: attendancesData } = await supabase
+          .from('attendances')
+          .select(`
+            student_id,
+            classes:class_id (
+              name
+            )
+          `)
+          .in('student_id', studentIds)
+          .order('date', { ascending: false })
+          .limit(studentIds.length);
+
+        if (attendancesData) {
+          attendancesData.forEach(att => {
+            if (!studentClasses[att.student_id] && att.classes?.name) {
+              studentClasses[att.student_id] = att.classes.name;
+            }
+          });
+        }
+      }
+
       // Transformer au format attendu
       const formattedCards = data.map(card => ({
         id: card.id,
         studentId: card.students?.user_id || card.students?.id,
         studentName: `${card.students?.first_name || ''} ${card.students?.last_name || ''}`.trim(),
-        class: card.students?.class_name || 'Non assigné',
-        photo: card.students?.photo || '/public/assets/images/no_image.png',
+        class: studentClasses[card.student_id] || 'Non assigné',
+        photo: card.students?.users?.photo || '/assets/images/no_image.png',
         cardNumber: card.card_number,
         issueDate: card.issue_date ? new Date(card.issue_date).toLocaleDateString('fr-FR') : '',
         expiryDate: card.expiry_date ? new Date(card.expiry_date).toLocaleDateString('fr-FR') : '',
         status: card.status,
+        dateOfBirth: card.students?.date_of_birth ? new Date(card.students.date_of_birth).toLocaleDateString('fr-FR') : '',
         parentName: 'Non renseigné', // Parents relation à implémenter plus tard
         emergencyContact: 'Non renseigné', // Parents relation à implémenter plus tard
         bloodType: 'Non renseigné', // À ajouter dans la table students si nécessaire

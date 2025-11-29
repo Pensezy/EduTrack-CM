@@ -33,13 +33,54 @@ export const useDataMode = () => {
           return;
         }
         
-        // Vérifier si un utilisateur est connecté
+        // PRIORITÉ 1 : Vérifier localStorage (pour les comptes personnel avec EmailJS)
+        const savedUser = localStorage.getItem('edutrack-user');
+        if (savedUser) {
+          try {
+            const userData = JSON.parse(savedUser);
+            console.log('✅ Utilisateur trouvé dans localStorage:', userData.email);
+            
+            if (!userData.demoAccount) {
+              // C'est un vrai compte production
+              console.log('✅ Mode PRODUCTION (localStorage):', userData.school_name || 'École');
+              setDataMode('production');
+              setUser(userData);
+              modeCache = { dataMode: 'production', user: userData };
+              cacheTimestamp = Date.now();
+              setIsLoading(false);
+              return;
+            } else {
+              // Compte démo
+              console.log('🎭 Mode DÉMO (localStorage)');
+              setDataMode('demo');
+              setUser(userData);
+              modeCache = { dataMode: 'demo', user: userData };
+              cacheTimestamp = Date.now();
+              setIsLoading(false);
+              return;
+            }
+          } catch (e) {
+            console.error('Erreur parsing localStorage:', e);
+          }
+        }
+        
+        // PRIORITÉ 2 : Vérifier session Supabase Auth (pour les comptes parents/étudiants/directeurs)
         const { data: { user }, error } = await supabase.auth.getUser();
+        
+        console.log('🔍 Vérification Supabase Auth:');
+        console.log('  - User exists:', !!user);
+        console.log('  - Error:', error?.message || 'Aucune');
+        if (user) {
+          console.log('  - Email:', user.email);
+          console.log('  - ID:', user.id);
+          console.log('  - Created:', user.created_at);
+          console.log('  - Metadata:', user.user_metadata);
+        }
         
         if (!mounted) return;
 
         if (error) {
-          console.log('Erreur lors de la vérification de l\'utilisateur:', error.message);
+          console.log('⚠️ Erreur Auth Supabase:', error.message);
           setDataMode('demo');
           setUser(null);
           return;
@@ -47,6 +88,7 @@ export const useDataMode = () => {
 
         if (!user) {
           // Pas d'utilisateur connecté = mode démo
+          console.log('❌ Aucun utilisateur Supabase connecté → Mode DÉMO');
           setDataMode('demo');
           setUser(null);
           
@@ -59,7 +101,16 @@ export const useDataMode = () => {
                                user.email?.includes('test@') || 
                                user.user_metadata?.demo === true;
 
+          console.log('🔍 Vérification compte démo:', {
+            email: user.email,
+            includesDemo: user.email?.includes('demo@'),
+            includesTest: user.email?.includes('test@'),
+            metadataDemo: user.user_metadata?.demo,
+            isDemoAccount
+          });
+
           if (isDemoAccount) {
+            console.log('🎭 Compte identifié comme DÉMO (email contient demo/test)');
             setDataMode('demo');
             setUser(user);
             
@@ -67,6 +118,8 @@ export const useDataMode = () => {
             modeCache = { dataMode: 'demo', user: user };
             cacheTimestamp = Date.now();
           } else {
+            console.log('✅ Compte Supabase valide, récupération des données utilisateur...');
+            
             // Récupérer les données utilisateur depuis la table users
             const { data: userData, error: userError } = await supabase
               .from('users')
@@ -82,11 +135,24 @@ export const useDataMode = () => {
                   id,
                   name,
                   code,
-                  type
+                  type,
+                  director_id,
+                  address,
+                  city,
+                  country,
+                  status
                 )
               `)
               .eq('id', user.id)
               .single();
+
+            console.log('📊 Résultat requête users:', {
+              found: !!userData,
+              error: userError?.message || 'Aucune',
+              role: userData?.role,
+              school_id: userData?.current_school_id,
+              has_school: !!userData?.school
+            });
 
             if (userError || !userData) {
               console.log('⚠️ Utilisateur non trouvé dans la table users, mode DÉMO activé');
@@ -101,11 +167,17 @@ export const useDataMode = () => {
 
             // Si l'utilisateur a une école associée = mode production
             if (userData.current_school_id && userData.school) {
-              console.log('✅ Mode PRODUCTION:', userData.school.name, '- Rôle:', userData.role);
+              console.log('✅ Mode PRODUCTION activé:');
+              console.log('  - École:', userData.school.name);
+              console.log('  - Rôle:', userData.role);
+              console.log('  - School ID:', userData.current_school_id);
+              console.log('  - Director ID:', userData.school.director_id);
               
               const enrichedUser = { 
                 ...user,
                 ...userData,
+                auth: user, // Garder une référence à l'objet auth Supabase
+                dbUser: userData, // Référence aux données de la table users
                 schoolData: userData.school,
                 school_id: userData.current_school_id,
                 school_name: userData.school.name

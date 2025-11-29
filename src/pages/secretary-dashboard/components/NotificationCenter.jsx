@@ -36,7 +36,68 @@ const NotificationCenter = () => {
 
         setParents(parentsRes || []);
         setSentMessages(historyRes || []);
-        setTemplates(templatesRes || []);
+        
+        // Ajouter des templates par défaut s'ils sont vides
+        const defaultTemplates = [
+          { 
+            value: 'custom', 
+            label: '✏️ Message personnalisé', 
+            category: 'custom', 
+            content: '', 
+            subjectDefault: '' 
+          },
+          { 
+            value: 'absence', 
+            label: '📅 Justification d\'absence', 
+            category: 'attendance', 
+            content: 'Bonjour,\n\nVotre enfant {nom_enfant} était absent(e) le {date}. Nous vous remercions de bien vouloir fournir un justificatif d\'absence dans les plus brefs délais.\n\nCordialement,\nL\'administration', 
+            subjectDefault: 'Justificatif d\'absence requis'
+          },
+          { 
+            value: 'payment', 
+            label: '💰 Rappel de paiement', 
+            category: 'financial', 
+            content: 'Cher(e) parent,\n\nNous vous rappelons qu\'un paiement concernant {nom_enfant} est en attente.\n\nMontant : {montant}\nDate limite : {date_limite}\n\nMerci de régulariser votre situation dès que possible.\n\nCordialement,\nLe service financier', 
+            subjectDefault: 'Rappel de paiement'
+          },
+          { 
+            value: 'meeting', 
+            label: '👥 Convocation réunion', 
+            category: 'general', 
+            content: 'Chers parents,\n\nVous êtes convoqué(e) à une réunion le {date} à {heure} concernant {sujet}.\n\nLieu : {lieu}\n\nVotre présence est importante.\n\nCordialement,\nL\'administration', 
+            subjectDefault: 'Convocation à une réunion'
+          },
+          { 
+            value: 'results', 
+            label: '📊 Publication des résultats', 
+            category: 'academic', 
+            content: 'Bonjour,\n\nLes résultats de {nom_enfant} pour {periode} sont maintenant disponibles.\n\nVous pouvez les consulter sur notre plateforme ou passer les récupérer au secrétariat.\n\nCordialement,\nL\'équipe pédagogique', 
+            subjectDefault: 'Résultats disponibles'
+          },
+          { 
+            value: 'event', 
+            label: '🎉 Annonce événement', 
+            category: 'general', 
+            content: 'Chers parents,\n\nNous avons le plaisir de vous annoncer {evenement} qui se tiendra le {date}.\n\n{details}\n\nNous comptons sur votre participation.\n\nCordialement,\nL\'équipe organisatrice', 
+            subjectDefault: 'Annonce d\'événement'
+          },
+          { 
+            value: 'health', 
+            label: '🏥 Information santé', 
+            category: 'health', 
+            content: 'Cher(e) parent,\n\nNous vous informons que {nom_enfant} {information_sante}.\n\nMerci de nous contacter si besoin.\n\nCordialement,\nL\'infirmerie scolaire', 
+            subjectDefault: 'Information santé'
+          },
+          { 
+            value: 'behavior', 
+            label: '⚠️ Note de comportement', 
+            category: 'discipline', 
+            content: 'Cher(e) parent,\n\nNous souhaitons attirer votre attention sur le comportement de {nom_enfant}.\n\n{description}\n\nNous vous demandons de prendre les mesures nécessaires.\n\nCordialement,\nLa vie scolaire', 
+            subjectDefault: 'Note de comportement'
+          }
+        ];
+        
+        setTemplates(templatesRes && templatesRes.length > 0 ? templatesRes : defaultTemplates);
       } catch (error) {
         console.error('Error loading communication data:', error);
         setParents([]);
@@ -49,6 +110,44 @@ const NotificationCenter = () => {
 
     loadData();
   }, []);
+
+  // Gérer le changement de template et appliquer le contenu
+  const handleTemplateChange = (templateValue) => {
+    setSelectedTemplate(templateValue);
+    
+    const template = templates.find(t => t.value === templateValue);
+    if (template && template.content) {
+      setMessage(template.content);
+      if (template.subjectDefault) {
+        setSubject(template.subjectDefault);
+      }
+    } else {
+      // Template personnalisé, vider le message
+      setMessage('');
+      setSubject('');
+    }
+  };
+
+  // Filtres pour les parents
+  const [searchParent, setSearchParent] = useState('');
+  const [filterClass, setFilterClass] = useState('all');
+
+  // Filtrer les parents selon la recherche et la classe
+  const filteredParents = parents.filter(parent => {
+    const matchesSearch = searchParent === '' || 
+      parent.name.toLowerCase().includes(searchParent.toLowerCase()) ||
+      parent.studentName.toLowerCase().includes(searchParent.toLowerCase()) ||
+      parent.phone.includes(searchParent);
+    
+    const matchesClass = filterClass === 'all' || parent.class.includes(filterClass);
+    
+    return matchesSearch && matchesClass;
+  });
+
+  // Classes disponibles
+  const availableClasses = ['all', ...new Set(parents.flatMap(p => 
+    p.class.split(', ').filter(c => c !== 'Non définie')
+  ))].filter(Boolean);
 
   const handleSelectAll = () => {
     if (recipients.length === parents.length) {
@@ -126,8 +225,12 @@ const NotificationCenter = () => {
         return 'MessageSquare';
       case 'email':
         return 'Mail';
+      case 'whatsapp':
+        return 'Phone'; // Lucide a Phone qui ressemble au logo WhatsApp
       case 'both':
         return 'Send';
+      case 'all':
+        return 'Zap';
       default:
         return 'MessageSquare';
     }
@@ -204,40 +307,112 @@ const NotificationCenter = () => {
                 value={messageType}
                 onChange={setMessageType}
                 options={[
-                  { value: 'sms', label: 'SMS uniquement' },
-                  { value: 'email', label: 'Email uniquement' },
-                  { value: 'both', label: 'SMS + Email' }
+                  { value: 'sms', label: '📱 SMS uniquement' },
+                  { value: 'email', label: '📧 Email uniquement' },
+                  { value: 'whatsapp', label: '💬 WhatsApp' },
+                  { value: 'both', label: '📱📧 SMS + Email' },
+                  { value: 'all', label: '🚀 Tous les canaux' }
                 ]}
               />
               
               <Select
-                label="Modèle"
+                label="Modèle de message"
                 value={selectedTemplate}
-                onChange={setSelectedTemplate}
+                onChange={handleTemplateChange}
                 options={templates.map(t => ({ value: t.value, label: t.label }))}
+                helperText="Sélectionnez un modèle préfait ou personnalisez votre message"
               />
             </div>
+
+            {/* Note WhatsApp API */}
+            {(messageType === 'whatsapp' || messageType === 'all') && (
+              <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Icon name="Info" size={16} className="text-green-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-green-900 mb-1">
+                      💬 WhatsApp Business API
+                    </p>
+                    <p className="text-xs text-green-700">
+                      L'intégration WhatsApp sera disponible prochainement. Les messages seront envoyés via l'API WhatsApp Business officielle pour une meilleure délivrabilité.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Aide pour les variables */}
+            {selectedTemplate !== 'custom' && (
+              <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start space-x-2">
+                  <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-blue-900 mb-1">
+                      Variables disponibles dans ce modèle :
+                    </p>
+                    <p className="text-xs text-blue-700">
+                      Vous pouvez personnaliser les mots entre accolades comme {'{nom_enfant}'}, {'{date}'}, {'{heure}'}, etc.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="space-y-4">
               <div>
                 <Input
-                  label="Sujet (optionnel)"
+                  label="Sujet (optionnel pour SMS, requis pour Email)"
                   value={subject}
                   onChange={setSubject}
-                  placeholder="Sujet du message"
+                  placeholder="Ex: Convocation, Rappel, Information importante..."
                 />
               </div>
               
               <div>
-                <label className="block font-body font-body-medium text-sm text-text-primary mb-2">
-                  Message
-                </label>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block font-body font-body-medium text-sm text-text-primary">
+                    Message *
+                  </label>
+                  <span className="text-xs text-text-secondary">
+                    {message.length} caractères
+                    {messageType === 'sms' && message.length > 160 && (
+                      <span className="text-warning ml-2">
+                        ({Math.ceil(message.length / 160)} SMS)
+                      </span>
+                    )}
+                  </span>
+                </div>
                 <textarea
                   value={message}
                   onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Tapez votre message ici..."
-                  className="w-full h-32 p-3 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  placeholder="Tapez votre message ici ou sélectionnez un modèle ci-dessus..."
+                  className="w-full h-40 p-3 border border-border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 font-body"
+                  required
                 />
+                {messageType === 'sms' && message.length > 160 && (
+                  <p className="text-xs text-warning mt-1">
+                    ⚠️ Les SMS de plus de 160 caractères sont divisés en plusieurs messages
+                  </p>
+                )}
+              </div>
+              
+              {/* Boutons d'action rapide */}
+              <div className="flex items-center space-x-2">
+                <button
+                  type="button"
+                  onClick={() => setMessage(message + '\n\nCordialement,\nL\'administration')}
+                  className="text-xs text-primary hover:underline"
+                >
+                  + Ajouter signature
+                </button>
+                <span className="text-text-secondary">•</span>
+                <button
+                  type="button"
+                  onClick={() => setMessage('')}
+                  className="text-xs text-error hover:underline"
+                >
+                  Effacer le message
+                </button>
               </div>
             </div>
           </div>
@@ -246,31 +421,56 @@ const NotificationCenter = () => {
           <div className="bg-card rounded-lg border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-                Destinataires ({parents?.length})
+                Destinataires ({filteredParents?.length})
               </h3>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSelectAll}
-              >
-                {recipients.length === parents.length ? 'Désélectionner tout' : 'Sélectionner tout'}
-              </Button>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-text-secondary">
+                  {recipients.length} sélectionné(s)
+                </span>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSelectAll}
+                >
+                  {recipients.length === filteredParents.length ? 'Désélectionner tout' : 'Sélectionner tout'}
+                </Button>
+              </div>
+            </div>
+
+            {/* Filtres */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              <Input
+                placeholder="Rechercher un parent, élève ou téléphone..."
+                value={searchParent}
+                onChange={setSearchParent}
+                icon="Search"
+              />
+              <Select
+                value={filterClass}
+                onChange={setFilterClass}
+                options={[
+                  { value: 'all', label: 'Toutes les classes' },
+                  ...availableClasses.filter(c => c !== 'all').map(c => ({ value: c, label: c }))
+                ]}
+              />
             </div>
             
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {parents?.length === 0 ? (
+              {filteredParents?.length === 0 ? (
                 <div className="col-span-full text-center py-8">
                   <Icon name="Users" size={32} className="text-muted-foreground mx-auto mb-4" />
                   <h4 className="font-heading font-heading-medium text-base text-text-primary mb-2">
-                    Aucun parent trouvé
+                    {parents?.length === 0 ? 'Aucun parent trouvé' : 'Aucun résultat'}
                   </h4>
                   <p className="text-text-secondary">
-                    Aucun parent n'est enregistré dans la base de données pour cette école.
+                    {parents?.length === 0 
+                      ? 'Aucun parent n\'est enregistré dans la base de données pour cette école.'
+                      : 'Aucun parent ne correspond à vos critères de recherche.'}
                   </p>
                 </div>
               ) : (
-                parents?.map((parent) => (
-                  <div key={parent?.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg">
+                filteredParents?.map((parent) => (
+                  <div key={parent?.id} className="flex items-center space-x-3 p-3 border border-border rounded-lg hover:bg-accent/5 transition-micro">
                     <Checkbox
                       checked={recipients?.includes(parent?.id)}
                       onChange={() => handleRecipientToggle(parent?.id)}
@@ -280,15 +480,18 @@ const NotificationCenter = () => {
                         {parent?.name || `${parent?.first_name} ${parent?.last_name}`}
                       </p>
                       <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                        {parent?.studentName || (parent?.students && `${parent?.students?.first_name} ${parent?.students?.last_name}`)} ({parent?.class || parent?.students?.current_class})
+                        👦 {parent?.studentName || (parent?.students && `${parent?.students?.first_name} ${parent?.students?.last_name}`)} 
+                        <span className="ml-2">📚 {parent?.class || parent?.students?.current_class}</span>
                       </p>
                       <div className="flex items-center space-x-4 mt-1">
                         <span className="font-caption font-caption-normal text-xs text-text-secondary">
                           📱 {parent?.phone}
                         </span>
-                        <span className="font-caption font-caption-normal text-xs text-text-secondary">
-                          ✉️ {parent?.email}
-                        </span>
+                        {parent?.email && (
+                          <span className="font-caption font-caption-normal text-xs text-text-secondary">
+                            ✉️ {parent?.email}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -338,11 +541,15 @@ const NotificationCenter = () => {
                   const statusConfig = getStatusIcon(msg?.status);
                   
                   return (
-                    <div key={msg?.id} className="p-4">
+                      <div key={msg?.id} className="p-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-start space-x-3">
                           <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                            <Icon name={getTypeIcon(msg?.type)} size={20} className="text-primary" />
+                            {msg?.type === 'whatsapp' ? (
+                              <span className="text-xl">💬</span>
+                            ) : (
+                              <Icon name={getTypeIcon(msg?.type)} size={20} className="text-primary" />
+                            )}
                           </div>
                           <div>
                             <p className="font-body font-body-semibold text-sm text-text-primary">

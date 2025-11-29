@@ -302,6 +302,164 @@ class DocumentService {
       return { data: null, error: error?.message };
     }
   }
+
+  // Get all school documents for secretary
+  async getAllSchoolDocuments() {
+    try {
+      let schoolId = null;
+      let userId = null;
+
+      // Essayer avec Auth Supabase d'abord
+      const { data: { user: authUser } } = await supabase?.auth?.getUser();
+      
+      if (authUser) {
+        userId = authUser.id;
+        const { data: userData } = await supabase
+          ?.from('users')
+          ?.select('current_school_id')
+          ?.eq('id', authUser.id)
+          ?.single();
+        schoolId = userData?.current_school_id;
+      } else {
+        // Fallback : localStorage (pour comptes personnel EmailJS)
+        const savedUser = localStorage.getItem('edutrack-user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          userId = userData.id;
+          schoolId = userData.current_school_id || userData.school_id;
+          console.log('✅ Utilisation localStorage pour documents:', { userId, schoolId });
+        }
+      }
+
+      if (!schoolId) {
+        return { success: false, documents: [], error: 'École non trouvée' };
+      }
+
+      // Get documents for the school
+      const { data, error } = await supabase
+        ?.from('documents')
+        ?.select(`
+          id,
+          title,
+          document_type,
+          created_at,
+          file_name,
+          file_path,
+          mime_type,
+          class_name
+        `)
+        ?.eq('school_id', schoolId)
+        ?.order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Format documents to match expected structure
+      const documents = (data || []).map(doc => ({
+        id: doc.id,
+        name: doc.title,
+        type: doc.document_type || 'administratif',
+        dateCreated: new Date(doc.created_at).toLocaleDateString('fr-FR'),
+        status: 'generated',
+        studentName: doc.class_name || 'Document général',
+        class: doc.class_name || 'N/A',
+        format: doc.mime_type?.split('/')[1]?.toUpperCase() || 'PDF',
+        file_path: doc.file_path, // Garder pour savoir si le fichier existe
+        file_name: doc.file_name
+      }));
+
+      return { success: true, documents, error: null };
+    } catch (error) {
+      console.error('Erreur récupération documents école:', error);
+      
+      // Si la table n'existe pas, retourner un message clair
+      if (error.message?.includes('Could not find the table')) {
+        return { 
+          success: false, 
+          documents: [], 
+          error: 'TABLE_NOT_EXISTS',
+          message: 'La table documents n\'existe pas encore dans Supabase. Créez-la pour activer cette fonctionnalité.'
+        };
+      }
+      
+      return { success: false, documents: [], error: error?.message };
+    }
+  }
+
+  // Generate a certificate or administrative document
+  async generateDocument(documentType, options = {}) {
+    try {
+      const { studentId = null, classId = null, visibility = 'private', isPublic = false } = options;
+      
+      let schoolId = null;
+      let userId = null;
+
+      // Essayer avec Auth Supabase d'abord
+      const { data: { user: authUser } } = await supabase?.auth?.getUser();
+      
+      if (authUser) {
+        userId = authUser.id;
+        const { data: userData } = await supabase
+          ?.from('users')
+          ?.select('current_school_id')
+          ?.eq('id', authUser.id)
+          ?.single();
+        schoolId = userData?.current_school_id;
+      } else {
+        // Fallback : localStorage
+        const savedUser = localStorage.getItem('edutrack-user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          userId = userData.id;
+          schoolId = userData.current_school_id || userData.school_id;
+        }
+      }
+
+      if (!schoolId) {
+        throw new Error('École non trouvée');
+      }
+
+      const docTitle = `${documentType}_${Date.now()}`;
+      
+      // Insert document record avec visibilité
+      const documentData = {
+        title: docTitle,
+        document_type: documentType,
+        school_id: schoolId,
+        file_name: `${docTitle}.pdf`,
+        mime_type: 'application/pdf',
+        visibility: visibility,
+        is_public: isPublic
+      };
+      
+      // Ajouter target_student_id si fourni
+      if (studentId) {
+        documentData.target_student_id = studentId;
+      }
+      
+      // Ajouter target_class_id si fourni
+      if (classId) {
+        documentData.target_class_id = classId;
+      }
+      
+      // N'ajouter uploaded_by que si on a un vrai userId Supabase
+      if (userId && userId.length === 36) {
+        documentData.uploaded_by = userId;
+      }
+      
+      const { data, error } = await supabase
+        ?.from('documents')
+        ?.insert(documentData)
+        ?.select()
+        ?.single();
+
+      if (error) throw error;
+      
+      return { success: true, document: data, error: null };
+    } catch (error) {
+      console.error('Erreur génération document:', error);
+      return { success: false, document: null, error: error?.message };
+    }
+  }
 }
 
 export const documentService = new DocumentService();

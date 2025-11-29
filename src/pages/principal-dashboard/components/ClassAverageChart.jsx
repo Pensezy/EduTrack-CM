@@ -37,11 +37,13 @@ const ClassAverageChart = () => {
   ];
 
   // Générer dynamiquement les options de niveaux selon les classes réelles
+  // Dédupliquer les niveaux pour éviter les clés en double
+  const uniqueLevels = [...new Set(availableClasses.map(classe => classe.level || classe.name))];
   const gradeOptions = [
     { value: 'all', label: 'Tous les niveaux' },
-    ...availableClasses.map(classe => ({
-      value: classe.level || classe.name,
-      label: classe.name || `${classe.level}${classe.section ? ' ' + classe.section : ''}`
+    ...uniqueLevels.map(level => ({
+      value: level,
+      label: level
     }))
   ];
 

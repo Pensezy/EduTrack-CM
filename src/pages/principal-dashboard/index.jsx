@@ -61,6 +61,26 @@ const PrincipalDashboard = () => {
     console.log('  - Chargement mode:', modeLoading);
     console.log('  - Utilisateur:', user);
     
+    // Détails d'authentification
+    if (user) {
+      console.log('  📋 Détails utilisateur:');
+      console.log('    • Email:', user.email);
+      console.log('    • ID:', user.id);
+      console.log('    • Role:', user.role || 'Non défini');
+      console.log('    • Compte démo:', user.demoAccount ? '⚠️ OUI' : '✅ NON');
+      console.log('    • Données école:', user.schoolData ? '✅ Présentes' : '❌ Absentes');
+      if (user.schoolData) {
+        console.log('      - Nom:', user.schoolData.name);
+        console.log('      - ID:', user.schoolData.id);
+        console.log('      - Directeur ID:', user.schoolData.director_id);
+        console.log('      - Type:', user.schoolData.type);
+      }
+      console.log('    • Auth Supabase:', user.auth ? '✅ Actif' : '❌ Inactif');
+      console.log('    • DB User:', user.dbUser ? '✅ Présent' : '❌ Absent');
+    } else {
+      console.log('  ⚠️ Aucun utilisateur détecté');
+    }
+    
     if (schoolDataFromDatabase) {
       console.log('✅ Données école depuis SUPABASE (PRIORITÉ):', schoolDataFromDatabase);
     } else if (schoolDataFromUser) {
@@ -948,14 +968,31 @@ const PrincipalDashboard = () => {
                       <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
                         Dashboard Principal
                       </h1>
-                      {/* Indicateur de mode - simplifié */}
-                      <div className={`self-start px-2 py-1 rounded-full text-xs font-medium ${
-                        isDemo 
-                          ? 'bg-amber-100 text-amber-800' 
-                          : 'bg-green-100 text-green-800'
-                      }`}>
-                        {isDemo ? '🔄 Démo' : '🏫 Réel'}
-                      </div>
+                      {/* Mode Indicator Badge */}
+                      {modeLoading ? (
+                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
+                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1.5"></div>
+                          Chargement...
+                        </span>
+                      ) : (
+                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
+                          isProduction 
+                            ? 'bg-green-100 text-green-800 border border-green-200' 
+                            : 'bg-orange-100 text-orange-800 border border-orange-200'
+                        }`}>
+                          {isProduction ? (
+                            <>
+                              <Icon name="CheckCircle2" size={12} className="mr-1" />
+                              Mode PRODUCTION
+                            </>
+                          ) : (
+                            <>
+                              <Icon name="AlertCircle" size={12} className="mr-1" />
+                              Mode DÉMO
+                            </>
+                          )}
+                        </span>
+                      )}
                     </div>
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
                       {/* Nom de l'école - priorité sur mobile */}

@@ -5,26 +5,39 @@ import { supabase } from '../lib/supabase';
 import { getCurrentSchoolId } from './cardService';
 
 // Fonction pour détecter le mode
-const isProductionMode = () => {
+const isProductionMode = async () => {
   try {
-    const savedUser = localStorage.getItem('edutrack-user');
-    console.log('🔍 Debug mode detection - localStorage:', savedUser ? 'EXISTS' : 'NULL');
+    // Vérifier si un utilisateur est authentifié dans Supabase
+    const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (!savedUser) {
-      console.log('❌ Pas de données utilisateur dans localStorage');
+    if (error || !user) {
+      console.log('❌ Pas d\'utilisateur authentifié Supabase');
       return false;
     }
     
-    const userData = JSON.parse(savedUser);
-    console.log('📊 Données utilisateur:', {
-      email: userData.email,
-      demoAccount: userData.demoAccount,
-      school_name: userData.school_name,
-      role: userData.role
+    // Vérifier si c'est un compte démo
+    const isDemoAccount = user.email?.includes('demo@') || 
+                         user.email?.includes('test@') || 
+                         user.user_metadata?.demo === true;
+    
+    if (isDemoAccount) {
+      console.log('🎭 Compte démo détecté:', user.email);
+      return false;
+    }
+    
+    // Vérifier si l'utilisateur existe dans la table users
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('id, email, role')
+      .eq('id', user.id)
+      .single();
+    
+    const isProduction = !userError && userData;
+    console.log('🎯 Mode détecté:', isProduction ? 'PRODUCTION' : 'DÉMO', {
+      email: user.email,
+      hasUserData: !!userData
     });
     
-    const isProduction = !userData.demoAccount;
-    console.log('🎯 Mode détecté:', isProduction ? 'PRODUCTION' : 'DÉMO');
     return isProduction;
   } catch (error) {
     console.error('❌ Erreur détection mode:', error);
@@ -205,11 +218,22 @@ export const absenceService = {
   // Obtenir toutes les absences
   getAllAbsences: async (mode = null) => {
     // Déterminer le mode : utiliser le paramètre fourni ou détecter automatiquement
-    const isProduction = mode === 'production' || (mode === null && isProductionMode());
+    let isProduction;
+    
+    if (mode === 'production') {
+      isProduction = true;
+    } else if (mode === 'demo') {
+      isProduction = false;
+    } else {
+      // Détection automatique (fonction async)
+      isProduction = await isProductionMode();
+    }
+    
+    console.log('🔍 getAllAbsences - Mode:', isProduction ? 'PRODUCTION' : 'DÉMO');
     
     // Mode démo : retourner les données fictives
     if (!isProduction) {
-      console.log('🎭 Mode DÉMO - Absences fictives');
+      console.log('🎭 Mode DÉMO - Retour des absences fictives');
       return new Promise((resolve) => {
         setTimeout(() => resolve([...absencesData]), 300);
       });

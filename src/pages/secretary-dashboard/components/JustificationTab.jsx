@@ -8,10 +8,10 @@ import NewAbsenceModal from './NewAbsenceModal';
 import NotificationHistoryModal from './NotificationHistoryModal';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import absenceService from '../../../services/absenceService';
-import useDataMode from '../../../hooks/useDataMode';
+import { useDataMode } from '../../../hooks/useDataMode';
 
 const JustificationTab = () => {
-  const { isDemo, isProduction } = useDataMode();
+  const { isDemo, isProduction, dataMode, user } = useDataMode();
   const [selectedDate, setSelectedDate] = useState(new Date()?.toISOString()?.split('T')?.[0]);
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,6 +24,17 @@ const JustificationTab = () => {
   const [showNewAbsenceModal, setShowNewAbsenceModal] = useState(false);
   const [showNotificationHistoryModal, setShowNotificationHistoryModal] = useState(false);
   const [selectedAbsence, setSelectedAbsence] = useState(null);
+
+  // Debug : afficher le mode détecté
+  useEffect(() => {
+    console.log('🔍 JustificationTab - Mode actuel:', {
+      dataMode,
+      isDemo,
+      isProduction,
+      userEmail: user?.email,
+      schoolId: user?.school_id
+    });
+  }, [dataMode, isDemo, isProduction, user]);
 
   const statusOptions = [
     { value: '', label: 'Tous les statuts' },
@@ -283,6 +294,15 @@ const JustificationTab = () => {
             <p className="font-body font-body-normal text-text-secondary mt-1">
               Suivi des absences et retards, justifications et relances parents
             </p>
+            {/* Indicateur de mode (temporaire pour debug) */}
+            <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mt-2 ${
+              isProduction 
+                ? 'bg-green-100 text-green-700' 
+                : 'bg-orange-100 text-orange-700'
+            }`}>
+              {isProduction ? '✅ Mode Production' : '🎭 Mode Démo'}
+              {user?.email && ` - ${user.email}`}
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <Button

@@ -17,6 +17,7 @@ const AccountsManagement = () => {
   const [selectedRole, setSelectedRole] = useState('all');
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Hooks pour la gestion des données
   const { user: authUser } = useAuth();
@@ -251,8 +252,61 @@ const AccountsManagement = () => {
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
     { id: 'accounts', label: 'Comptes utilisateurs', icon: 'Users' },
     { id: 'security', label: 'Sécurité', icon: 'Shield' },
-    { id: 'create', label: 'Créer compte', icon: 'UserPlus' }
+    { id: 'create', label: 'Créer compte', icon: 'UserPlus' },
+    { id: 'email-test', label: 'Test Email', icon: 'Mail' }
   ];
+
+  // Test de la configuration EmailJS
+  const testEmailConfiguration = async () => {
+    if (isDemo) {
+      alert('⚠️ Le test d\'email n\'est disponible qu\'en mode production.');
+      return;
+    }
+
+    const testEmail = prompt('Entrez votre adresse email pour recevoir un email de test :');
+    
+    if (!testEmail || !testEmail.includes('@')) {
+      alert('Adresse email invalide.');
+      return;
+    }
+
+    setLoadingAccounts(true);
+
+    try {
+      console.log('🧪 Test de configuration EmailJS...');
+      
+      const emailResult = await sendCredentialsEmail({
+        recipientEmail: testEmail,
+        recipientName: 'Utilisateur Test',
+        role: 'Enseignant Test',
+        email: testEmail,
+        password: 'TestPassword123!',
+        schoolName: user?.school_name || 'École Test',
+        principalName: user?.full_name || 'Directeur Test',
+      });
+
+      if (emailResult.success) {
+        alert(
+          `✅ Test réussi !\n\n` +
+          `Un email de test a été envoyé à ${testEmail}\n\n` +
+          `Vérifiez votre boîte de réception (et les spams).\n\n` +
+          `Si vous recevez l'email, la configuration fonctionne correctement !`
+        );
+      } else {
+        alert(
+          `❌ Test échoué\n\n` +
+          `Erreur : ${emailResult.error}\n\n` +
+          `${emailResult.technicalError ? `Détails : ${emailResult.technicalError}\n\n` : ''}` +
+          `Consultez la console (F12) pour plus de détails.\n\n` +
+          `Voir le guide : docs/EMAIL_TROUBLESHOOTING.md`
+        );
+      }
+    } catch (error) {
+      alert(`❌ Erreur inattendue :\n\n${error.message}`);
+    } finally {
+      setLoadingAccounts(false);
+    }
+  };
 
   // Gestion des actions sur les comptes
   const handleResetPassword = (accountId, accountName, accountEmail) => {
@@ -343,24 +397,6 @@ const AccountsManagement = () => {
       return;
     }
 
-    // Vérification de l'utilisateur connecté (mode production)
-    if (!isDemo && !user) {
-      alert('❌ Erreur : Utilisateur non connecté. Veuillez vous reconnecter.');
-      console.error('User is null');
-      return;
-    }
-
-    if (!isDemo && !user.current_school_id) {
-      console.error('❌ current_school_id manquant. User data:', user);
-      alert(
-        `❌ Erreur : Votre compte n'est pas associé à une école.\n\n` +
-        `Email: ${user?.email || 'N/A'}\n` +
-        `Rôle: ${user?.role || 'N/A'}\n\n` +
-        `Veuillez contacter l'administrateur système.`
-      );
-      return;
-    }
-
     setLoadingAccounts(true);
 
     try {
@@ -392,6 +428,26 @@ const AccountsManagement = () => {
       } else {
         // ✅ MODE PRODUCTION - Création réelle avec Supabase
         console.log('Création compte avec Supabase...');
+        
+        // Vérification de l'utilisateur connecté (mode production)
+        if (!user) {
+          alert('❌ Erreur : Utilisateur non connecté. Veuillez vous reconnecter.');
+          console.error('User is null');
+          setLoadingAccounts(false);
+          return;
+        }
+
+        if (!user.current_school_id) {
+          console.error('❌ current_school_id manquant. User data:', user);
+          alert(
+            `❌ Erreur : Votre compte n'est pas associé à une école.\n\n` +
+            `Email: ${user?.email || 'N/A'}\n` +
+            `Rôle: ${user?.role || 'N/A'}\n\n` +
+            `Veuillez contacter l'administrateur système.`
+          );
+          setLoadingAccounts(false);
+          return;
+        }
         
         // Séparer le nom complet en prénom et nom
         const nameParts = newUser.fullName.trim().split(' ');
@@ -516,6 +572,12 @@ const AccountsManagement = () => {
         // Étape 2: Envoyer l'email avec les identifiants (pour le personnel uniquement)
         if (newUser.role !== 'principal' && newUser.role !== 'admin') {
           console.log('📧 Envoi de l\'email avec les identifiants...');
+          console.log('Configuration email actuelle:', { 
+            configured: isEmailConfigured(),
+            hasServiceId: !!import.meta.env.VITE_EMAILJS_SERVICE_ID,
+            hasTemplateId: !!import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+            hasPublicKey: !!import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+          });
           
           const emailResult = await sendCredentialsEmail({
             recipientEmail: newUser.email,
@@ -526,6 +588,8 @@ const AccountsManagement = () => {
             schoolName: user.school_name || 'Votre établissement',
             principalName: user.full_name || 'Le Directeur',
           });
+
+          console.log('📬 Résultat de l\'envoi:', emailResult);
 
           if (emailResult.success) {
             // Email envoyé avec succès
@@ -538,21 +602,27 @@ const AccountsManagement = () => {
               `L'utilisateur recevra :\n` +
               `• Son email de connexion\n` +
               `• Son mot de passe temporaire\n` +
-              `• Le lien pour se connecter`
+              `• Le lien pour se connecter\n\n` +
+              `✓ Email envoyé le ${new Date().toLocaleString('fr-FR')}`
             );
           } else if (emailResult.fallback) {
             // Fallback: afficher les identifiants si l'email n'a pas pu être envoyé
-            const configMessage = !isEmailConfigured() 
-              ? '\n\n⚙️ Pour activer l\'envoi automatique d\'emails, configurez EmailJS dans vos variables d\'environnement.'
+            const errorDetails = emailResult.technicalError 
+              ? `\n\n🔧 Erreur technique : ${emailResult.technicalError}` 
               : '';
+            
+            const configMessage = !isEmailConfigured() 
+              ? '\n\n⚙️ Pour activer l\'envoi automatique d\'emails :\n1. Créez un compte sur https://emailjs.com\n2. Configurez un service email (Gmail, Outlook...)\n3. Créez un template d\'email\n4. Ajoutez les clés dans le fichier .env'
+              : '\n\n⚙️ EmailJS est configuré mais l\'envoi a échoué.\nVérifiez :\n• Votre connexion Internet\n• Que le Service ID et Template ID sont corrects\n• Que le template existe sur emailjs.com';
             
             alert(
               `✅ Compte créé avec succès !\n\n` +
               `Utilisateur : ${newUser.fullName}\n` +
               `Email : ${newUser.email}\n` +
               `Rôle : ${getRoleLabel(newUser.role)}\n\n` +
-              `⚠️ L'email n'a pas pu être envoyé automatiquement.\n\n` +
-              `📋 IDENTIFIANTS À COMMUNIQUER :\n\n` +
+              `⚠️ L'email n'a pas pu être envoyé automatiquement.\n` +
+              `Raison : ${emailResult.error}\n\n` +
+              `📋 IDENTIFIANTS À COMMUNIQUER MANUELLEMENT :\n\n` +
               `Email : ${newUser.email}\n` +
               `Mot de passe : ${newUser.password}\n\n` +
               `⚠️ IMPORTANT :\n` +
@@ -560,7 +630,8 @@ const AccountsManagement = () => {
               `• Communiquez-les directement à ${newUser.fullName}\n` +
               `• L'utilisateur pourra se connecter avec ces identifiants\n` +
               `• Ces identifiants ne seront plus affichés après fermeture` +
-              configMessage
+              configMessage +
+              errorDetails
             );
           }
         } else {
@@ -890,10 +961,114 @@ const AccountsManagement = () => {
         return renderSecurity();
       case 'create':
         return renderCreateForm();
+      case 'email-test':
+        return renderEmailTest();
       default:
         return renderOverview();
     }
   };
+
+  // Interface de test EmailJS
+  const renderEmailTest = () => (
+    <div className="max-w-3xl mx-auto">
+      <div className="bg-white rounded-lg border border-gray-200 p-6">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+            <Icon name="Mail" size={24} className="text-blue-600" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Test de Configuration Email</h3>
+            <p className="text-sm text-gray-600">Diagnostiquer et tester l'envoi d'emails</p>
+          </div>
+        </div>
+
+        {/* Statut de la configuration */}
+        <div className={`rounded-lg p-4 mb-6 ${isEmailConfigured() ? 'bg-green-50 border border-green-200' : 'bg-orange-50 border border-orange-200'}`}>
+          <div className="flex items-start space-x-3">
+            <Icon 
+              name={isEmailConfigured() ? 'CheckCircle' : 'AlertCircle'} 
+              size={20} 
+              className={isEmailConfigured() ? 'text-green-600' : 'text-orange-600'} 
+            />
+            <div className="flex-1">
+              <h4 className={`font-semibold ${isEmailConfigured() ? 'text-green-900' : 'text-orange-900'}`}>
+                {isEmailConfigured() ? '✅ EmailJS Configuré' : '⚠️ EmailJS Non Configuré'}
+              </h4>
+              <p className={`text-sm mt-1 ${isEmailConfigured() ? 'text-green-700' : 'text-orange-700'}`}>
+                {isEmailConfigured() 
+                  ? 'Les clés EmailJS sont détectées. Vous pouvez tester l\'envoi d\'emails.'
+                  : 'Les clés EmailJS ne sont pas configurées. Consultez le guide de configuration.'}
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Informations de configuration */}
+        <div className="space-y-4 mb-6">
+          <h4 className="font-semibold text-gray-900">Configuration Actuelle</h4>
+          
+          <div className="bg-gray-50 rounded-lg p-4 space-y-2 font-mono text-sm">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Service ID:</span>
+              <span className={import.meta.env.VITE_EMAILJS_SERVICE_ID ? 'text-green-600' : 'text-red-600'}>
+                {import.meta.env.VITE_EMAILJS_SERVICE_ID || '❌ Non configuré'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Template ID:</span>
+              <span className={import.meta.env.VITE_EMAILJS_TEMPLATE_ID ? 'text-green-600' : 'text-red-600'}>
+                {import.meta.env.VITE_EMAILJS_TEMPLATE_ID || '❌ Non configuré'}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Public Key:</span>
+              <span className={import.meta.env.VITE_EMAILJS_PUBLIC_KEY ? 'text-green-600' : 'text-red-600'}>
+                {import.meta.env.VITE_EMAILJS_PUBLIC_KEY ? '✓ Configurée' : '❌ Non configurée'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Bouton de test */}
+        <div className="space-y-4">
+          <Button
+            onClick={testEmailConfiguration}
+            disabled={!isEmailConfigured() || isDemo}
+            className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300"
+          >
+            <Icon name="Send" size={16} className="mr-2" />
+            {isDemo ? 'Test disponible en mode production' : 'Envoyer un email de test'}
+          </Button>
+
+          {/* Instructions */}
+          <div className="bg-blue-50 rounded-lg p-4">
+            <h5 className="font-semibold text-blue-900 mb-2">Comment ça marche ?</h5>
+            <ol className="text-sm text-blue-800 space-y-1 list-decimal list-inside">
+              <li>Cliquez sur "Envoyer un email de test"</li>
+              <li>Entrez votre adresse email</li>
+              <li>Vérifiez votre boîte de réception (et les spams)</li>
+              <li>Si vous recevez l'email, la configuration fonctionne !</li>
+            </ol>
+          </div>
+        </div>
+
+        {/* Guide de dépannage */}
+        <div className="mt-6 pt-6 border-t">
+          <h4 className="font-semibold text-gray-900 mb-3">🔧 Dépannage</h4>
+          <div className="space-y-2 text-sm text-gray-600">
+            <p>Si le test échoue :</p>
+            <ul className="list-disc list-inside space-y-1 ml-4">
+              <li>Vérifiez que les clés dans <code className="bg-gray-100 px-1 rounded">.env</code> correspondent à celles sur emailjs.com</li>
+              <li>Redémarrez le serveur après avoir modifié <code className="bg-gray-100 px-1 rounded">.env</code></li>
+              <li>Vérifiez que le template existe sur emailjs.com</li>
+              <li>Vérifiez votre connexion Internet</li>
+              <li>Consultez le guide complet : <code className="bg-gray-100 px-1 rounded">docs/EMAIL_TROUBLESHOOTING.md</code></li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   // Vue d'ensemble avec statistiques
   const renderOverview = () => (
@@ -1416,14 +1591,24 @@ const AccountsManagement = () => {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Input
-                label="Mot de passe *"
-                type="password"
-                value={newUser.password}
-                onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
-                placeholder="Minimum 8 caractères"
-                helperText="Lettres, chiffres et caractères spéciaux recommandés"
-              />
+              <div className="relative">
+                <Input
+                  label="Mot de passe *"
+                  type={showPassword ? "text" : "password"}
+                  value={newUser.password}
+                  onChange={(e) => setNewUser(prev => ({ ...prev, password: e.target.value }))}
+                  placeholder="Minimum 8 caractères"
+                  helperText="Lettres, chiffres et caractères spéciaux recommandés"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-9 text-gray-500 hover:text-gray-700 transition-colors"
+                  title={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                >
+                  <Icon name={showPassword ? "EyeOff" : "Eye"} size={18} />
+                </button>
+              </div>
               <div className="flex space-x-2 mt-2">
                 <Button
                   type="button"

@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
+import { useDataMode } from '../../../hooks/useDataMode';
+import { supabase } from '../../../lib/supabase';
 
 const TransferWorkflow = () => {
   const [selectedStudent, setSelectedStudent] = useState('');
@@ -11,24 +13,125 @@ const TransferWorkflow = () => {
   const [transferDate, setTransferDate] = useState('');
   const [qrCodeGenerated, setQrCodeGenerated] = useState(false);
   const [transferCode, setTransferCode] = useState('');
+  const [students, setStudents] = useState([]);
+  const [pendingTransfers, setPendingTransfers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const { isDemo, isProduction, dataMode, user } = useDataMode();
 
-  const students = [
-    { value: '1', label: 'Marie Dubois (CM2)' },
-    { value: '2', label: 'Pierre Martin (CM1)' },
-    { value: '3', label: 'Camille Rousseau (CE2)' },
-    { value: '4', label: 'Lucas Bernard (CM2)' },
-    { value: '5', label: 'Emma Leroy (CE1)' }
-  ];
+  // Debug : afficher le mode détecté
+  useEffect(() => {
+    console.log('🔍 TransferWorkflow - Mode actuel:', {
+      dataMode,
+      isDemo,
+      isProduction,
+      userEmail: user?.email,
+      schoolId: user?.school_id
+    });
+  }, [dataMode, isDemo, isProduction, user]);
 
-  const reasonOptions = [
-    { value: 'relocation', label: 'Déménagement' },
-    { value: 'school_choice', label: 'Choix d\'établissement' },
-    { value: 'family_reasons', label: 'Raisons familiales' },
-    { value: 'academic_reasons', label: 'Raisons pédagogiques' },
-    { value: 'other', label: 'Autre' }
-  ];
+  // Charger les étudiants et transferts au montage
+  useEffect(() => {
+    const loadData = async () => {
+      setLoading(true);
+      try {
+        if (isDemo) {
+          // Mode démo : données fictives
+          setStudents([
+            { value: '1', label: 'Marie Dubois (CM2)' },
+            { value: '2', label: 'Pierre Martin (CM1)' },
+            { value: '3', label: 'Camille Rousseau (CE2)' },
+            { value: '4', label: 'Lucas Bernard (CM2)' },
+            { value: '5', label: 'Emma Leroy (CE1)' }
+          ]);
+          setPendingTransfers(demoTransfers);
+        } else {
+          // Mode production : charger depuis Supabase
+          let schoolId = null;
+          
+          // Essayer d'abord avec la session Supabase
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          
+          if (authUser) {
+            console.log('✅ Utilisateur Auth trouvé:', authUser.email);
+            // Récupérer l'école depuis la table users
+            const { data: userData } = await supabase
+              .from('users')
+              .select('current_school_id')
+              .eq('id', authUser.id)
+              .single();
+            schoolId = userData?.current_school_id;
+          } else {
+            // Fallback : utiliser localStorage
+            console.log('🔄 Pas de session Auth, utilisation localStorage');
+            const savedUser = localStorage.getItem('edutrack-user');
+            if (savedUser) {
+              const userData = JSON.parse(savedUser);
+              schoolId = userData.current_school_id || userData.school_id;
+              console.log('✅ École trouvée dans localStorage:', schoolId);
+            }
+          }
 
-  const pendingTransfers = [
+          if (!schoolId) {
+            console.error('❌ Aucune école trouvée');
+            setPendingTransfers([]);
+            setStudents([]);
+            return;
+          }
+
+          // Charger les étudiants actifs de l'école
+          const { data: studentsData, error: studentsError } = await supabase
+            .from('students')
+            .select('id, first_name, last_name')
+            .eq('is_active', true)
+            .eq('school_id', schoolId);
+
+          if (!studentsError && studentsData) {
+            setStudents(studentsData.map(s => ({
+              value: s.id,
+              label: `${s.first_name} ${s.last_name}`
+            })));
+          }
+
+          // Charger les transferts en cours de l'école
+          const { data: transfers, error: transfersError } = await supabase
+            .from('transfers')
+            .select(`
+              *,
+              student:students(first_name, last_name)
+            `)
+            .eq('from_school_id', schoolId)
+            .order('request_date', { ascending: false });
+
+          if (!transfersError && transfers) {
+            setPendingTransfers(transfers.map(t => ({
+              id: t.id,
+              studentName: `${t.student?.first_name} ${t.student?.last_name}`,
+              studentId: t.student_id,
+              class: 'N/A',
+              transferDate: new Date(t.transfer_date).toLocaleDateString('fr-FR'),
+              newSchool: t.new_school_name,
+              reason: t.transfer_reason,
+              status: t.status,
+              transferCode: t.transfer_code,
+              qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMCIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZmZmIi8+CiAgPHRleHQgeD0iNTAiIHk9IjU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjMDAwIj5RUjwvdGV4dD4KPC9zdmc+",
+              parentNotified: t.parent_notified || false,
+              documentsReady: t.documents_ready || false
+            })));
+          } else {
+            setPendingTransfers([]);
+          }
+        }
+      } catch (error) {
+        console.error('Erreur chargement données transfert:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [isDemo]);
+
+  const demoTransfers = [
     {
       id: 1,
       studentName: "Camille Rousseau",
@@ -50,13 +153,21 @@ const TransferWorkflow = () => {
       class: "CE1",
       transferDate: "15/01/2025",
       newSchool: "École Élémentaire Victor Hugo",
-      reason: "Choix d\'établissement",
+      reason: "Choix d'établissement",
       status: "confirmed",
       transferCode: "TRF-2024-002",
       qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMCIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZmZmIi8+CiAgPHRleHQgeD0iNTAiIHk9IjU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjMDAwIj5RUjwvdGV4dD4KPC9zdmc+",
       parentNotified: true,
       documentsReady: true
     }
+  ];
+
+  const reasonOptions = [
+    { value: 'relocation', label: 'Déménagement' },
+    { value: 'school_choice', label: 'Choix d\'établissement' },
+    { value: 'family_reasons', label: 'Raisons familiales' },
+    { value: 'academic_reasons', label: 'Raisons pédagogiques' },
+    { value: 'other', label: 'Autre' }
   ];
 
   const getStatusConfig = (status) => {
@@ -86,32 +197,239 @@ const TransferWorkflow = () => {
     setQrCodeGenerated(true);
   };
 
-  const handleInitiateTransfer = () => {
+  const handleInitiateTransfer = async () => {
     if (!selectedStudent || !transferReason || !newSchool || !transferDate) {
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
 
-    generateTransferCode();
-    console.log('Initiate transfer:', {
-      student: selectedStudent,
-      reason: transferReason,
-      newSchool: newSchool,
-      date: transferDate,
-      code: transferCode
-    });
+    if (isDemo) {
+      // Mode démo : ajouter à la liste locale
+      const newCode = `TRF-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+      setTransferCode(newCode);
+      setQrCodeGenerated(true);
+      
+      const studentInfo = students.find(s => s.value === selectedStudent);
+      const newTransfer = {
+        id: pendingTransfers.length + 1,
+        studentName: studentInfo?.label || 'Élève',
+        studentId: `STU${String(pendingTransfers.length + 1).padStart(3, '0')}`,
+        class: 'N/A',
+        transferDate,
+        newSchool,
+        reason: reasonOptions.find(r => r.value === transferReason)?.label || transferReason,
+        status: 'pending',
+        transferCode: newCode,
+        qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMCIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZmZmIi8+CiAgPHRleHQgeD0iNTAiIHk9IjU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjMDAwIj5RUjwvdGV4dD4KPC9zdmc+",
+        parentNotified: false,
+        documentsReady: false
+      };
+      
+      setPendingTransfers([newTransfer, ...pendingTransfers]);
+      alert(`✅ Transfert initié en mode démo pour ${studentInfo?.label}`);
+      
+      // Réinitialiser le formulaire
+      setSelectedStudent('');
+      setTransferReason('');
+      setNewSchool('');
+      setTransferDate('');
+      
+      return;
+    }
+
+    // Mode production : créer via Supabase
+    try {
+      setLoading(true);
+      const newCode = `TRF-${new Date().getFullYear()}-${String(Math.floor(Math.random() * 1000)).padStart(3, '0')}`;
+      
+      // Get current user and school
+      let userId = null;
+      let schoolId = null;
+      
+      // Essayer avec la session Auth d'abord
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (authUser) {
+        userId = authUser.id;
+        const { data: userData } = await supabase
+          .from('users')
+          .select('current_school_id')
+          .eq('id', authUser.id)
+          .single();
+        schoolId = userData?.current_school_id;
+      } else {
+        // Fallback : localStorage
+        const savedUser = localStorage.getItem('edutrack-user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          userId = userData.id;
+          schoolId = userData.current_school_id || userData.school_id;
+        }
+      }
+
+      if (!userId || !schoolId) {
+        throw new Error('Impossible d\'identifier l\'utilisateur ou l\'école');
+      }
+
+      const transferData = {
+        student_id: selectedStudent,
+        from_school_id: schoolId,
+        transfer_reason: transferReason,
+        new_school_name: newSchool,
+        transfer_date: transferDate,
+        transfer_code: newCode,
+        status: 'pending',
+        requested_by: userId,
+        request_date: new Date().toISOString()
+      };
+
+      const result = await supabase
+        .from('transfers')
+        .insert([transferData])
+        .select()
+        .single();
+
+      if (result.error) throw result.error;
+
+      setTransferCode(newCode);
+      setQrCodeGenerated(true);
+      alert('✅ Transfert initié avec succès !');
+      
+      // Recharger la liste des transferts
+      const { data: transfers } = await supabase
+        .from('transfers')
+        .select(`
+          *,
+          student:students(first_name, last_name)
+        `)
+        .eq('from_school_id', schoolId)
+        .order('request_date', { ascending: false });
+
+      if (transfers) {
+        setPendingTransfers(transfers.map(t => ({
+          id: t.id,
+          studentName: `${t.student?.first_name} ${t.student?.last_name}`,
+          studentId: t.student_id,
+          class: 'N/A',
+          transferDate: new Date(t.transfer_date).toLocaleDateString('fr-FR'),
+          newSchool: t.new_school_name,
+          reason: t.transfer_reason,
+          status: t.status,
+          transferCode: t.transfer_code,
+          qrCode: "data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KICA8cmVjdCB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgZmlsbD0iIzAwMCIvPgogIDxyZWN0IHg9IjEwIiB5PSIxMCIgd2lkdGg9IjgwIiBoZWlnaHQ9IjgwIiBmaWxsPSIjZmZmIi8+CiAgPHRleHQgeD0iNTAiIHk9IjU1IiB0ZXh0LWFuY2hvcj0ibWlkZGxlIiBmb250LXNpemU9IjEyIiBmaWxsPSIjMDAwIj5RUjwvdGV4dD4KPC9zdmc+",
+          parentNotified: false,
+          documentsReady: false
+        })));
+      }
+
+      // Réinitialiser le formulaire
+      setSelectedStudent('');
+      setTransferReason('');
+      setNewSchool('');
+      setTransferDate('');
+    } catch (error) {
+      console.error('Erreur création transfert:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de créer le transfert'}`);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const handleSendConfirmation = (transferId) => {
-    console.log('Send confirmation SMS for transfer:', transferId);
+  const handleSendConfirmation = async (transferId) => {
+    const transfer = pendingTransfers.find(t => t.id === transferId);
+    if (!transfer) return;
+    
+    if (isDemo) {
+      alert(`🎭 Mode démo : SMS de confirmation envoyé pour ${transfer.studentName}\nCode: ${transfer.transferCode}`);
+      // Mettre à jour le statut localement
+      setPendingTransfers(pendingTransfers.map(t => 
+        t.id === transferId ? { ...t, parentNotified: true } : t
+      ));
+      return;
+    }
+    
+    try {
+      // Mode production : mettre à jour dans Supabase
+      const { error } = await supabase
+        .from('transfers')
+        .update({ parent_notified: true })
+        .eq('id', transferId);
+
+      if (error) throw error;
+
+      setPendingTransfers(pendingTransfers.map(t => 
+        t.id === transferId ? { ...t, parentNotified: true } : t
+      ));
+      
+      alert(`✅ SMS de confirmation envoyé pour ${transfer.studentName}`);
+      // TODO: Implémenter l'envoi réel de SMS via le service de communication
+    } catch (error) {
+      console.error('Erreur envoi SMS:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible d\'envoyer le SMS'}`);
+    }
   };
 
-  const handlePrintDocuments = (transferId) => {
-    console.log('Print transfer documents for:', transferId);
+  const handlePrintDocuments = async (transferId) => {
+    const transfer = pendingTransfers.find(t => t.id === transferId);
+    if (!transfer) return;
+    
+    if (isDemo) {
+      alert(`🎭 Mode démo : Impression des documents de transfert pour ${transfer.studentName}`);
+      setPendingTransfers(pendingTransfers.map(t => 
+        t.id === transferId ? { ...t, documentsReady: true } : t
+      ));
+      return;
+    }
+    
+    try {
+      // Mode production : mettre à jour dans Supabase
+      const { error } = await supabase
+        .from('transfers')
+        .update({ documents_ready: true })
+        .eq('id', transferId);
+
+      if (error) throw error;
+
+      setPendingTransfers(pendingTransfers.map(t => 
+        t.id === transferId ? { ...t, documentsReady: true } : t
+      ));
+      
+      alert(`✅ Documents prêts pour ${transfer.studentName}`);
+      // TODO: Générer et imprimer les documents de transfert
+    } catch (error) {
+      console.error('Erreur impression documents:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible de préparer les documents'}`);
+    }
   };
 
-  const handleCancelTransfer = (transferId) => {
-    console.log('Cancel transfer:', transferId);
+  const handleCancelTransfer = async (transferId) => {
+    const transfer = pendingTransfers.find(t => t.id === transferId);
+    if (!transfer) return;
+    
+    const confirmCancel = window.confirm(`Êtes-vous sûr de vouloir annuler le transfert de ${transfer.studentName} ?`);
+    if (!confirmCancel) return;
+    
+    if (isDemo) {
+      alert(`🎭 Mode démo : Transfert annulé pour ${transfer.studentName}`);
+      setPendingTransfers(pendingTransfers.filter(t => t.id !== transferId));
+      return;
+    }
+    
+    try {
+      // Mode production : mettre à jour le statut dans Supabase
+      const { error } = await supabase
+        .from('transfers')
+        .update({ status: 'cancelled' })
+        .eq('id', transferId);
+
+      if (error) throw error;
+
+      // Retirer de la liste locale
+      setPendingTransfers(pendingTransfers.filter(t => t.id !== transferId));
+      alert(`✅ Transfert annulé pour ${transfer.studentName}`);
+    } catch (error) {
+      console.error('Erreur annulation transfert:', error);
+      alert(`❌ Erreur : ${error.message || 'Impossible d\'annuler le transfert'}`);
+    }
   };
 
   return (
@@ -124,6 +442,15 @@ const TransferWorkflow = () => {
         <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
           Processus de transfert d'élèves avec génération de QR codes
         </p>
+        {/* Indicateur de mode (temporaire pour debug) */}
+        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mt-2 ${
+          isProduction 
+            ? 'bg-green-100 text-green-700' 
+            : 'bg-orange-100 text-orange-700'
+        }`}>
+          {isProduction ? '✅ Mode Production' : '🎭 Mode Démo'}
+          {user?.email && ` - ${user.email}`}
+        </div>
       </div>
       {/* New Transfer Form */}
       <div className="bg-card rounded-lg border border-border p-6">

@@ -46,16 +46,28 @@ export const sendCredentialsEmail = async ({
   principalName,
 }) => {
   try {
+    console.log('📧 Tentative d\'envoi d\'email...');
+    console.log('  - Destinataire:', recipientEmail);
+    console.log('  - Rôle:', role);
+    console.log('  - École:', schoolName);
+
     // Vérifier que EmailJS est configuré
     if (!EMAILJS_CONFIG.publicKey || EMAILJS_CONFIG.publicKey === '') {
-      console.warn('⚠️ EmailJS non configuré. Les identifiants seront affichés à l\'écran.');
+      console.warn('⚠️ EmailJS non configuré. Clés manquantes dans .env');
+      console.warn('  - Service ID:', EMAILJS_CONFIG.serviceId);
+      console.warn('  - Template ID:', EMAILJS_CONFIG.templateId);
+      console.warn('  - Public Key:', EMAILJS_CONFIG.publicKey ? 'Présente' : '❌ MANQUANTE');
       return {
         success: false,
-        error: 'EmailJS non configuré',
+        error: 'EmailJS non configuré - Clés manquantes dans le fichier .env',
         fallback: true,
         credentials: { email, password },
       };
     }
+
+    console.log('✓ Configuration EmailJS détectée');
+    console.log('  - Service ID:', EMAILJS_CONFIG.serviceId);
+    console.log('  - Template ID:', EMAILJS_CONFIG.templateId);
 
     // Préparer les données du template
     const templateParams = {
@@ -70,6 +82,8 @@ export const sendCredentialsEmail = async ({
       current_year: new Date().getFullYear(),
     };
 
+    console.log('📤 Envoi de l\'email via EmailJS...');
+    
     // Envoyer l'email
     const response = await emailjs.send(
       EMAILJS_CONFIG.serviceId,
@@ -78,19 +92,44 @@ export const sendCredentialsEmail = async ({
       EMAILJS_CONFIG.publicKey
     );
 
+    console.log('📬 Réponse EmailJS:', response);
+
     if (response.status === 200) {
+      console.log('✅ Email envoyé avec succès à', recipientEmail);
       return {
         success: true,
         message: 'Email envoyé avec succès',
+        details: {
+          recipient: recipientEmail,
+          timestamp: new Date().toISOString(),
+          status: response.status
+        }
       };
     } else {
-      throw new Error('Échec de l\'envoi de l\'email');
+      console.error('❌ Échec de l\'envoi - Status:', response.status);
+      throw new Error(`Échec de l\'envoi de l\'email (Status: ${response.status})`);
     }
   } catch (error) {
     console.error('❌ Erreur lors de l\'envoi de l\'email:', error);
+    console.error('  - Type d\'erreur:', error.name);
+    console.error('  - Message:', error.message);
+    console.error('  - Détails:', error.text || 'Aucun détail supplémentaire');
+    
+    // Déterminer le type d'erreur pour un message plus clair
+    let userFriendlyError = error.message;
+    
+    if (error.message?.includes('Invalid email')) {
+      userFriendlyError = 'L\'adresse email est invalide';
+    } else if (error.message?.includes('Failed to fetch') || error.message?.includes('Network')) {
+      userFriendlyError = 'Erreur de connexion Internet. Vérifiez votre connexion.';
+    } else if (error.message?.includes('Service ID') || error.message?.includes('Template ID')) {
+      userFriendlyError = 'Configuration EmailJS incorrecte. Vérifiez vos clés dans le fichier .env';
+    }
+    
     return {
       success: false,
-      error: error.message || 'Erreur inconnue',
+      error: userFriendlyError,
+      technicalError: error.message,
       fallback: true,
       credentials: { email, password },
     };
