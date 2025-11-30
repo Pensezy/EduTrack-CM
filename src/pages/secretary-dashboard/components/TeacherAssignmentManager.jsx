@@ -4,7 +4,7 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
-import teacherMultiSchoolServiceDemo from '../../../services/teacherMultiSchoolServiceDemo';
+import { supabase } from '../../../lib/supabase';
 
 const TeacherAssignmentManager = ({ 
   teacher, 
@@ -13,43 +13,83 @@ const TeacherAssignmentManager = ({
   onCancel 
 }) => {
   const [availableClasses, setAvailableClasses] = useState([]);
+  const [availableSubjects, setAvailableSubjects] = useState([]);
+  const [showAddSubjectModal, setShowAddSubjectModal] = useState(false);
+  const [newSubject, setNewSubject] = useState('');
   const [assignmentData, setAssignmentData] = useState({
-    position: 'Enseignant vacataire',
     subjects: [],
     classes: [],
     weeklyHours: 0,
-    assignmentType: 'vacataire',
     startDate: new Date().toISOString().split('T')[0],
     endDate: '2025-06-30'
   });
   const [isLoading, setIsLoading] = useState(false);
 
-  // Options de poste
-  const positionOptions = [
-    { value: 'Enseignant titulaire', label: 'Enseignant titulaire' },
-    { value: 'Enseignant vacataire', label: 'Enseignant vacataire' },
-    { value: 'Enseignant remplaçant', label: 'Enseignant remplaçant' },
-    { value: 'Professeur principal', label: 'Professeur principal' }
-  ];
-
-  // Options de type d'assignation
-  const assignmentTypeOptions = [
-    { value: 'principal', label: 'Poste principal' },
-    { value: 'vacataire', label: 'Vacation' },
-    { value: 'remplacement', label: 'Remplacement' }
-  ];
-
-  // Charger les classes disponibles pour l'établissement de la secrétaire
+  // Charger les classes et matières disponibles pour l'établissement
   useEffect(() => {
-    const loadAvailableClasses = async () => {
+    const loadSchoolData = async () => {
       if (currentSchool?.id) {
-        const classes = await teacherMultiSchoolServiceDemo.getAvailableClassesForSchool(currentSchool.id);
-        setAvailableClasses(classes);
+        try {
+          const { data: schoolData, error } = await supabase
+            .from('schools')
+            .select('available_classes, type, custom_subjects')
+            .eq('id', currentSchool.id)
+            .single();
+
+          if (error) {
+            console.error('Erreur chargement données école:', error);
+            return;
+          }
+
+          // Charger les classes
+          if (schoolData?.available_classes && Array.isArray(schoolData.available_classes)) {
+            const formattedClasses = schoolData.available_classes.map((className, index) => ({
+              id: `class-${index}`,
+              name: className,
+              studentsCount: 0
+            }));
+            setAvailableClasses(formattedClasses);
+            console.log(`✅ ${formattedClasses.length} classe(s) chargée(s)`);
+          }
+
+          // Charger les matières (par défaut + personnalisées, sans doublons)
+          const defaultSubjects = getDefaultSubjectsBySchoolType(schoolData.type);
+          const customSubjects = (schoolData.custom_subjects || []).map(name => ({ id: `custom-${name}`, name }));
+          
+          // Utiliser un Set pour éliminer les doublons par nom
+          const allSubjectsMap = new Map();
+          [...defaultSubjects, ...customSubjects].forEach(subject => {
+            if (!allSubjectsMap.has(subject.name)) {
+              allSubjectsMap.set(subject.name, subject);
+            }
+          });
+          
+          const allSubjects = Array.from(allSubjectsMap.values());
+          setAvailableSubjects(allSubjects);
+          console.log(`✅ ${allSubjects.length} matière(s) disponible(s) (sans doublons)`);
+        } catch (error) {
+          console.error('Exception chargement données école:', error);
+        }
       }
     };
 
-    loadAvailableClasses();
+    loadSchoolData();
   }, [currentSchool?.id]);
+
+  // Fonction pour obtenir les matières par défaut selon le type d'école
+  const getDefaultSubjectsBySchoolType = (schoolType) => {
+    const subjectsByType = {
+      'Maternelle': ['Éveil', 'Psychomotricité', 'Langage', 'Arts plastiques', 'Musique', 'Jeux éducatifs'],
+      'Primaire': ['Mathématiques', 'Français', 'Lecture', 'Écriture', 'Histoire', 'Géographie', 'Sciences', 'Éducation Civique et Morale', 'Arts Plastiques', 'Musique', 'Éducation Physique et Sportive', 'Anglais', 'Informatique', 'Travaux Manuels', 'Hygiène et Santé', 'Bibliothèque'],
+      'Collège': ['Mathématiques', 'Français', 'Anglais', 'Histoire-Géographie', 'Sciences de la Vie et de la Terre', 'Physique-Chimie', 'Technologie', 'Éducation Physique et Sportive', 'Arts Plastiques', 'Musique', 'Éducation Civique', 'Espagnol', 'Allemand', 'Informatique'],
+      'Lycée Général': ['Mathématiques', 'Français', 'Philosophie', 'Histoire-Géographie', 'Anglais', 'Espagnol', 'Allemand', 'Physique-Chimie', 'Sciences de la Vie et de la Terre', 'Sciences Économiques et Sociales', 'Éducation Physique et Sportive', 'Arts Plastiques', 'Musique', 'NSI (Numérique et Sciences Informatiques)', 'SI (Sciences de l\'Ingénieur)', 'HGGSP', 'HLP', 'LLCER', 'Biologie-Écologie', 'Mathématiques Expertes'],
+      'Lycée Technique': ['Mathématiques', 'Français', 'Anglais', 'Histoire-Géographie', 'Physique-Chimie', 'Électrotechnique', 'Mécanique', 'Génie Civil', 'Informatique', 'Économie-Gestion', 'Construction', 'CAO/DAO', 'Automatisme', 'Sciences de l\'Ingénieur', 'Télécommunications', 'Maintenance', 'Énergie', 'Éducation Physique et Sportive'],
+      'Lycée Professionnel': ['Mathématiques', 'Français', 'Anglais', 'Histoire-Géographie', 'Commerce', 'Vente', 'Comptabilité', 'Secrétariat', 'Cuisine', 'Hôtellerie', 'Coiffure', 'Esthétique', 'Mécanique Auto', 'Électricité', 'Menuiserie', 'Soudure', 'Mode', 'Agriculture']
+    };
+
+    const subjects = subjectsByType[schoolType] || subjectsByType['Collège'];
+    return subjects.map((name, index) => ({ id: `default-${index}`, name }));
+  };
 
   // Calculer automatiquement les heures en fonction des classes et matières
   useEffect(() => {
@@ -68,12 +108,12 @@ const TeacherAssignmentManager = ({
     }
   }, [assignmentData.classes, assignmentData.subjects]);
 
-  const handleSubjectChange = (subject, isChecked) => {
+  const handleSubjectChange = (subjectName, isChecked) => {
     setAssignmentData(prev => ({
       ...prev,
       subjects: isChecked 
-        ? [...prev.subjects, subject]
-        : prev.subjects.filter(s => s !== subject)
+        ? [...prev.subjects, subjectName]
+        : prev.subjects.filter(s => s !== subjectName)
     }));
   };
 
@@ -86,6 +126,66 @@ const TeacherAssignmentManager = ({
     }));
   };
 
+  // Ajouter une nouvelle matière personnalisée
+  const handleAddSubject = async () => {
+    if (!newSubject.trim()) {
+      alert('Veuillez entrer le nom de la matière');
+      return;
+    }
+
+    // Vérifier si la matière existe déjà
+    if (availableSubjects.some(s => s.name.toLowerCase() === newSubject.trim().toLowerCase())) {
+      alert('Cette matière existe déjà');
+      return;
+    }
+
+    try {
+      // Récupérer les matières personnalisées actuelles
+      const { data: schoolData, error: fetchError } = await supabase
+        .from('schools')
+        .select('custom_subjects')
+        .eq('id', currentSchool.id)
+        .single();
+
+      if (fetchError) {
+        console.error('❌ Erreur récupération matières:', fetchError);
+        alert('Erreur lors de la récupération des matières');
+        return;
+      }
+
+      // Ajouter la nouvelle matière à la liste
+      const currentCustomSubjects = schoolData.custom_subjects || [];
+      const updatedCustomSubjects = [...currentCustomSubjects, newSubject.trim()];
+
+      // Sauvegarder dans la base de données
+      const { error: updateError } = await supabase
+        .from('schools')
+        .update({ custom_subjects: updatedCustomSubjects })
+        .eq('id', currentSchool.id);
+
+      if (updateError) {
+        console.error('❌ Erreur sauvegarde matière:', updateError);
+        alert('Erreur lors de la sauvegarde de la matière');
+        return;
+      }
+
+      // Ajouter la nouvelle matière à l'état local
+      const newSubjectObj = {
+        id: `custom-${Date.now()}`,
+        name: newSubject.trim()
+      };
+
+      setAvailableSubjects([...availableSubjects, newSubjectObj]);
+      setNewSubject('');
+      setShowAddSubjectModal(false);
+      
+      console.log('✅ Matière ajoutée et sauvegardée:', newSubjectObj.name);
+    } catch (error) {
+      console.error('Exception ajout matière:', error);
+      alert('Erreur lors de l\'ajout de la matière');
+    }
+  };
+
   const handleSubmit = async () => {
     if (assignmentData.subjects.length === 0 || assignmentData.classes.length === 0) {
       alert('Veuillez sélectionner au moins une matière et une classe.');
@@ -94,20 +194,184 @@ const TeacherAssignmentManager = ({
 
     setIsLoading(true);
     try {
-      const result = await teacherMultiSchoolServiceDemo.createTeacherAssignment(
-        teacher.id,
-        currentSchool.id,
-        assignmentData
-      );
+      // Si c'est un nouvel enseignant (isNew = true), créer d'abord le compte
+      let teacherId = teacher.id;
+      
+      if (teacher.isNew) {
+        // Créer le compte utilisateur dans Supabase Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email: teacher.email,
+          password: teacher.password || 'TempPass123!', // Mot de passe temporaire
+          options: {
+            data: {
+              full_name: teacher.fullName,
+              role: 'teacher'
+            }
+          }
+        });
 
-      if (result.success) {
-        onAssignmentComplete(result.assignment);
-      } else {
-        alert('Erreur lors de la création de l\'assignation: ' + result.error);
+        if (authError) {
+          console.error('Erreur création compte Auth:', authError);
+          alert('Erreur lors de la création du compte: ' + authError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        teacherId = authData.user.id;
+
+        // Créer l'entrée dans la table users
+        const { error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: teacherId,
+            email: teacher.email,
+            full_name: teacher.fullName,
+            phone: teacher.phone,
+            role: 'teacher',
+            created_at: new Date().toISOString()
+          });
+
+        if (userError) {
+          console.error('Erreur création utilisateur:', userError);
+          alert('Erreur lors de la création de l\'utilisateur: ' + userError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        // Créer l'entrée dans la table teachers et récupérer son ID
+        const { data: teacherData, error: teacherError } = await supabase
+          .from('teachers')
+          .insert({
+            user_id: teacherId,
+            school_id: currentSchool.id,
+            first_name: teacher.fullName.split(' ')[0],
+            last_name: teacher.fullName.split(' ').slice(1).join(' ') || teacher.fullName.split(' ')[0],
+            is_active: true,
+            hire_date: assignmentData.startDate
+          })
+          .select('id')
+          .single();
+
+        if (teacherError) {
+          console.error('Erreur création enseignant dans teachers:', teacherError);
+          alert('Erreur lors de la création de l\'enseignant: ' + teacherError.message);
+          setIsLoading(false);
+          return;
+        }
+
+        // Utiliser l'ID de la table teachers (pas le user_id) pour les assignations
+        teacherId = teacherData.id;
+        console.log('✅ Enseignant créé dans teachers avec ID:', teacherId);
+
+        console.log('✅ Nouvel enseignant créé avec l\'ID:', teacherId);
       }
+
+      // Récupérer l'année académique actuelle de l'école
+      const { data: academicYears, error: yearError } = await supabase
+        .from('academic_years')
+        .select('id')
+        .eq('school_id', currentSchool.id)
+        .eq('is_current', true)
+        .single();
+
+      if (yearError || !academicYears) {
+        console.warn('⚠️ Aucune année académique active trouvée, création sans année académique');
+        // Si pas d'année académique, on doit soit en créer une, soit rendre le champ nullable
+        alert('Aucune année académique active trouvée pour cet établissement. Veuillez d\'abord configurer l\'année académique.');
+        setIsLoading(false);
+        return;
+      }
+
+      const academicYearId = academicYears.id;
+      console.log('✅ Année académique:', academicYearId);
+
+      // Vérifier si l'enseignant existe dans la table teachers (pour les enseignants existants)
+      if (!teacher.isNew) {
+        // Récupérer l'ID de la table teachers (pas le user_id)
+        const { data: existingTeacher, error: checkError } = await supabase
+          .from('teachers')
+          .select('id')
+          .eq('user_id', teacherId)
+          .maybeSingle();
+
+        // Si l'enseignant n'existe pas dans la table teachers, le créer
+        if (!existingTeacher && !checkError) {
+          console.log('⚠️ Enseignant existant mais pas dans la table teachers, création...');
+          const { data: newTeacherData, error: teacherCreateError } = await supabase
+            .from('teachers')
+            .insert({
+              user_id: teacherId,
+              school_id: currentSchool.id,
+              first_name: teacher.fullName?.split(' ')[0] || 'Prénom',
+              last_name: teacher.fullName?.split(' ').slice(1).join(' ') || 'Nom',
+              is_active: true,
+              hire_date: assignmentData.startDate
+            })
+            .select('id')
+            .single();
+
+          if (teacherCreateError) {
+            console.error('Erreur création enseignant:', teacherCreateError);
+            alert('Erreur: Cet enseignant doit d\'abord être enregistré dans la table teachers.');
+            setIsLoading(false);
+            return;
+          }
+          teacherId = newTeacherData.id;
+          console.log('✅ Enseignant ajouté à la table teachers avec ID:', teacherId);
+        } else if (existingTeacher) {
+          // Utiliser l'ID de la table teachers (pas le user_id)
+          teacherId = existingTeacher.id;
+          console.log('✅ Enseignant trouvé dans teachers avec ID:', teacherId);
+        }
+      }
+
+      // Créer les assignations dans teacher_assignments
+      // Une entrée par combinaison classe-matière
+      const assignments = [];
+      const weeklyHoursPerAssignment = Math.round(assignmentData.weeklyHours / (assignmentData.classes.length * assignmentData.subjects.length));
+      
+      for (const className of assignmentData.classes) {
+        for (const subject of assignmentData.subjects) {
+          assignments.push({
+            teacher_id: teacherId,
+            school_id: currentSchool.id,
+            academic_year_id: academicYearId,
+            class_id: null, // Pas d'ID de classe pour l'instant, on utilise class_name
+            subject_id: null, // Pas d'ID de matière pour l'instant, on utilise subject_name
+            class_name: className,
+            subject_name: subject,
+            is_active: true,
+            start_date: assignmentData.startDate,
+            end_date: assignmentData.endDate,
+            schedule: {
+              weekly_hours: weeklyHoursPerAssignment
+            }
+          });
+        }
+      }
+
+      const { data, error } = await supabase
+        .from('teacher_assignments')
+        .insert(assignments)
+        .select();
+
+      if (error) {
+        console.error('Erreur création assignation:', error);
+        alert('Erreur lors de la création de l\'assignation: ' + error.message);
+        setIsLoading(false);
+        return;
+      }
+
+      console.log('✅ Assignation(s) créée(s):', data.length);
+      onAssignmentComplete({
+        ...assignmentData,
+        teacher_id: teacherId,
+        school_id: currentSchool.id,
+        assignments: data
+      });
     } catch (error) {
-      console.error('Erreur:', error);
-      alert('Une erreur est survenue lors de la création de l\'assignation.');
+      console.error('Exception:', error);
+      alert('Une erreur est survenue: ' + error.message);
     } finally {
       setIsLoading(false);
     }
@@ -131,21 +395,23 @@ const TeacherAssignmentManager = ({
           </div>
           <div>
             <h4 className="font-heading font-heading-semibold text-base text-text-primary">
-              {teacher.firstName} {teacher.lastName}
+              {teacher.fullName || `${teacher.firstName || ''} ${teacher.lastName || ''}`.trim()}
             </h4>
             <p className="text-sm text-text-secondary">
-              {teacher.email} • {teacher.phone}
+              {teacher.email} {teacher.phone && `• ${teacher.phone}`}
             </p>
-            <div className="flex flex-wrap gap-1 mt-2">
-              {teacher.specializations.map((spec, index) => (
-                <span 
-                  key={index}
-                  className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
-                >
-                  {spec}
-                </span>
-              ))}
-            </div>
+            {(teacher.subjects || teacher.specializations) && (teacher.subjects || teacher.specializations).length > 0 && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {(teacher.subjects || teacher.specializations || []).map((spec, index) => (
+                  <span 
+                    key={index}
+                    className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full"
+                  >
+                    {spec}
+                  </span>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -172,27 +438,11 @@ const TeacherAssignmentManager = ({
 
       {/* Formulaire d'assignation */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Informations générales */}
+        {/* Période d'assignation */}
         <div className="space-y-4">
           <h5 className="font-heading font-heading-semibold text-md text-text-primary">
-            Informations du poste
+            Période d'assignation
           </h5>
-
-          <Select
-            label="Type de poste"
-            options={positionOptions}
-            value={assignmentData.position}
-            onChange={(value) => setAssignmentData(prev => ({ ...prev, position: value }))}
-            required
-          />
-
-          <Select
-            label="Type d'assignation"
-            options={assignmentTypeOptions}
-            value={assignmentData.assignmentType}
-            onChange={(value) => setAssignmentData(prev => ({ ...prev, assignmentType: value }))}
-            required
-          />
 
           <div className="grid grid-cols-2 gap-4">
             <Input
@@ -259,26 +509,51 @@ const TeacherAssignmentManager = ({
 
       {/* Sélection des matières */}
       <div>
-        <h5 className="font-heading font-heading-semibold text-md text-text-primary mb-3">
-          Matières à enseigner
-        </h5>
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {teacher.specializations.map((subject, index) => (
-            <div key={index} className="flex items-center space-x-2">
+        <div className="flex items-center justify-between mb-3">
+          <h5 className="font-heading font-heading-semibold text-md text-text-primary">
+            Matières à enseigner
+          </h5>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAddSubjectModal(true)}
+            iconName="Plus"
+            iconPosition="left"
+          >
+            Ajouter une matière
+          </Button>
+        </div>
+        
+        {assignmentData.subjects.length > 0 && (
+          <div className="mb-3 text-sm text-primary">
+            {assignmentData.subjects.length} matière(s) sélectionnée(s): {assignmentData.subjects.join(', ')}
+          </div>
+        )}
+        
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto border border-border rounded-lg p-3">
+          {availableSubjects.map((subject, index) => (
+            <div key={subject.id || index} className="flex items-center space-x-2">
               <Checkbox
-                id={`subject-${index}`}
-                checked={assignmentData.subjects.includes(subject)}
-                onChange={(e) => handleSubjectChange(subject, e.target.checked)}
+                id={`subject-${subject.id || index}`}
+                checked={assignmentData.subjects.includes(subject.name)}
+                onChange={(e) => handleSubjectChange(subject.name, e.target.checked)}
               />
               <label 
-                htmlFor={`subject-${index}`}
+                htmlFor={`subject-${subject.id || index}`}
                 className="text-sm text-text-primary cursor-pointer"
               >
-                {subject}
+                {subject.name}
               </label>
             </div>
           ))}
         </div>
+        {availableSubjects.length === 0 && (
+          <div className="text-center py-4">
+            <p className="text-sm text-text-secondary">
+              Aucune matière disponible pour cet établissement
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Sélection des classes */}
@@ -380,6 +655,82 @@ const TeacherAssignmentManager = ({
               <p className="text-xs text-text-secondary">
                 Cette assignation représente {assignmentData.weeklyHours}h/semaine, ce qui peut être considéré comme une charge élevée.
               </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Ajouter une matière */}
+      {showAddSubjectModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-card rounded-lg border border-border w-full max-w-md">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="font-heading font-heading-semibold text-xl text-text-primary">
+                  Ajouter une matière
+                </h3>
+                <button
+                  onClick={() => {
+                    setShowAddSubjectModal(false);
+                    setNewSubject('');
+                  }}
+                  className="text-text-secondary hover:text-text-primary"
+                >
+                  <Icon name="X" size={20} />
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-body font-body-medium text-text-secondary mb-2">
+                    Nom de la matière *
+                  </label>
+                  <Input
+                    type="text"
+                    placeholder="Ex: Informatique, Biologie, etc."
+                    value={newSubject}
+                    onChange={(e) => setNewSubject(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter') {
+                        handleAddSubject();
+                      }
+                    }}
+                  />
+                  <p className="text-xs text-text-tertiary mt-1">
+                    Cette matière sera ajoutée à la liste des matières disponibles
+                  </p>
+                </div>
+
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                    <p className="text-xs text-blue-700">
+                      <strong>Note :</strong> Cette matière sera disponible pour tous les enseignants de votre établissement.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowAddSubjectModal(false);
+                    setNewSubject('');
+                  }}
+                  className="flex-1"
+                >
+                  Annuler
+                </Button>
+                <Button
+                  onClick={handleAddSubject}
+                  className="flex-1"
+                  iconName="Plus"
+                  iconPosition="left"
+                >
+                  Ajouter
+                </Button>
+              </div>
             </div>
           </div>
         </div>

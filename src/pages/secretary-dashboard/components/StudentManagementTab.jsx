@@ -17,6 +17,10 @@ const StudentManagementTab = ({ isDemo = false }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [loading, setLoading] = useState(true);
   
+  // Données de l'école
+  const [currentSchool, setCurrentSchool] = useState(null);
+  const [schoolClasses, setSchoolClasses] = useState([]);
+  
   // États pour le nouveau workflow multi-étapes
   const [currentStep, setCurrentStep] = useState(1);
   const [inscriptionMode, setInscriptionMode] = useState('new'); // 'new' ou 'existing'
@@ -122,10 +126,112 @@ const StudentManagementTab = ({ isDemo = false }) => {
 
   const [students, setStudents] = useState([]);
 
-  // Charger les élèves au montage
+  // Charger les données au montage
   useEffect(() => {
+    loadSchoolData();
     loadStudents();
   }, [isDemo]);
+
+  const loadSchoolData = async () => {
+    if (isDemo) {
+      // Mode démo : données statiques
+      setCurrentSchool({
+        id: 'school-1',
+        name: 'École Primaire Centrale',
+        type: 'Primaire'
+      });
+      setSchoolClasses([
+        { id: 'class-1', name: 'CE1', level: 'CE1' },
+        { id: 'class-2', name: 'CE2', level: 'CE2' },
+        { id: 'class-3', name: 'CM1', level: 'CM1' },
+        { id: 'class-4', name: 'CM2', level: 'CM2' }
+      ]);
+      return;
+    }
+
+    try {
+      const savedUser = localStorage.getItem('edutrack-user');
+      const userData = savedUser ? JSON.parse(savedUser) : null;
+      const schoolId = userData?.current_school_id;
+
+      if (!schoolId) {
+        console.warn('⚠️ Pas d\'école associée');
+        return;
+      }
+
+      // Charger les informations de l'école
+      const { data: schoolData, error: schoolError } = await supabase
+        .from('schools')
+        .select('id, name, type, available_classes')
+        .eq('id', schoolId)
+        .single();
+
+      if (schoolError) {
+        console.error('❌ Erreur chargement école:', schoolError);
+        return;
+      }
+
+      setCurrentSchool({
+        id: schoolData.id,
+        name: schoolData.name,
+        type: schoolData.type
+      });
+
+      console.log('✅ École chargée pour les élèves:', schoolData.name);
+      console.log('📋 Classes disponibles:', schoolData.available_classes);
+
+      // Utiliser les classes choisies lors de la création de l'école
+      if (schoolData.available_classes && Array.isArray(schoolData.available_classes) && schoolData.available_classes.length > 0) {
+        const schoolClassesList = schoolData.available_classes.map((className, index) => ({
+          id: `class-${index}`,
+          name: className,
+          level: className
+        }));
+        setSchoolClasses(schoolClassesList);
+        console.log(`✅ ${schoolClassesList.length} classe(s) chargée(s) depuis available_classes pour les élèves`);
+      } else {
+        console.warn('⚠️ Aucune classe dans available_classes, utilisation des classes par défaut');
+        const defaultClasses = getDefaultClassesBySchoolType(schoolData.type);
+        setSchoolClasses(defaultClasses);
+      }
+    } catch (error) {
+      console.error('Exception chargement données école:', error);
+    }
+  };
+
+  // Fonction pour obtenir les classes par défaut selon le type d'école
+  const getDefaultClassesBySchoolType = (schoolType) => {
+    if (schoolType === 'Maternelle') {
+      return [
+        { id: 'default-ps', name: 'Petite Section', level: 'PS' },
+        { id: 'default-ms', name: 'Moyenne Section', level: 'MS' },
+        { id: 'default-gs', name: 'Grande Section', level: 'GS' }
+      ];
+    } else if (schoolType === 'Primaire') {
+      return [
+        { id: 'default-cp', name: 'CP', level: 'CP' },
+        { id: 'default-ce1', name: 'CE1', level: 'CE1' },
+        { id: 'default-ce2', name: 'CE2', level: 'CE2' },
+        { id: 'default-cm1', name: 'CM1', level: 'CM1' },
+        { id: 'default-cm2', name: 'CM2', level: 'CM2' }
+      ];
+    } else if (schoolType === 'Collège') {
+      return [
+        { id: 'default-6eme', name: '6ème', level: '6ème' },
+        { id: 'default-5eme', name: '5ème', level: '5ème' },
+        { id: 'default-4eme', name: '4ème', level: '4ème' },
+        { id: 'default-3eme', name: '3ème', level: '3ème' }
+      ];
+    } else if (schoolType === 'Lycée') {
+      return [
+        { id: 'default-2nde', name: '2nde', level: '2nde' },
+        { id: 'default-1ere', name: '1ère', level: '1ère' },
+        { id: 'default-tle', name: 'Terminale', level: 'Terminale' }
+      ];
+    } else {
+      return [];
+    }
+  };
 
   const loadStudents = async () => {
     if (isDemo) {
@@ -203,12 +309,13 @@ const StudentManagementTab = ({ isDemo = false }) => {
     }
   };
 
+  // Options dynamiques basées sur les données de l'école
   const classOptions = [
     { value: '', label: 'Toutes les classes' },
-    { value: 'CE1', label: 'CE1' },
-    { value: 'CE2', label: 'CE2' },
-    { value: 'CM1', label: 'CM1' },
-    { value: 'CM2', label: 'CM2' }
+    ...schoolClasses.map(cls => ({
+      value: cls.name,
+      label: cls.name
+    }))
   ];
 
   const statusOptions = [

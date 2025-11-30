@@ -950,38 +950,107 @@ const DangerZone = ({ userRole, userId, userEmail }) => {
       // 2. Supprimer les références spécifiques à cet utilisateur (hors école)
       console.log('🗑️ Nettoyage des références utilisateur...');
       
-      // Supprimer les modèles de messages créés par cet utilisateur
-      await supabase.from('message_templates').delete().eq('created_by', userId);
-      
-      // Supprimer les communications envoyées par cet utilisateur  
-      await supabase.from('communications').delete().eq('sent_by_user_id', userId);
-      
-      // Supprimer les notifications créées par cet utilisateur
-      await supabase.from('notifications').delete().eq('created_by_user_id', userId);
+      // Pour les enseignants, parents, étudiants, secrétaires: DÉSACTIVER au lieu de supprimer
+      // Car les données appartiennent à l'établissement, pas à l'utilisateur
+      if (['teacher', 'parent', 'student', 'secretary'].includes(userRole)) {
+        console.log(`📋 Rôle ${userRole}: Désactivation au lieu de suppression`);
+        
+        // 1. Désactiver dans la table users
+        const { error: userDeactivateError } = await supabase
+          .from('users')
+          .update({ 
+            is_active: false,
+            email: `deleted_${Date.now()}_${userId.substring(0, 8)}@deleted.local`,
+            phone: null,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', userId);
 
-      // 3. Supprimer l'utilisateur de la table users
-      const { error: userDeleteError } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', userId);
+        if (userDeactivateError) {
+          console.error('Erreur désactivation user:', userDeactivateError);
+          throw userDeactivateError;
+        }
 
-      if (userDeleteError) throw userDeleteError;
+        // 2. Désactiver dans les tables spécifiques
+        if (userRole === 'teacher') {
+          await supabase
+            .from('teachers')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+          
+          // Désactiver les assignations (ne pas supprimer)
+          await supabase
+            .from('teacher_assignments')
+            .update({ is_active: false, end_date: new Date().toISOString() })
+            .eq('teacher_id', userId);
+        } else if (userRole === 'parent') {
+          await supabase
+            .from('parents')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+        } else if (userRole === 'student') {
+          await supabase
+            .from('students')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+        } else if (userRole === 'secretary') {
+          await supabase
+            .from('secretaries')
+            .update({ is_active: false, updated_at: new Date().toISOString() })
+            .eq('user_id', userId);
+        }
 
-      // 4. Supprimer le compte Supabase Auth
+        console.log('✅ Compte désactivé. Les données de l\'établissement sont préservées.');
+        
+        // NE PAS supprimer:
+        // - Les notes créées par l'enseignant
+        // - Les présences enregistrées
+        // - Les documents créés
+        // - Les communications envoyées
+        // Ces données appartiennent à l'établissement
+        
+      } else {
+        // Pour les autres rôles (si existants), suppression complète
+        console.log('⚠️ Suppression complète pour ce type de compte');
+        
+        // Supprimer les modèles de messages créés par cet utilisateur
+        await supabase.from('message_templates').delete().eq('created_by', userId);
+        
+        // Supprimer les communications envoyées par cet utilisateur  
+        await supabase.from('communications').delete().eq('sent_by_user_id', userId);
+        
+        // Supprimer les notifications créées par cet utilisateur
+        await supabase.from('notifications').delete().eq('created_by_user_id', userId);
+
+        // Supprimer l'utilisateur de la table users
+        const { error: userDeleteError } = await supabase
+          .from('users')
+          .delete()
+          .eq('id', userId);
+
+        if (userDeleteError) throw userDeleteError;
+      }
+
+      // 3. Supprimer/désactiver le compte Supabase Auth
+      // Pour tous les rôles: supprimer l'auth (ils ne pourront plus se connecter)
       const { error: authDeleteError } = await supabase.auth.admin.deleteUser(userId);
       
-      // Note: admin.deleteUser nécessite des permissions spéciales
-      // Alternative: déconnecter l'utilisateur et le compte sera marqué comme supprimé
       if (authDeleteError) {
         console.warn('Impossible de supprimer le compte auth:', authDeleteError);
         // Continuer quand même pour déconnecter l'utilisateur
       }
 
-      // 5. Déconnecter l'utilisateur
+      // 4. Déconnecter l'utilisateur
       await supabase.auth.signOut();
 
+      // 5. Message et redirection selon le type de suppression
+      if (['teacher', 'parent', 'student', 'secretary'].includes(userRole)) {
+        alert('✅ Votre compte a été désactivé. Vous ne pourrez plus vous connecter mais l\'historique de l\'établissement est préservé.');
+      } else {
+        alert('✅ Votre compte a été supprimé avec succès. Toutes vos données ont été effacées.');
+      }
+      
       // 6. Rediriger vers la page d'accueil
-      alert('✅ Votre compte a été supprimé avec succès. Toutes vos données ont été effacées.');
       window.location.href = '/';
 
     } catch (error) {

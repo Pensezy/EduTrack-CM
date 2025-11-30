@@ -76,22 +76,41 @@ const ClassSelector = ({ classes, selectedClass, onClassSelect }) => {
                 {/* Schedule Preview */}
                 <div className="pt-3 border-t border-border">
                   <h4 className="font-caption font-caption-semibold text-xs text-muted-foreground mb-2">
-                    Horaires cette semaine:
+                    Charge horaire:
                   </h4>
                   <div className="space-y-1">
-                    {classData?.schedule?.slice(0, 2)?.map((slot, index) => (
-                      <div key={index} className="flex items-center justify-between text-xs">
+                    {Array.isArray(classData?.schedule) ? (
+                      // Format ancien: array d'horaires
+                      <>
+                        {classData?.schedule?.slice(0, 2)?.map((slot, index) => (
+                          <div key={index} className="flex items-center justify-between text-xs">
+                            <span className="font-caption font-caption-normal text-muted-foreground">
+                              {slot?.day}
+                            </span>
+                            <span className="font-caption font-caption-semibold text-primary">
+                              {slot?.time}
+                            </span>
+                          </div>
+                        ))}
+                        {classData?.schedule?.length > 2 && (
+                          <div className="text-xs text-center text-muted-foreground">
+                            +{classData?.schedule?.length - 2} autre{classData?.schedule?.length - 2 > 1 ? 's' : ''}
+                          </div>
+                        )}
+                      </>
+                    ) : classData?.schedule?.weekly_hours ? (
+                      // Format nouveau: objet JSON avec weekly_hours
+                      <div className="flex items-center justify-between text-xs">
                         <span className="font-caption font-caption-normal text-muted-foreground">
-                          {slot?.day}
+                          Heures par semaine
                         </span>
                         <span className="font-caption font-caption-semibold text-primary">
-                          {slot?.time}
+                          {classData?.schedule?.weekly_hours}h
                         </span>
                       </div>
-                    ))}
-                    {classData?.schedule?.length > 2 && (
+                    ) : (
                       <div className="text-xs text-center text-muted-foreground">
-                        +{classData?.schedule?.length - 2} autre{classData?.schedule?.length - 2 > 1 ? 's' : ''}
+                        Horaire non défini
                       </div>
                     )}
                   </div>
@@ -101,7 +120,7 @@ const ClassSelector = ({ classes, selectedClass, onClassSelect }) => {
                 <div className="grid grid-cols-2 gap-2 pt-3 border-t border-border">
                   <div className="text-center p-2 bg-muted/20 rounded">
                     <div className="font-heading font-heading-bold text-sm text-success">
-                      {Math.floor(Math.random() * 5 + 15)}/20
+                      {classData?.average ? `${classData.average.toFixed(1)}/20` : 'N/A'}
                     </div>
                     <p className="font-caption font-caption-normal text-xs text-muted-foreground">
                       Moy. classe
@@ -109,7 +128,7 @@ const ClassSelector = ({ classes, selectedClass, onClassSelect }) => {
                   </div>
                   <div className="text-center p-2 bg-muted/20 rounded">
                     <div className="font-heading font-heading-bold text-sm text-primary">
-                      {Math.floor(Math.random() * 10 + 85)}%
+                      {classData?.attendanceRate ? `${classData.attendanceRate}%` : 'N/A'}
                     </div>
                     <p className="font-caption font-caption-normal text-xs text-muted-foreground">
                       Présence

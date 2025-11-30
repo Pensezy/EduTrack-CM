@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
-import teacherMultiSchoolServiceDemo from '../../../services/teacherMultiSchoolServiceDemo';
+import { supabase } from '../../../lib/supabase';
 
 const TeacherSearchSelector = ({ 
   onTeacherSelect, 
@@ -15,7 +15,7 @@ const TeacherSearchSelector = ({
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
-  // Recherche en temps réel
+  // Recherche en temps réel dans Supabase
   useEffect(() => {
     const performSearch = async () => {
       if (!searchTerm || searchTerm.length < 2) {
@@ -26,8 +26,41 @@ const TeacherSearchSelector = ({
 
       setIsSearching(true);
       try {
-        const results = await teacherMultiSchoolServiceDemo.searchExistingTeachers(searchTerm);
-        setSearchResults(results);
+        // Rechercher dans la table users avec le rôle teacher
+        const { data: teachers, error } = await supabase
+          .from('users')
+          .select(`
+            id,
+            full_name,
+            email,
+            phone,
+            role
+          `)
+          .eq('role', 'teacher')
+          .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+
+        if (error) {
+          console.error('Erreur de recherche:', error);
+          setSearchResults([]);
+          return;
+        }
+
+        // Formater les résultats pour correspondre au format attendu
+        const formattedResults = teachers.map(teacher => ({
+          id: teacher.id,
+          fullName: teacher.full_name || 'Nom inconnu',
+          firstName: teacher.full_name?.split(' ')[0] || '',
+          lastName: teacher.full_name?.split(' ').slice(1).join(' ') || '',
+          email: teacher.email || '',
+          phone: teacher.phone || '',
+          specializations: [], // On pourrait charger cela depuis teacher_assignments si besoin
+          assignments: [],
+          totalSchools: 0,
+          totalWeeklyHours: 0,
+          availableHours: 40
+        }));
+
+        setSearchResults(formattedResults);
         setShowResults(true);
       } catch (error) {
         console.error('Erreur de recherche:', error);
@@ -46,7 +79,55 @@ const TeacherSearchSelector = ({
     setShowResults(false);
   };
 
+  // Charger tous les enseignants
+  const loadAllTeachers = async () => {
+    setIsSearching(true);
+    try {
+      const { data: teachers, error } = await supabase
+        .from('users')
+        .select(`
+          id,
+          full_name,
+          email,
+          phone,
+          role
+        `)
+        .eq('role', 'teacher')
+        .order('full_name', { ascending: true });
+
+      if (error) {
+        console.error('Erreur chargement enseignants:', error);
+        setSearchResults([]);
+        return;
+      }
+
+      const formattedResults = teachers.map(teacher => ({
+        id: teacher.id,
+        fullName: teacher.full_name || 'Nom inconnu',
+        firstName: teacher.full_name?.split(' ')[0] || '',
+        lastName: teacher.full_name?.split(' ').slice(1).join(' ') || '',
+        email: teacher.email || '',
+        phone: teacher.phone || '',
+        specializations: [],
+        assignments: [],
+        totalSchools: 0,
+        totalWeeklyHours: 0,
+        availableHours: 40
+      }));
+
+      setSearchResults(formattedResults);
+      setShowResults(true);
+      console.log(`✅ ${formattedResults.length} enseignant(s) chargé(s)`);
+    } catch (error) {
+      console.error('Exception chargement enseignants:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
   const getSpecializationsBadges = (specializations) => {
+    if (!specializations || specializations.length === 0) return null;
     return specializations.map((spec, index) => (
       <span 
         key={index}
@@ -69,21 +150,36 @@ const TeacherSearchSelector = ({
   return (
     <div className="space-y-4">
       {/* Zone de recherche */}
-      <div className="relative">
-        <Input
-          type="search"
-          placeholder="Rechercher par nom, email, téléphone ou spécialisation..."
-          value={searchTerm}
-          onChange={(e) => onSearchChange(e.target.value)}
-          className="w-full pr-10"
-        />
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          {isSearching ? (
-            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-          ) : (
-            <Icon name="Search" size={16} className="text-muted-foreground" />
-          )}
+      <div className="space-y-2">
+        <div className="relative">
+          <Input
+            type="search"
+            placeholder="Rechercher par nom, email ou téléphone..."
+            value={searchTerm}
+            onChange={(e) => onSearchChange(e.target.value)}
+            className="w-full pr-10"
+          />
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            {isSearching ? (
+              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+            ) : (
+              <Icon name="Search" size={16} className="text-muted-foreground" />
+            )}
+          </div>
         </div>
+        
+        {/* Bouton pour afficher tous les enseignants */}
+        {!searchTerm && !showResults && (
+          <Button
+            onClick={loadAllTeachers}
+            variant="outline"
+            className="w-full"
+            disabled={isSearching}
+          >
+            <Icon name="Users" size={16} className="mr-2" />
+            Afficher tous les enseignants
+          </Button>
+        )}
       </div>
 
       {/* Enseignant sélectionné */}
@@ -96,14 +192,16 @@ const TeacherSearchSelector = ({
               </div>
               <div className="flex-1">
                 <h4 className="font-heading font-heading-semibold text-base text-text-primary">
-                  {selectedTeacher.firstName} {selectedTeacher.lastName}
+                  {selectedTeacher.fullName || `${selectedTeacher.firstName} ${selectedTeacher.lastName}`}
                 </h4>
                 <p className="text-sm text-text-secondary">
-                  {selectedTeacher.email} • {selectedTeacher.phone}
+                  {selectedTeacher.email} {selectedTeacher.phone && `• ${selectedTeacher.phone}`}
                 </p>
-                <div className="mt-2">
-                  {getSpecializationsBadges(selectedTeacher.specializations)}
-                </div>
+                {selectedTeacher.specializations && selectedTeacher.specializations.length > 0 && (
+                  <div className="mt-2">
+                    {getSpecializationsBadges(selectedTeacher.specializations)}
+                  </div>
+                )}
                 <p className="text-xs text-text-secondary mt-1">
                   {getAssignmentSummary(selectedTeacher)}
                 </p>
@@ -180,7 +278,7 @@ const TeacherSearchSelector = ({
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
                       <h4 className="font-heading font-heading-medium text-sm text-text-primary">
-                        {teacher.firstName} {teacher.lastName}
+                        {teacher.fullName || `${teacher.firstName} ${teacher.lastName}`}
                       </h4>
                       {teacher.totalSchools > 1 && (
                         <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
@@ -189,11 +287,13 @@ const TeacherSearchSelector = ({
                       )}
                     </div>
                     <p className="text-xs text-text-secondary mb-2">
-                      {teacher.email} • {teacher.phone}
+                      {teacher.email} {teacher.phone && `• ${teacher.phone}`}
                     </p>
-                    <div className="mb-2">
-                      {getSpecializationsBadges(teacher.specializations)}
-                    </div>
+                    {teacher.specializations && teacher.specializations.length > 0 && (
+                      <div className="mb-2">
+                        {getSpecializationsBadges(teacher.specializations)}
+                      </div>
+                    )}
                     <p className="text-xs text-text-secondary">
                       {getAssignmentSummary(teacher)}
                     </p>

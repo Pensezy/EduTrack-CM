@@ -32,6 +32,18 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [studentsData, setStudentsData] = useState({});
   const [documentsData, setDocumentsData] = useState({});
+  const [upcomingSchedule, setUpcomingSchedule] = useState([]);
+  
+  console.log('🏫 TeacherDashboard RENDER:', {
+    isDemo,
+    isProduction,
+    dataMode,
+    hasUser: !!user,
+    userId: user?.id,
+    userEmail: user?.email,
+    teacherDataName: teacherData?.name,
+    classesInTeacherData: teacherData?.assignedClasses?.map(c => c.name)
+  });
 
   // Mock teacher data (utilisé uniquement en mode démo)
   const mockTeacherData = {
@@ -187,8 +199,8 @@ const TeacherDashboard = () => {
     ]
   };
 
-  // Mock upcoming schedule
-  const upcomingSchedule = [
+  // Mock upcoming schedule (utilisé uniquement en mode démo)
+  const mockUpcomingSchedule = [
     {
       id: "schedule-001",
       className: "3ème A",
@@ -221,15 +233,40 @@ const TeacherDashboard = () => {
     }
   ];
 
+  // Helper function pour obtenir la date du prochain jour de la semaine
+  const getCurrentDateForDay = (dayName) => {
+    const daysOfWeek = ['Dimanche', 'Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi'];
+    const targetDay = daysOfWeek.indexOf(dayName);
+    
+    if (targetDay === -1) {
+      return new Date().toISOString().split('T')[0]; // Fallback sur aujourd'hui
+    }
+    
+    const today = new Date();
+    const currentDay = today.getDay();
+    const daysUntilTarget = (targetDay - currentDay + 7) % 7 || 7; // Si c'est aujourd'hui, prendre la semaine prochaine
+    
+    const targetDate = new Date(today);
+    targetDate.setDate(today.getDate() + daysUntilTarget);
+    
+    return targetDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
+  };
+
   // Charger les données réelles depuis Supabase en mode production
   useEffect(() => {
     const loadTeacherData = async () => {
+      console.log('🔍 TeacherDashboard - Chargement des données...');
+      console.log('  - isDemo:', isDemo);
+      console.log('  - dataMode:', dataMode);
+      console.log('  - user:', user);
+      
       if (isDemo) {
         // En mode démo, utiliser les données mock
         console.log('🎭 Mode DÉMO - Utilisation des données fictives');
         setTeacherData(mockTeacherData);
         setStudentsData(mockStudentsData);
         setDocumentsData(mockDocumentsData);
+        setUpcomingSchedule(mockUpcomingSchedule);
         setLoading(false);
         return;
       }
@@ -315,13 +352,22 @@ const TeacherDashboard = () => {
 
         console.log('✅ Assignations chargées:', assignments?.length || 0);
 
-        // 3. Pour chaque classe, récupérer les élèves
+        // 3. Pour chaque classe, récupérer les élèves avec leurs notes et présences
         const studentsDataByClass = {};
         
         if (assignments && assignments.length > 0) {
           for (const assignment of assignments) {
             const classId = assignment.class_id;
             
+            // Si pas de class_id, on ne peut pas charger les élèves
+            // (les assignations utilisent class_name/subject_name en mode texte)
+            if (!classId) {
+              console.log('ℹ️ Assignation sans class_id (mode texte):', assignment.class_name);
+              studentsDataByClass[assignment.id] = [];
+              continue;
+            }
+            
+            // Récupérer les élèves
             const { data: students, error: studentsError } = await supabase
               .from('students')
               .select(`
@@ -339,21 +385,81 @@ const TeacherDashboard = () => {
               .eq('class_id', classId)
               .eq('is_active', true);
 
-            if (!studentsError && students) {
-              studentsDataByClass[assignment.id] = students.map(student => ({
-                id: student.id,
-                name: student.users?.full_name || 'Élève',
-                matricule: student.matricule,
-                email: student.users?.email,
-                phone: student.users?.phone,
-                recentGrades: [], // À charger séparément si nécessaire
-                attendance: { present: 0, absent: 0, late: 0 } // À calculer séparément
-              }));
+            if (studentsError) {
+              console.error('Erreur chargement élèves:', studentsError);
+              continue;
+            }
+
+            // Pour chaque élève, récupérer les notes récentes
+            const studentIds = students?.map(s => s.id) || [];
+            
+            const { data: grades, error: gradesError } = await supabase
+              .from('grades')
+              .select('student_id, grade, evaluation_type, created_at, subject_name')
+              .in('student_id', studentIds)
+              .order('created_at', { ascending: false })
+              .limit(100);
+
+            if (gradesError) {
+              console.warn('Erreur chargement notes:', gradesError);
+            }
+
+            // Récupérer les présences
+            const { data: attendances, error: attendancesError } = await supabase
+              .from('attendances')
+              .select('student_id, status')
+              .in('student_id', studentIds);
+
+            if (attendancesError) {
+              console.warn('Erreur chargement présences:', attendancesError);
+            }
+
+            // Créer des maps pour accès rapide
+            const gradesByStudent = new Map();
+            (grades || []).forEach(grade => {
+              if (!gradesByStudent.has(grade.student_id)) {
+                gradesByStudent.set(grade.student_id, []);
+              }
+              gradesByStudent.get(grade.student_id).push(grade);
+            });
+
+            const attendancesByStudent = new Map();
+            (attendances || []).forEach(att => {
+              if (!attendancesByStudent.has(att.student_id)) {
+                attendancesByStudent.set(att.student_id, { present: 0, absent: 0, late: 0 });
+              }
+              const stats = attendancesByStudent.get(att.student_id);
+              if (att.status === 'present') stats.present++;
+              else if (att.status === 'absent') stats.absent++;
+              else if (att.status === 'late') stats.late++;
+            });
+
+            // Formatter les données des élèves
+            if (students) {
+              studentsDataByClass[assignment.id] = students.map(student => {
+                const studentGrades = gradesByStudent.get(student.id) || [];
+                const studentAttendance = attendancesByStudent.get(student.id) || { present: 0, absent: 0, late: 0 };
+                
+                return {
+                  id: student.id,
+                  name: student.users?.full_name || 'Élève',
+                  matricule: student.matricule,
+                  email: student.users?.email,
+                  phone: student.users?.phone,
+                  recentGrades: studentGrades.slice(0, 5).map(g => ({
+                    subject: g.subject_name || assignment.subject_name,
+                    grade: g.grade,
+                    date: new Date(g.created_at).toLocaleDateString('fr-FR'),
+                    type: g.evaluation_type || 'Évaluation'
+                  })),
+                  attendance: studentAttendance
+                };
+              });
             }
           }
         }
 
-        console.log('✅ Élèves chargés pour', Object.keys(studentsDataByClass).length, 'classes');
+        console.log('✅ Élèves chargés pour', Object.keys(studentsDataByClass).length, 'assignations');
 
         // 4. Formatter les données pour correspondre au format attendu
         const formattedTeacherData = {
@@ -362,23 +468,82 @@ const TeacherDashboard = () => {
           email: teacherInfo.users?.email,
           phone: teacherInfo.users?.phone,
           specialty: teacherInfo.specialty,
-          employeeId: `ENS-${teacherInfo.id}`,
-          assignedClasses: (assignments || []).map(assignment => ({
-            id: assignment.id,
-            name: assignment.class_name || assignment.classes?.name,
-            level: assignment.classes?.level,
-            section: assignment.classes?.section,
-            school: teacherInfo.schools?.name,
-            subject: assignment.subject_name || assignment.subjects?.name,
-            students: studentsDataByClass[assignment.id]?.length || 0,
-            schedule: assignment.schedule || []
-          }))
+          employeeId: `ENS-${teacherInfo.id.substring(0, 8)}`,
+          assignedClasses: (assignments || []).map(assignment => {
+            const students = studentsDataByClass[assignment.id] || [];
+            
+            // Calculer la moyenne de la classe
+            let classAverage = null;
+            if (students.length > 0) {
+              const studentsWithGrades = students.filter(s => s.recentGrades && s.recentGrades.length > 0);
+              if (studentsWithGrades.length > 0) {
+                const totalAvg = studentsWithGrades.reduce((sum, student) => {
+                  const studentAvg = student.recentGrades.reduce((s, g) => s + g.grade, 0) / student.recentGrades.length;
+                  return sum + studentAvg;
+                }, 0);
+                classAverage = totalAvg / studentsWithGrades.length;
+              }
+            }
+            
+            // Calculer le taux de présence
+            let attendanceRate = null;
+            if (students.length > 0) {
+              const totalPresent = students.reduce((sum, s) => sum + (s.attendance?.present || 0), 0);
+              const totalAbsent = students.reduce((sum, s) => sum + (s.attendance?.absent || 0), 0);
+              const totalLate = students.reduce((sum, s) => sum + (s.attendance?.late || 0), 0);
+              const total = totalPresent + totalAbsent + totalLate;
+              if (total > 0) {
+                attendanceRate = Math.round((totalPresent / total) * 100);
+              }
+            }
+            
+            return {
+              id: assignment.id,
+              name: assignment.class_name || assignment.classes?.name || 'Classe',
+              level: assignment.classes?.level || 'Non défini',
+              section: assignment.classes?.section || '',
+              school: teacherInfo.schools?.name || 'École',
+              subject: assignment.subject_name || assignment.subjects?.name || 'Matière',
+              students: students.length,
+              schedule: assignment.schedule || { weekly_hours: 0 },
+              average: classAverage,
+              attendanceRate: attendanceRate
+            };
+          })
         };
 
         console.log('✅ Données formatées:', formattedTeacherData);
 
+        // 5. Générer l'emploi du temps à partir des assignations
+        const scheduleData = [];
+        if (assignments && assignments.length > 0) {
+          assignments.forEach(assignment => {
+            if (assignment.schedule && Array.isArray(assignment.schedule)) {
+              assignment.schedule.forEach(slot => {
+                scheduleData.push({
+                  id: `schedule-${assignment.id}-${slot.day}`,
+                  className: assignment.class_name || assignment.classes?.name,
+                  subject: assignment.subject_name || assignment.subjects?.name,
+                  day: slot.day,
+                  time: slot.time,
+                  room: slot.room,
+                  date: getCurrentDateForDay(slot.day), // Fonction helper pour obtenir la prochaine occurrence du jour
+                  type: 'course'
+                });
+              });
+            }
+          });
+        }
+        console.log('✅ Emploi du temps généré:', scheduleData.length, 'créneaux');
+
         setTeacherData(formattedTeacherData);
         setStudentsData(studentsDataByClass);
+        setUpcomingSchedule(scheduleData);
+        
+        console.log('🎯 DONNÉES RÉELLES DÉFINIES:');
+        console.log('  - Nombre de classes:', formattedTeacherData.assignedClasses?.length);
+        console.log('  - Classes:', formattedTeacherData.assignedClasses?.map(c => c.name));
+        console.log('  - Nom enseignant:', formattedTeacherData.name);
 
       } catch (error) {
         console.error('❌ Erreur chargement données enseignant:', error);
@@ -387,6 +552,7 @@ const TeacherDashboard = () => {
         setTeacherData(mockTeacherData);
         setStudentsData(mockStudentsData);
         setDocumentsData(mockDocumentsData);
+        setUpcomingSchedule(mockUpcomingSchedule);
       } finally {
         setLoading(false);
       }
@@ -403,6 +569,9 @@ const TeacherDashboard = () => {
     return () => clearInterval(timer);
   }, []);
 
+  // NE PAS sélectionner automatiquement une classe
+  // L'utilisateur doit choisir manuellement
+  /*
   useEffect(() => {
     // Set first class as selected by default
     if (teacherData?.assignedClasses?.length > 0 && !selectedClass) {
@@ -410,8 +579,10 @@ const TeacherDashboard = () => {
       setSelectedSubject(teacherData?.assignedClasses?.[0]?.subject);
     }
   }, [teacherData]);
+  */
 
   const handleClassSelect = (classData) => {
+    console.log('📌 Classe sélectionnée:', classData);
     setSelectedClass(classData);
     setSelectedSubject(classData?.subject);
   };
@@ -441,20 +612,39 @@ const TeacherDashboard = () => {
   };
 
   const renderTabContent = () => {
+    console.log('🖼️ RENDER TAB - teacherData:', {
+      hasData: !!teacherData,
+      name: teacherData?.name,
+      classCount: teacherData?.assignedClasses?.length,
+      classes: teacherData?.assignedClasses
+    });
+    
     switch (currentTab) {
       case 'classes':
         return (
           <div className="space-y-6">
             <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mes Classes</h2>
-            <ClassSelector
-              classes={teacherData?.assignedClasses}
-              selectedClass={selectedClass}
-              onClassSelect={handleClassSelect}
-            />
-            <AssignedClassesOverview 
-              classes={teacherData?.assignedClasses}
-              selectedClass={selectedClass}
-            />
+            {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 ? (
+              <>
+                <ClassSelector
+                  classes={teacherData?.assignedClasses}
+                  selectedClass={selectedClass}
+                  onClassSelect={handleClassSelect}
+                />
+                {selectedClass && (
+                  <AssignedClassesOverview 
+                    classes={teacherData?.assignedClasses}
+                    selectedClass={selectedClass}
+                  />
+                )}
+              </>
+            ) : (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <Icon name="GraduationCap" size={48} className="mx-auto text-muted-foreground mb-4" />
+                <p className="text-text-secondary">Aucune classe assignée pour le moment</p>
+                <p className="text-sm text-muted-foreground mt-2">Contactez votre directeur pour obtenir vos affectations</p>
+              </div>
+            )}
           </div>
         );
 
@@ -462,15 +652,23 @@ const TeacherDashboard = () => {
         return (
           <div className="space-y-6">
             <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Gestion des Notes</h2>
-            {selectedClass ? (
-              <GradeEntryPanel 
-                classData={selectedClass}
-                students={studentsData?.[selectedClass?.id] || []}
-              />
+            {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 ? (
+              selectedClass ? (
+                <GradeEntryPanel 
+                  classData={selectedClass}
+                  students={studentsData?.[selectedClass?.id] || []}
+                />
+              ) : (
+                <div className="bg-card rounded-lg border border-border p-8 text-center">
+                  <Icon name="BookOpen" size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-text-secondary">Sélectionnez une classe pour gérer les notes</p>
+                </div>
+              )
             ) : (
               <div className="bg-card rounded-lg border border-border p-8 text-center">
                 <Icon name="BookOpen" size={48} className="mx-auto text-muted-foreground mb-4" />
-                <p className="text-text-secondary">Sélectionnez une classe pour gérer les notes</p>
+                <p className="text-text-secondary">Aucune classe assignée pour le moment</p>
+                <p className="text-sm text-muted-foreground mt-2">Contactez votre directeur pour obtenir vos affectations</p>
               </div>
             )}
           </div>
@@ -480,15 +678,23 @@ const TeacherDashboard = () => {
         return (
           <div className="space-y-6">
             <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Gestion des Présences</h2>
-            {selectedClass ? (
-              <AttendanceManager
-                classData={selectedClass}
-                students={studentsData?.[selectedClass?.id] || []}
-              />
+            {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 ? (
+              selectedClass ? (
+                <AttendanceManager
+                  classData={selectedClass}
+                  students={studentsData?.[selectedClass?.id] || []}
+                />
+              ) : (
+                <div className="bg-card rounded-lg border border-border p-8 text-center">
+                  <Icon name="Calendar" size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-text-secondary">Sélectionnez une classe pour gérer les présences</p>
+                </div>
+              )
             ) : (
               <div className="bg-card rounded-lg border border-border p-8 text-center">
                 <Icon name="Calendar" size={48} className="mx-auto text-muted-foreground mb-4" />
-                <p className="text-text-secondary">Sélectionnez une classe pour gérer les présences</p>
+                <p className="text-text-secondary">Aucune classe assignée pour le moment</p>
+                <p className="text-sm text-muted-foreground mt-2">Contactez votre directeur pour obtenir vos affectations</p>
               </div>
             )}
           </div>
@@ -498,15 +704,23 @@ const TeacherDashboard = () => {
         return (
           <div className="space-y-6">
             <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mes Documents</h2>
-            {selectedClass ? (
-              <DocumentManager 
-                classData={selectedClass}
-                documents={documentsData?.[selectedClass?.id] || []}
-              />
+            {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 ? (
+              selectedClass ? (
+                <DocumentManager 
+                  classData={selectedClass}
+                  documents={documentsData?.[selectedClass?.id] || []}
+                />
+              ) : (
+                <div className="bg-card rounded-lg border border-border p-8 text-center">
+                  <Icon name="Files" size={48} className="mx-auto text-muted-foreground mb-4" />
+                  <p className="text-text-secondary">Sélectionnez une classe pour gérer les documents</p>
+                </div>
+              )
             ) : (
               <div className="bg-card rounded-lg border border-border p-8 text-center">
                 <Icon name="Files" size={48} className="mx-auto text-muted-foreground mb-4" />
-                <p className="text-text-secondary">Sélectionnez une classe pour gérer les documents</p>
+                <p className="text-text-secondary">Aucune classe assignée pour le moment</p>
+                <p className="text-sm text-muted-foreground mt-2">Contactez votre directeur pour obtenir vos affectations</p>
               </div>
             )}
           </div>
@@ -552,51 +766,79 @@ const TeacherDashboard = () => {
       default: // 'dashboard'
         return (
           <>
-            {/* Mode Selector */}
-            <div className="bg-card rounded-lg border border-border p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="font-heading font-heading-medium text-base text-text-primary mb-1">
-                    Mode d'affichage
-                  </h3>
-                  <p className="text-sm text-text-secondary">
-                    Choisissez entre vue établissement unique ou multi-établissements
-                  </p>
+            {/* Message si aucune classe assignée - Affiché peu importe le mode */}
+            {(!teacherData?.assignedClasses || teacherData?.assignedClasses?.length === 0) && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
+                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Icon name="GraduationCap" size={40} className="text-blue-600" />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => setViewMode('single')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      viewMode === 'single'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Icon name="School" size={16} className="mr-2 inline" />
-                    Vue Simple
-                  </button>
-                  <button
-                    onClick={() => setViewMode('multi-school')}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                      viewMode === 'multi-school'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted text-text-secondary hover:text-text-primary'
-                    }`}
-                  >
-                    <Icon name="Building" size={16} className="mr-2 inline" />
-                    Multi-Établissements
-                  </button>
+                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                  Aucune classe assignée
+                </h3>
+                <p className="text-blue-700 mb-4">
+                  Vous n'avez pas encore de classes assignées. Contactez votre directeur d'établissement pour obtenir vos affectations de cours.
+                </p>
+                <div className="bg-blue-100 rounded-lg p-4 inline-block">
+                  <p className="text-sm text-blue-800">
+                    <strong>💡 Conseil :</strong> Une fois vos classes assignées, vous pourrez :
+                  </p>
+                  <ul className="text-sm text-blue-700 mt-2 text-left space-y-1">
+                    <li>• Gérer les notes de vos élèves</li>
+                    <li>• Suivre les présences</li>
+                    <li>• Partager des documents pédagogiques</li>
+                    <li>• Communiquer avec les élèves et parents</li>
+                  </ul>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Vue Multi-Établissements */}
-            {viewMode === 'multi-school' && (
+            {/* Mode Selector - Affiché uniquement si l'enseignant a des classes */}
+            {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 && (
+              <div className="bg-card rounded-lg border border-border p-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-heading font-heading-medium text-base text-text-primary mb-1">
+                      Mode d'affichage
+                    </h3>
+                    <p className="text-sm text-text-secondary">
+                      Choisissez entre vue établissement unique ou multi-établissements
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <button
+                      onClick={() => setViewMode('single')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        viewMode === 'single'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      <Icon name="School" size={16} className="mr-2 inline" />
+                      Vue Simple
+                    </button>
+                    <button
+                      onClick={() => setViewMode('multi-school')}
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                        viewMode === 'multi-school'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted text-text-secondary hover:text-text-primary'
+                      }`}
+                    >
+                      <Icon name="Building" size={16} className="mr-2 inline" />
+                      Multi-Établissements
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Vue Multi-Établissements - Affiché uniquement si classes assignées */}
+            {viewMode === 'multi-school' && teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 && (
               <TeacherMultiSchoolOverview teacherGlobalId="global-teacher-1" />
             )}
 
             {/* Vue Simple - Contenu existant */}
-            {viewMode === 'single' && (
+            {viewMode === 'single' && teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 && (
               <>
                 {/* Class Selector */}
                 <ClassSelector
@@ -708,36 +950,40 @@ const TeacherDashboard = () => {
                     {getGreeting()}, {teacherData?.name} ! 👩‍🏫
                   </h1>
                   <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
-                    Gérez vos classes, évaluations et documents pédagogiques efficacement.
+                    {teacherData?.assignedClasses?.length > 0 
+                      ? 'Gérez vos classes, évaluations et documents pédagogiques efficacement.'
+                      : 'Aucune classe assignée pour le moment. Contactez votre directeur pour obtenir vos affectations.'}
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 mt-3">
-                  <div className="bg-white/20 rounded-lg px-3 py-1">
-                    <span className="font-caption font-caption-semibold text-sm">
-                      {teacherData?.assignedClasses?.length} classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}
-                    </span>
+                {teacherData?.assignedClasses?.length > 0 && (
+                  <div className="flex flex-wrap items-center gap-4 mt-3">
+                    <div className="bg-white/20 rounded-lg px-3 py-1">
+                      <span className="font-caption font-caption-semibold text-sm">
+                        {teacherData?.assignedClasses?.length} classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}
+                      </span>
+                    </div>
+                    <div className="bg-white/20 rounded-lg px-3 py-1">
+                      <span className="font-caption font-caption-semibold text-sm">
+                        {getTotalStudents()} élèves
+                      </span>
+                    </div>
+                    <div className="bg-white/20 rounded-lg px-3 py-1">
+                      <span className="font-caption font-caption-semibold text-sm">
+                        {teacherData?.specialty || 'Enseignant'}
+                      </span>
+                    </div>
+                    {/* Indicateur de mode */}
+                    <div className={`rounded-lg px-3 py-1 ${
+                      isProduction 
+                        ? 'bg-green-500/30 border border-green-300' 
+                        : 'bg-orange-500/30 border border-orange-300'
+                    }`}>
+                      <span className="font-caption font-caption-semibold text-sm">
+                        {isProduction ? '✅ Production' : '🎭 Démo'}
+                      </span>
+                    </div>
                   </div>
-                  <div className="bg-white/20 rounded-lg px-3 py-1">
-                    <span className="font-caption font-caption-semibold text-sm">
-                      {getTotalStudents()} élèves
-                    </span>
-                  </div>
-                  <div className="bg-white/20 rounded-lg px-3 py-1">
-                    <span className="font-caption font-caption-semibold text-sm">
-                      {teacherData?.specialty}
-                    </span>
-                  </div>
-                  {/* Indicateur de mode */}
-                  <div className={`rounded-lg px-3 py-1 ${
-                    isProduction 
-                      ? 'bg-green-500/30 border border-green-300' 
-                      : 'bg-orange-500/30 border border-orange-300'
-                  }`}>
-                    <span className="font-caption font-caption-semibold text-sm">
-                      {isProduction ? '✅ Production' : '🎭 Démo'}
-                    </span>
-                  </div>
-                </div>
+                )}
               </div>
               <div className="flex items-center space-x-4">
                 <div className="text-center">

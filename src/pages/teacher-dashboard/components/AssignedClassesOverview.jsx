@@ -9,16 +9,28 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
   };
 
   const getWeeklyHours = () => {
-    return classes?.reduce((total, cls) => total + cls?.schedule?.length * 1.5, 0);
+    return classes?.reduce((total, cls) => {
+      // Support pour les deux formats
+      if (Array.isArray(cls?.schedule)) {
+        return total + cls?.schedule?.length * 1.5;
+      } else if (cls?.schedule?.weekly_hours) {
+        return total + cls?.schedule?.weekly_hours;
+      }
+      return total;
+    }, 0) || 0;
   };
 
   const getTodaySchedule = () => {
     const today = new Date()?.toLocaleDateString('fr-FR', { weekday: 'long' });
     const todayFr = today?.charAt(0)?.toUpperCase() + today?.slice(1)?.toLowerCase();
     
-    return selectedClass?.schedule?.filter(slot => 
-      slot?.day?.toLowerCase() === todayFr?.toLowerCase()
-    ) || [];
+    // Support uniquement pour le format array
+    if (Array.isArray(selectedClass?.schedule)) {
+      return selectedClass?.schedule?.filter(slot => 
+        slot?.day?.toLowerCase() === todayFr?.toLowerCase()
+      ) || [];
+    }
+    return [];
   };
 
   const getNextClass = () => {
@@ -26,13 +38,16 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
     const currentDay = now?.toLocaleDateString('fr-FR', { weekday: 'long' });
     const currentTime = now?.getHours() * 60 + now?.getMinutes();
     
-    for (const cls of classes) {
-      for (const slot of cls?.schedule) {
-        if (slot?.day === currentDay) {
-          const [startHour, startMin] = slot?.time?.split('-')?.[0]?.split(':')?.map(Number);
-          const slotTime = startHour * 60 + startMin;
-          if (slotTime > currentTime) {
-            return { class: cls, slot };
+    for (const cls of (classes || [])) {
+      // Support uniquement pour le format array
+      if (Array.isArray(cls?.schedule)) {
+        for (const slot of cls?.schedule) {
+          if (slot?.day === currentDay) {
+            const [startHour, startMin] = slot?.time?.split('-')?.[0]?.split(':')?.map(Number);
+            const slotTime = startHour * 60 + startMin;
+            if (slotTime > currentTime) {
+              return { class: cls, slot };
+            }
           }
         }
       }
