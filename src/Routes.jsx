@@ -28,6 +28,7 @@ import PasswordRecovery from "./pages/password-recovery";
 import PasswordReset from "./pages/password-reset";
 import ProductionLogin from "./pages/production-login";
 import AuthCallback from "./pages/AuthCallback";
+import HelpCenter from "./pages/HelpCenter";
 
 const Routes = () => {
   return (
@@ -61,6 +62,7 @@ const Routes = () => {
           <Route path="/password-recovery" element={<PasswordRecovery />} />
           <Route path="/password-reset" element={<PasswordReset />} />
           <Route path="/production-login" element={<ProductionLogin />} />
+          <Route path="/help" element={<HelpCenter />} />
           <Route path="*" element={<NotFound />} />
         </RouterRoutes>
       </ErrorBoundary>

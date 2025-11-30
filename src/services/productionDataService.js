@@ -210,20 +210,48 @@ export const productionDataService = {
   async getSchoolStats() {
     try {
       this.ensureContext();
+      
+      console.log("📊 Récupération des statistiques de l'école:", this.currentSchoolId);
+      
+      // Récupérer les vraies statistiques depuis Supabase
+      const [studentsResult, teachersResult, classesResult] = await Promise.all([
+        supabase
+          .from("students")
+          .select("id", { count: "exact" })
+          .eq("school_id", this.currentSchoolId)
+          .eq("is_active", true),
+        supabase
+          .from("teachers")
+          .select("id", { count: "exact" })
+          .eq("school_id", this.currentSchoolId)
+          .eq("is_active", true),
+        supabase
+          .from("classes")
+          .select("id", { count: "exact" })
+          .eq("school_id", this.currentSchoolId)
+      ]);
+
+      const totalStudents = studentsResult.count || 0;
+      const totalTeachers = teachersResult.count || 0;
+      const totalClasses = classesResult.count || 0;
+      
+      console.log("✅ Statistiques récupérées:", { totalStudents, totalTeachers, totalClasses });
+      
       return {
         data: {
-          students: 0,
-          teachers: 0,
-          classes: 0,
-          totalRevenue: 0
+          totalStudents,
+          totalTeachers,
+          classes: totalClasses,
+          totalRevenue: 0 // À implémenter plus tard
         },
         error: null
       };
     } catch (error) {
+      console.error("❌ Erreur lors de la récupération des statistiques:", error);
       return {
         data: {
-          students: 0,
-          teachers: 0,
+          totalStudents: 0,
+          totalTeachers: 0,
           classes: 0,
           totalRevenue: 0
         },

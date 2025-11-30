@@ -317,18 +317,15 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                     <span>Mon profil</span>
                   </Link>
 
-                  {userRole !== 'principal' && (
-                    <>
-                      <Link
-                        to="/help"
-                        className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
-                        onClick={() => setIsProfileOpen(false)}
-                      >
-                        <AppIcon name="HelpCircle" size={16} />
-                        <span>Aide</span>
-                      </Link>
-                    </>
-                  )}
+                  {/* Lien Aide disponible pour tous les rôles */}
+                  <Link
+                    to="/help"
+                    className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 rounded-md transition-colors"
+                    onClick={() => setIsProfileOpen(false)}
+                  >
+                    <AppIcon name="HelpCircle" size={16} />
+                    <span>Aide</span>
+                  </Link>
 
                   <div className="border-t border-gray-100 mt-2 pt-2">
                     <button

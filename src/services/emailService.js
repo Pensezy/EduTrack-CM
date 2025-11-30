@@ -25,15 +25,22 @@ export const initEmailJS = () => {
 };
 
 /**
- * Envoie un email avec les identifiants de connexion au personnel
+ * Envoie un email avec les identifiants de connexion
  * @param {Object} params - Paramètres de l'email
- * @param {string} params.recipientEmail - Email du destinataire
+ * @param {string} params.recipientEmail - Email du destinataire (utilisateur ou directeur)
  * @param {string} params.recipientName - Nom du destinataire
- * @param {string} params.role - Rôle du personnel (enseignant, secrétaire, etc.)
- * @param {string} params.email - Email de connexion
- * @param {string} params.password - Mot de passe temporaire
+ * @param {string} params.role - Rôle du personnel (enseignant, secrétaire, parent, etc.)
+ * @param {string} params.email - Email de connexion du compte créé
+ * @param {string} params.password - Mot de passe du compte
  * @param {string} params.schoolName - Nom de l'école
  * @param {string} params.principalName - Nom du directeur
+ * @param {boolean} params.hasPersonalEmail - Si true, email envoyé à l'utilisateur, sinon au directeur
+ * @param {string} params.staffName - Nom du personnel (si envoi au directeur)
+ * @param {string} params.phone - Téléphone de l'utilisateur
+ * @param {string} params.studentName - Nom de l'élève (pour les comptes élèves)
+ * @param {string} params.matricule - Matricule de l'élève
+ * @param {string} params.parentName - Nom du parent (pour les comptes élèves)
+ * @param {string} params.parentPhone - Téléphone du parent
  * @returns {Promise<Object>} - Résultat de l'envoi
  */
 export const sendCredentialsEmail = async ({
@@ -44,12 +51,21 @@ export const sendCredentialsEmail = async ({
   password,
   schoolName,
   principalName,
+  hasPersonalEmail = true,
+  staffName = '',
+  phone = '',
+  studentName = '',
+  matricule = '',
+  parentName = '',
+  parentPhone = '',
+  isStudent = false,
 }) => {
   try {
     console.log('📧 Tentative d\'envoi d\'email...');
     console.log('  - Destinataire:', recipientEmail);
     console.log('  - Rôle:', role);
     console.log('  - École:', schoolName);
+    console.log('  - Email personnel:', hasPersonalEmail ? 'OUI' : 'NON (envoi au directeur)');
 
     // Vérifier que EmailJS est configuré
     if (!EMAILJS_CONFIG.publicKey || EMAILJS_CONFIG.publicKey === '') {
@@ -80,9 +96,20 @@ export const sendCredentialsEmail = async ({
       principal_name: principalName,
       login_url: `${window.location.origin}/staff-login`,
       current_year: new Date().getFullYear(),
+      // Nouveaux champs pour gérer les deux cas
+      has_personal_email: hasPersonalEmail ? 'yes' : 'no',
+      staff_name: staffName || '',
+      staff_phone: phone || '',
+      // Pour les élèves
+      is_student: isStudent ? 'yes' : 'no',
+      student_name: studentName || '',
+      matricule: matricule || '',
+      parent_name: parentName || '',
+      parent_phone: parentPhone || '',
     };
 
     console.log('📤 Envoi de l\'email via EmailJS...');
+    console.log('   Type:', hasPersonalEmail ? 'Direct à l\'utilisateur' : 'Au directeur pour transmission');
     
     // Envoyer l'email
     const response = await emailjs.send(
@@ -101,6 +128,7 @@ export const sendCredentialsEmail = async ({
         message: 'Email envoyé avec succès',
         details: {
           recipient: recipientEmail,
+          sentToPrincipal: !hasPersonalEmail,
           timestamp: new Date().toISOString(),
           status: response.status
         }

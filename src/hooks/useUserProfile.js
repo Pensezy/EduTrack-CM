@@ -134,8 +134,6 @@ const getDemoProfile = (role, user) => {
 
 // Profil réel optimisé (chargement rapide des données essentielles)
 const getRealProfile = async (user) => {
-  const service = productionDataService;
-  
   // Base profile from auth
   let profile = {
     id: user.id,
@@ -148,36 +146,52 @@ const getRealProfile = async (user) => {
   };
 
   try {
+    // Initialiser le contexte pour productionDataService si nécessaire
+    if (user.current_school_id) {
+      productionDataService.setUserContext(user.id, user.current_school_id);
+    }
+
     // Charger SEULEMENT les données spécifiques au rôle (pas toutes les données)
     switch (profile.role) {
       case 'principal':
         // Charger données école uniquement
-        const schoolData = await service.getSchoolDetails();
-        if (schoolData.data) {
-          profile = {
-            ...profile,
-            school_name: schoolData.data.name || 'École non définie',
-            school_address: schoolData.data.address || 'Adresse non définie',
-            position: 'Directeur d\'Établissement',
-            experience: 'Non défini',
-            specialization: 'Administration Scolaire'
-          };
+        if (user.current_school_id) {
+          const schoolData = await productionDataService.getSchoolDetails();
+          if (schoolData.data) {
+            profile = {
+              ...profile,
+              school_name: schoolData.data.name || 'École non définie',
+              school_address: schoolData.data.address || 'Adresse non définie',
+              position: 'Directeur d\'Établissement',
+              experience: 'Non défini',
+              specialization: 'Administration Scolaire'
+            };
+          }
         }
         break;
 
       case 'teacher':
-        // Charger données enseignant uniquement
-        const teacherData = await service.getPersonnel();
-        const teacher = teacherData.data?.find(p => p.email === user.email && p.type === 'teacher');
-        if (teacher) {
-          profile = {
-            ...profile,
-            full_name: teacher.name || profile.full_name,
-            phone: teacher.phone || profile.phone,
-            subject: teacher.subject || 'Matière non définie',
-            classes: teacher.classes || [],
-            experience: teacher.experience || 'Non défini'
-          };
+        // Pour les enseignants, charger directement depuis la table teachers
+        // sans passer par productionDataService.getPersonnel()
+        if (user.current_school_id) {
+          const { supabase } = await import('../lib/supabase');
+          const { data: teacherData, error: teacherError } = await supabase
+            .from('teachers')
+            .select('id, first_name, last_name, specialty, hire_date')
+            .eq('user_id', user.id)
+            .eq('is_active', true)
+            .maybeSingle();
+
+          if (teacherData) {
+            profile = {
+              ...profile,
+              full_name: profile.full_name || `${teacherData.first_name} ${teacherData.last_name}`,
+              subject: teacherData.specialty || 'Matière non définie',
+              experience: teacherData.hire_date ? 
+                `${new Date().getFullYear() - new Date(teacherData.hire_date).getFullYear()} ans` : 
+                'Non défini'
+            };
+          }
         }
         break;
         

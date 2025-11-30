@@ -27,7 +27,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Mes Devoirs', path: '/student-dashboard?tab=assignments', icon: 'FileText', description: 'Travaux à rendre' },
       { label: 'Présences', path: '/student-dashboard?tab=attendance', icon: 'Calendar', description: 'Historique de présence' },
       { label: 'Emploi du temps', path: '/student-dashboard?tab=schedule', icon: 'Clock', description: 'Planning hebdomadaire' },
-      { label: 'Mon Profil', path: '/student-dashboard?tab=profile', icon: 'User', description: 'Informations personnelles' }
+      { label: 'Mon Profil', path: '/student-dashboard?tab=profile', icon: 'User', description: 'Informations personnelles' },
+      { label: 'Aide', path: '/help', icon: 'HelpCircle', description: 'Centre d\'aide' }
     ],
     teacher: [
       { label: 'Dashboard', path: '/teacher-dashboard', icon: 'Home', description: 'Aperçu des classes' },
@@ -35,18 +36,21 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Notes', path: '/teacher-dashboard?tab=grades', icon: 'BookOpen', description: 'Saisie des notes' },
       { label: 'Présences', path: '/teacher-dashboard?tab=attendance', icon: 'Calendar', description: 'Prise de présence' },
       { label: 'Documents', path: '/teacher-dashboard?tab=documents', icon: 'Files', description: 'Ressources pédagogiques' },
-      { label: 'Mon Compte', path: '/teacher-dashboard?tab=account', icon: 'User', description: 'Gestion du compte' }
+      { label: 'Mon Compte', path: '/teacher-dashboard?tab=account', icon: 'User', description: 'Gestion du compte' },
+      { label: 'Aide', path: '/help', icon: 'HelpCircle', description: 'Centre d\'aide' }
     ],
     secretary: [
       { label: 'Dashboard', path: '/secretary-dashboard', icon: 'Home', description: 'Retour à l\'accueil' },
       { label: 'Transferts', path: '/secretary-dashboard?tab=transfers', icon: 'ArrowRightLeft', description: 'Changements d\'école' },
       { label: 'Documents', path: '/secretary-dashboard?tab=documents', icon: 'FileText', description: 'Certificats & attestations' },
-      { label: 'Année Scolaire', path: '/secretary-dashboard?tab=schoolyear', icon: 'RotateCcw', description: 'Transition d\'année' }
+      { label: 'Année Scolaire', path: '/secretary-dashboard?tab=schoolyear', icon: 'RotateCcw', description: 'Transition d\'année' },
+      { label: 'Aide', path: '/help', icon: 'HelpCircle', description: 'Centre d\'aide' }
     ],
     principal: [
       { label: 'Dashboard', path: '/principal-dashboard', icon: 'Home', description: 'Dashboard principal' },
       { label: 'Comptes', path: '/principal-dashboard?tab=accounts', icon: 'UserCheck', description: 'Gestion des comptes' },
-      { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration avancée' }
+      { label: 'Système', path: '/principal-dashboard?tab=system', icon: 'Settings', description: 'Configuration avancée' },
+      { label: 'Aide', path: '/help', icon: 'HelpCircle', description: 'Centre d\'aide' }
     ],
     parent: [
       { label: 'Dashboard', path: '/parent-dashboard', icon: 'Home', description: 'Vue d\'ensemble' },
@@ -54,7 +58,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Notes', path: '/parent-dashboard?tab=grades', icon: 'BookOpen', description: 'Résultats scolaires' },
       { label: 'Présences', path: '/parent-dashboard?tab=attendance', icon: 'Calendar', description: 'Assiduité' },
       { label: 'Paiements', path: '/parent-dashboard?tab=payments', icon: 'CreditCard', description: 'Frais scolaires' },
-      { label: 'Messages', path: '/parent-dashboard?tab=messages', icon: 'MessageCircle', description: 'Communications' }
+      { label: 'Messages', path: '/parent-dashboard?tab=messages', icon: 'MessageCircle', description: 'Communications' },
+      { label: 'Aide', path: '/help', icon: 'HelpCircle', description: 'Centre d\'aide' }
     ],
     admin: [
       { label: 'Dashboard', path: '/admin-dashboard?tab=overview', icon: 'Home', description: 'Aperçu système' },
@@ -62,7 +67,8 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
       { label: 'Établissements', path: '/admin-dashboard?tab=schools', icon: 'School', description: 'Gestion établissements' },
       { label: 'Finances', path: '/admin-dashboard?tab=finances', icon: 'DollarSign', description: 'Gestion financière' },
       { label: 'Analytics', path: '/admin-dashboard?tab=analytics', icon: 'BarChart3', description: 'Statistiques' },
-      { label: 'Sécurité', path: '/admin-dashboard?tab=security', icon: 'Shield', description: 'Sécurité système' }
+      { label: 'Sécurité', path: '/admin-dashboard?tab=security', icon: 'Shield', description: 'Sécurité système' },
+      { label: 'Aide', path: '/help', icon: 'HelpCircle', description: 'Centre d\'aide' }
     ]
   };
 
@@ -244,15 +250,15 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                 };
 
                 return (
-                  <button
+                  <Link
                     key={index}
-                    onClick={() => navigate(action?.path)}
-                    className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 w-full text-left shadow-sm hover:shadow-md ${getActionStyle(action?.label)}`}
+                    to={action?.path}
+                    className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 w-full shadow-sm hover:shadow-md ${getActionStyle(action?.label)}`}
                     title={isCollapsed ? action?.label : ''}
                   >
                     <Icon name={action?.icon} size={18} className="flex-shrink-0" />
                     {!isCollapsed && <span className="ml-2 font-medium">{action?.label}</span>}
-                  </button>
+                  </Link>
                 );
               })}
             </div>

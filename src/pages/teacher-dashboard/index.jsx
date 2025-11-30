@@ -729,36 +729,177 @@ const TeacherDashboard = () => {
       case 'account':
         return (
           <div className="space-y-6">
-            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mon Compte</h2>
+            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mon Profil</h2>
+            
+            {/* Carte principale du profil */}
             <div className="bg-card rounded-lg border border-border p-6">
-              <div className="flex items-center space-x-4 mb-6">
-                <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center">
-                  <Icon name="User" size={40} className="text-primary" />
+              <div className="flex items-start space-x-6 mb-6">
+                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                  <Icon name="User" size={48} className="text-primary" />
                 </div>
-                <div>
-                  <h3 className="font-heading font-heading-semibold text-xl">{teacherData?.name}</h3>
-                  <p className="text-text-secondary">{teacherData?.email}</p>
-                  <p className="text-sm text-muted-foreground">Matricule: {teacherData?.employeeId}</p>
+                <div className="flex-1">
+                  <h3 className="font-heading font-heading-bold text-2xl text-card-foreground mb-2">
+                    {teacherData?.name || 'Nom non disponible'}
+                  </h3>
+                  <div className="space-y-1 text-muted-foreground">
+                    <div className="flex items-center gap-2">
+                      <Icon name="Mail" size={16} />
+                      <span>{teacherData?.email || 'Email non renseigné'}</span>
+                    </div>
+                    {teacherData?.phone && (
+                      <div className="flex items-center gap-2">
+                        <Icon name="Phone" size={16} />
+                        <span>{teacherData.phone}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center gap-2">
+                      <Icon name="Hash" size={16} />
+                      <span>Matricule: {teacherData?.employeeId || 'Non attribué'}</span>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-lg">
+                  <Icon name="CheckCircle" size={20} />
+                  <span className="font-caption font-caption-semibold">Actif</span>
                 </div>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground mb-1">Spécialité</div>
-                  <div className="font-heading font-heading-medium">{teacherData?.specialty}</div>
-                </div>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground mb-1">Classes assignées</div>
-                  <div className="font-heading font-heading-medium">{teacherData?.assignedClasses?.length}</div>
-                </div>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground mb-1">Total élèves</div>
-                  <div className="font-heading font-heading-medium">{getTotalStudents()}</div>
-                </div>
-                <div className="bg-muted rounded-lg p-4">
-                  <div className="text-sm text-muted-foreground mb-1">Statut</div>
-                  <div className="font-heading font-heading-medium text-success">Actif</div>
+
+              <div className="border-t border-border pt-6">
+                <h4 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+                  Informations professionnelles
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Spécialité - N'afficher que si disponible */}
+                  {teacherData?.specialty && (
+                    <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="BookOpen" size={18} className="text-primary" />
+                        <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                          Spécialité
+                        </div>
+                      </div>
+                      <div className="font-heading font-heading-medium text-card-foreground">
+                        {teacherData.specialty}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Établissement */}
+                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name="School" size={18} className="text-primary" />
+                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                        Établissement
+                      </div>
+                    </div>
+                    <div className="font-heading font-heading-medium text-card-foreground">
+                      {teacherData?.assignedClasses?.[0]?.school || 'Non assigné'}
+                    </div>
+                  </div>
+
+                  {/* Classes assignées */}
+                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name="GraduationCap" size={18} className="text-success" />
+                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                        Classes assignées
+                      </div>
+                    </div>
+                    <div className="font-heading font-heading-bold text-2xl text-success">
+                      {teacherData?.assignedClasses?.length || 0}
+                    </div>
+                  </div>
+
+                  {/* Total élèves */}
+                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name="Users" size={18} className="text-warning" />
+                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                        Total élèves
+                      </div>
+                    </div>
+                    <div className="font-heading font-heading-bold text-2xl text-warning">
+                      {getTotalStudents() || 0}
+                    </div>
+                  </div>
+
+                  {/* Heures par semaine */}
+                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Icon name="Clock" size={18} className="text-accent-foreground" />
+                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                        Heures/semaine
+                      </div>
+                    </div>
+                    <div className="font-heading font-heading-bold text-2xl text-accent-foreground">
+                      {teacherData?.assignedClasses?.reduce((total, cls) => {
+                        return total + (cls.schedule?.weekly_hours || 0);
+                      }, 0) || 0}h
+                    </div>
+                  </div>
+
+                  {/* ID utilisateur - N'afficher que si nécessaire */}
+                  {teacherData?.id && (
+                    <div className="bg-muted/30 rounded-lg p-4 border border-border">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Icon name="Key" size={18} className="text-muted-foreground" />
+                        <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                          ID Utilisateur
+                        </div>
+                      </div>
+                      <div className="font-mono text-xs text-muted-foreground truncate">
+                        {teacherData.id.substring(0, 8)}...
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Liste des classes assignées */}
+              {teacherData?.assignedClasses && teacherData.assignedClasses.length > 0 && (
+                <div className="border-t border-border pt-6 mt-6">
+                  <h4 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+                    Mes classes et matières
+                  </h4>
+                  <div className="space-y-2">
+                    {teacherData.assignedClasses.map((cls, index) => (
+                      <div 
+                        key={cls.id} 
+                        className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border hover:bg-muted/40 transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                            <span className="font-heading font-heading-bold text-primary">
+                              {index + 1}
+                            </span>
+                          </div>
+                          <div>
+                            <div className="font-heading font-heading-medium text-card-foreground">
+                              {cls.name}
+                            </div>
+                            <div className="text-sm text-muted-foreground">
+                              {cls.subject}
+                              {cls.level && cls.level !== 'Non défini' && ` • ${cls.level}`}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 text-sm">
+                          <div className="flex items-center gap-1 text-muted-foreground">
+                            <Icon name="Users" size={14} />
+                            <span>{cls.students} élève{cls.students > 1 ? 's' : ''}</span>
+                          </div>
+                          {cls.schedule?.weekly_hours > 0 && (
+                            <div className="flex items-center gap-1 text-muted-foreground">
+                              <Icon name="Clock" size={14} />
+                              <span>{cls.schedule.weekly_hours}h/sem</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );
