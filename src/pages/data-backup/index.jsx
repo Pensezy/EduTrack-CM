@@ -24,6 +24,7 @@ const DataBackup = () => {
 
   // Debug pour voir les données utilisateur
   console.log('🔍 User data in data-backup:', user);
+  console.log('🔍 User role:', user?.role);
   console.log('🔍 User full_name:', user?.full_name);
   console.log('🔍 User name:', user?.name);
   console.log('🔍 User email:', user?.email);
@@ -306,7 +307,7 @@ const DataBackup = () => {
       
       <div className="min-h-screen bg-background">
         <Header 
-          userRole={user?.role || "principal"} 
+          userRole="principal"
           userName={getUserDisplayName()}
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
@@ -314,7 +315,7 @@ const DataBackup = () => {
         
         <div className="flex pt-16">
           <Sidebar 
-            userRole={user?.role || "principal"}
+            userRole="principal"
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
           />

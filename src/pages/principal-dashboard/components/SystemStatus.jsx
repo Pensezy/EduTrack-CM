@@ -247,7 +247,6 @@ const SystemStatus = () => {
     { id: 'system', label: 'État du système', icon: 'Activity' },
     { id: 'school', label: 'Paramètres école', icon: 'School' }
   ];
-
   const renderTabContent = () => {
     switch (activeTab) {
       case 'school':

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
@@ -6,9 +6,13 @@ import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import useDashboardData from '../../hooks/useDashboardData';
+import { supabase } from '../../lib/supabase';
+import { sendBulkNotification, isEmailConfigured } from '../../services/emailService';
 
 const NotificationManagement = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [recentNotifications, setRecentNotifications] = useState([]);
   const [notificationData, setNotificationData] = useState({
     title: '',
     message: '',
@@ -25,6 +29,33 @@ const NotificationManagement = () => {
     user 
   } = useDashboardData();
 
+  // Charger les notifications depuis Supabase
+  useEffect(() => {
+    if (isProduction && user?.current_school_id) {
+      loadNotifications();
+    } else if (isDemo) {
+      // En mode démo, ne pas afficher de notifications fictives
+      setRecentNotifications([]);
+    }
+  }, [isProduction, user?.current_school_id, isDemo]);
+
+  const loadNotifications = async () => {
+    try {
+      const { data: notifications, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('school_id', user.current_school_id)
+        .order('sent_at', { ascending: false })
+        .limit(10);
+
+      if (error) throw error;
+
+      setRecentNotifications(notifications || []);
+    } catch (error) {
+      console.error('❌ Erreur chargement notifications:', error);
+    }
+  };
+
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
   };
@@ -37,77 +68,119 @@ const NotificationManagement = () => {
     }));
   };
 
-  const handleSendNotification = () => {
-    console.log('Sending notification:', notificationData);
-    // Ici vous pourriez ajouter la logique d'envoi
-    alert('Notification envoyée avec succès !');
-    setNotificationData({
-      title: '',
-      message: '',
-      target: 'all',
-      priority: 'normal',
-      type: 'info'
-    });
-  };
+  const handleSendNotification = async () => {
+    if (!notificationData.title || !notificationData.message) {
+      alert('Veuillez remplir le titre et le message');
+      return;
+    }
 
-  // Notifications récentes basées sur le mode de données
-  const recentNotifications = isDemo ? [
-    {
-      id: 1,
-      title: 'Réunion parents d\'élèves (DÉMO)',
-      message: 'Rappel de la réunion prévue vendredi à 18h - Données fictives',
-      target: 'parents',
-      date: '2024-09-20',
-      status: 'sent',
-      isDemo: true
-    },
-    {
-      id: 2,
-      title: 'Fermeture école (DÉMO)',
-      message: 'L\'école sera fermée lundi pour travaux - Données fictives',
-      target: 'all',
-      date: '2024-09-18',
-      status: 'sent',
-      isDemo: true
-    },
-    {
-      id: 3,
-      title: 'Nouvelle activité (DÉMO)',
-      message: 'Club de robotique - inscriptions ouvertes - Données fictives',
-      target: 'students',
-      date: '2024-09-15',
-      status: 'sent',
-      isDemo: true
+    setLoading(true);
+
+    try {
+      if (isDemo) {
+        // Mode démo - simulation
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        alert('✅ (Mode Démo) Notification simulée avec succès !');
+        setNotificationData({
+          title: '',
+          message: '',
+          target: 'all',
+          priority: 'normal',
+          type: 'info'
+        });
+        setLoading(false);
+        return;
+      }
+
+      // Mode production - vraie sauvegarde
+      console.log('📤 Envoi de la notification...');
+
+      // 1. Récupérer les destinataires selon le target
+      let recipients = [];
+      const { current_school_id } = user;
+
+      if (notificationData.target !== 'all') {
+        const table = notificationData.target === 'parents' ? 'parents' :
+                     notificationData.target === 'students' ? 'students' :
+                     notificationData.target === 'teachers' ? 'teachers' :
+                     notificationData.target === 'staff' ? 'users' : null;
+
+        if (table) {
+          const query = supabase
+            .from(table)
+            .select('email, full_name')
+            .eq('school_id', current_school_id)
+            .eq('is_active', true);
+
+          const { data: users } = await query;
+          
+          recipients = (users || [])
+            .filter(u => u.email)
+            .map(u => ({
+              email: u.email,
+              name: u.full_name
+            }));
+        }
+      }
+
+      // 2. Sauvegarder dans Supabase
+      const { data: savedNotification, error: saveError } = await supabase
+        .from('notifications')
+        .insert({
+          school_id: current_school_id,
+          sender_id: user.id,
+          title: notificationData.title,
+          message: notificationData.message,
+          target: notificationData.target,
+          priority: notificationData.priority,
+          type: notificationData.type,
+          status: 'sent',
+          recipients_count: recipients.length
+        })
+        .select()
+        .single();
+
+      if (saveError) throw saveError;
+
+      console.log('✅ Notification sauvegardée:', savedNotification);
+
+      // 3. Envoyer les emails si EmailJS est configuré
+      if (isEmailConfigured() && recipients.length > 0) {
+        const emailResult = await sendBulkNotification({
+          title: notificationData.title,
+          message: notificationData.message,
+          target: notificationData.target,
+          priority: notificationData.priority,
+          type: notificationData.type,
+          schoolName: user.schoolData?.name || 'École',
+          senderName: user.full_name || 'Directeur',
+          recipients
+        });
+
+        console.log('📧 Résultat envoi emails:', emailResult);
+        
+        alert(`✅ Notification envoyée !\n\n${emailResult.message}\n\nNotification sauvegardée dans le système.`);
+      } else {
+        alert('✅ Notification enregistrée avec succès !\n\nNote : Service d\'email non configuré.');
+      }
+
+      // 4. Recharger les notifications et réinitialiser le formulaire
+      await loadNotifications();
+      setNotificationData({
+        title: '',
+        message: '',
+        target: 'all',
+        priority: 'normal',
+        type: 'info'
+      });
+
+    } catch (error) {
+      console.error('❌ Erreur:', error);
+      alert('❌ Erreur lors de l\'envoi : ' + error.message);
+    } finally {
+      setLoading(false);
     }
-  ] : [
-    {
-      id: 1,
-      title: 'École configurée',
-      message: `Configuration de ${user?.schoolData?.name || 'votre école'} terminée avec succès`,
-      target: 'staff',
-      date: new Date().toISOString().split('T')[0],
-      status: 'sent',
-      isDemo: false
-    },
-    {
-      id: 2,
-      title: 'Classes définies',
-      message: `${user?.schoolData?.available_classes?.length || 0} classes configurées pour votre ${user?.schoolData?.type || 'établissement'}`,
-      target: 'staff',
-      date: new Date().toISOString().split('T')[0],
-      status: 'sent',
-      isDemo: false
-    },
-    {
-      id: 3,
-      title: 'Système opérationnel',
-      message: 'Votre système de gestion scolaire est maintenant fonctionnel',
-      target: 'all',
-      date: new Date().toISOString().split('T')[0],
-      status: 'sent',
-      isDemo: false
-    }
-  ];
+  };
 
   return (
     <>
@@ -257,10 +330,11 @@ const NotificationManagement = () => {
                   <Button 
                     onClick={handleSendNotification}
                     className="w-full"
-                    disabled={!notificationData.title || !notificationData.message}
+                    disabled={!notificationData.title || !notificationData.message || loading}
+                    loading={loading}
                   >
                     <Icon name="Send" size={16} className="mr-2" />
-                    Envoyer la Notification
+                    {loading ? 'Envoi en cours...' : 'Envoyer la Notification'}
                   </Button>
                 </div>
               </div>
@@ -301,7 +375,7 @@ const NotificationManagement = () => {
                           )}
                         </div>
                         <span className="text-xs text-muted-foreground">
-                          {notification.date}
+                          {new Date(notification.sent_at || notification.date).toLocaleDateString('fr-FR')}
                         </span>
                       </div>
                       <p className="text-sm text-muted-foreground mb-2">
@@ -315,12 +389,19 @@ const NotificationManagement = () => {
                         }`}>
                           {notification.target}
                         </span>
-                        <span className={`text-xs flex items-center ${
-                          notification.isDemo ? 'text-orange-600' : 'text-success'
-                        }`}>
-                          <Icon name="CheckCircle" size={12} className="mr-1" />
-                          {notification.isDemo ? 'Fictif' : 'Envoyé'}
-                        </span>
+                        <div className="flex items-center space-x-2">
+                          {notification.recipients_count > 0 && (
+                            <span className="text-xs text-muted-foreground">
+                              {notification.recipients_count} destinataire(s)
+                            </span>
+                          )}
+                          <span className={`text-xs flex items-center ${
+                            notification.isDemo ? 'text-orange-600' : 'text-success'
+                          }`}>
+                            <Icon name="CheckCircle" size={12} className="mr-1" />
+                            {notification.isDemo ? 'Fictif' : notification.status === 'sent' ? 'Envoyé' : 'Échoué'}
+                          </span>
+                        </div>
                       </div>
                     </div>
                   ))}

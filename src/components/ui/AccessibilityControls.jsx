@@ -5,11 +5,8 @@ import Button from './Button';
 const AccessibilityControls = ({ className = '' }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [settings, setSettings] = useState({
-    highContrast: false,
-    largeText: false,
-    reducedMotion: false,
-    audioSupport: false,
-    theme: 'light'
+    theme: 'light',
+    largeText: false
   });
 
   // Load settings from localStorage on mount
@@ -33,42 +30,50 @@ const AccessibilityControls = ({ className = '' }) => {
   const applySettings = (settingsToApply) => {
     const root = document.documentElement;
     
-    // High contrast mode
-    if (settingsToApply?.highContrast) {
-      root.classList?.add('high-contrast');
+    // Theme - Mode Jour/Nuit
+    if (settingsToApply?.theme === 'dark') {
+      root.classList?.add('dark');
+      root.setAttribute('data-theme', 'dark');
+      // Appliquer les couleurs du mode sombre avec meilleur contraste
+      root.style.setProperty('--color-background', '#0f172a');
+      root.style.setProperty('--color-foreground', '#f8fafc');
+      root.style.setProperty('--color-card', '#1e293b');
+      root.style.setProperty('--color-border', '#475569');
+      root.style.setProperty('--color-muted', '#334155');
+      root.style.setProperty('--color-muted-foreground', '#e2e8f0');
+      root.style.setProperty('--color-primary', '#3b82f6');
+      root.style.setProperty('--color-primary-foreground', '#f8fafc');
+      console.log('🌙 Mode Nuit activé avec contraste amélioré');
     } else {
-      root.classList?.remove('high-contrast');
+      root.classList?.remove('dark');
+      root.setAttribute('data-theme', 'light');
+      // Réinitialiser les couleurs
+      root.style.removeProperty('--color-background');
+      root.style.removeProperty('--color-foreground');
+      root.style.removeProperty('--color-card');
+      root.style.removeProperty('--color-border');
+      root.style.removeProperty('--color-muted');
+      root.style.removeProperty('--color-muted-foreground');
+      root.style.removeProperty('--color-primary');
+      root.style.removeProperty('--color-primary-foreground');
+      console.log('☀️ Mode Jour activé');
     }
 
     // Large text
     if (settingsToApply?.largeText) {
       root.classList?.add('large-text');
+      root.style.fontSize = '118%';
+      console.log('🔤 Texte agrandi activé');
     } else {
       root.classList?.remove('large-text');
-    }
-
-    // Reduced motion
-    if (settingsToApply?.reducedMotion) {
-      root.classList?.add('reduce-motion');
-    } else {
-      root.classList?.remove('reduce-motion');
-    }
-
-    // Theme
-    if (settingsToApply?.theme === 'dark') {
-      root.classList?.add('dark');
-    } else {
-      root.classList?.remove('dark');
+      root.style.fontSize = '';
     }
   };
 
   const resetSettings = () => {
     const defaultSettings = {
-      highContrast: false,
-      largeText: false,
-      reducedMotion: false,
-      audioSupport: false,
-      theme: 'light'
+      theme: 'light',
+      largeText: false
     };
     setSettings(defaultSettings);
     localStorage.setItem('accessibility-settings', JSON.stringify(defaultSettings));
@@ -77,43 +82,22 @@ const AccessibilityControls = ({ className = '' }) => {
 
   const accessibilityOptions = [
     {
-      key: 'highContrast',
-      label: 'High Contrast',
-      description: 'Increase color contrast for better visibility',
-      icon: 'Contrast',
-      type: 'toggle'
+      key: 'theme',
+      label: 'Mode Nuit/Jour',
+      description: 'Basculer entre le thème clair et sombre',
+      icon: 'Moon',
+      type: 'select',
+      options: [
+        { value: 'light', label: '☀️ Jour' },
+        { value: 'dark', label: '🌙 Nuit' }
+      ]
     },
     {
       key: 'largeText',
-      label: 'Large Text',
-      description: 'Increase text size for better readability',
+      label: 'Texte Agrandi',
+      description: 'Augmente la taille du texte pour une meilleure lisibilité',
       icon: 'Type',
       type: 'toggle'
-    },
-    {
-      key: 'reducedMotion',
-      label: 'Reduce Motion',
-      description: 'Minimize animations and transitions',
-      icon: 'Pause',
-      type: 'toggle'
-    },
-    {
-      key: 'audioSupport',
-      label: 'Audio Support',
-      description: 'Enable audio cues and screen reader support',
-      icon: 'Volume2',
-      type: 'toggle'
-    },
-    {
-      key: 'theme',
-      label: 'Theme',
-      description: 'Switch between light and dark themes',
-      icon: 'Palette',
-      type: 'select',
-      options: [
-        { value: 'light', label: 'Light' },
-        { value: 'dark', label: 'Dark' }
-      ]
     }
   ];
 
@@ -128,7 +112,7 @@ const AccessibilityControls = ({ className = '' }) => {
         title="Accessibility Options"
       >
         <Icon name="Accessibility" size={20} />
-        {Object.values(settings)?.some(value => value === true || value === 'dark') && (
+        {(settings?.largeText || settings?.theme === 'dark') && (
           <div className="absolute -top-1 -right-1 w-3 h-3 bg-accent rounded-full" />
         )}
       </Button>
@@ -222,37 +206,222 @@ const AccessibilityControls = ({ className = '' }) => {
       )}
       {/* CSS for accessibility classes */}
       <style jsx global>{`
-        .high-contrast {
-          --color-background: #000000;
-          --color-foreground: #FFFFFF;
-          --color-card: #1a1a1a;
-          --color-border: #FFFFFF;
-          --color-muted: #333333;
+        /* Dark Theme - Mode Nuit Amélioré */
+        .dark {
+          background-color: #0f172a !important;
+          color: #f8fafc !important;
         }
         
+        /* Backgrounds */
+        .dark .bg-white,
+        .dark .bg-gray-50 {
+          background-color: #1e293b !important;
+          color: #f8fafc !important;
+        }
+        
+        .dark .bg-gray-100 {
+          background-color: #334155 !important;
+          color: #f8fafc !important;
+        }
+        
+        .dark .bg-gray-200 {
+          background-color: #475569 !important;
+          color: #f8fafc !important;
+        }
+        
+        .dark .bg-blue-50 {
+          background-color: #1e3a5f !important;
+          color: #dbeafe !important;
+        }
+        
+        .dark .bg-green-50 {
+          background-color: #1a4d2e !important;
+          color: #d1fae5 !important;
+        }
+        
+        .dark .bg-purple-50 {
+          background-color: #3b2a4f !important;
+          color: #e9d5ff !important;
+        }
+        
+        .dark .bg-orange-50 {
+          background-color: #4a2c1b !important;
+          color: #fed7aa !important;
+        }
+        
+        .dark .bg-yellow-50 {
+          background-color: #4a4218 !important;
+          color: #fef3c7 !important;
+        }
+        
+        /* Text Colors - Contraste Amélioré */
+        .dark .text-gray-900,
+        .dark .text-gray-800,
+        .dark .text-gray-700,
+        .dark .text-gray-600 {
+          color: #f8fafc !important;
+        }
+        
+        .dark .text-gray-500 {
+          color: #e2e8f0 !important;
+        }
+        
+        .dark .text-gray-400 {
+          color: #cbd5e1 !important;
+        }
+        
+        .dark .text-gray-300 {
+          color: #94a3b8 !important;
+        }
+        
+        /* Text Colors Colorés */
+        .dark .text-blue-600,
+        .dark .text-blue-700,
+        .dark .text-blue-800,
+        .dark .text-blue-900 {
+          color: #93c5fd !important;
+        }
+        
+        .dark .text-green-600,
+        .dark .text-green-700,
+        .dark .text-green-800,
+        .dark .text-green-900 {
+          color: #86efac !important;
+        }
+        
+        .dark .text-red-600,
+        .dark .text-red-700,
+        .dark .text-red-800,
+        .dark .text-red-900 {
+          color: #fca5a5 !important;
+        }
+        
+        .dark .text-orange-600,
+        .dark .text-orange-700,
+        .dark .text-orange-800,
+        .dark .text-orange-900 {
+          color: #fdba74 !important;
+        }
+        
+        .dark .text-purple-600,
+        .dark .text-purple-700,
+        .dark .text-purple-800,
+        .dark .text-purple-900 {
+          color: #c4b5fd !important;
+        }
+        
+        .dark .text-yellow-600,
+        .dark .text-yellow-700,
+        .dark .text-yellow-800,
+        .dark .text-yellow-900 {
+          color: #fde047 !important;
+        }
+        
+        /* Borders */
+        .dark .border-gray-200,
+        .dark .border-gray-300 {
+          border-color: #475569 !important;
+        }
+        
+        .dark .border-gray-100 {
+          border-color: #334155 !important;
+        }
+        
+        .dark .border-blue-200 {
+          border-color: #3b82f6 !important;
+        }
+        
+        .dark .border-green-200 {
+          border-color: #22c55e !important;
+        }
+        
+        /* Shadows */
+        .dark .shadow-sm,
+        .dark .shadow {
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6) !important;
+        }
+        
+        .dark .shadow-lg {
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.7) !important;
+        }
+        
+        /* Cards et Conteneurs */
+        .dark .bg-card {
+          background-color: #1e293b !important;
+          color: #f8fafc !important;
+        }
+        
+        /* Boutons */
+        .dark button {
+          color: #f8fafc !important;
+        }
+        
+        .dark .bg-blue-600 {
+          background-color: #2563eb !important;
+        }
+        
+        .dark .bg-green-600 {
+          background-color: #16a34a !important;
+        }
+        
+        /* Inputs */
+        .dark input,
+        .dark select,
+        .dark textarea {
+          background-color: #334155 !important;
+          color: #f8fafc !important;
+          border-color: #475569 !important;
+        }
+        
+        .dark input::placeholder {
+          color: #94a3b8 !important;
+        }
+        
+        /* Tables */
+        .dark table {
+          color: #f8fafc !important;
+        }
+        
+        .dark thead {
+          background-color: #334155 !important;
+        }
+        
+        .dark tbody tr {
+          border-color: #475569 !important;
+        }
+        
+        .dark tbody tr:hover {
+          background-color: #334155 !important;
+        }
+        
+        /* Large Text Mode */
         .large-text {
-          font-size: 1.125rem;
+          font-size: 118% !important;
         }
         
-        .large-text h1 { font-size: 2.5rem; }
-        .large-text h2 { font-size: 2rem; }
-        .large-text h3 { font-size: 1.75rem; }
-        .large-text h4 { font-size: 1.5rem; }
-        .large-text h5 { font-size: 1.25rem; }
-        .large-text h6 { font-size: 1.125rem; }
-        
-        .reduce-motion * {
-          animation-duration: 0.01ms !important;
-          animation-iteration-count: 1 !important;
-          transition-duration: 0.01ms !important;
+        .large-text * {
+          line-height: 1.6 !important;
         }
         
-        @media (prefers-reduced-motion: reduce) {
-          .reduce-motion * {
-            animation-duration: 0.01ms !important;
-            animation-iteration-count: 1 !important;
-            transition-duration: 0.01ms !important;
-          }
+        .large-text h1 { font-size: 2.75rem !important; }
+        .large-text h2 { font-size: 2.25rem !important; }
+        .large-text h3 { font-size: 1.875rem !important; }
+        .large-text h4 { font-size: 1.5rem !important; }
+        .large-text h5 { font-size: 1.25rem !important; }
+        .large-text h6 { font-size: 1.125rem !important; }
+        .large-text p, 
+        .large-text span, 
+        .large-text div { 
+          font-size: 1.125rem !important; 
+        }
+        .large-text button { 
+          font-size: 1.125rem !important; 
+          padding: 0.75rem 1.5rem !important; 
+        }
+        .large-text input, 
+        .large-text select, 
+        .large-text textarea { 
+          font-size: 1.125rem !important; 
         }
       `}</style>
     </div>

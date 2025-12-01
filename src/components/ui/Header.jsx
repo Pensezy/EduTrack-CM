@@ -32,9 +32,36 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
   // Charger les notifications selon le mode
   useEffect(() => {
     const loadNotifications = async () => {
-      if (isProduction) {
-        // Mode production : afficher un état vide (les vraies notifications seront implémentées plus tard)
-        setNotifications([]);
+      if (isProduction && user?.current_school_id) {
+        // Mode production : charger les vraies notifications depuis Supabase
+        try {
+          setLoadingNotifications(true);
+          
+          const { data: notifs, error } = await supabase
+            .from('notifications')
+            .select('id, title, message, type, priority, sent_at')
+            .eq('school_id', user.current_school_id)
+            .order('sent_at', { ascending: false })
+            .limit(5);
+
+          if (error) throw error;
+
+          // Formater les notifications pour l'affichage
+          const formattedNotifs = (notifs || []).map(notif => ({
+            id: notif.id,
+            title: notif.title,
+            message: notif.message,
+            type: notif.type || 'info',
+            time: formatTimeAgo(notif.sent_at)
+          }));
+
+          setNotifications(formattedNotifs);
+        } catch (error) {
+          console.error('❌ Erreur chargement notifications:', error);
+          setNotifications([]);
+        } finally {
+          setLoadingNotifications(false);
+        }
       } else if (isDemo) {
         // Mode démo : utiliser les données fictives avec traduction française
         const demoNotifications = [
@@ -47,7 +74,24 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     };
 
     loadNotifications();
-  }, [isDemo, isProduction]);
+  }, [isDemo, isProduction, user?.current_school_id]);
+
+  // Fonction pour formater le temps relatif
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return 'à l\'instant';
+    if (diffMins < 60) return `il y a ${diffMins} min`;
+    if (diffHours < 24) return `il y a ${diffHours}h`;
+    if (diffDays === 1) return 'hier';
+    if (diffDays < 7) return `il y a ${diffDays} jours`;
+    return date.toLocaleDateString('fr-FR');
+  };
 
   const navigationItems = {
     student: [

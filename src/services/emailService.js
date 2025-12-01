@@ -225,5 +225,117 @@ export const isEmailConfigured = () => {
   );
 };
 
+/**
+ * Envoie une notification en masse aux utilisateurs ciblés
+ * @param {Object} params - Paramètres de la notification
+ * @param {string} params.title - Titre de la notification
+ * @param {string} params.message - Message de la notification
+ * @param {string} params.target - Destinataires (all, parents, students, teachers, staff)
+ * @param {string} params.priority - Priorité (low, normal, high, urgent)
+ * @param {string} params.type - Type (info, success, warning, error)
+ * @param {string} params.schoolName - Nom de l'école
+ * @param {string} params.senderName - Nom de l'expéditeur
+ * @param {Array} params.recipients - Liste des emails destinataires
+ * @returns {Promise<Object>} - Résultat de l'envoi
+ */
+export const sendBulkNotification = async ({
+  title,
+  message,
+  target,
+  priority,
+  type,
+  schoolName,
+  senderName,
+  recipients = []
+}) => {
+  try {
+    console.log('📧 Envoi de notification en masse...');
+    console.log('  - Titre:', title);
+    console.log('  - Destinataires:', target);
+    console.log('  - Nombre d\'emails:', recipients.length);
+
+    // Vérifier que EmailJS est configuré
+    if (!isEmailConfigured()) {
+      console.warn('⚠️ EmailJS non configuré');
+      return {
+        success: false,
+        error: 'Service d\'envoi d\'emails non configuré',
+        sentCount: 0,
+        totalCount: recipients.length
+      };
+    }
+
+    // Si aucun destinataire spécifique, retourner succès (sera géré par Supabase)
+    if (recipients.length === 0) {
+      console.log('ℹ️ Aucun email spécifique - notification sauvegardée uniquement');
+      return {
+        success: true,
+        message: 'Notification enregistrée (pas d\'emails spécifiques)',
+        sentCount: 0,
+        totalCount: 0
+      };
+    }
+
+    // Template pour les notifications
+    const templateParams = {
+      notification_title: title,
+      notification_message: message,
+      priority: priority,
+      type: type,
+      school_name: schoolName,
+      sender_name: senderName,
+      target_group: target,
+      current_year: new Date().getFullYear(),
+    };
+
+    let sentCount = 0;
+    let failedCount = 0;
+
+    // Envoyer à chaque destinataire (limiter à 10 pour éviter le spam)
+    const maxRecipients = Math.min(recipients.length, 10);
+    
+    for (let i = 0; i < maxRecipients; i++) {
+      try {
+        const response = await emailjs.send(
+          EMAILJS_CONFIG.serviceId,
+          'template_notification', // Template spécifique pour les notifications
+          {
+            ...templateParams,
+            to_email: recipients[i].email,
+            to_name: recipients[i].name || 'Utilisateur'
+          },
+          EMAILJS_CONFIG.publicKey
+        );
+
+        if (response.status === 200) {
+          sentCount++;
+        }
+      } catch (error) {
+        console.error(`❌ Erreur envoi à ${recipients[i].email}:`, error.message);
+        failedCount++;
+      }
+    }
+
+    console.log(`✅ Notification envoyée: ${sentCount}/${maxRecipients} emails`);
+
+    return {
+      success: sentCount > 0,
+      message: `${sentCount} email(s) envoyé(s) sur ${maxRecipients}`,
+      sentCount,
+      failedCount,
+      totalCount: recipients.length
+    };
+
+  } catch (error) {
+    console.error('❌ Erreur lors de l\'envoi de la notification:', error);
+    return {
+      success: false,
+      error: error.message,
+      sentCount: 0,
+      totalCount: recipients.length
+    };
+  }
+};
+
 // Initialiser EmailJS au chargement du module
 initEmailJS();

@@ -267,30 +267,7 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
         </nav>
 
         {/* Bottom Section */}
-        <div className="p-4 border-t border-border">
-          {!isCollapsed ? (
-            <div className="bg-muted rounded-lg p-3">
-              <div className="flex items-center space-x-2 mb-2">
-                <Icon name="Lightbulb" size={16} className="text-accent" />
-                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-                  Tip
-                </span>
-              </div>
-              <p className="font-body font-body-normal text-xs text-card-foreground">
-                Use keyboard shortcuts to navigate faster. Press '?' for help.
-              </p>
-            </div>
-          ) : (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="w-full"
-              title="Help & Tips"
-            >
-              <Icon name="Lightbulb" size={20} />
-            </Button>
-          )}
-        </div>
+
       </div>
     </aside>
   );

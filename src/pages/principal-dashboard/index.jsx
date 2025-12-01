@@ -1190,13 +1190,8 @@ const PrincipalDashboard = () => {
                       <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
                       <span className="font-medium">Système OK</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="Users" size={12} className="text-blue-600" />
-                      <span>{data?.schoolStats?.totalStudents || data?.schoolStats?.students || 0} élèves</span>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="GraduationCap" size={12} className="text-green-600" />
-                      <span>{data?.schoolStats?.totalTeachers || data?.schoolStats?.teachers || 0} enseignants</span>
+                    <div className="text-xs text-gray-500">
+                      EduTrack CM © {new Date().getFullYear()} - Tous droits réservés
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 sm:space-x-4">
