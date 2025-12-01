@@ -13,6 +13,7 @@ import PaymentStatus from './components/PaymentStatus';
 import CommunicationCenter from './components/CommunicationCenter';
 import UpcomingEvents from './components/UpcomingEvents';
 import MultiSchoolChildrenOverview from './components/MultiSchoolChildrenOverview';
+import ManageChildModal from './components/ManageChildModal';
 
 const ParentDashboard = () => {
   const [searchParams] = useSearchParams();
@@ -20,6 +21,7 @@ const ParentDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
   const [viewMode, setViewMode] = useState('traditional'); // 'traditional' ou 'multischool'
+  const [managingChild, setManagingChild] = useState(null); // Pour le modal de gestion
 
   // Utiliser le hook unifié pour les données
   const {
@@ -53,12 +55,17 @@ const ParentDashboard = () => {
     children: children.map(child => {
       return {
         id: child.id,
+        user_id: child.user_id, // Pour ManageChildModal
         name: child.full_name || child.name,
+        full_name: child.full_name || child.name, // Pour ManageChildModal
         matricule: child.matricule,
         class: typeof child.class === 'object' ? child.class?.name : child.class,
+        class_name: typeof child.class === 'object' ? child.class?.name : child.class, // Pour ManageChildModal
         school: typeof child.school === 'object' ? child.school?.name : child.school,
         schoolId: typeof child.school === 'object' ? child.school?.id : child.schoolId,
         photo: child.photo_url || child.photo,
+        email: child.email, // Pour ManageChildModal
+        phone: child.phone, // Pour ManageChildModal
         averageGrade: child.averageGrade || 0,
         attendanceRate: child.attendanceRate || 0,
         unreadNotifications: child.unreadNotifications || 0,
@@ -106,6 +113,7 @@ const ParentDashboard = () => {
               selectedSchool={selectedSchool}
               onChildSelect={handleChildSelect}
               onSchoolChange={handleSchoolChange}
+              onManageChild={(child) => setManagingChild(child)}
             />
             {selectedChildTransformed && (
               <ChildOverviewCard child={selectedChildTransformed} />
@@ -238,6 +246,7 @@ const ParentDashboard = () => {
                   selectedSchool={selectedSchool}
                   onChildSelect={handleChildSelect}
                   onSchoolChange={handleSchoolChange}
+                  onManageChild={(child) => setManagingChild(child)}
                 />
 
                 {/* Child Overview Card */}
@@ -382,6 +391,17 @@ const ParentDashboard = () => {
             {!isLoading && renderTabContent()}
           </div>
         </main>
+
+        {/* Manage Child Modal */}
+        <ManageChildModal
+          child={managingChild}
+          isOpen={!!managingChild}
+          onClose={() => setManagingChild(null)}
+          onUpdate={() => {
+            // Recharger les données si nécessaire
+            window.location.reload();
+          }}
+        />
       </div>
   );
 };

@@ -9,6 +9,11 @@ supabase/
 ├── migrations/                    # Migrations SQL Supabase
 │   ├── 20250101000000_initial_schema.sql    # Schéma complet (22 tables)
 │   └── 20250102000000_auth_trigger.sql      # Trigger d'authentification
+├── functions/                     # Edge Functions Supabase
+│   ├── update-student-password/   # Fonction changement mdp enfant
+│   │   ├── index.ts              # Code de la fonction
+│   │   └── README.md             # Documentation complète
+│   └── update_student_password_rpc.sql  # Alternative RPC
 ├── email-templates/               # Templates d'emails personnalisés
 │   ├── confirm-signup.html        # Email de confirmation d'inscription
 │   ├── README.md                  # Guide d'utilisation des templates
@@ -249,6 +254,55 @@ SELECT 'academic_years', COUNT(*) FROM academic_years;
 2. Vérifier dans Supabase Auth que l'utilisateur existe
 3. Vérifier dans la table `users` que l'enregistrement est créé
 4. Vérifier que l'école, l'année académique et les types sont créés
+
+---
+
+## ⚡ Edge Functions
+
+### update-student-password
+
+**Description :** Permet aux parents de modifier le mot de passe de leurs enfants de manière sécurisée.
+
+**Chemin :** `supabase/functions/update-student-password/`
+
+**Endpoint :** `POST /functions/v1/update-student-password`
+
+**Fonctionnalités :**
+- ✅ Vérification relation parent-enfant
+- ✅ Validation mot de passe (min 8 caractères)
+- ✅ Mise à jour sécurisée via API Admin
+- ✅ Protection CORS
+
+**Déploiement :**
+```bash
+# Installation CLI
+npm install -g supabase
+
+# Connexion
+supabase login
+
+# Lier le projet
+supabase link --project-ref YOUR_REF
+
+# Déployer
+supabase functions deploy update-student-password
+
+# Vérifier
+supabase functions list
+```
+
+**Documentation complète :**
+- `supabase/functions/update-student-password/README.md` - Guide technique complet
+- `docs/EDGE_FUNCTION_DEPLOYMENT_GUIDE.md` - Guide de déploiement rapide
+- `docs/PARENT_CHILD_MANAGEMENT.md` - Guide utilisateur
+- `docs/PARENT_CHILD_MANAGEMENT_TECHNICAL.md` - Documentation technique
+
+**Alternative RPC :**
+Un fichier `update_student_password_rpc.sql` est disponible comme alternative, mais ne peut pas modifier directement `auth.users`. L'Edge Function est recommandée.
+
+**État actuel :** ⚠️ Créé mais non déployé (requiert Supabase CLI)
+
+---
 
 ## 🤝 Contribution
 

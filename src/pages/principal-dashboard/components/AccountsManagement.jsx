@@ -140,8 +140,6 @@ const AccountsManagement = () => {
     parentEmail: '',
     // Champs spécifiques parent
     selectedChildren: [],
-    emergencyContact: '',
-    emergencyPhone: '',
     profession: '',
     address: ''
   });
@@ -384,12 +382,36 @@ const AccountsManagement = () => {
         } else {
           console.log('✅ Données école chargées:', schoolData);
 
-          // Charger les classes depuis available_classes
+          // Charger les classes depuis available_classes ET vérifier dans la table classes
           if (schoolData?.available_classes && Array.isArray(schoolData.available_classes)) {
-            const formattedClasses = schoolData.available_classes.map((className, index) => ({
-              value: `class-${index}`,
-              label: className
-            }));
+            // D'abord, essayer de charger depuis la table classes
+            const { data: dbClasses, error: classesError } = await supabase
+              .from('classes')
+              .select('id, name, level')
+              .eq('school_id', user.current_school_id)
+              .order('level')
+              .order('name');
+
+            let formattedClasses = [];
+
+            if (!classesError && dbClasses && dbClasses.length > 0) {
+              // Utiliser les classes de la base avec leurs UUID
+              console.log('✅ Utilisation des classes depuis la table classes (avec UUID)');
+              formattedClasses = dbClasses.map(cls => ({
+                value: cls.id, // UUID réel
+                label: cls.name,
+                level: cls.level
+              }));
+            } else {
+              // Fallback: utiliser available_classes avec des IDs temporaires
+              console.warn('⚠️ Table classes vide, utilisation de available_classes (IDs temporaires)');
+              formattedClasses = schoolData.available_classes.map((className, index) => ({
+                value: `temp-${index}`, // ID temporaire
+                label: className,
+                isTemporary: true // Flag pour savoir qu'on doit créer la classe
+              }));
+            }
+
             setAvailableClasses(formattedClasses);
             console.log(`✅ ${formattedClasses.length} classe(s) chargée(s)`);
           } else {
@@ -416,6 +438,7 @@ const AccountsManagement = () => {
 
         console.log('👨‍👩‍👧 Chargement parents...');
         // Charger les parents (pour lier aux élèves)
+        // Note: parents n'a pas de school_id ni is_active directement
         const { data: parentsData, error: parentsError } = await supabase
           .from('parents')
           .select(`
@@ -429,8 +452,6 @@ const AccountsManagement = () => {
               full_name
             )
           `)
-          .eq('school_id', user.current_school_id)
-          .eq('is_active', true)
           .order('last_name');
 
         if (parentsError) {
@@ -445,6 +466,7 @@ const AccountsManagement = () => {
             email: parent.users.email,
             phone: parent.users.phone
           }));
+          console.log('📋 Parents formatés:', formattedParents.length);
           setAvailableStudents(formattedParents); // Réutiliser availableStudents pour les parents
         }
       } catch (error) {
@@ -675,9 +697,13 @@ const AccountsManagement = () => {
       }
       // Pas besoin d'email ou password pour les élèves (généré auto si secondaire)
     } else if (newUser.role === 'parent') {
-      // Pour les parents : téléphone obligatoire, email optionnel
+      // Pour les parents : téléphone et adresse obligatoires
       if (!newUser.phone) {
         alert('Veuillez saisir le numéro de téléphone du parent (obligatoire)');
+        return;
+      }
+      if (!newUser.address) {
+        alert('Veuillez saisir l\'adresse du parent (obligatoire)');
         return;
       }
       if (!newUser.password) {
@@ -787,9 +813,9 @@ const AccountsManagement = () => {
 
         let userId = null;
 
-        // Pour le personnel (non-directeur), créer directement dans la base sans auth
-        if (newUser.role !== 'principal' && newUser.role !== 'admin') {
-          console.log('Création compte personnel...');
+        // Pour le personnel (enseignants, secrétaires) ET les parents, créer directement dans la base sans auth
+        if (newUser.role === 'teacher' || newUser.role === 'secretary' || newUser.role === 'parent') {
+          console.log('Création compte personnel/parent...');
           
           // Générer un UUID pour le nouvel utilisateur
           const newUserId = crypto.randomUUID();
@@ -818,7 +844,7 @@ const AccountsManagement = () => {
           userId = userData.id;
           console.log('✅ Utilisateur créé:', userId);
 
-          // 2. Créer l'entrée dans la table spécifique (teachers ou secretaries)
+          // 2. Créer l'entrée dans la table spécifique (teachers, secretaries ou parents)
           if (newUser.role === 'teacher') {
             const { data: teacherData, error: teacherError } = await supabase
               .from('teachers')
@@ -914,126 +940,17 @@ const AccountsManagement = () => {
             }
 
             // TODO: Gérer les permissions de la secrétaire (table secretary_permissions)
-          } else if (newUser.role === 'student') {
-            // Déterminer si on crée un compte utilisateur (secondaire) ou pas (primaire)
-            const createUserAccount = needsUserAccount(newUser.schoolLevel);
-            
-            let studentUserId = null;
-            let generatedMatricule = '';
-            let generatedEmail = '';
-            let generatedPassword = '';
-
-            if (createUserAccount) {
-              // ÉLÈVE DU SECONDAIRE : Créer un compte utilisateur
-              console.log('🎓 Création compte élève secondaire avec identifiants...');
-              
-              // Générer le matricule
-              generatedMatricule = await generateStudentMatricule(user.current_school_id);
-              console.log('📋 Matricule généré:', generatedMatricule);
-              
-              // Générer l'email automatique
-              generatedEmail = generateStudentEmail(generatedMatricule, user.school_name || 'ecole');
-              console.log('📧 Email généré:', generatedEmail);
-              
-              // Générer le mot de passe
-              generatedPassword = generateStudentPassword(firstName);
-              console.log('🔑 Mot de passe généré:', generatedPassword);
-              
-              // Créer le compte utilisateur
-              const newStudentUserId = crypto.randomUUID();
-              
-              const { data: studentUserData, error: studentUserError } = await supabase
-                .from('users')
-                .insert({
-                  id: newStudentUserId,
-                  email: generatedEmail,
-                  full_name: newUser.fullName,
-                  phone: newUser.phone || null,
-                  role: 'student',
-                  current_school_id: user.current_school_id,
-                  is_active: true,
-                  created_at: new Date().toISOString(),
-                  updated_at: new Date().toISOString()
-                });
-
-              if (studentUserError) {
-                throw new Error(`Erreur création compte élève: ${studentUserError.message}`);
-              }
-
-              studentUserId = newStudentUserId;
-              console.log('✅ Compte utilisateur créé pour élève secondaire');
-            } else {
-              // ÉLÈVE DU PRIMAIRE : Pas de compte utilisateur
-              console.log('👶 Création élève primaire SANS compte utilisateur');
-              studentUserId = null; // Pas de user_id
-            }
-
-            // Créer l'entrée dans la table students (pour tous les niveaux)
-            const { data: studentData, error: studentError } = await supabase
-              .from('students')
-              .insert({
-                school_id: user.current_school_id,
-                user_id: studentUserId, // null pour primaire, UUID pour secondaire
-                matricule: generatedMatricule || null,
-                first_name: firstName,
-                last_name: lastName,
-                class_id: newUser.classId || null,
-                date_of_birth: newUser.dateOfBirth || null,
-                school_level: newUser.schoolLevel,
-                is_active: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select('id')
-              .single();
-
-            if (studentError) {
-              console.error('Erreur création élève:', studentError);
-              throw new Error(`Erreur création élève: ${studentError.message}`);
-            }
-
-            // Créer la relation parent-élève dans parent_student
-            const { error: linkError } = await supabase
-              .from('parent_student')
-              .insert({
-                parent_id: newUser.parentId,
-                student_id: studentData.id,
-                relationship: 'parent', // Par défaut
-                is_primary: true,
-                is_emergency_contact: true
-              });
-
-            if (linkError) {
-              console.error('Erreur liaison parent-élève:', linkError);
-              // Ne pas bloquer, l'élève est créé
-            } else {
-              console.log('✅ Relation parent-élève créée');
-            }
-
-            // Si élève du secondaire, stocker les identifiants pour l'email au parent
-            if (createUserAccount) {
-              // Ces variables seront utilisées pour l'envoi d'email plus loin
-              newUser.generatedEmail = generatedEmail;
-              newUser.generatedPassword = generatedPassword;
-              newUser.generatedMatricule = generatedMatricule;
-            }
-
-            console.log(`✅ Élève créé (${newUser.schoolLevel === 'primary' ? 'PRIMAIRE - sans compte' : 'SECONDAIRE - avec compte'})`);
           } else if (newUser.role === 'parent') {
-            const { data: parentData, error: parentError } = await supabase
+            const { data: parentData, error: parentError} = await supabase
               .from('parents')
               .insert({
-                school_id: user.current_school_id,
                 user_id: userId,
                 first_name: firstName,
                 last_name: lastName,
+                phone: newUser.phone,
+                email: newUser.email,
                 profession: newUser.profession || null,
-                address: newUser.address || null,
-                emergency_contact: newUser.emergencyContact || null,
-                emergency_phone: newUser.emergencyPhone || null,
-                is_active: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                address: newUser.address || null
               })
               .select('id')
               .single();
@@ -1047,6 +964,127 @@ const AccountsManagement = () => {
           }
 
           console.log('✅ Compte personnel créé:', userId);
+          
+        } else if (newUser.role === 'student') {
+          // TOUS LES ÉLÈVES (primaire ET secondaire) : Créer un compte utilisateur
+          console.log('🎓 Création compte élève avec identifiants...');
+          
+          // Générer le matricule
+          const generatedMatricule = await generateStudentMatricule(user.current_school_id);
+          console.log('📋 Matricule généré:', generatedMatricule);
+          
+          // Générer l'email automatique
+          const generatedEmail = generateStudentEmail(generatedMatricule, user.school_name || 'ecole');
+          console.log('📧 Email généré:', generatedEmail);
+          
+          // Générer le mot de passe
+          const generatedPassword = generateStudentPassword(firstName);
+          console.log('🔑 Mot de passe généré:', generatedPassword);
+          
+          // Créer le compte utilisateur
+          const newStudentUserId = crypto.randomUUID();
+          
+          const { data: studentUserData, error: studentUserError } = await supabase
+            .from('users')
+            .insert({
+              id: newStudentUserId,
+              email: generatedEmail,
+              full_name: newUser.fullName,
+              phone: newUser.phone || null,
+              role: 'student',
+              current_school_id: user.current_school_id,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (studentUserError) {
+            throw new Error(`Erreur création compte élève: ${studentUserError.message}`);
+          }
+
+          userId = newStudentUserId;
+          console.log('✅ Compte utilisateur créé pour élève');
+
+          // Gérer le class_id : si c'est un ID temporaire, créer la classe d'abord
+          let finalClassId = newUser.classId;
+          
+          if (newUser.classId && newUser.classId.startsWith('temp-')) {
+            console.log('⚠️ ID temporaire détecté, création de la classe dans la table classes...');
+            
+            // Récupérer le nom de la classe depuis availableClasses
+            const selectedClass = availableClasses.find(c => c.value === newUser.classId);
+            
+            if (selectedClass && selectedClass.isTemporary) {
+              // Créer la classe dans la table classes
+              const { data: newClassData, error: newClassError } = await supabase
+                .from('classes')
+                .insert({
+                  school_id: user.current_school_id,
+                  name: selectedClass.label,
+                  level: selectedClass.label.toLowerCase().includes('primaire') ? 'primary' : 
+                         selectedClass.label.toLowerCase().includes('secondaire') ? 'secondary' : 'primary',
+                  academic_year_id: user.academic_year_id
+                })
+                .select('id')
+                .single();
+
+              if (newClassError) {
+                console.error('Erreur création classe:', newClassError);
+                // Continuer sans classe plutôt que de bloquer
+                finalClassId = null;
+              } else {
+                finalClassId = newClassData.id;
+                console.log('✅ Classe créée avec UUID:', finalClassId);
+              }
+            }
+          }
+
+          // Créer l'entrée dans la table students
+          const { data: studentData, error: studentError } = await supabase
+            .from('students')
+            .insert({
+              school_id: user.current_school_id,
+              user_id: newStudentUserId,
+              registration_number: generatedMatricule,
+              first_name: firstName,
+              last_name: lastName,
+              class_id: finalClassId, // UUID réel ou null
+              date_of_birth: newUser.dateOfBirth || null,
+              is_active: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            })
+            .select('id')
+            .single();
+
+          if (studentError) {
+            console.error('Erreur création élève:', studentError);
+            throw new Error(`Erreur création élève: ${studentError.message}`);
+          }
+
+          // Créer la relation parent-élève dans parent_students (table simplifiée)
+          const { error: linkError } = await supabase
+            .from('parent_students')
+            .insert({
+              parent_id: newUser.parentId,
+              student_id: studentData.id,
+              relationship: 'parent',
+              is_primary: true
+            });
+
+          if (linkError) {
+            console.error('Erreur liaison parent-élève:', linkError);
+            // Ne pas bloquer, l'élève est créé
+          } else {
+            console.log('✅ Relation parent-élève créée');
+          }
+
+          // Stocker les identifiants générés pour l'email au parent
+          newUser.generatedEmail = generatedEmail;
+          newUser.generatedPassword = generatedPassword;
+          newUser.generatedMatricule = generatedMatricule;
+
+          console.log(`✅ Élève créé avec compte utilisateur (Classe: ${availableClasses.find(c => c.value === newUser.classId)?.label || 'N/A'})`);
           
         } else {
           // Pour les directeurs/admins, utiliser signUp normal (avec email automatique)
@@ -1101,8 +1139,8 @@ const AccountsManagement = () => {
           // Logique d'envoi d'email selon si l'utilisateur a un email personnel ou non
           let recipientEmail, emailContent, hasPersonalEmail;
           
-          if (newUser.role === 'student' && newUser.schoolLevel === 'secondary') {
-            // Élève secondaire : envoyer au parent avec les identifiants générés
+          if (newUser.role === 'student') {
+            // Élève : envoyer au parent avec les identifiants générés
             const selectedParent = availableStudents.find(p => p.id === newUser.parentId);
             hasPersonalEmail = selectedParent?.email && !selectedParent.email.includes('@edutrack.cm');
             
@@ -1110,7 +1148,7 @@ const AccountsManagement = () => {
             emailContent = {
               recipientEmail: recipientEmail,
               recipientName: hasPersonalEmail ? (selectedParent?.full_name || 'Parent') : user.full_name,
-              role: 'Élève (Secondaire)',
+              role: 'Élève',
               email: newUser.generatedEmail,
               password: newUser.generatedPassword,
               matricule: newUser.generatedMatricule,
@@ -1122,9 +1160,6 @@ const AccountsManagement = () => {
               schoolName: user.school_name || 'Votre établissement',
               principalName: user.full_name || 'Le Directeur',
             };
-          } else if (newUser.role === 'student' && newUser.schoolLevel === 'primary') {
-            // Élève primaire : pas d'email (pas de compte)
-            emailContent = null;
           } else {
             // Personnel (enseignant, secrétaire, parent)
             hasPersonalEmail = newUser.email && !newUser.email.includes('@edutrack.cm');
@@ -1144,7 +1179,7 @@ const AccountsManagement = () => {
             };
           }
 
-          let emailResult = { success: true }; // Par défaut pour élèves primaire
+          let emailResult = { success: true };
           
           if (emailContent) {
             console.log(`📧 Envoi email à ${hasPersonalEmail ? 'l\'utilisateur' : 'au directeur'}:`, recipientEmail);
@@ -1153,35 +1188,18 @@ const AccountsManagement = () => {
           }
 
           if (emailResult.success) {
-            // Email envoyé avec succès OU élève primaire (pas d'email)
+            // Email envoyé avec succès
             let successMessage;
             
-            if (newUser.role === 'student' && newUser.schoolLevel === 'primary') {
-              // Élève primaire : pas de compte créé
-              const selectedParent = availableStudents.find(p => p.id === newUser.parentId);
-              successMessage = (
-                `✅ Élève inscrit avec succès !\n\n` +
-                `Nom : ${newUser.fullName}\n` +
-                `Classe : ${availableClasses.find(c => c.value === newUser.classId)?.label || 'N/A'}\n` +
-                `Niveau : Primaire\n\n` +
-                `👶 AUCUN COMPTE PERSONNEL CRÉÉ\n` +
-                `L'élève n'a pas d'identifiants de connexion.\n\n` +
-                `👨‍👩‍👧 Parent lié :\n` +
-                `• Nom : ${selectedParent?.full_name || 'N/A'}\n` +
-                `• Email : ${selectedParent?.email || 'Non renseigné'}\n` +
-                `• Téléphone : ${selectedParent?.phone || 'Non renseigné'}\n\n` +
-                `Le parent peut voir cet enfant dans son tableau de bord et suivre ses notes et absences.`
-              );
-            } else if (newUser.role === 'student' && newUser.schoolLevel === 'secondary') {
-              // Élève secondaire : compte créé
+            if (newUser.role === 'student') {
+              // Élève : compte créé avec identifiants
               const selectedParent = availableStudents.find(p => p.id === newUser.parentId);
               const parentHasPersonalEmail = selectedParent?.email && !selectedParent.email.includes('@edutrack.cm');
               
               successMessage = (
                 `✅ Compte élève créé avec succès !\n\n` +
                 `Nom : ${newUser.fullName}\n` +
-                `Classe : ${availableClasses.find(c => c.value === newUser.classId)?.label || 'N/A'}\n` +
-                `Niveau : Secondaire\n\n` +
+                `Classe : ${availableClasses.find(c => c.value === newUser.classId)?.label || 'N/A'}\n\n` +
                 `🎓 COMPTE PERSONNEL CRÉÉ :\n` +
                 `📋 Matricule : ${newUser.generatedMatricule}\n` +
                 `📧 Email : ${newUser.generatedEmail}\n` +
@@ -1243,13 +1261,13 @@ const AccountsManagement = () => {
             
             let fallbackMessage;
             
-            if (newUser.role === 'student' && newUser.schoolLevel === 'secondary') {
-              // Élève secondaire : afficher les identifiants générés
+            if (newUser.role === 'student') {
+              // Élève : afficher les identifiants générés
               const selectedParent = availableStudents.find(p => p.id === newUser.parentId);
               fallbackMessage = (
                 `✅ Compte élève créé avec succès !\n\n` +
                 `Élève : ${newUser.fullName}\n` +
-                `Niveau : Secondaire\n\n` +
+                `Classe : ${availableClasses.find(c => c.value === newUser.classId)?.label || 'N/A'}\n\n` +
                 `⚠️ L'email n'a pas pu être envoyé au parent.\n` +
                 `Raison : ${emailResult.error}\n\n` +
                 `📋 IDENTIFIANTS À COMMUNIQUER AU PARENT :\n\n` +
@@ -1303,7 +1321,9 @@ const AccountsManagement = () => {
         }
 
         // Étape 3: Recharger la liste des comptes
+        console.log('🔄 Rechargement de la liste des comptes...');
         await loadAccountsFromSupabase();
+        console.log('✅ Liste des comptes rechargée');
 
         // Reset du formulaire
         setNewUser({
@@ -1329,11 +1349,11 @@ const AccountsManagement = () => {
           parentPhone: '',
           parentEmail: '',
           selectedChildren: [],
-          emergencyContact: '',
-          emergencyPhone: '',
           profession: '',
           address: ''
         });
+        
+        // Passer à l'onglet des comptes pour voir le nouveau compte
         setActiveTab('accounts');
       }
       
@@ -1428,11 +1448,6 @@ const AccountsManagement = () => {
     return `${capitalized}${year}`;
   };
 
-  // Fonction pour déterminer si un niveau nécessite un compte utilisateur
-  const needsUserAccount = (schoolLevel) => {
-    return schoolLevel === 'secondary';
-  };
-
   // Fonction pour déterminer automatiquement le school_level selon le type d'école et la classe
   const determineSchoolLevel = (schoolType, className) => {
     // Si le type d'école est défini clairement
@@ -1521,6 +1536,60 @@ const AccountsManagement = () => {
         console.error('Erreur lors du chargement des secrétaires:', secretariesError);
       }
 
+      // Récupérer les parents (pas de school_id direct dans parents)
+      const { data: parentsData, error: parentsError } = await supabase
+        .from('parents')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          profession,
+          address,
+          created_at,
+          users!inner (
+            id,
+            email,
+            full_name,
+            phone,
+            role
+          )
+        `);
+
+      if (parentsError) {
+        console.error('Erreur lors du chargement des parents:', parentsError);
+      }
+
+      // Récupérer les élèves
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
+        .select(`
+          id,
+          first_name,
+          last_name,
+          registration_number,
+          date_of_birth,
+          class_id,
+          user_id,
+          created_at,
+          users:user_id (
+            id,
+            email,
+            full_name,
+            phone,
+            role
+          ),
+          classes (
+            name,
+            level
+          )
+        `)
+        .eq('school_id', user.current_school_id)
+        .eq('is_active', true);
+
+      if (studentsError) {
+        console.error('Erreur lors du chargement des élèves:', studentsError);
+      }
+
       // Combiner et formater les données
       const allPersonnel = [];
       
@@ -1559,6 +1628,45 @@ const AccountsManagement = () => {
         });
       }
 
+      // Ajouter les parents
+      if (parentsData) {
+        parentsData.forEach(parent => {
+          allPersonnel.push({
+            id: parent.users.id,
+            email: parent.users.email,
+            full_name: parent.users.full_name || `${parent.first_name} ${parent.last_name}`,
+            phone: parent.users.phone,
+            role: 'parent',
+            profession: parent.profession,
+            address: parent.address,
+            is_active: true,
+            created_at: parent.created_at,
+            personnel_id: parent.id
+          });
+        });
+      }
+
+      // Ajouter les élèves
+      if (studentsData) {
+        studentsData.forEach(student => {
+          allPersonnel.push({
+            id: student.users?.id || student.id, // user_id peut être null pour primaire
+            email: student.users?.email || 'N/A',
+            full_name: student.users?.full_name || `${student.first_name} ${student.last_name}`,
+            phone: student.users?.phone || 'N/A',
+            role: 'student',
+            registration_number: student.registration_number,
+            class_name: student.classes?.name,
+            class_level: student.classes?.level,
+            date_of_birth: student.date_of_birth,
+            has_account: !!student.users, // Indique si l'élève a un compte (secondaire)
+            is_active: true,
+            created_at: student.created_at,
+            personnel_id: student.id
+          });
+        });
+      }
+
       // Trier par date de création
       const sortedPersonnel = allPersonnel.sort((a, b) => 
         new Date(b.created_at) - new Date(a.created_at)
@@ -1568,10 +1676,13 @@ const AccountsManagement = () => {
       console.log('📊 Détail personnel:', {
         teachers: teachersData?.length || 0,
         secretaries: secretariesData?.length || 0,
+        parents: parentsData?.length || 0,
+        students: studentsData?.length || 0,
         total: sortedPersonnel.length
       });
       
       setAccounts(sortedPersonnel);
+      console.log('✅ State accounts mis à jour avec', sortedPersonnel.length, 'comptes');
       
     } catch (error) {
       console.error('❌ Erreur chargement comptes:', error);
@@ -2265,8 +2376,6 @@ const AccountsManagement = () => {
                       parentPhone: '',
                       parentEmail: '',
                       selectedChildren: [],
-                      emergencyContact: '',
-                      emergencyPhone: '',
                       profession: ''
                     }));
                   }}
@@ -2305,8 +2414,6 @@ const AccountsManagement = () => {
                       parentPhone: '',
                       parentEmail: '',
                       selectedChildren: [],
-                      emergencyContact: '',
-                      emergencyPhone: '',
                       profession: '',
                       address: ''
                     }));
@@ -2773,26 +2880,11 @@ const AccountsManagement = () => {
                   />
                   
                   <Input
-                    label="Adresse (optionnel)"
+                    label="Adresse *"
                     value={newUser.address}
                     onChange={(e) => setNewUser(prev => ({ ...prev, address: e.target.value }))}
                     placeholder="Quartier, Ville"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Input
-                    label="Contact d'urgence (optionnel)"
-                    value={newUser.emergencyContact}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, emergencyContact: e.target.value }))}
-                    placeholder="Nom du contact d'urgence"
-                  />
-
-                  <Input
-                    label="Téléphone d'urgence (optionnel)"
-                    value={newUser.emergencyPhone}
-                    onChange={(e) => setNewUser(prev => ({ ...prev, emergencyPhone: e.target.value }))}
-                    placeholder="+237 6XX XXX XXX"
+                    required
                   />
                 </div>
               </div>
@@ -2891,8 +2983,6 @@ const AccountsManagement = () => {
                   parentPhone: '',
                   parentEmail: '',
                   selectedChildren: [],
-                  emergencyContact: '',
-                  emergencyPhone: '',
                   profession: ''
                 });
                 setActiveTab('overview');

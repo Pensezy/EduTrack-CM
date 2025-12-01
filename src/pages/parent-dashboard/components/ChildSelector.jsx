@@ -8,7 +8,8 @@ const ChildSelector = ({
   selectedSchool, 
   onChildSelect, 
   onSchoolChange,
-  getChildrenBySchool 
+  getChildrenBySchool,
+  onManageChild
 }) => {
   return (
     <div className="bg-card rounded-lg shadow-card border border-border p-6">
@@ -48,8 +49,7 @@ const ChildSelector = ({
           return (
             <div
               key={child?.id}
-              onClick={() => onChildSelect(child)}
-              className={`relative p-4 rounded-lg border-2 transition-all duration-300 cursor-pointer group ${
+              className={`relative p-4 rounded-lg border-2 transition-all duration-300 group ${
                 isSelected 
                   ? 'border-primary bg-primary/5 shadow-md' 
                   : 'border-border hover:border-primary/50 hover:bg-primary/2'
@@ -62,7 +62,19 @@ const ChildSelector = ({
                 </div>
               )}
 
-              <div className="flex items-center gap-4">
+              {/* Manage Button */}
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onManageChild?.(child);
+                }}
+                className="absolute top-2 right-2 p-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-sm transition-all opacity-0 group-hover:opacity-100"
+                title="Gérer cet enfant"
+              >
+                <Icon name="Settings" size={16} className="text-gray-600" />
+              </button>
+
+              <div className="flex items-center gap-4 cursor-pointer" onClick={() => onChildSelect(child)}>
                 {/* Child Photo */}
                 <div className="relative">
                   <img
