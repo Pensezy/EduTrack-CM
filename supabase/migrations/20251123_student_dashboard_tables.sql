@@ -165,7 +165,8 @@ ALTER TABLE grades ADD COLUMN IF NOT EXISTS grade_type TEXT;
 ALTER TABLE grades ADD COLUMN IF NOT EXISTS comment TEXT;
 
 -- Note: Si les colonnes existent déjà sous d'autres noms (value/max_value), créer une vue
-CREATE OR REPLACE VIEW grades_normalized AS
+DROP VIEW IF EXISTS grades_normalized CASCADE;
+CREATE VIEW grades_normalized AS
 SELECT 
   id,
   school_id,
@@ -177,7 +178,7 @@ SELECT
   type,
   COALESCE(grade, value) as grade,
   COALESCE(max_grade, max_value) as max_grade,
-  COALESCE(coefficient, 1.0) as coefficient,
+  COALESCE(coefficient, 1.0)::numeric(3,2) as coefficient,
   COALESCE(grade_type, type::text) as grade_type,
   COALESCE(comment, description) as comment,
   date,
@@ -211,8 +212,8 @@ COMMENT ON TABLE student_achievements IS 'Accomplissements et badges des élève
 COMMENT ON TABLE behavior_assessments IS 'Évaluations comportementales des élèves';
 COMMENT ON TABLE schedules IS 'Emploi du temps des classes';
 
-COMMENT ON COLUMN students.class_id IS 'Classe actuelle de l\'élève';
-COMMENT ON COLUMN students.status IS 'Statut de l\'élève (actif, transféré, etc.)';
+COMMENT ON COLUMN students.class_id IS 'Classe actuelle de l''élève';
+COMMENT ON COLUMN students.status IS 'Statut de l''élève (actif, transféré, etc.)';
 COMMENT ON COLUMN grades.coefficient IS 'Coefficient de la note pour le calcul de moyenne';
 COMMENT ON COLUMN attendances.period IS 'Période de la journée (journée complète, matin, après-midi)';
 COMMENT ON COLUMN notifications.type IS 'Type de notification pour filtrage et affichage';

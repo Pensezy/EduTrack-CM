@@ -176,7 +176,6 @@ export const AuthProvider = ({ children }) => {
           role: authUser.user_metadata?.role || 'student',
           phone: authUser.user_metadata?.phone || '',
           is_active: true,
-          active: true,
           photo: '/assets/images/no_image.png',
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()

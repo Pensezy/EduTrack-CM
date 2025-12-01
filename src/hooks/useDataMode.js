@@ -201,8 +201,6 @@ export const useDataMode = () => {
               cacheTimestamp = Date.now();
             }
           }
-          
-          setUser(user);
         }
       } catch (error) {
         console.error('Erreur lors de la détection du mode de données:', error);
