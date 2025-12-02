@@ -52,13 +52,13 @@ export const useDashboardData = (schoolContext = null) => {
         let userId, schoolId;
         
         // Priorité 1: Données de l'école depuis le contexte passé en paramètre
-        if (schoolContext?.director_id && schoolContext?.id) {
-          userId = schoolContext.director_id;
+        if (schoolContext?.director_user_id && schoolContext?.id) {
+          userId = schoolContext.director_user_id;
           schoolId = schoolContext.id;
         }
         // Priorité 2: Données de l'utilisateur depuis useDataMode
-        else if (user?.schoolData?.director_id && user?.schoolData?.id) {
-          userId = user.schoolData.director_id;
+        else if (user?.schoolData?.director_user_id && user?.schoolData?.id) {
+          userId = user.schoolData.director_user_id;
           schoolId = user.schoolData.id;
         }
         // Priorité 3: Données utilisateur de base

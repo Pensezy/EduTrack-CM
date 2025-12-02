@@ -24,6 +24,9 @@ const StudentDashboard = () => {
   const [documentTab, setDocumentTab] = useState('received'); // 'received', 'assignments', 'admin'
   const { user } = useAuth();
 
+  console.log('🔑 AuthContext user:', user);
+  console.log('💾 localStorage user:', JSON.parse(localStorage.getItem('edutrack-user') || 'null'));
+
   // Utiliser le nouveau hook unifié pour récupérer les données (mode démo ou production)
   const {
     loading,
@@ -59,6 +62,10 @@ const StudentDashboard = () => {
       assignmentsDue: fetchedAssignments.filter(a => a.status === 'pending').length || 0
     }
   } : null;
+
+  console.log('👤 Student Dashboard - User ID:', user?.id);
+  console.log('👤 Student Dashboard - Student Profile:', studentProfile);
+  console.log('👤 Student Dashboard - Student Data:', studentData);
 
   // Transformer les données de notes pour correspondre au format attendu
   const gradesBySubject = getGradesBySubject();

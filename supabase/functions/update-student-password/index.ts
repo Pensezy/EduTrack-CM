@@ -1,3 +1,4 @@
+// @deno-types="https://deno.land/std@0.168.0/http/server.ts"
 // Supabase Edge Function pour permettre à un parent de changer le mot de passe de son enfant
 // Endpoint: POST /update-student-password
 // Body: { student_user_id: string, new_password: string, parent_user_id: string }

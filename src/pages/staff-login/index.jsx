@@ -157,9 +157,17 @@ const StaffLogin = () => {
         throw new Error('Compte désactivé. Contactez votre administrateur.');
       }
 
-      // Pour les comptes locaux, pas de vérification de mot de passe pour le moment
-      // (le mot de passe est stocké en clair temporairement - à sécuriser plus tard)
+      // Pour les comptes locaux sans Auth, on ne vérifie pas le mot de passe pour le moment
       console.log('⚠️ Connexion sans vérification de mot de passe (compte local)');
+
+      // Mettre à jour la dernière connexion
+      await supabase
+        .from('users')
+        .update({ 
+          last_login: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', userData.id);
 
       // Créer la session avec les données locales
       const userSession = {

@@ -264,7 +264,7 @@ export const demoDataService = {
         code: 'DEMO-001',
         status: 'active',
         available_classes: ['6ème', '5ème', '4ème', '3ème', '2nde', '1ère', 'Terminale'],
-        director_id: 'demo-director',
+        director_user_id: 'demo-director',
         users: {
           id: 'demo-director',
           full_name: 'Directeur Démonstration',

@@ -44,7 +44,19 @@ export const useStudentDashboardData = (studentId) => {
       setLoading(true);
       setError(null);
 
+      // Réinitialiser toutes les données avant de charger les nouvelles
+      setStudentProfile(null);
+      setStats(null);
+      setGrades([]);
+      setAttendance([]);
+      setAssignments([]);
+      setNotifications([]);
+      setAchievements([]);
+      setBehavior(null);
+      setSchedule(null);
+
       console.log(`📚 Chargement données étudiant en mode ${isDemo ? 'DÉMO' : 'PRODUCTION'}...`);
+      console.log(`👤 ID étudiant:`, studentId);
 
       // Définir le contexte pour le mode production
       if (!isDemo && studentId) {
@@ -73,6 +85,10 @@ export const useStudentDashboardData = (studentId) => {
         service.getStudentBehavior(studentId),
         service.getStudentSchedule(studentId)
       ]);
+
+      console.log('📋 Profile Result:', profileResult);
+      console.log('📊 Stats Result:', statsResult);
+      console.log('📝 Grades Result:', gradesResult);
 
       // Mettre à jour les états avec les résultats
       setStudentProfile(profileResult.data);

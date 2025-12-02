@@ -156,7 +156,7 @@ export const createPrincipalSchool = async ({
     console.log('✅ Utilisateur créé/mis à jour:', userData.id);
 
     // 5. Créer l'école
-    const { data: schoolData, error: schoolError } = await supabase
+    let { data: schoolData, error: schoolError } = await supabase
       .from('schools')
       .insert({
         name: schoolName,

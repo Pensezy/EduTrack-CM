@@ -72,7 +72,7 @@ const PrincipalDashboard = () => {
       if (user.schoolData) {
         console.log('      - Nom:', user.schoolData.name);
         console.log('      - ID:', user.schoolData.id);
-        console.log('      - Directeur ID:', user.schoolData.director_id);
+        console.log('      - Directeur User ID:', user.schoolData.director_user_id);
         console.log('      - Type:', user.schoolData.type);
       }
       console.log('    • Auth Supabase:', user.auth ? '✅ Actif' : '❌ Inactif');
@@ -96,7 +96,7 @@ const PrincipalDashboard = () => {
       console.log('🎓 Type:', schoolData.type);
       console.log('📚 Classes disponibles:', schoolData.available_classes);
       console.log('📊 Statut:', schoolData.status);
-      console.log('👤 Directeur ID:', schoolData.director_id);
+      console.log('👤 Directeur User ID:', schoolData.director_user_id);
     }
   }, [schoolData, dataMode, isDemo, isProduction, modeLoading, user]);
 
@@ -203,17 +203,70 @@ const PrincipalDashboard = () => {
       // Importer supabase pour la mise à jour
       const { supabase } = await import('../../lib/supabase');
       
-      // Ajouter la nouvelle classe au tableau existant
+      // 1. Ajouter la nouvelle classe au tableau existant (dans schools.available_classes)
       const updatedClasses = [...currentClasses, classNameTrimmed];
       
-      // Mettre à jour en base de données
-      const { error } = await supabase
+      // Mettre à jour la table schools
+      const { error: schoolError } = await supabase
         .from('schools')
         .update({ available_classes: updatedClasses })
         .eq('id', schoolData.id);
       
-      if (error) {
-        throw error;
+      if (schoolError) {
+        throw schoolError;
+      }
+      
+      console.log(`✅ Classe "${classNameTrimmed}" ajoutée à schools.available_classes`);
+      
+      // 2. Créer aussi l'entrée dans la table classes (pour les assignations)
+      // Récupérer l'année académique courante
+      const { data: academicYearData, error: yearError } = await supabase
+        .from('academic_years')
+        .select('id')
+        .eq('school_id', schoolData.id)
+        .eq('is_current', true)
+        .maybeSingle();
+      
+      if (yearError) {
+        console.warn('Erreur récupération année académique:', yearError);
+      }
+      
+      if (academicYearData?.id) {
+        // Détecter le niveau (primary/secondary) selon le nom de la classe
+        const determineLevel = (name) => {
+          const nameLower = name.toLowerCase();
+          const secondaryKeywords = ['6ème', '6eme', '5ème', '5eme', '4ème', '4eme', '3ème', '3eme',
+                                      '2nde', '2de', 'seconde', '1ère', '1ere', 'première', 'premiere',
+                                      'tle', 'terminale', 'terminal'];
+          
+          if (secondaryKeywords.some(keyword => nameLower.includes(keyword))) {
+            return 'secondary';
+          }
+          return 'primary';
+        };
+        
+        const detectedLevel = determineLevel(classNameTrimmed);
+        
+        // Créer l'entrée dans la table classes
+        const { error: classError } = await supabase
+          .from('classes')
+          .insert({
+            school_id: schoolData.id,
+            academic_year_id: academicYearData.id,
+            name: classNameTrimmed,
+            level: detectedLevel
+          });
+        
+        if (classError) {
+          // Si la classe existe déjà dans la table (contrainte unique), ce n'est pas grave
+          if (classError.code !== '23505') { // 23505 = violation de contrainte unique
+            console.warn('Erreur création classe dans table classes:', classError);
+          }
+        } else {
+          console.log(`✅ Classe "${classNameTrimmed}" créée dans la table classes (niveau: ${detectedLevel})`);
+        }
+      } else {
+        console.warn('⚠️ Aucune année académique courante trouvée - classe non créée dans la table classes');
       }
       
       // Succès
@@ -891,7 +944,7 @@ const PrincipalDashboard = () => {
                     <div><strong>Pays:</strong> {user.schoolData.country || 'Non défini'}</div>
                     <div><strong>Classes:</strong> {user.schoolData.available_classes ? user.schoolData.available_classes.join(', ') : 'Non définies'}</div>
                     <div><strong>Code école:</strong> {user.schoolData.code || 'Non défini'}</div>
-                    <div><strong>Directeur ID:</strong> {user.schoolData.director_id}</div>
+                    <div><strong>Directeur User ID:</strong> {user.schoolData.director_user_id}</div>
                   </div>
                 </div>
               )}

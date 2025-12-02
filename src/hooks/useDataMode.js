@@ -33,41 +33,10 @@ export const useDataMode = () => {
           return;
         }
         
-        // PRIORITÉ 1 : Vérifier localStorage (pour les comptes personnel avec EmailJS)
-        const savedUser = localStorage.getItem('edutrack-user');
-        if (savedUser) {
-          try {
-            const userData = JSON.parse(savedUser);
-            console.log('✅ Utilisateur trouvé dans localStorage:', userData.email);
-            
-            if (!userData.demoAccount) {
-              // C'est un vrai compte production
-              console.log('✅ Mode PRODUCTION (localStorage):', userData.school_name || 'École');
-              setDataMode('production');
-              setUser(userData);
-              modeCache = { dataMode: 'production', user: userData };
-              cacheTimestamp = Date.now();
-              setIsLoading(false);
-              return;
-            } else {
-              // Compte démo
-              console.log('🎭 Mode DÉMO (localStorage)');
-              setDataMode('demo');
-              setUser(userData);
-              modeCache = { dataMode: 'demo', user: userData };
-              cacheTimestamp = Date.now();
-              setIsLoading(false);
-              return;
-            }
-          } catch (e) {
-            console.error('Erreur parsing localStorage:', e);
-          }
-        }
-        
-        // PRIORITÉ 2 : Vérifier session Supabase Auth (pour les comptes parents/étudiants/directeurs)
+        // PRIORITÉ 1 : Vérifier session Supabase Auth D'ABORD (pour vraies connexions)
         const { data: { user }, error } = await supabase.auth.getUser();
         
-        console.log('🔍 Vérification Supabase Auth:');
+        console.log('🔍 Vérification Supabase Auth (PRIORITÉ 1):');
         console.log('  - User exists:', !!user);
         console.log('  - Error:', error?.message || 'Aucune');
         if (user) {
@@ -79,23 +48,10 @@ export const useDataMode = () => {
         
         if (!mounted) return;
 
-        if (error) {
-          console.log('⚠️ Erreur Auth Supabase:', error.message);
-          setDataMode('demo');
-          setUser(null);
-          return;
-        }
-
-        if (!user) {
-          // Pas d'utilisateur connecté = mode démo
-          console.log('❌ Aucun utilisateur Supabase connecté → Mode DÉMO');
-          setDataMode('demo');
-          setUser(null);
+        // Si utilisateur Supabase connecté, traiter en priorité
+        if (user && !error) {
+          console.log('✅ Utilisateur Supabase détecté, traitement en cours...');
           
-          // Mettre en cache
-          modeCache = { dataMode: 'demo', user: null };
-          cacheTimestamp = Date.now();
-        } else {
           // Vérifier si c'est un compte démo ou un vrai compte
           const isDemoAccount = user.email?.includes('demo@') || 
                                user.email?.includes('test@') || 
@@ -136,7 +92,7 @@ export const useDataMode = () => {
                   name,
                   code,
                   type,
-                  director_id,
+                  director_user_id,
                   address,
                   city,
                   country,
@@ -171,7 +127,7 @@ export const useDataMode = () => {
               console.log('  - École:', userData.school.name);
               console.log('  - Rôle:', userData.role);
               console.log('  - School ID:', userData.current_school_id);
-              console.log('  - Director ID:', userData.school.director_id);
+              console.log('  - Director User ID:', userData.school.director_user_id);
               
               const enrichedUser = { 
                 ...user,
@@ -201,6 +157,44 @@ export const useDataMode = () => {
               cacheTimestamp = Date.now();
             }
           }
+        } else {
+          // Pas d'utilisateur Supabase, vérifier localStorage en fallback
+          console.log('🔄 Pas d\'utilisateur Supabase, vérification localStorage...');
+          const savedUser = localStorage.getItem('edutrack-user');
+          
+          if (savedUser) {
+            try {
+              const userData = JSON.parse(savedUser);
+              console.log('✅ Utilisateur trouvé dans localStorage (FALLBACK):', userData.email);
+              
+              if (!userData.demoAccount) {
+                // C'est un vrai compte production
+                console.log('✅ Mode PRODUCTION (localStorage):', userData.school_name || 'École');
+                setDataMode('production');
+                setUser(userData);
+                modeCache = { dataMode: 'production', user: userData };
+                cacheTimestamp = Date.now();
+                return;
+              } else {
+                // Compte démo
+                console.log('🎭 Mode DÉMO (localStorage)');
+                setDataMode('demo');
+                setUser(userData);
+                modeCache = { dataMode: 'demo', user: userData };
+                cacheTimestamp = Date.now();
+                return;
+              }
+            } catch (e) {
+              console.error('Erreur parsing localStorage:', e);
+            }
+          }
+          
+          // Aucune source de données trouvée
+          console.log('❌ Aucun utilisateur (ni Supabase ni localStorage) → Mode DÉMO');
+          setDataMode('demo');
+          setUser(null);
+          modeCache = { dataMode: 'demo', user: null };
+          cacheTimestamp = Date.now();
         }
       } catch (error) {
         console.error('Erreur lors de la détection du mode de données:', error);
@@ -217,7 +211,11 @@ export const useDataMode = () => {
 
     // Écouter les changements d'authentification
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('🔄 Auth state changed:', event);
       if (mounted) {
+        // Vider le cache pour forcer une re-détection
+        modeCache = null;
+        cacheTimestamp = null;
         checkDataMode();
       }
     });

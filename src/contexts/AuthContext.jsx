@@ -114,13 +114,24 @@ export const AuthProvider = ({ children }) => {
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
+        console.log('🔄 Chargement utilisateur depuis localStorage:', userData.email);
+        
         // Check if it's a demo account
         if (demoAccounts[userData.email]) {
           setAuthMode('demo');
           setUser(userData);
           setUserProfile(userData);
+          setLoading(false);
+        } else if (userData.demoAccount === false && userData.sessionId) {
+          // Compte local (enseignant, étudiant, parent, secrétaire)
+          // Ces comptes n'ont pas de session Supabase Auth
+          console.log('✅ Compte local détecté, utilisation directe des données');
+          setAuthMode('standard');
+          setUser(userData);
+          setUserProfile(userData);
+          setLoading(false);
         } else {
-          // For real accounts, verify with Supabase
+          // Pour les autres comptes (directeurs), vérifier avec Supabase
           setAuthMode('standard');
           checkSupabaseSession(userData);
         }
@@ -132,6 +143,29 @@ export const AuthProvider = ({ children }) => {
     } else {
       checkSupabaseSession();
     }
+
+    // Écouter les changements dans le localStorage (changement de compte)
+    const handleStorageChange = (e) => {
+      if (e.key === 'edutrack-user') {
+        console.log('🔄 Changement de compte détecté dans localStorage');
+        if (e.newValue) {
+          try {
+            const userData = JSON.parse(e.newValue);
+            console.log('👤 Nouveau compte:', userData.email);
+            setUser(userData);
+            setUserProfile(userData);
+          } catch (err) {
+            console.error('Erreur parsing nouveau user:', err);
+          }
+        } else {
+          setUser(null);
+          setUserProfile(null);
+        }
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   const checkSupabaseSession = async (localUser = null) => {

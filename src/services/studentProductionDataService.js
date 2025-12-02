@@ -38,6 +38,8 @@ const studentProductionDataService = {
       }
       studentProductionDataService.ensureContext();
 
+      console.log('👤 Récupération profil pour user_id:', studentProductionDataService.currentStudentId);
+
       const { data, error } = await supabase
         .from('students')
         .select(`
@@ -66,8 +68,11 @@ const studentProductionDataService = {
             country
           )
         `)
-        .eq('id', studentProductionDataService.currentStudentId)
+        .eq('user_id', studentProductionDataService.currentStudentId)
         .single();
+
+      console.log('👤 Résultat requête profil - data:', data);
+      console.log('👤 Résultat requête profil - error:', error);
 
       if (error) throw error;
 
@@ -90,11 +95,36 @@ const studentProductionDataService = {
 
       console.log('📊 Récupération stats pour étudiant:', studentProductionDataService.currentStudentId);
 
+      // D'abord récupérer l'ID de l'étudiant depuis user_id
+      const { data: studentInfo, error: studentError } = await supabase
+        .from('students')
+        .select('id, user_id')
+        .eq('user_id', studentProductionDataService.currentStudentId)
+        .single();
+
+      if (studentError || !studentInfo?.id) {
+        console.warn('⚠️ Aucun étudiant trouvé pour cet user_id');
+        return {
+          data: {
+            averageGrade: '0.00',
+            attendanceRate: '100.0',
+            totalAbsences: 0,
+            justifiedAbsences: 0,
+            unjustifiedAbsences: 0,
+            lateArrivals: 0,
+            assignmentsDue: 0,
+            assignmentsCompleted: 0,
+            unreadNotifications: 0
+          },
+          error: null
+        };
+      }
+
       // Récupérer moyenne des notes
       const { data: gradesData, error: gradesError } = await supabase
         .from('grades')
         .select('grade')
-        .eq('student_id', studentProductionDataService.currentStudentId);
+        .eq('student_id', studentInfo.id);
 
       if (gradesError) throw gradesError;
 
@@ -106,7 +136,7 @@ const studentProductionDataService = {
       const { data: absencesData, error: absencesError } = await supabase
         .from('absences')
         .select('*')
-        .eq('student_id', studentProductionDataService.currentStudentId);
+        .eq('student_id', studentInfo.id);
 
       if (absencesError) throw absencesError;
 
@@ -119,7 +149,7 @@ const studentProductionDataService = {
       const { data: assignmentsData, error: assignmentsError } = await supabase
         .from('assignments')
         .select('status')
-        .eq('student_id', studentProductionDataService.currentStudentId);
+        .eq('student_id', studentInfo.id);
 
       if (assignmentsError) console.warn('Erreur assignments:', assignmentsError);
 
@@ -127,12 +157,6 @@ const studentProductionDataService = {
       const assignmentsCompleted = assignmentsData?.filter(a => a.status === 'completed').length || 0;
 
       // Récupérer notifications non lues
-      const { data: studentInfo } = await supabase
-        .from('students')
-        .select('user_id')
-        .eq('id', studentProductionDataService.currentStudentId)
-        .single();
-
       let unreadNotifications = 0;
       if (studentInfo?.user_id) {
         const { data: notifData } = await supabase
@@ -180,6 +204,18 @@ const studentProductionDataService = {
 
       console.log('📝 Récupération notes pour étudiant:', studentProductionDataService.currentStudentId);
 
+      // Récupérer l'ID de l'étudiant depuis user_id
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', studentProductionDataService.currentStudentId)
+        .single();
+
+      if (studentError || !studentData?.id) {
+        console.warn('⚠️ Aucun étudiant trouvé pour cet user_id');
+        return { data: [], error: null };
+      }
+
       const { data, error } = await supabase
         .from('grades')
         .select(`
@@ -200,7 +236,7 @@ const studentProductionDataService = {
             full_name
           )
         `)
-        .eq('student_id', studentProductionDataService.currentStudentId)
+        .eq('student_id', studentData.id)
         .order('date', { ascending: false });
 
       if (error) throw error;
@@ -240,10 +276,22 @@ const studentProductionDataService = {
 
       console.log('📅 Récupération présences pour étudiant:', studentProductionDataService.currentStudentId);
 
+      // Récupérer l'ID de l'étudiant depuis user_id
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', studentProductionDataService.currentStudentId)
+        .single();
+
+      if (studentError || !studentData?.id) {
+        console.warn('⚠️ Aucun étudiant trouvé pour cet user_id');
+        return { data: [], error: null };
+      }
+
       const { data, error } = await supabase
         .from('absences')
         .select('*')
-        .eq('student_id', studentProductionDataService.currentStudentId)
+        .eq('student_id', studentData.id)
         .order('absence_date', { ascending: false });
 
       if (error) throw error;
@@ -279,6 +327,18 @@ const studentProductionDataService = {
 
       console.log('📚 Récupération devoirs pour étudiant:', studentProductionDataService.currentStudentId);
 
+      // Récupérer l'ID de l'étudiant depuis user_id
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', studentProductionDataService.currentStudentId)
+        .single();
+
+      if (studentError || !studentData?.id) {
+        console.warn('⚠️ Aucun étudiant trouvé pour cet user_id');
+        return { data: [], error: null };
+      }
+
       // Vérifier si la table assignments existe
       const { data, error } = await supabase
         .from('assignments')
@@ -294,7 +354,7 @@ const studentProductionDataService = {
             code
           )
         `)
-        .eq('student_id', studentProductionDataService.currentStudentId)
+        .eq('student_id', studentData.id)
         .order('due_date', { ascending: true });
 
       if (error) {
@@ -333,18 +393,6 @@ const studentProductionDataService = {
 
       console.log('🔔 Récupération notifications pour étudiant:', studentProductionDataService.currentStudentId);
 
-      // Récupérer l'user_id de l'étudiant
-      const { data: studentData, error: studentError } = await supabase
-        .from('students')
-        .select('user_id')
-        .eq('id', studentProductionDataService.currentStudentId)
-        .single();
-
-      if (studentError || !studentData?.user_id) {
-        console.warn('⚠️ Aucun user_id trouvé pour cet étudiant');
-        return { data: [], error: null };
-      }
-
       const { data, error } = await supabase
         .from('user_notifications')
         .select(`
@@ -360,7 +408,7 @@ const studentProductionDataService = {
             name
           )
         `)
-        .eq('user_id', studentData.user_id)
+        .eq('user_id', studentProductionDataService.currentStudentId)
         .order('created_at', { ascending: false })
         .limit(50);
 
@@ -399,11 +447,23 @@ const studentProductionDataService = {
 
       console.log('🏆 Récupération achievements pour étudiant:', studentProductionDataService.currentStudentId);
 
+      // Récupérer l'ID de l'étudiant depuis user_id
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', studentProductionDataService.currentStudentId)
+        .single();
+
+      if (studentError || !studentData?.id) {
+        console.warn('⚠️ Aucun étudiant trouvé pour cet user_id');
+        return { data: [], error: null };
+      }
+
       // Vérifier si la table achievements existe
       const { data, error } = await supabase
         .from('achievements')
         .select('*')
-        .eq('student_id', studentProductionDataService.currentStudentId)
+        .eq('student_id', studentData.id)
         .order('earned_date', { ascending: false });
 
       if (error) {
@@ -431,11 +491,34 @@ const studentProductionDataService = {
 
       console.log('🎯 Récupération comportement pour étudiant:', studentProductionDataService.currentStudentId);
 
+      // Récupérer l'ID de l'étudiant depuis user_id
+      const { data: studentData, error: studentError } = await supabase
+        .from('students')
+        .select('id')
+        .eq('user_id', studentProductionDataService.currentStudentId)
+        .single();
+
+      if (studentError || !studentData?.id) {
+        console.warn('⚠️ Aucun étudiant trouvé pour cet user_id');
+        return {
+          data: {
+            overall_score: 0,
+            participation: 0,
+            discipline: 0,
+            respect: 0,
+            homework: 0,
+            comments: [],
+            positive_notes: []
+          },
+          error: null
+        };
+      }
+
       // Vérifier si la table behavior existe
       const { data, error } = await supabase
         .from('behavior')
         .select('*')
-        .eq('student_id', studentProductionDataService.currentStudentId)
+        .eq('student_id', studentData.id)
         .single();
 
       if (error) {
@@ -478,7 +561,7 @@ const studentProductionDataService = {
       const { data: studentData, error: studentError } = await supabase
         .from('students')
         .select('class_id')
-        .eq('id', studentProductionDataService.currentStudentId)
+        .eq('user_id', studentProductionDataService.currentStudentId)
         .single();
 
       if (studentError || !studentData?.class_id) {

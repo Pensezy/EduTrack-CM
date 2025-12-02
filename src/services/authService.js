@@ -50,9 +50,26 @@ export const loginDirector = async (email, password) => {
 
     console.log('✅ Connexion réussie pour:', authData.user.email);
 
-    // 2. Données d'école gérées automatiquement - pas besoin de finalisation manuelle
+    // 2. Mettre à jour la date de dernière connexion
+    const { error: updateLoginError } = await supabase
+      .from('users')
+      .update({ 
+        last_login: new Date().toISOString(),
+        login_attempts: 0, // Réinitialiser les tentatives échouées
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', authData.user.id);
 
-    // 3. Récupérer les données de l'école
+    if (updateLoginError) {
+      console.warn('⚠️ Erreur mise à jour last_login:', updateLoginError);
+      // Ne pas bloquer la connexion pour cette erreur
+    } else {
+      console.log('✅ Date de dernière connexion mise à jour');
+    }
+
+    // 3. Données d'école gérées automatiquement - pas besoin de finalisation manuelle
+
+    // 4. Récupérer les données de l'école
     console.log('🔍 Recherche école pour utilisateur:', {
       userId: authData.user.id,
       userEmail: authData.user.email,
@@ -413,6 +430,8 @@ export const loginWithPin = async (identifier, pin) => {
         is_active: true,
         active: true,
         photo: '/assets/images/no_image.png',
+        last_login: new Date().toISOString(), // Ajouter la date de connexion
+        login_attempts: 0, // Réinitialiser les tentatives
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       })
@@ -422,6 +441,8 @@ export const loginWithPin = async (identifier, pin) => {
     if (userError) {
       console.warn('⚠️ Warning: Could not ensure user in users table:', userError);
       // Continue anyway as we have the verified data
+    } else {
+      console.log('✅ Date de dernière connexion mise à jour (PIN login)');
     }
 
     // Build authenticated user object
@@ -446,3 +467,57 @@ export const loginWithPin = async (identifier, pin) => {
     };
   }
 };
+
+/**
+ * Connexion pour les étudiants (sans Supabase Auth)
+ * Les étudiants ont seulement une entrée dans la table users
+ */
+export const loginStudent = async (email, password) => {
+  try {
+    console.log('🔐 Tentative de connexion étudiant pour:', email);
+    
+    // Vérifier les identifiants dans la table users
+    const { data: userData, error: userError } = await supabase
+      .from('users')
+      .select('*')
+      .eq('email', email)
+      .eq('role', 'student')
+      .eq('is_active', true)
+      .single();
+
+    if (userError || !userData) {
+      throw new Error('Email ou mot de passe incorrect');
+    }
+
+    // Vérifier le mot de passe (stocké en clair pour l'instant)
+    if (userData.password_hash !== password) {
+      throw new Error('Email ou mot de passe incorrect');
+    }
+
+    // Mettre à jour la date de dernière connexion
+    await supabase
+      .from('users')
+      .update({ 
+        last_login: new Date().toISOString(),
+        login_attempts: 0,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', userData.id);
+
+    console.log('✅ Connexion étudiant réussie pour:', userData.email);
+
+    return {
+      success: true,
+      user: userData
+    };
+
+  } catch (error) {
+    console.error('❌ Erreur connexion étudiant:', error);
+    return {
+      success: false,
+      user: null,
+      error: error.message || 'Erreur de connexion'
+    };
+  }
+};
+
