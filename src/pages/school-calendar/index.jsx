@@ -4,15 +4,23 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
+import { useDataMode } from '../../hooks/useDataMode';
+import { getCurrentAcademicYear } from '../../utils/academicYear';
 
 const SchoolCalendar = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
+  const [currentMonth, setCurrentMonth] = useState(new Date());
   
-  // Récupérer les informations de l'utilisateur connecté
-  const { user } = useAuth();
+  // Utiliser useDataMode qui gère correctement l'utilisateur avec son rôle
+  const { user, isLoading } = useDataMode();
+  
+  // Debug : Vérifier quel utilisateur est chargé
+  console.log('📅 SchoolCalendar - Utilisateur:', user?.email, 'Rôle:', user?.role);
+  
+  // Récupérer l'année académique actuelle
+  const currentAcademicYear = getCurrentAcademicYear();
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -22,23 +30,23 @@ const SchoolCalendar = () => {
     {
       id: 1,
       title: 'Rentrée scolaire',
-      date: '2024-09-02',
+      date: '2025-09-01',
       type: 'academic',
-      description: 'Début de l\'année scolaire 2024-2025',
+      description: `Début de l'année scolaire ${currentAcademicYear}`,
       color: 'bg-blue-500'
     },
     {
       id: 2,
       title: 'Réunion parents d\'élèves',
-      date: '2024-09-28',
+      date: '2025-09-28',
       type: 'meeting',
       description: 'Réunion trimestrielle avec les parents',
       color: 'bg-green-500'
     },
     {
       id: 3,
-      title: 'Congé de la Jeunesse',
-      date: '2024-02-11',
+      title: 'Fête nationale',
+      date: '2025-05-20',
       type: 'holiday',
       description: 'Fête nationale - école fermée',
       color: 'bg-red-500'
@@ -46,7 +54,7 @@ const SchoolCalendar = () => {
     {
       id: 4,
       title: 'Examens du 1er trimestre',
-      date: '2024-12-10',
+      date: '2025-12-10',
       type: 'exam',
       description: 'Début des examens trimestriels',
       color: 'bg-orange-500'
@@ -54,7 +62,7 @@ const SchoolCalendar = () => {
     {
       id: 5,
       title: 'Formation des enseignants',
-      date: '2024-10-15',
+      date: '2025-10-15',
       type: 'training',
       description: 'Session de formation pédagogique',
       color: 'bg-purple-500'
@@ -91,6 +99,36 @@ const SchoolCalendar = () => {
   const getEventTypeColor = (type) => {
     return eventTypes.find(t => t.id === type)?.color || 'bg-gray-500';
   };
+  
+  // Fonction pour changer de mois
+  const previousMonth = () => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(newDate.getMonth() - 1);
+    setCurrentMonth(newDate);
+  };
+  
+  const nextMonth = () => {
+    const newDate = new Date(currentMonth);
+    newDate.setMonth(newDate.getMonth() + 1);
+    setCurrentMonth(newDate);
+  };
+  
+  const goToToday = () => {
+    setCurrentMonth(new Date());
+  };
+  
+  const getMonthName = () => {
+    return currentMonth.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' });
+  };
+  
+  // Fonction pour gérer les actions (à implémenter)
+  const handleAddEvent = () => {
+    alert('Fonctionnalité en développement : Ajouter un événement');
+  };
+  
+  const handleExport = () => {
+    alert('Fonctionnalité en développement : Exporter le calendrier');
+  };
 
   return (
     <>
@@ -101,15 +139,15 @@ const SchoolCalendar = () => {
       
       <div className="min-h-screen bg-background">
         <Header 
-          userRole={user?.role || "principal"} 
-          userName={user?.full_name || user?.name || "Utilisateur"}
+          userRole={user?.role} 
+          userName={user?.full_name || user?.email?.split('@')[0] || "Utilisateur"}
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
         
         <div className="flex pt-16">
           <Sidebar 
-            userRole={user?.role || "principal"}
+            userRole={user?.role}
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
           />
@@ -130,19 +168,21 @@ const SchoolCalendar = () => {
                       Calendrier Scolaire
                     </h1>
                     <p className="text-muted-foreground">
-                      Gérer les événements et les plannings de l'école
+                      Année académique {currentAcademicYear}
                     </p>
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={handleExport}>
                     <Icon name="Download" size={16} className="mr-2" />
                     Exporter
                   </Button>
-                  <Button>
-                    <Icon name="Plus" size={16} className="mr-2" />
-                    Nouvel événement
-                  </Button>
+                  {(user?.role === 'principal' || user?.role === 'secretary') && (
+                    <Button onClick={handleAddEvent}>
+                      <Icon name="Plus" size={16} className="mr-2" />
+                      Nouvel événement
+                    </Button>
+                  )}
                 </div>
               </div>
             </div>
@@ -154,17 +194,17 @@ const SchoolCalendar = () => {
                   {/* En-tête du calendrier */}
                   <div className="flex items-center justify-between mb-6">
                     <div className="flex items-center space-x-4">
-                      <h2 className="text-xl font-heading font-heading-semibold text-card-foreground">
-                        Septembre 2024
+                      <h2 className="text-xl font-heading font-heading-semibold text-card-foreground capitalize">
+                        {getMonthName()}
                       </h2>
                       <div className="flex space-x-1">
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={previousMonth}>
                           <Icon name="ChevronLeft" size={16} />
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={goToToday}>
                           Aujourd'hui
                         </Button>
-                        <Button variant="ghost" size="sm">
+                        <Button variant="ghost" size="sm" onClick={nextMonth}>
                           <Icon name="ChevronRight" size={16} />
                         </Button>
                       </div>
@@ -283,22 +323,32 @@ const SchoolCalendar = () => {
                     Actions rapides
                   </h3>
                   <div className="space-y-2">
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Icon name="Plus" size={14} className="mr-2" />
-                      Ajouter événement
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Icon name="Calendar" size={14} className="mr-2" />
-                      Programmer vacances
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Icon name="Users" size={14} className="mr-2" />
-                      Réunion parents
-                    </Button>
-                    <Button variant="outline" size="sm" className="w-full justify-start">
-                      <Icon name="BookOpen" size={14} className="mr-2" />
-                      Planifier examens
-                    </Button>
+                    {(user?.role === 'principal' || user?.role === 'secretary') && (
+                      <>
+                        <Button variant="outline" size="sm" className="w-full justify-start" onClick={handleAddEvent}>
+                          <Icon name="Plus" size={14} className="mr-2" />
+                          Ajouter événement
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => alert('Fonctionnalité en développement')}>
+                          <Icon name="Calendar" size={14} className="mr-2" />
+                          Programmer vacances
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => alert('Fonctionnalité en développement')}>
+                          <Icon name="Users" size={14} className="mr-2" />
+                          Réunion parents
+                        </Button>
+                        <Button variant="outline" size="sm" className="w-full justify-start" onClick={() => alert('Fonctionnalité en développement')}>
+                          <Icon name="BookOpen" size={14} className="mr-2" />
+                          Planifier examens
+                        </Button>
+                      </>
+                    )}
+                    {user?.role === 'teacher' && (
+                      <div className="text-sm text-muted-foreground p-3 bg-muted/30 rounded-lg">
+                        <Icon name="Info" size={14} className="inline mr-2" />
+                        Consultation uniquement
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

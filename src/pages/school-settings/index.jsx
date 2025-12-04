@@ -1,17 +1,28 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Helmet } from 'react-helmet';
+import { useNavigate } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useAuth } from '../../contexts/AuthContext';
+import { useDataMode } from '../../hooks/useDataMode';
 
 const SchoolSettings = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
+  const navigate = useNavigate();
   
-  // Récupérer les informations de l'utilisateur connecté
-  const { user } = useAuth();
+  // Utiliser useDataMode qui gère correctement l'utilisateur avec son rôle
+  const { user, isLoading } = useDataMode();
+  
+  // Protection : Seul le principal peut accéder à cette page
+  useEffect(() => {
+    if (!isLoading && user && user.role !== 'principal') {
+      console.warn('⚠️ Accès refusé : Cette page est réservée au directeur');
+      alert('Accès refusé : Cette page est réservée au directeur de l\'école.');
+      navigate('/');
+    }
+  }, [user, isLoading, navigate]);
 
   const toggleSidebar = () => {
     setIsSidebarCollapsed(!isSidebarCollapsed);
@@ -64,15 +75,15 @@ const SchoolSettings = () => {
       
       <div className="min-h-screen bg-background">
         <Header 
-          userRole={user?.role || "principal"} 
-          userName={user?.full_name || user?.name || "Utilisateur"}
+          userRole={user?.role} 
+          userName={user?.full_name || user?.email?.split('@')[0] || "Utilisateur"}
           isCollapsed={isSidebarCollapsed}
           onToggleSidebar={toggleSidebar}
         />
         
         <div className="flex pt-16">
           <Sidebar 
-            userRole={user?.role || "principal"}
+            userRole={user?.role}
             isCollapsed={isSidebarCollapsed}
             onToggle={toggleSidebar}
           />

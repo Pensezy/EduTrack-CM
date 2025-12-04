@@ -1,23 +1,30 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useDataMode } from './useDataMode';
+import { supabase } from '../lib/supabase';
 import demoDataService from '../services/demoDataService';
 import productionDataService from '../services/productionDataService';
 
 /**
  * Hook optimisé pour charger SEULEMENT les données de profil utilisateur
  * Plus rapide que useDashboardData pour les pages qui n'ont besoin que du profil
+ * @param {object} providedUser - Utilisateur à charger (optionnel, sinon utilise AuthContext)
  */
-export const useUserProfile = () => {
-  const { user } = useAuth();
+export const useUserProfile = (providedUser = null) => {
+  const { user: authUser } = useAuth();
   const { dataMode, isLoading: modeLoading } = useDataMode();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Utiliser l'utilisateur fourni ou celui du contexte
+  const user = providedUser || authUser;
+
   useEffect(() => {
     const loadUserProfile = async () => {
       if (!user || modeLoading) return;
+      
+      console.log('👤 useUserProfile - Chargement profil pour:', user.email, '(ID:', user.id, ')');
       
       setLoading(true);
       setError(null);
@@ -28,11 +35,14 @@ export const useUserProfile = () => {
 
         if (isDemoAccount) {
           // ============ PROFIL DÉMO ============
+          console.log('🎭 Mode DÉMO détecté');
           const demoProfile = getDemoProfile(user.role, user);
           setProfile(demoProfile);
         } else {
           // ============ PROFIL RÉEL ============
+          console.log('✅ Mode PRODUCTION détecté');
           const realProfile = await getRealProfile(user);
+          console.log('📋 Profil chargé:', realProfile);
           setProfile(realProfile);
         }
       } catch (err) {
@@ -154,30 +164,53 @@ const getRealProfile = async (user) => {
     // Charger SEULEMENT les données spécifiques au rôle (pas toutes les données)
     switch (profile.role) {
       case 'principal':
-        // Charger données école uniquement
-        if (user.current_school_id) {
+        // Charger données école complètes
+        if (user.current_school_id || user.schoolData?.id) {
+          const schoolId = user.current_school_id || user.schoolData?.id;
+          
+          // Charger les détails de l'école
           const schoolData = await productionDataService.getSchoolDetails();
+          
           if (schoolData.data) {
+            // Compter le personnel et les étudiants
+            const { data: employees } = await supabase
+              .from('users')
+              .select('id', { count: 'exact' })
+              .eq('current_school_id', schoolId)
+              .in('role', ['teacher', 'secretary']);
+            
+            const { data: students, count: studentsCount } = await supabase
+              .from('students')
+              .select('id', { count: 'exact', head: true })
+              .eq('school_id', schoolId);
+            
             profile = {
               ...profile,
               school_name: schoolData.data.name || 'École non définie',
               school_address: schoolData.data.address || 'Adresse non définie',
+              school_city: schoolData.data.city || '',
+              school_country: schoolData.data.country || '',
+              school_phone: schoolData.data.phone || '',
+              school_code: schoolData.data.code || '',
               position: 'Directeur d\'Établissement',
-              experience: 'Non défini',
-              specialization: 'Administration Scolaire'
+              experience: 'Non défini', // À remplir manuellement ou depuis un champ dédié
+              specialization: 'Administration Scolaire',
+              employees_count: employees?.length || 0,
+              students_count: studentsCount || 0,
+              classes_managed: schoolData.data.available_classes || [],
+              school_type: schoolData.data.type || 'Non défini',
+              school_status: schoolData.data.status || 'active'
             };
           }
         }
         break;
 
       case 'teacher':
-        // Pour les enseignants, charger directement depuis la table teachers
-        // sans passer par productionDataService.getPersonnel()
+        // Pour les enseignants, charger depuis la table teachers
         if (user.current_school_id) {
-          const { supabase } = await import('../lib/supabase');
-          const { data: teacherData, error: teacherError } = await supabase
+          const { data: teacherData } = await supabase
             .from('teachers')
-            .select('id, first_name, last_name, specialty, hire_date')
+            .select('*, classes(name)')
             .eq('user_id', user.id)
             .eq('is_active', true)
             .maybeSingle();
@@ -187,11 +220,158 @@ const getRealProfile = async (user) => {
               ...profile,
               full_name: profile.full_name || `${teacherData.first_name} ${teacherData.last_name}`,
               subject: teacherData.specialty || 'Matière non définie',
+              degree: teacherData.degree || 'Non défini',
               experience: teacherData.hire_date ? 
                 `${new Date().getFullYear() - new Date(teacherData.hire_date).getFullYear()} ans` : 
-                'Non défini'
+                'Non défini',
+              classes: teacherData.classes?.map(c => c.name) || [],
+              phone: teacherData.phone || profile.phone
             };
+            
+            // Compter les étudiants
+            const { count: studentsCount } = await supabase
+              .from('students')
+              .select('id', { count: 'exact', head: true })
+              .eq('school_id', user.current_school_id);
+            
+            profile.students_count = studentsCount || 0;
           }
+        }
+        break;
+      
+      case 'student':
+        // Pour les étudiants, charger depuis la table students
+        const { data: studentData, error: studentError } = await supabase
+          .from('students')
+          .select(`
+            *,
+            classes(name),
+            schools(name)
+          `)
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        console.log('📚 Données étudiant chargées:', studentData);
+        console.log('📚 Student ID:', studentData?.id);
+
+        if (studentData) {
+          // Charger les informations du parent via la table de liaison parent_students
+          let parentInfo = null;
+          
+          // Chercher d'abord dans parent_students (nouvelle structure)
+          const { data: parentStudentLink, error: linkError } = await supabase
+            .from('parent_students')
+            .select(`
+              parent_id,
+              relationship,
+              is_primary,
+              parents!inner(
+                id,
+                user_id,
+                profession,
+                address,
+                emergency_contact,
+                users!inner(id, full_name, phone, email)
+              )
+            `)
+            .eq('student_id', studentData.id)
+            .eq('is_primary', true)
+            .maybeSingle();
+          
+          console.log('🔗 Lien parent-étudiant:', parentStudentLink);
+          console.log('🔗 Erreur lien:', linkError);
+          
+          if (parentStudentLink && parentStudentLink.parents && parentStudentLink.parents.users) {
+            const parentData = parentStudentLink.parents;
+            const userData = parentData.users;
+            
+            parentInfo = {
+              id: userData.id,
+              name: userData.full_name || 'Non défini',
+              phone: userData.phone || 'Non défini',
+              email: userData.email || 'Non défini',
+              profession: parentData.profession || null,
+              address: parentData.address || null,
+              emergency_contact: parentData.emergency_contact || null,
+              relationship: parentStudentLink.relationship || 'Parent'
+            };
+            console.log('✅ Parent info extraite:', parentInfo);
+          } else {
+            // Fallback : essayer avec l'ancienne structure (parent_id dans students)
+            console.log('⚠️ Pas de lien dans parent_students, essai avec parent_id...');
+            
+            if (studentData.parent_id) {
+              const { data: parentData, error: parentError } = await supabase
+                .from('parents')
+                .select(`
+                  *,
+                  users!inner(id, full_name, phone, email)
+                `)
+                .eq('id', studentData.parent_id)
+                .maybeSingle();
+              
+              console.log('👨‍👩‍👧 Parent via parent_id:', parentData);
+              
+              if (parentData && parentData.users) {
+                parentInfo = {
+                  id: parentData.users.id,
+                  name: parentData.users.full_name || 'Non défini',
+                  phone: parentData.users.phone || 'Non défini',
+                  email: parentData.users.email || 'Non défini',
+                  profession: parentData.profession || null,
+                  address: parentData.address || null,
+                  emergency_contact: parentData.emergency_contact || null,
+                  relationship: 'Parent'
+                };
+                console.log('✅ Parent info extraite (fallback):', parentInfo);
+              }
+            } else {
+              console.warn('⚠️ Aucun parent trouvé pour cet étudiant');
+            }
+          }
+          
+          profile = {
+            ...profile,
+            full_name: studentData.first_name && studentData.last_name 
+              ? `${studentData.first_name} ${studentData.last_name}` 
+              : profile.full_name,
+            class_name: studentData.classes?.name || 'Non assigné',
+            school_name: studentData.schools?.name || 'École non définie',
+            student_id: studentData.student_number || 'Non défini',
+            birth_date: studentData.birth_date || 'Non défini',
+            parent_name: parentInfo?.name || 'Non défini',
+            parent_phone: parentInfo?.phone || 'Non défini',
+            parent_email: parentInfo?.email || null,
+            parent_profession: parentInfo?.profession || null,
+            parent_address: parentInfo?.address || null,
+            parent_emergency_contact: parentInfo?.emergency_contact || null,
+            parent_relationship: parentInfo?.relationship || null,
+            phone: studentData.phone || profile.phone,
+            gender: studentData.gender || 'Non défini',
+            // Ces champs seront calculés dynamiquement
+            average_grade: 'À calculer',
+            attendance_rate: 'À calculer',
+            subjects: [] // À charger depuis le programme de la classe
+          };
+        }
+        break;
+        
+      case 'secretary':
+        // Pour les secrétaires, charger depuis la table users
+        if (user.current_school_id) {
+          const { data: schoolData } = await supabase
+            .from('schools')
+            .select('name, address')
+            .eq('id', user.current_school_id)
+            .maybeSingle();
+          
+          profile = {
+            ...profile,
+            position: 'Secrétaire',
+            school_name: schoolData?.name || 'École non définie',
+            specialization: 'Gestion Administrative',
+            permissions: ['Gestion Étudiants', 'Documents Administratifs']
+          };
         }
         break;
         

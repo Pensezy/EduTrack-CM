@@ -109,45 +109,126 @@ export const AuthProvider = ({ children }) => {
   const [authMode, setAuthMode] = useState('standard'); // 'standard' or 'demo'
 
   useEffect(() => {
-    // Charger la session au démarrage
-    const savedUser = localStorage.getItem('edutrack-user');
-    if (savedUser) {
+    // PRIORITÉ : Toujours vérifier la session Supabase d'abord
+    // Cela évite qu'un compte local (étudiant) ne masque un compte principal connecté
+    const initializeAuth = async () => {
       try {
-        const userData = JSON.parse(savedUser);
-        console.log('🔄 Chargement utilisateur depuis localStorage:', userData.email);
+        console.log('🔍 Vérification de la session Supabase...');
+        const { data: { session }, error } = await supabase.auth.getSession();
         
-        // Check if it's a demo account
-        if (demoAccounts[userData.email]) {
-          setAuthMode('demo');
-          setUser(userData);
-          setUserProfile(userData);
-          setLoading(false);
-        } else if (userData.demoAccount === false && userData.sessionId) {
-          // Compte local (enseignant, étudiant, parent, secrétaire)
-          // Ces comptes n'ont pas de session Supabase Auth
-          console.log('✅ Compte local détecté, utilisation directe des données');
+        if (session?.user) {
+          // ✅ Session Supabase active (Principal) - PRIORITÉ ABSOLUE
+          console.log('✅ Session Supabase trouvée:', session.user.email);
+          await ensureUserInDatabase(session.user);
+          setUser(session.user);
+          setUserProfile(session.user);
           setAuthMode('standard');
-          setUser(userData);
-          setUserProfile(userData);
+          localStorage.setItem('edutrack-user', JSON.stringify(session.user));
           setLoading(false);
+          return;
+        }
+        
+        console.log('ℹ️ Pas de session Supabase, vérification localStorage...');
+        
+        // Pas de session Supabase, vérifier localStorage
+        const savedUser = localStorage.getItem('edutrack-user');
+        if (savedUser) {
+          const userData = JSON.parse(savedUser);
+          console.log('🔄 Utilisateur depuis localStorage:', userData.email);
+          
+          // Check if it's a demo account
+          if (demoAccounts[userData.email]) {
+            setAuthMode('demo');
+            setUser(userData);
+            setUserProfile(userData);
+            setLoading(false);
+          } else if (userData.demoAccount === false && userData.sessionId) {
+            // Compte local (enseignant, étudiant, parent, secrétaire)
+            console.log('✅ Compte local détecté, utilisation directe des données');
+            setAuthMode('standard');
+            setUser(userData);
+            setUserProfile(userData);
+            setLoading(false);
+          } else {
+            // Données invalides dans localStorage
+            console.warn('⚠️ Données localStorage invalides');
+            localStorage.removeItem('edutrack-user');
+            setLoading(false);
+          }
         } else {
-          // Pour les autres comptes (directeurs), vérifier avec Supabase
-          setAuthMode('standard');
-          checkSupabaseSession(userData);
+          console.log('ℹ️ Aucune session trouvée');
+          setLoading(false);
         }
       } catch (e) {
-        console.error('Erreur lors du chargement de la session:', e);
+        console.error('❌ Erreur lors de l\'initialisation:', e);
         localStorage.removeItem('edutrack-user');
-        checkSupabaseSession();
+        setLoading(false);
       }
-    } else {
-      checkSupabaseSession();
-    }
+    };
+    
+    initializeAuth();
+
+    // Écouter les changements de session Supabase (connexion/déconnexion principal)
+    let isProcessingAuth = false;
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log('🔐 Changement d\'état Supabase:', event, session?.user?.email);
+      
+      // Éviter les appels multiples simultanés
+      if (isProcessingAuth) {
+        console.log('⏭️ Événement ignoré (traitement en cours)');
+        return;
+      }
+      
+      if (event === 'SIGNED_IN' && session?.user) {
+        // Principal connecté - Ne traiter que si ce n'est pas déjà fait
+        const currentUser = localStorage.getItem('edutrack-user');
+        if (currentUser) {
+          try {
+            const userData = JSON.parse(currentUser);
+            if (userData.id === session.user.id) {
+              console.log('✅ Utilisateur déjà défini, ignorer l\'événement');
+              return;
+            }
+          } catch (e) {
+            // Continuer si erreur de parsing
+          }
+        }
+        
+        isProcessingAuth = true;
+        try {
+          await ensureUserInDatabase(session.user);
+          setUser(session.user);
+          setUserProfile(session.user);
+          localStorage.setItem('edutrack-user', JSON.stringify(session.user));
+        } finally {
+          isProcessingAuth = false;
+        }
+      } else if (event === 'SIGNED_OUT') {
+        // Principal déconnecté
+        console.log('👋 Déconnexion Supabase');
+        // Ne pas nettoyer si un compte local est actif
+        const savedUser = localStorage.getItem('edutrack-user');
+        if (savedUser) {
+          try {
+            const userData = JSON.parse(savedUser);
+            if (!userData.sessionId) {
+              // C'était un compte Supabase, le supprimer
+              localStorage.removeItem('edutrack-user');
+              setUser(null);
+              setUserProfile(null);
+            }
+          } catch (e) {
+            console.error('Erreur parsing user:', e);
+          }
+        }
+      }
+    });
 
     // Écouter les changements dans le localStorage (changement de compte)
+    // Note: storage event ne marche que pour les autres fenêtres
     const handleStorageChange = (e) => {
       if (e.key === 'edutrack-user') {
-        console.log('🔄 Changement de compte détecté dans localStorage');
+        console.log('🔄 Changement de compte détecté dans localStorage (autre fenêtre)');
         if (e.newValue) {
           try {
             const userData = JSON.parse(e.newValue);
@@ -164,8 +245,28 @@ export const AuthProvider = ({ children }) => {
       }
     };
 
+    // Écouter les événements personnalisés pour les changements dans la même fenêtre
+    const handleUserChange = (e) => {
+      console.log('🔄 Changement de compte détecté (événement personnalisé)');
+      const userData = e.detail;
+      if (userData) {
+        console.log('👤 Nouveau compte:', userData.email);
+        setUser(userData);
+        setUserProfile(userData);
+      } else {
+        setUser(null);
+        setUserProfile(null);
+      }
+    };
+
     window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
+    window.addEventListener('edutrack-user-changed', handleUserChange);
+    
+    return () => {
+      authListener?.subscription?.unsubscribe();
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('edutrack-user-changed', handleUserChange);
+    };
   }, []);
 
   const checkSupabaseSession = async (localUser = null) => {

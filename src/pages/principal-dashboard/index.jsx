@@ -19,6 +19,7 @@ import ErrorBoundary from '../../components/ErrorBoundary';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import useDashboardData from '../../hooks/useDashboardData';
+import useRoleSession from '../../hooks/useRoleSession';
 
 const PrincipalDashboard = () => {
   const location = useLocation();
@@ -34,6 +35,9 @@ const PrincipalDashboard = () => {
   const [classError, setClassError] = useState('');
   const [classSuccess, setClassSuccess] = useState('');
   
+  // NOUVEAU : Charger la session spécifique au directeur
+  const { user: principalUser, loading: sessionLoading, error: sessionError } = useRoleSession('principal');
+  
   // Hook pour les données avec switch automatique démo/production
   const { 
     data, 
@@ -47,14 +51,19 @@ const PrincipalDashboard = () => {
     user  // Récupérer aussi l'utilisateur depuis useDataMode
   } = useDashboardData();
 
+  // Utiliser prioritairement la session du directeur
+  const currentUser = principalUser || user;
+
   // Récupérer les données de l'école - PRIORITÉ aux vraies données de la base de données
   const schoolDataFromDatabase = data.schoolDetails; // Vraies données depuis Supabase
   const schoolDataFromState = location.state?.school;
-  const schoolDataFromUser = user?.schoolData;
+  const schoolDataFromUser = currentUser?.schoolData;
   const schoolData = schoolDataFromDatabase || schoolDataFromUser || schoolDataFromState;
   
   useEffect(() => {
     console.log('🏛️ PrincipalDashboard - État actuel:');
+    console.log('  - Session Principal:', principalUser?.email || 'Non trouvée');
+    console.log('  - Utilisateur actif:', currentUser?.email);
     console.log('  - Mode de données:', dataMode);
     console.log('  - Est en mode démo:', isDemo);
     console.log('  - Est en mode production:', isProduction);
@@ -941,7 +950,7 @@ const PrincipalDashboard = () => {
                     <div><strong>Statut:</strong> {user.schoolData.status}</div>
                     <div><strong>Adresse:</strong> {user.schoolData.address || 'Non définie'}</div>
                     <div><strong>Ville:</strong> {user.schoolData.city || 'Non définie'}</div>
-                    <div><strong>Pays:</strong> {user.schoolData.country || 'Non défini'}</div>
+                    <div><strong>Pays:</strong> {user.schoolData.ceountry || 'Non défini'}</div>
                     <div><strong>Classes:</strong> {user.schoolData.available_classes ? user.schoolData.available_classes.join(', ') : 'Non définies'}</div>
                     <div><strong>Code école:</strong> {user.schoolData.code || 'Non défini'}</div>
                     <div><strong>Directeur User ID:</strong> {user.schoolData.director_user_id}</div>

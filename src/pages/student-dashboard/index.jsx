@@ -5,6 +5,7 @@ import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import { useAuth } from '../../contexts/AuthContext';
 import { useStudentDashboardData } from '../../hooks/useStudentDashboardData';
+import useRoleSession from '../../hooks/useRoleSession';
 
 import ProfileCard from './components/ProfileCard';
 import GradesPanel from './components/GradesPanel';
@@ -13,6 +14,7 @@ import BehaviorAssessment from './components/BehaviorAssessment';
 import NotificationsPanel from './components/NotificationsPanel';
 import UpcomingAssignments from './components/UpcomingAssignments';
 import AchievementBadges from './components/AchievementBadges';
+import ParentInfoCard from './components/ParentInfoCard';
 
 const StudentDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -22,10 +24,17 @@ const StudentDashboard = () => {
   const [messageTab, setMessageTab] = useState('received'); // 'received', 'sent', 'archived'
   const [showNewMessageModal, setShowNewMessageModal] = useState(false);
   const [documentTab, setDocumentTab] = useState('received'); // 'received', 'assignments', 'admin'
-  const { user } = useAuth();
+  
+  // NOUVEAU : Charger la session spécifique à l'étudiant
+  const { user: studentUser, loading: sessionLoading, error: sessionError } = useRoleSession('student');
+  const { user: authUser } = useAuth();
+  
+  // Utiliser prioritairement la session étudiant
+  const user = studentUser || authUser;
 
-  console.log('🔑 AuthContext user:', user);
-  console.log('💾 localStorage user:', JSON.parse(localStorage.getItem('edutrack-user') || 'null'));
+  console.log('🔑 Student Session:', studentUser?.email || 'Non trouvée');
+  console.log('🔑 AuthContext user:', authUser?.email);
+  console.log('🔑 Utilisateur actif:', user?.email);
 
   // Utiliser le nouveau hook unifié pour récupérer les données (mode démo ou production)
   const {
@@ -1222,9 +1231,10 @@ const StudentDashboard = () => {
                 <UpcomingAssignments assignments={assignmentsData} />
               </div>
 
-              {/* Right Column - Attendance and Notifications */}
+              {/* Right Column - Attendance, Parent Info and Notifications */}
               <div className="space-y-6">
                 <AttendanceCalendar attendanceData={attendanceData} />
+                <ParentInfoCard parentInfo={studentProfile} />
                 <NotificationsPanel notifications={notificationsData} />
               </div>
             </div>

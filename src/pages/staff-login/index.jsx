@@ -184,7 +184,23 @@ const StaffLogin = () => {
         demoAccount: false
       };
 
+      // Stocker la session avec une clé spécifique au rôle
+      const sessionKey = `edutrack-session-${userData.role}`;
+      localStorage.setItem(sessionKey, JSON.stringify(userSession));
+      console.log(`💾 Session sauvegardée sous: ${sessionKey}`);
+      
+      // Également sauvegarder dans la clé globale pour compatibilité
       localStorage.setItem('edutrack-user', JSON.stringify(userSession));
+      
+      // Dispatcher l'événement pour notifier AuthContext du changement
+      window.dispatchEvent(new CustomEvent('edutrack-user-changed', { 
+        detail: { 
+          user: userSession, 
+          role: userData.role,
+          sessionKey 
+        } 
+      }));
+      console.log('📢 Événement edutrack-user-changed dispatché pour:', userSession.email, '- Rôle:', userData.role);
       
       console.log('✅ Mode PRODUCTION (compte local):', userSession.school_name);
 

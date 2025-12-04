@@ -26,14 +26,6 @@ const QuickActions = () => {
       path: '/staff-login'
     },
     {
-      id: 'personnel',
-      title: 'Créer compte secrétaire',
-      description: 'Ajouter un nouveau secrétaire',
-      icon: 'UserPlus',
-      color: 'bg-blue-500',
-      path: '/principal-dashboard?tab=personnel'
-    },
-    {
       id: 'notifications',
       title: 'Envoyer une notification',
       description: 'Diffuser un message à toute l\'école',
@@ -52,18 +44,10 @@ const QuickActions = () => {
     {
       id: 'staff',
       title: 'Gestion du personnel',
-      description: 'Accéder aux profils du personnel',
+      description: 'Créer et gérer les comptes du personnel',
       icon: 'Users',
       color: 'bg-warning',
-      path: '/principal-dashboard?tab=personnel'
-    },
-    {
-      id: 'settings',
-      title: 'Paramètres école',
-      description: 'Configurer les paramètres généraux',
-      icon: 'Settings',
-      color: 'bg-secondary',
-      path: '/school-settings'
+      path: '/principal-dashboard?tab=accounts'
     },
     {
       id: 'calendar',

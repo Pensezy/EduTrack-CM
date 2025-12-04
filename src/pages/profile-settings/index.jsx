@@ -1,13 +1,52 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { useAuth } from '../../contexts/AuthContext';
 import useUserProfile from '../../hooks/useUserProfile';
+import useRoleSession from '../../hooks/useRoleSession';
 
 const ProfileSettings = () => {
-  const { user } = useAuth();
-  const { profile: userProfile, loading: profileLoading, error } = useUserProfile();
+  const location = useLocation();
+  const { user: authUser } = useAuth();
+  
+  console.log('🔍 ProfileSettings - AuthUser reçu:', authUser?.email, 'Role:', authUser?.role, 'ID:', authUser?.id);
+  
+  // PRIORITÉ ABSOLUE : Si authUser existe, l'utiliser directement sans vérifier de session
+  // Cela corrige le problème où un utilisateur connecté voit les données d'un autre utilisateur
+  let user = authUser;
+  
+  // Déterminer le rôle attendu (uniquement pour useRoleSession en fallback)
+  let expectedRole = authUser?.role || 'student';
+  
+  if (!authUser?.role) {
+    const currentPath = location.pathname;
+    
+    if (currentPath.includes('principal')) {
+      expectedRole = 'principal';
+    } else if (currentPath.includes('teacher')) {
+      expectedRole = 'teacher';
+    } else if (currentPath.includes('parent')) {
+      expectedRole = 'parent';
+    } else if (currentPath.includes('secretary')) {
+      expectedRole = 'secretary';
+    }
+  }
+  
+  // Toujours appeler le hook (règle React) mais uniquement en fallback
+  const { user: roleUser } = useRoleSession(expectedRole);
+  
+  // Fallback : Si authUser n'existe pas, essayer roleUser
+  if (!user && roleUser) {
+    user = roleUser;
+    console.log('👤 ProfileSettings - Utilisation RoleSession (fallback):', roleUser.email);
+  }
+  
+  console.log('✅ ProfileSettings - Utilisateur final sélectionné:', user?.email, '(rôle:', user?.role, ')');
+  
+  // Passer l'utilisateur spécifique au hook
+  const { profile: userProfile, loading: profileLoading, error } = useUserProfile(user);
   
   const [isChangingPassword, setIsChangingPassword] = useState(false);
   const [passwordData, setPasswordData] = useState({
@@ -444,6 +483,18 @@ const ProfileSettings = () => {
                   </p>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-yellow-700 mb-1">Date de naissance</label>
+                  <p className="text-sm text-yellow-900 bg-white p-2 rounded">
+                    {userProfile.birth_date ? new Date(userProfile.birth_date).toLocaleDateString('fr-FR') : 'Non défini'}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-yellow-700 mb-1">Genre</label>
+                  <p className="text-sm text-yellow-900 bg-white p-2 rounded">
+                    {userProfile.gender === 'M' ? 'Masculin' : userProfile.gender === 'F' ? 'Féminin' : 'Non défini'}
+                  </p>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-yellow-700 mb-1">Moyenne générale</label>
                   <p className="text-sm text-yellow-900 bg-white p-2 rounded">
                     {userProfile.average_grade || 'Non calculée'}
@@ -453,18 +504,6 @@ const ProfileSettings = () => {
                   <label className="block text-sm font-medium text-yellow-700 mb-1">Taux de présence</label>
                   <p className="text-sm text-yellow-900 bg-white p-2 rounded">
                     {userProfile.attendance_rate || 'Non calculé'}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-yellow-700 mb-1">Parent / Tuteur</label>
-                  <p className="text-sm text-yellow-900 bg-white p-2 rounded">
-                    {userProfile.parent_name || 'Non défini'}
-                  </p>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-yellow-700 mb-1">Téléphone parent</label>
-                  <p className="text-sm text-yellow-900 bg-white p-2 rounded">
-                    {userProfile.parent_phone || 'Non défini'}
                   </p>
                 </div>
                 {userProfile.subjects && userProfile.subjects.length > 0 && (
@@ -481,6 +520,84 @@ const ProfileSettings = () => {
                     </div>
                   </div>
                 )}
+              </div>
+              
+              {/* Section Parent/Tuteur - Visible et mise en avant */}
+              <div className="mt-4 pt-4 border-t border-yellow-300">
+                <h5 className="font-medium text-yellow-900 mb-3 flex items-center">
+                  <Icon name="Users" size={16} className="mr-2" />
+                  Informations Parent / Tuteur
+                </h5>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-3 rounded-lg border border-yellow-300">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
+                        <Icon name="User" size={20} className="text-yellow-700" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-yellow-700 mb-1">Nom complet</label>
+                        <p className="text-sm font-semibold text-yellow-900">
+                          {userProfile.parent_name || 'Non défini'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-3 rounded-lg border border-yellow-300">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
+                        <Icon name="Phone" size={20} className="text-yellow-700" />
+                      </div>
+                      <div>
+                        <label className="block text-xs font-medium text-yellow-700 mb-1">Téléphone</label>
+                        <p className="text-sm font-semibold text-yellow-900">
+                          {userProfile.parent_phone || 'Non défini'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  {userProfile.parent_email && (
+                    <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-3 rounded-lg border border-yellow-300">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
+                          <Icon name="Mail" size={20} className="text-yellow-700" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-yellow-700 mb-1">Email</label>
+                          <p className="text-sm font-semibold text-yellow-900">
+                            {userProfile.parent_email}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {userProfile.parent_profession && (
+                    <div className="bg-gradient-to-r from-yellow-100 to-orange-100 p-3 rounded-lg border border-yellow-300">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-yellow-200 rounded-full flex items-center justify-center">
+                          <Icon name="Briefcase" size={20} className="text-yellow-700" />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-yellow-700 mb-1">Profession</label>
+                          <p className="text-sm font-semibold text-yellow-900">
+                            {userProfile.parent_profession}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-3 bg-blue-50 border border-blue-200 rounded-lg p-3">
+                  <div className="flex items-start space-x-2">
+                    <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
+                    <div>
+                      <p className="text-xs text-blue-900 font-medium">Informations importantes</p>
+                      <p className="text-xs text-blue-700 mt-1">
+                        En cas d'urgence ou pour toute question concernant votre scolarité, 
+                        votre parent/tuteur peut être contacté aux coordonnées ci-dessus.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}

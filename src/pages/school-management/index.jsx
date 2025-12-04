@@ -45,8 +45,12 @@ const SchoolManagement = () => {
   }, [location]);
 
   const handleLoginSuccess = (schoolData) => {
+    console.log('🎉 Connexion réussie, redirection vers le dashboard...');
     // Navigate to principal dashboard with school data
-    navigate('/principal-dashboard', { state: { school: schoolData } }); 
+    // Petit délai pour laisser l'AuthContext se mettre à jour
+    setTimeout(() => {
+      navigate('/principal-dashboard', { state: { school: schoolData }, replace: true }); 
+    }, 100);
   };
 
   const handleRegistrationSuccess = () => {

@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../../lib/supabase';
 import Input from '../../../components/ui/Input';
 import Button from '../../../components/ui/Button';
 import Icon from '../../../components/AppIcon';
 
 const SchoolLoginForm = ({ onSuccess }) => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     email: '',
@@ -113,8 +115,30 @@ const SchoolLoginForm = ({ onSuccess }) => {
         status: result.school.status
       });
 
-      // Passer les données de l'école au composant parent
+      // Stocker les données utilisateur dans localStorage pour AuthContext
+      const userDataForContext = {
+        ...result.user,
+        school: result.school,
+        role: 'principal',
+        current_school_id: result.school.id
+      };
+      
+      localStorage.setItem('edutrack-user', JSON.stringify(userDataForContext));
+      
+      // Déclencher un événement pour notifier AuthContext du changement
+      window.dispatchEvent(new CustomEvent('edutrack-user-changed', { 
+        detail: userDataForContext 
+      }));
+
+      // Appeler le callback si fourni
       onSuccess?.(result.school);
+      
+      // Naviguer directement vers le dashboard principal
+      console.log('🔄 Redirection vers /principal-dashboard...');
+      navigate('/principal-dashboard', { 
+        state: { school: result.school },
+        replace: true 
+      });
       
     } catch (error) {
       console.error('Erreur de connexion:', error.message);
