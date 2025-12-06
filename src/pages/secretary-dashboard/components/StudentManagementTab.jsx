@@ -254,52 +254,76 @@ const StudentManagementTab = ({ isDemo = false }) => {
         return;
       }
 
-      // Charger les élèves depuis Supabase avec les infos du parent
-      const { data, error } = await supabase
+      console.log('🔍 Chargement des élèves pour l\'école:', schoolId);
+
+      // Charger d'abord les élèves sans les relations (pour éviter les erreurs de foreign key)
+      const { data: studentsData, error: studentsError } = await supabase
         .from('students')
-        .select(`
-          id,
-          user_id,
-          first_name,
-          last_name,
-          date_of_birth,
-          enrollment_date,
-          class_name,
-          is_active,
-          photo,
-          school_id,
-          parent_id,
-          parents:parent_id (
-            id,
-            user_id,
-            first_name,
-            last_name,
-            email,
-            phone
-          )
-        `)
+        .select('*')
         .eq('school_id', schoolId)
         .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Erreur chargement élèves:', error);
+      if (studentsError) {
+        console.error('❌ Erreur chargement élèves:', studentsError);
+        console.error('❌ Détails:', studentsError.message, studentsError.details, studentsError.hint);
         setStudents([]);
       } else {
-        // Transformer les données Supabase au format attendu
-        const formattedStudents = data.map(student => ({
-          id: student.id,
-          name: `${student.first_name} ${student.last_name}`,
-          class: student.class_name || 'Non assigné',
-          enrollmentStatus: student.is_active ? 'active' : 'transferred',
-          photo: student.photo || '/public/assets/images/no_image.png',
-          parentName: student.parents ? `${student.parents.first_name} ${student.parents.last_name}` : 'Non renseigné',
-          parentPhone: student.parents?.phone || 'Non renseigné',
-          parentEmail: student.parents?.email || 'Non renseigné',
-          enrollmentDate: student.enrollment_date ? new Date(student.enrollment_date).toLocaleDateString('fr-FR') : 'Non renseignée',
-          studentId: student.user_id || `STU${student.id.substring(0, 6)}`
-        }));
-        setStudents(formattedStudents);
-        console.log(`✅ ${formattedStudents.length} élève(s) chargé(s)`);
+        console.log('📊 Données brutes élèves reçues:', studentsData);
+        console.log(`📈 Nombre d'élèves trouvés: ${studentsData?.length || 0}`);
+        
+        if (!studentsData || studentsData.length === 0) {
+          console.warn('⚠️ Aucune donnée d\'élève trouvée dans la base pour school_id:', schoolId);
+          setStudents([]);
+        } else {
+          // Récupérer les IDs des parents pour une requête séparée
+          const parentIds = studentsData
+            .map(s => s.parent_id)
+            .filter(id => id != null);
+          
+          console.log('🔍 Parent IDs à charger:', parentIds);
+          
+          // Charger les informations des parents séparément
+          let parentsMap = {};
+          if (parentIds.length > 0) {
+            const { data: parentsData, error: parentsError } = await supabase
+              .from('parents')
+              .select('id, user_id, first_name, last_name, email, phone')
+              .in('id', parentIds);
+            
+            if (parentsError) {
+              console.error('⚠️ Erreur chargement parents:', parentsError);
+            } else if (parentsData) {
+              console.log('📊 Données parents reçues:', parentsData);
+              // Créer un map pour un accès rapide
+              parentsMap = parentsData.reduce((acc, parent) => {
+                acc[parent.id] = parent;
+                return acc;
+              }, {});
+            }
+          }
+          
+          // Transformer les données Supabase au format attendu
+          const formattedStudents = studentsData.map(student => {
+            console.log('🔄 Formatage élève:', student.first_name, student.last_name);
+            const parentInfo = parentsMap[student.parent_id];
+            
+            return {
+              id: student.id,
+              name: `${student.first_name} ${student.last_name}`,
+              class: student.current_class || student.class_name || 'Non assigné',
+              enrollmentStatus: student.is_active ? 'active' : 'transferred',
+              photo: student.photo_url || student.photo || '/public/assets/images/no_image.png',
+              parentName: parentInfo ? `${parentInfo.first_name} ${parentInfo.last_name}` : 'Non renseigné',
+              parentPhone: parentInfo?.phone || 'Non renseigné',
+              parentEmail: parentInfo?.email || 'Non renseigné',
+              enrollmentDate: student.enrollment_date ? new Date(student.enrollment_date).toLocaleDateString('fr-FR') : 'Non renseignée',
+              studentId: student.user_id || `STU${student.id.substring(0, 6)}`
+            };
+          });
+          setStudents(formattedStudents);
+          console.log(`✅ ${formattedStudents.length} élève(s) chargé(s) et formaté(s)`);
+          console.log('👥 Liste finale:', formattedStudents);
+        }
       }
     } catch (error) {
       console.error('Exception chargement élèves:', error);
@@ -568,6 +592,13 @@ const StudentManagementTab = ({ isDemo = false }) => {
   };
 
   const generateAccountsData = () => {
+    // Si c'est un nouveau parent sans email, générer un email automatique
+    if (inscriptionMode === 'new' && !familyData.parent.email) {
+      const cleanPhone = familyData.parent.phone.replace(/\s+/g, '').replace(/\+/g, '');
+      familyData.parent.email = `parent${cleanPhone}@edutrack.cm`;
+      console.log('📧 Email généré automatiquement pour parent:', familyData.parent.email);
+    }
+
     // Générer les identifiants des élèves
     const studentsWithAccounts = familyData.students.map(student => {
       const loginCreds = generateLoginCredentials(
@@ -607,6 +638,7 @@ const StudentManagementTab = ({ isDemo = false }) => {
         ...prev,
         parent: {
           ...prev.parent,
+          email: familyData.parent.email, // Utiliser l'email généré si applicable
           primaryLogin: parentLoginCreds.primaryLogin || parentLoginCreds.customUsername,
           secondaryLogin: parentLoginCreds.secondaryLogin,
           customUsername: parentLoginCreds.customUsername,
@@ -948,347 +980,557 @@ const StudentManagementTab = ({ isDemo = false }) => {
         </div>
       </div>
 
-      {/* Modal Inscription Famille Complète */}
+      {/* Modal Inscription Famille Complète - Version Améliorée */}
       {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg border border-border max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-                  Inscription Famille Complète
-                </h3>
-                <p className="text-sm text-text-secondary mt-1">
-                  Étape {currentStep} sur 3 - {currentStep === 1 ? 'Informations du parent' : currentStep === 2 ? 'Informations des élèves' : 'Récapitulatif et création des comptes'}
-                </p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-fadeIn">
+          <div className="bg-white rounded-xl shadow-2xl max-w-5xl w-full max-h-[95vh] overflow-hidden flex flex-col">
+            {/* En-tête moderne avec gradient */}
+            <div className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-white/20 rounded-lg flex items-center justify-center backdrop-blur-sm">
+                    <Icon name="UserPlus" size={24} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">
+                      Nouvelle Inscription Élève
+                    </h3>
+                    <p className="text-blue-100 text-sm mt-1">
+                      {currentStep === 1 && 'Informations du parent/tuteur'}
+                      {currentStep === 2 && 'Informations de l\'élève'}
+                      {currentStep === 3 && 'Vérification et création des comptes'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowAddModal(false);
+                    resetWorkflow();
+                  }}
+                  className="w-10 h-10 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                >
+                  <Icon name="X" size={20} className="text-white" />
+                </button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setShowAddModal(false);
-                  resetWorkflow();
-                }}
-                iconName="X"
-              />
             </div>
 
-            {/* Indicateur de progression */}
-            <div className="px-6 py-4 border-b border-border">
-              <div className="flex items-center space-x-4">
-                {[1, 2, 3].map((step) => (
-                  <div key={step} className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      step === currentStep 
-                        ? 'bg-primary text-primary-foreground' 
-                        : step < currentStep 
-                        ? 'bg-success text-success-foreground' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {step < currentStep ? <Icon name="Check" size={16} /> : step}
+            {/* Indicateur de progression moderne */}
+            <div className="px-6 py-6 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center justify-between max-w-2xl mx-auto">
+                {[
+                  { num: 1, label: 'Parent', icon: 'User' },
+                  { num: 2, label: 'Élève', icon: 'GraduationCap' },
+                  { num: 3, label: 'Validation', icon: 'CheckCircle' }
+                ].map((step, idx) => (
+                  <React.Fragment key={step.num}>
+                    <div className="flex flex-col items-center">
+                      <div className={`relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300 ${
+                        step.num === currentStep 
+                          ? 'bg-blue-600 text-white shadow-lg shadow-blue-300 scale-110' 
+                          : step.num < currentStep 
+                          ? 'bg-green-500 text-white shadow-md' 
+                          : 'bg-gray-200 text-gray-400'
+                      }`}>
+                        {step.num < currentStep ? (
+                          <Icon name="Check" size={24} className="animate-scaleIn" />
+                        ) : (
+                          <Icon name={step.icon} size={24} />
+                        )}
+                        {step.num === currentStep && (
+                          <div className="absolute inset-0 rounded-full bg-blue-600 animate-ping opacity-20"></div>
+                        )}
+                      </div>
+                      <span className={`mt-2 text-sm font-medium transition-colors ${
+                        step.num === currentStep 
+                          ? 'text-blue-600' 
+                          : step.num < currentStep 
+                          ? 'text-green-600' 
+                          : 'text-gray-400'
+                      }`}>
+                        {step.label}
+                      </span>
                     </div>
-                    <span className={`text-sm ${
-                      step === currentStep ? 'text-primary font-medium' : 'text-text-secondary'
-                    }`}>
-                      {step === 1 ? 'Parent' : step === 2 ? 'Élèves' : 'Comptes'}
-                    </span>
-                    {step < 3 && <div className="w-8 h-0.5 bg-border mx-2" />}
-                  </div>
+                    {idx < 2 && (
+                      <div className="flex-1 h-1 mx-4 mb-8 rounded-full overflow-hidden bg-gray-200">
+                        <div 
+                          className={`h-full transition-all duration-500 ${
+                            step.num < currentStep ? 'bg-green-500 w-full' : 'bg-gray-200 w-0'
+                          }`}
+                        />
+                      </div>
+                    )}
+                  </React.Fragment>
                 ))}
               </div>
             </div>
             
-            {/* Contenu des étapes */}
-            <div className="p-6">
-              {currentStep === 1 && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <Icon name="UserPlus" size={48} className="text-primary mx-auto mb-2" />
-                    <h4 className="font-heading font-heading-semibold text-lg text-text-primary">
-                      Type d'Inscription
-                    </h4>
-                    <p className="text-sm text-text-secondary">
-                      Choisissez le mode d'inscription selon la situation
-                    </p>
-                  </div>
-
-                  {/* Choix du mode d'inscription */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                    <div 
-                      onClick={() => setInscriptionMode('new')}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                        inscriptionMode === 'new' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          inscriptionMode === 'new' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          <Icon name="UserPlus" size={20} />
-                        </div>
-                        <div>
-                          <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                            Nouvelle Famille
-                          </h5>
-                          <p className="text-sm text-text-secondary">
-                            Premier enfant à inscrire pour cette famille
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div 
-                      onClick={() => setInscriptionMode('existing')}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-                        inscriptionMode === 'existing' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          inscriptionMode === 'existing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          <Icon name="Users" size={20} />
-                        </div>
-                        <div>
-                          <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                            Parent Existant
-                          </h5>
-                          <p className="text-sm text-text-secondary">
-                            Ajouter un enfant à un parent déjà inscrit
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Formulaire nouveau parent */}
-                  {inscriptionMode === 'new' && (
-                    <div className="space-y-4">
-                      <div className="text-center mb-4">
-                        <Icon name="User" size={40} className="text-success mx-auto mb-2" />
-                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                          Informations du Parent/Tuteur
-                        </h5>
-                        <p className="text-sm text-text-secondary">
-                          Ces informations seront utilisées pour créer le compte parent
-                        </p>
-                      </div>
+            {/* Contenu des étapes avec scroll */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="p-8">
+                {currentStep === 1 && (
+                  <div className="space-y-8 max-w-4xl mx-auto">
+                    {/* Choix du mode d'inscription - Design amélioré */}
+                    <div>
+                      <h4 className="text-lg font-semibold text-gray-900 mb-2">
+                        Type d'inscription
+                      </h4>
+                      <p className="text-gray-600 text-sm mb-6">
+                        Sélectionnez le type de parent pour cette inscription
+                      </p>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                          label="Prénom du parent"
-                          placeholder="Ex: Jean"
-                          value={familyData.parent.firstName}
-                          onChange={(e) => setFamilyData(prev => ({
-                            ...prev,
-                            parent: { ...prev.parent, firstName: e.target.value }
-                          }))}
-                          required
-                        />
-                        <Input
-                          label="Nom de famille"
-                          placeholder="Ex: Mbarga"
-                          value={familyData.parent.lastName}
-                          onChange={(e) => setFamilyData(prev => ({
-                            ...prev,
-                            parent: { ...prev.parent, lastName: e.target.value }
-                          }))}
-                          required
-                        />
-                        <Input
-                          label="Email"
-                          type="email"
-                          placeholder="jean.mbarga@email.com"
-                          value={familyData.parent.email}
-                          onChange={(e) => setFamilyData(prev => ({
-                            ...prev,
-                            parent: { ...prev.parent, email: e.target.value }
-                          }))}
-                          required
-                        />
-                        <Input
-                          label="Téléphone"
-                          placeholder="+237 6XX XX XX XX"
-                          value={familyData.parent.phone}
-                          onChange={(e) => setFamilyData(prev => ({
-                            ...prev,
-                            parent: { ...prev.parent, phone: e.target.value }
-                          }))}
-                          required
-                        />
-                        <Input
-                          label="Adresse"
-                          placeholder="Quartier, Ville"
-                          value={familyData.parent.address}
-                          onChange={(e) => setFamilyData(prev => ({
-                            ...prev,
-                            parent: { ...prev.parent, address: e.target.value }
-                          }))}
-                        />
-                        <Input
-                          label="Profession"
-                          placeholder="Ex: Enseignant, Commerçant..."
-                          value={familyData.parent.occupation}
-                          onChange={(e) => setFamilyData(prev => ({
-                            ...prev,
-                            parent: { ...prev.parent, occupation: e.target.value }
-                          }))}
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <button
+                          onClick={() => setInscriptionMode('new')}
+                          className={`group relative overflow-hidden rounded-xl p-6 text-left transition-all duration-300 ${
+                            inscriptionMode === 'new'
+                              ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-500 shadow-lg shadow-blue-200'
+                              : 'bg-white border-2 border-gray-200 hover:border-blue-300 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start space-x-4">
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                              inscriptionMode === 'new'
+                                ? 'bg-blue-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-600 group-hover:bg-blue-100 group-hover:text-blue-600'
+                            }`}>
+                              <Icon name="UserPlus" size={24} />
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-gray-900 mb-1 flex items-center">
+                                Nouveau Parent
+                                {inscriptionMode === 'new' && (
+                                  <Icon name="CheckCircle" size={18} className="ml-2 text-blue-600" />
+                                )}
+                              </h5>
+                              <p className="text-sm text-gray-600">
+                                Créer un nouveau compte parent pour cette famille
+                              </p>
+                              <div className="mt-3 text-xs text-gray-500 flex items-center">
+                                <Icon name="Info" size={14} className="mr-1" />
+                                Premier enfant de la famille
+                              </div>
+                            </div>
+                          </div>
+                        </button>
+
+                        <button
+                          onClick={() => setInscriptionMode('existing')}
+                          className={`group relative overflow-hidden rounded-xl p-6 text-left transition-all duration-300 ${
+                            inscriptionMode === 'existing'
+                              ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-500 shadow-lg shadow-green-200'
+                              : 'bg-white border-2 border-gray-200 hover:border-green-300 hover:shadow-md'
+                          }`}
+                        >
+                          <div className="flex items-start space-x-4">
+                            <div className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                              inscriptionMode === 'existing'
+                                ? 'bg-green-600 text-white shadow-md'
+                                : 'bg-gray-100 text-gray-600 group-hover:bg-green-100 group-hover:text-green-600'
+                            }`}>
+                              <Icon name="Users" size={24} />
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-gray-900 mb-1 flex items-center">
+                                Parent Existant
+                                {inscriptionMode === 'existing' && (
+                                  <Icon name="CheckCircle" size={18} className="ml-2 text-green-600" />
+                                )}
+                              </h5>
+                              <p className="text-sm text-gray-600">
+                                Associer l'élève à un parent déjà inscrit
+                              </p>
+                              <div className="mt-3 text-xs text-gray-500 flex items-center">
+                                <Icon name="Info" size={14} className="mr-1" />
+                                Frère/sœur d'un élève existant
+                              </div>
+                            </div>
+                          </div>
+                        </button>
                       </div>
                     </div>
-                  )}
 
-                  {/* Recherche et sélection parent existant avec système multi-établissements */}
-                  {inscriptionMode === 'existing' && (
-                    <div className="space-y-4">
-                      <div className="text-center mb-4">
-                        <Icon name="Search" size={40} className="text-primary mx-auto mb-2" />
-                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                          Système Multi-Établissements
-                        </h5>
-                        <p className="text-sm text-text-secondary">
-                          Recherchez si le parent existe déjà dans le système global
-                        </p>
-                        <div className="mt-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg">
-                          <p className="text-xs text-blue-700">
-                            ✅ Évite les doublons • Un parent = Un compte global • Plusieurs établissements
-                          </p>
+                    {/* Formulaire nouveau parent - Design modernisé */}
+                    {inscriptionMode === 'new' && (
+                      <div className="space-y-6 animate-fadeIn">
+                        <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 border border-blue-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Icon name="User" size={20} className="text-white" />
+                            </div>
+                            <div className="flex-1">
+                              <h5 className="font-semibold text-gray-900 mb-1">
+                                Informations du Parent/Tuteur
+                              </h5>
+                              <p className="text-sm text-gray-600 mb-3">
+                                Ces informations seront utilisées pour créer le compte parent. Le parent pourra se connecter avec son email ou son téléphone.
+                              </p>
+                              <div className="bg-white/60 rounded-lg p-3 border border-blue-200">
+                                <div className="flex items-start space-x-2">
+                                  <Icon name="Info" size={16} className="text-blue-600 mt-0.5 flex-shrink-0" />
+                                  <div className="text-xs text-gray-700">
+                                    <strong>📧 Email optionnel :</strong> Si le parent n'a pas d'email, un email technique sera généré automatiquement au format <span className="font-mono bg-blue-100 px-1 rounded">parent[téléphone]@edutrack.cm</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Prénom du parent <span className="text-red-500">*</span>
+                              </label>
+                              <Input
+                                placeholder="Ex: Jean"
+                                value={familyData.parent.firstName}
+                                onChange={(e) => setFamilyData(prev => ({
+                                  ...prev,
+                                  parent: { ...prev.parent, firstName: e.target.value }
+                                }))}
+                                className="h-11"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Nom de famille <span className="text-red-500">*</span>
+                              </label>
+                              <Input
+                                placeholder="Ex: Mbarga"
+                                value={familyData.parent.lastName}
+                                onChange={(e) => setFamilyData(prev => ({
+                                  ...prev,
+                                  parent: { ...prev.parent, lastName: e.target.value }
+                                }))}
+                                className="h-11"
+                                required
+                              />
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Email
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <Icon name="Mail" size={18} className="text-gray-400" />
+                                </div>
+                                <Input
+                                  type="email"
+                                  placeholder="jean.mbarga@email.com (optionnel)"
+                                  value={familyData.parent.email}
+                                  onChange={(e) => setFamilyData(prev => ({
+                                    ...prev,
+                                    parent: { ...prev.parent, email: e.target.value }
+                                  }))}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                              <p className="text-xs text-gray-500 mt-1">
+                                💡 Si non fourni, un email technique sera généré automatiquement
+                              </p>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Téléphone <span className="text-red-500">*</span>
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <Icon name="Phone" size={18} className="text-gray-400" />
+                                </div>
+                                <Input
+                                  placeholder="+237 6XX XX XX XX"
+                                  value={familyData.parent.phone}
+                                  onChange={(e) => setFamilyData(prev => ({
+                                    ...prev,
+                                    parent: { ...prev.parent, phone: e.target.value }
+                                  }))}
+                                  className="h-11 pl-10"
+                                  required
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Adresse
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <Icon name="MapPin" size={18} className="text-gray-400" />
+                                </div>
+                                <Input
+                                  placeholder="Quartier, Ville"
+                                  value={familyData.parent.address}
+                                  onChange={(e) => setFamilyData(prev => ({
+                                    ...prev,
+                                    parent: { ...prev.parent, address: e.target.value }
+                                  }))}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                            </div>
+                            
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                Profession
+                              </label>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                  <Icon name="Briefcase" size={18} className="text-gray-400" />
+                                </div>
+                                <Input
+                                  placeholder="Ex: Enseignant, Commerçant..."
+                                  value={familyData.parent.occupation}
+                                  onChange={(e) => setFamilyData(prev => ({
+                                    ...prev,
+                                    parent: { ...prev.parent, occupation: e.target.value }
+                                  }))}
+                                  className="h-11 pl-10"
+                                />
+                              </div>
+                            </div>
+                          </div>
                         </div>
                       </div>
+                    )}
 
-                      <ParentSearchSelector
-                        onParentSelect={(parent) => {
-                          setSelectedExistingParent(parent);
-                          if (parent) {
-                            // Pre-remplir les données du parent
-                            setFamilyData(prev => ({
-                              ...prev,
-                              parent: {
-                                firstName: parent.firstName,
-                                lastName: parent.lastName,
-                                email: parent.email,
-                                phone: parent.phone,
-                                address: parent.address || '',
-                                occupation: parent.profession || '',
-                                username: '',
-                                password: '',
-                                userId: parent.id
+                    {/* Recherche parent existant - Design modernisé */}
+                    {inscriptionMode === 'existing' && (
+                      <div className="space-y-6 animate-fadeIn">
+                        <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 border border-green-200">
+                          <div className="flex items-start space-x-3">
+                            <div className="w-10 h-10 bg-green-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                              <Icon name="Search" size={20} className="text-white" />
+                            </div>
+                            <div>
+                              <h5 className="font-semibold text-gray-900 mb-1">
+                                Système Multi-Établissements
+                              </h5>
+                              <p className="text-sm text-gray-600 mb-3">
+                                Recherchez si le parent existe déjà dans le système global pour éviter les doublons.
+                              </p>
+                              <div className="flex flex-wrap gap-2 text-xs">
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-green-100 text-green-700 font-medium">
+                                  <Icon name="CheckCircle" size={14} className="mr-1" />
+                                  Un parent = Un compte
+                                </span>
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-blue-100 text-blue-700 font-medium">
+                                  <Icon name="Building" size={14} className="mr-1" />
+                                  Plusieurs établissements
+                                </span>
+                                <span className="inline-flex items-center px-2.5 py-1 rounded-full bg-purple-100 text-purple-700 font-medium">
+                                  <Icon name="Users" size={14} className="mr-1" />
+                                  Plusieurs enfants
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
+                          <ParentSearchSelector
+                            isDemo={isDemo}
+                            onParentSelect={(parent) => {
+                              setSelectedExistingParent(parent);
+                              if (parent) {
+                                setFamilyData(prev => ({
+                                  ...prev,
+                                  parent: {
+                                    firstName: parent.firstName,
+                                    lastName: parent.lastName,
+                                    email: parent.email,
+                                    phone: parent.phone,
+                                    address: parent.address || '',
+                                    occupation: parent.profession || '',
+                                    username: '',
+                                    password: '',
+                                    userId: parent.id
+                                  }
+                                }));
                               }
-                            }));
-                          }
-                        }}
-                        onCreateNew={() => {
-                          setInscriptionMode('new');
-                          setSelectedExistingParent(null);
-                          setParentSearchTerm('');
-                        }}
-                        selectedParent={selectedExistingParent}
-                        searchTerm={parentSearchTerm}
-                        onSearchChange={setParentSearchTerm}
-                      />
-                    </div>
-                  )}
-                </div>
-              )}
+                            }}
+                            onCreateNew={() => {
+                              setInscriptionMode('new');
+                              setSelectedExistingParent(null);
+                              setParentSearchTerm('');
+                            }}
+                            selectedParent={selectedExistingParent}
+                            searchTerm={parentSearchTerm}
+                            onSearchChange={setParentSearchTerm}
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
               {currentStep === 2 && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <Icon name="Users" size={48} className="text-primary mx-auto mb-2" />
-                    <h4 className="font-heading font-heading-semibold text-lg text-text-primary">
+                <div className="space-y-6 animate-fadeIn">
+                  {/* En-tête de l'étape 2 - Modern design */}
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-6 text-center border border-blue-200">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center mx-auto mb-3 shadow-lg shadow-blue-200">
+                      <Icon name="GraduationCap" size={32} className="text-white" />
+                    </div>
+                    <h4 className="font-heading font-heading-semibold text-xl text-gray-900 mb-1">
                       Informations des Élèves
                     </h4>
-                    <p className="text-sm text-text-secondary">
-                      Ajoutez un ou plusieurs enfants à inscrire
+                    <p className="text-sm text-gray-600">
+                      Ajoutez un ou plusieurs enfants à inscrire dans cet établissement
+                      {currentSchool && (
+                        <span className="block mt-1 font-medium text-blue-700">
+                          📍 {currentSchool.name}
+                        </span>
+                      )}
                     </p>
                   </div>
 
+                  {/* Avertissement si aucune classe disponible */}
+                  {schoolClasses.length === 0 && (
+                    <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                      <div className="flex items-start space-x-3">
+                        <Icon name="AlertTriangle" size={20} className="text-yellow-600 mt-0.5" />
+                        <div>
+                          <h5 className="font-semibold text-yellow-900 mb-1">Aucune classe disponible</h5>
+                          <p className="text-sm text-yellow-700">
+                            Aucune classe n'a été configurée pour cet établissement. Contactez l'administrateur pour configurer les classes disponibles.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {familyData.students.map((student, index) => (
-                    <div key={`student-${index}-${student.firstName || 'new'}`} className="border border-border rounded-lg p-4 space-y-4">
-                      <div className="flex items-center justify-between">
-                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                          Élève {index + 1}
-                        </h5>
+                    <div key={`student-${index}-${student.firstName || 'new'}`} className="bg-white border-2 border-gray-200 rounded-xl p-6 space-y-5 shadow-sm hover:shadow-md transition-shadow duration-200">
+                      <div className="flex items-center justify-between pb-4 border-b border-gray-200">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                            <Icon name="User" size={20} className="text-white" />
+                          </div>
+                          <div>
+                            <h5 className="font-heading font-heading-semibold text-base text-gray-900">
+                              Élève {index + 1}
+                            </h5>
+                            <p className="text-xs text-gray-500">Informations scolaires</p>
+                          </div>
+                        </div>
                         {familyData.students.length > 1 && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
+                          <button
                             onClick={() => removeStudent(index)}
-                            className="text-destructive hover:text-destructive"
-                            iconName="Trash2"
-                            iconPosition="left"
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
                           >
+                            <Icon name="Trash2" size={14} className="mr-1" />
                             Supprimer
-                          </Button>
+                          </button>
                         )}
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <Input
-                          label="Prénom de l'élève"
-                          placeholder="Ex: Marie"
-                          value={student.firstName}
-                          onChange={(e) => {
-                            const updatedStudents = [...familyData.students];
-                            updatedStudents[index].firstName = e.target.value;
-                            setFamilyData(prev => ({ ...prev, students: updatedStudents }));
-                          }}
-                          required
-                        />
-                        <Input
-                          label="Nom de famille"
-                          placeholder="Ex: Mbarga"
-                          value={student.lastName}
-                          onChange={(e) => {
-                            const updatedStudents = [...familyData.students];
-                            updatedStudents[index].lastName = e.target.value;
-                            setFamilyData(prev => ({ ...prev, students: updatedStudents }));
-                          }}
-                          required
-                        />
-                        <Select
-                          label="Classe"
-                          options={[
-                            { value: 'CE1', label: 'CE1' },
-                            { value: 'CE2', label: 'CE2' },
-                            { value: 'CM1', label: 'CM1' },
-                            { value: 'CM2', label: 'CM2' }
-                          ]}
-                          value={student.class}
-                          onChange={(value) => {
-                            const updatedStudents = [...familyData.students];
-                            updatedStudents[index].class = value;
-                            setFamilyData(prev => ({ ...prev, students: updatedStudents }));
-                          }}
-                          required
-                        />
-                        <Input
-                          label="Date de naissance"
-                          type="date"
-                          value={student.dateOfBirth}
-                          onChange={(e) => {
-                            const updatedStudents = [...familyData.students];
-                            updatedStudents[index].dateOfBirth = e.target.value;
-                            setFamilyData(prev => ({ ...prev, students: updatedStudents }));
-                          }}
-                          required
-                        />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Prénom de l'élève <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Icon name="User" size={18} className="text-gray-400" />
+                            </div>
+                            <Input
+                              placeholder="Ex: Marie"
+                              value={student.firstName}
+                              onChange={(e) => {
+                                const updatedStudents = [...familyData.students];
+                                updatedStudents[index].firstName = e.target.value;
+                                setFamilyData(prev => ({ ...prev, students: updatedStudents }));
+                              }}
+                              className="h-11 pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Nom de famille <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Icon name="User" size={18} className="text-gray-400" />
+                            </div>
+                            <Input
+                              placeholder="Ex: Mbarga"
+                              value={student.lastName}
+                              onChange={(e) => {
+                                const updatedStudents = [...familyData.students];
+                                updatedStudents[index].lastName = e.target.value;
+                                setFamilyData(prev => ({ ...prev, students: updatedStudents }));
+                              }}
+                              className="h-11 pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Classe <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none z-10">
+                              <Icon name="BookOpen" size={18} className="text-gray-400" />
+                            </div>
+                            <Select
+                              options={schoolClasses.map(cls => ({
+                                value: cls.name,
+                                label: cls.name
+                              }))}
+                              value={student.class}
+                              onChange={(value) => {
+                                const updatedStudents = [...familyData.students];
+                                updatedStudents[index].class = value;
+                                setFamilyData(prev => ({ ...prev, students: updatedStudents }));
+                              }}
+                              className="h-11 pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Date de naissance <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Icon name="Calendar" size={18} className="text-gray-400" />
+                            </div>
+                            <Input
+                              type="date"
+                              value={student.dateOfBirth}
+                              onChange={(e) => {
+                                const updatedStudents = [...familyData.students];
+                                updatedStudents[index].dateOfBirth = e.target.value;
+                                setFamilyData(prev => ({ ...prev, students: updatedStudents }));
+                              }}
+                              className="h-11 pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
 
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={addStudent}
-                    className="w-full"
-                    iconName="Plus"
-                    iconPosition="left"
+                    className="w-full inline-flex items-center justify-center px-6 py-3.5 text-sm font-semibold text-blue-600 bg-blue-50 border-2 border-blue-200 border-dashed rounded-xl hover:bg-blue-100 hover:border-blue-300 transition-all duration-200"
                   >
+                    <Icon name="Plus" size={18} className="mr-2" />
                     Ajouter un autre élève
-                  </Button>
+                  </button>
                 </div>
               )}
 
@@ -1502,63 +1744,78 @@ const StudentManagementTab = ({ isDemo = false }) => {
                 </div>
               )}
             </div>
-
-            {/* Navigation */}
-            <div className="flex items-center justify-between p-6 border-t border-border">
-              <div className="flex gap-3">
-                {currentStep > 1 && (
-                  <Button 
-                    variant="outline" 
-                    onClick={prevStep}
-                    iconName="ChevronLeft"
-                    iconPosition="left"
-                  >
-                    Précédent
-                  </Button>
-                )}
-              </div>
-              
-              <div className="flex gap-3">
-                <Button 
-                  variant="outline" 
-                  onClick={() => {
-                    setShowAddModal(false);
-                    resetWorkflow();
-                  }}
-                >
-                  Annuler
-                </Button>
+            </div>
+            
+            {/* Barre de navigation inférieure - Design amélioré */}
+            <div className="bg-gray-50 border-t border-gray-200 px-8 py-5">
+              <div className="flex items-center justify-between">
+                <div>
+                  {currentStep > 1 ? (
+                    <button
+                      onClick={prevStep}
+                      className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-700 bg-white border-2 border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-all duration-200"
+                    >
+                      <Icon name="ChevronLeft" size={18} className="mr-2" />
+                      Précédent
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        setShowAddModal(false);
+                        resetWorkflow();
+                      }}
+                      className="inline-flex items-center px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      <Icon name="X" size={18} className="mr-2" />
+                      Annuler
+                    </button>
+                  )}
+                </div>
                 
-                {currentStep < 3 ? (
-                  <Button 
-                    onClick={nextStep}
-                    disabled={
-                      (currentStep === 1 && (
-                        (inscriptionMode === 'new' && (!familyData.parent.firstName || !familyData.parent.lastName || !familyData.parent.email || !familyData.parent.phone)) ||
-                        (inscriptionMode === 'existing' && !selectedExistingParent)
-                      )) ||
-                      (currentStep === 2 && familyData.students.some(s => !s.firstName || !s.lastName || !s.class))
-                    }
-                    iconName="ChevronRight"
-                    iconPosition="right"
-                  >
-                    Suivant
-                  </Button>
-                ) : (
-                  <Button 
-                    onClick={() => {
-                      // Ici on sauvegarderait en base de données
-                      alert('Famille inscrite avec succès ! Les comptes ont été créés.');
-                      setShowAddModal(false);
-                      resetWorkflow();
-                    }}
-                    disabled={!familyData.students[0]?.customUsername}
-                    iconName="Check"
-                    iconPosition="left"
-                  >
-                    Finaliser l'Inscription
-                  </Button>
-                )}
+                <div className="flex items-center space-x-3">
+                  {currentStep > 1 && (
+                    <button
+                      onClick={() => {
+                        setShowAddModal(false);
+                        resetWorkflow();
+                      }}
+                      className="px-5 py-2.5 text-sm font-medium text-gray-600 hover:text-gray-800 transition-colors"
+                    >
+                      Annuler
+                    </button>
+                  )}
+                  
+                  {currentStep < 3 ? (
+                    <button
+                      onClick={nextStep}
+                      disabled={
+                        (currentStep === 1 && (
+                          (inscriptionMode === 'new' && (!familyData.parent.firstName || !familyData.parent.lastName || !familyData.parent.phone)) ||
+                          (inscriptionMode === 'existing' && !selectedExistingParent)
+                        )) ||
+                        (currentStep === 2 && familyData.students.some(s => !s.firstName || !s.lastName || !s.class))
+                      }
+                      className="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg hover:from-blue-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-blue-200 hover:shadow-xl disabled:shadow-none"
+                    >
+                      Continuer
+                      <Icon name="ChevronRight" size={18} className="ml-2" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => {
+                        // Ici on sauvegarderait en base de données
+                        alert('Famille inscrite avec succès ! Les comptes ont été créés.');
+                        setShowAddModal(false);
+                        resetWorkflow();
+                      }}
+                      disabled={!familyData.students[0]?.customUsername}
+                      className="inline-flex items-center px-6 py-2.5 text-sm font-semibold text-white bg-gradient-to-r from-green-600 to-emerald-600 rounded-lg hover:from-green-700 hover:to-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-lg shadow-green-200 hover:shadow-xl disabled:shadow-none"
+                    >
+                      <Icon name="CheckCircle" size={18} className="mr-2" />
+                      Finaliser l'Inscription
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           </div>

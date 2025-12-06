@@ -269,13 +269,32 @@ export class ParentMultiSchoolService {
    */
   async searchExistingParents(searchTerm, limit = 10) {
     try {
+      console.log('🔎 parentMultiSchoolService.searchExistingParents appelé:', searchTerm);
       await new Promise(resolve => setTimeout(resolve, 200));
 
       if (!searchTerm || searchTerm.length < 2) {
+        console.log('❌ Terme de recherche trop court');
         return [];
       }
 
       const searchLower = searchTerm.toLowerCase();
+      console.log('🔍 Recherche dans DEMO_DATA.parents:', DEMO_DATA.parents.length, 'parents');
+      console.log('🔤 Terme de recherche (lowercase):', searchLower);
+      
+      // Log pour chaque parent
+      DEMO_DATA.parents.forEach(parent => {
+        const matchFirstName = parent.firstName.toLowerCase().includes(searchLower);
+        const matchLastName = parent.lastName.toLowerCase().includes(searchLower);
+        const matchEmail = parent.email.toLowerCase().includes(searchLower);
+        const matchPhone = parent.phone.includes(searchTerm);
+        console.log(`  - ${parent.firstName} ${parent.lastName}:`, {
+          firstName: matchFirstName,
+          lastName: matchLastName,
+          email: matchEmail,
+          phone: matchPhone,
+          match: matchFirstName || matchLastName || matchEmail || matchPhone
+        });
+      });
       
       const matchingParents = DEMO_DATA.parents.filter(parent => 
         parent.firstName.toLowerCase().includes(searchLower) ||
@@ -283,6 +302,8 @@ export class ParentMultiSchoolService {
         parent.email.toLowerCase().includes(searchLower) ||
         parent.phone.includes(searchTerm)
       ).slice(0, limit);
+
+      console.log('✅ Parents correspondants trouvés:', matchingParents.length);
 
       const enrichedParents = matchingParents.map(parent => {
         const relations = DEMO_DATA.parentStudentSchoolRelations.filter(
@@ -310,9 +331,10 @@ export class ParentMultiSchoolService {
         };
       });
 
+      console.log('📦 Parents enrichis avec relations:', enrichedParents);
       return enrichedParents;
     } catch (error) {
-      console.error('Erreur lors de la recherche des parents:', error);
+      console.error('❌ Erreur lors de la recherche des parents:', error);
       throw error;
     }
   }

@@ -155,28 +155,33 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
   }, []);
 
   return (
-    <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-card border-r border-border z-navigation transition-all duration-state ${
+    <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gradient-to-b from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-xl border-r border-gray-200/50 z-navigation transition-all duration-300 shadow-lg ${
       isCollapsed ? 'w-16' : 'w-64'
     } lg:fixed`}>
       <div className="flex flex-col h-full">
-        {/* Toggle Button */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
+        {/* Toggle Button - Modernisé */}
+        <div className="flex items-center justify-between p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">
           {!isCollapsed && (
-            <h2 className="font-heading font-heading-semibold text-lg text-card-foreground">
-              Navigation
-            </h2>
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                <Icon name="Compass" size={16} className="text-white" />
+              </div>
+              <h2 className="font-heading font-heading-semibold text-lg bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Navigation
+              </h2>
+            </div>
           )}
           <Button
             variant="ghost"
             size="icon"
             onClick={onToggle}
-            className="hidden lg:flex"
+            className="hidden lg:flex hover:bg-blue-100 rounded-lg transition-all duration-300 group"
           >
-            <Icon name={isCollapsed ? "ChevronRight" : "ChevronLeft"} size={20} />
+            <Icon name={isCollapsed ? "ChevronRight" : "ChevronLeft"} size={20} className="text-blue-600 group-hover:scale-110 transition-transform" />
           </Button>
         </div>
 
-        {/* Navigation Items - Scrollable */}
+        {/* Navigation Items - Scrollable & Modernisée */}
         <nav 
           className="flex-1 overflow-y-auto overflow-x-hidden sidebar-scroll" 
           style={{
@@ -187,32 +192,46 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
           <div className="p-4 space-y-2">
             <div className="space-y-1">
             {!isCollapsed && (
-              <h3 className="font-caption font-caption-normal text-xs text-muted-foreground uppercase tracking-wider mb-3">
-                Main Menu
-              </h3>
+              <div className="flex items-center space-x-2 mb-4">
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+                <h3 className="font-caption font-caption-semibold text-xs text-blue-600 uppercase tracking-wider px-2 bg-blue-50 rounded-full py-1">
+                  Menu Principal
+                </h3>
+                <div className="h-px flex-1 bg-gradient-to-r from-transparent via-blue-300 to-transparent"></div>
+              </div>
             )}
             {currentNavItems?.map((item) => (
               <Link
                 key={item?.path}
                 to={item?.path}
-                className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2 rounded-lg text-sm font-body font-body-normal transition-micro group ${
+                className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-3 rounded-xl text-sm font-body transition-all duration-300 group ${
                   location?.pathname === item?.path
-                    ? 'bg-primary text-primary-foreground'
-                    : 'text-card-foreground hover:bg-muted hover:text-primary'
+                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-105'
+                    : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-102 hover:shadow-md'
                 }`}
                 title={isCollapsed ? item?.label : ''}
               >
-                <Icon 
-                  name={item?.icon} 
-                  size={20} 
-                  className={`flex-shrink-0 ${
-                    location?.pathname === item?.path ? 'text-primary-foreground' : ''
-                  }`}
-                />
+                <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
+                  location?.pathname === item?.path 
+                    ? 'bg-white/20 backdrop-blur-sm' 
+                    : 'bg-blue-100 group-hover:bg-blue-200'
+                }`}>
+                  <Icon 
+                    name={item?.icon} 
+                    size={20} 
+                    className={`flex-shrink-0 ${
+                      location?.pathname === item?.path ? 'text-white' : 'text-blue-600'
+                    }`}
+                  />
+                </div>
                 {!isCollapsed && (
-                  <div className="flex-1 min-w-0 ml-3">
-                    <div className="font-body font-body-semibold">{item?.label}</div>
-                    <div className="font-caption font-caption-normal text-xs text-muted-foreground group-hover:text-primary/70">
+                  <div className="flex-1 min-w-0">
+                    <div className={`font-body font-body-semibold ${
+                      location?.pathname === item?.path ? 'text-white' : 'text-gray-900'
+                    }`}>{item?.label}</div>
+                    <div className={`font-caption font-caption-normal text-xs ${
+                      location?.pathname === item?.path ? 'text-blue-100' : 'text-gray-500 group-hover:text-blue-600'
+                    }`}>
                       {item?.description}
                     </div>
                   </div>
@@ -221,43 +240,53 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
             ))}
           </div>
 
-          {/* Quick Actions - Améliorées */}
-          <div className="pt-6 border-t border-gray-200">
+          {/* Quick Actions - Modernisées */}
+          <div className="pt-6 mt-6 border-t border-gray-200/50">
             {!isCollapsed && (
-              <div className="mb-4 pt-4">
-                <h3 className="text-xs font-bold text-gray-600 uppercase tracking-wider mb-1">
-                  Actions Rapides
-                </h3>
-                <p className="text-xs text-gray-500">Outils de gestion</p>
+              <div className="mb-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg flex items-center justify-center shadow-md">
+                    <Icon name="Zap" size={16} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-bold text-gray-900">
+                      Actions Rapides
+                    </h3>
+                    <p className="text-xs text-gray-500">Outils essentiels</p>
+                  </div>
+                </div>
               </div>
             )}
             <div className="space-y-2">
               {currentQuickActions?.map((action, index) => {
                 // Définir des couleurs spécifiques pour chaque type d'action
                 const getActionStyle = (actionLabel) => {
-                  switch (actionLabel) {
-                    case 'Nouveau secrétaire':
-                      return 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 hover:border-emerald-300';
-                    case 'Nouveau message':
-                      return 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 hover:border-blue-300';
-                    case 'Créer rapport':
-                      return 'bg-purple-50 hover:bg-purple-100 text-purple-700 border-purple-200 hover:border-purple-300';
-                    case 'Sauvegarde':
-                      return 'bg-orange-50 hover:bg-orange-100 text-orange-700 border-orange-200 hover:border-orange-300';
-                    default:
-                      return 'bg-gray-50 hover:bg-blue-50 text-gray-700 hover:text-blue-700 border-gray-200 hover:border-blue-200';
+                  if (actionLabel?.includes('Nouvel')) {
+                    return 'bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 text-green-700 border border-green-200 hover:border-green-400 hover:shadow-lg';
                   }
+                  if (actionLabel?.includes('message') || actionLabel?.includes('SMS')) {
+                    return 'bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 text-blue-700 border border-blue-200 hover:border-blue-400 hover:shadow-lg';
+                  }
+                  if (actionLabel?.includes('rapport') || actionLabel?.includes('Planifier')) {
+                    return 'bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 text-purple-700 border border-purple-200 hover:border-purple-400 hover:shadow-lg';
+                  }
+                  if (actionLabel?.includes('Sauvegarde') || actionLabel?.includes('Imprimer')) {
+                    return 'bg-gradient-to-br from-orange-50 to-red-50 hover:from-orange-100 hover:to-red-100 text-orange-700 border border-orange-200 hover:border-orange-400 hover:shadow-lg';
+                  }
+                  return 'bg-gradient-to-br from-gray-50 to-slate-50 hover:from-blue-50 hover:to-indigo-50 text-gray-700 hover:text-blue-700 border border-gray-200 hover:border-blue-300 hover:shadow-lg';
                 };
 
                 return (
                   <Link
                     key={index}
                     to={action?.path}
-                    className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-2.5 rounded-lg text-sm font-medium border transition-all duration-200 w-full shadow-sm hover:shadow-md ${getActionStyle(action?.label)}`}
+                    className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-3 rounded-xl text-sm font-semibold transition-all duration-300 group ${getActionStyle(action?.label)}`}
                     title={isCollapsed ? action?.label : ''}
                   >
-                    <Icon name={action?.icon} size={18} className="flex-shrink-0" />
-                    {!isCollapsed && <span className="ml-2 font-medium">{action?.label}</span>}
+                    <div className="w-9 h-9 bg-white/60 rounded-lg flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                      <Icon name={action?.icon} size={18} className="flex-shrink-0" />
+                    </div>
+                    {!isCollapsed && <span className="font-body font-body-semibold">{action?.label}</span>}
                   </Link>
                 );
               })}

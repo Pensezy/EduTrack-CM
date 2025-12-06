@@ -355,7 +355,7 @@ const SecretaryDashboard = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
       {/* Header */}
       <Header 
         userRole={user?.role || "secretary"} 
@@ -373,98 +373,148 @@ const SecretaryDashboard = () => {
         isSidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
       }`}>
         <div className="p-6">
-          {/* Dashboard Header */}
-          <div className="mb-8">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
-                <h1 className="font-heading font-heading-bold text-3xl text-text-primary">
-                  Bienvenue, {secretaryName || 'Secrétaire'}
-                </h1>
-                <p className="font-body font-body-normal text-text-secondary mt-2">
-                  Tableau de Bord Secrétariat - Gestion administrative complète de l'établissement scolaire
-                </p>
-              </div>
-              <div className="flex items-center space-x-3">
-                <div className="text-right">
-                  <p className="font-body font-body-semibold text-sm text-text-primary">
-                    {new Date()?.toLocaleDateString('fr-FR', { 
-                      weekday: 'long', 
-                      year: 'numeric', 
-                      month: 'long', 
-                      day: 'numeric' 
-                    })}
+          {/* Dashboard Header - Ultra Compact */}
+          <div className="mb-4">
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl shadow-lg p-4 text-white">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
+                <div>
+                  <div className="inline-flex items-center px-2 py-0.5 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium mb-2">
+                    <span className="w-1.5 h-1.5 bg-green-400 rounded-full mr-1.5 animate-pulse"></span>
+                    En ligne
+                  </div>
+                  <h1 className="font-heading font-heading-bold text-2xl mb-1">
+                    Bienvenue, {secretaryName || 'Secrétaire'} 👋
+                  </h1>
+                  <p className="font-body font-body-normal text-blue-100 text-sm">
+                    Tableau de Bord Secrétariat - Gestion administrative complète
                   </p>
-                  <p className="font-caption font-caption-normal text-xs text-text-secondary">
-                    Année scolaire 2025-2026
-                  </p>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <div className="text-right bg-white/10 backdrop-blur-sm rounded-lg p-3 border border-white/20">
+                    <p className="font-body font-body-semibold text-xs mb-0.5">
+                      {new Date()?.toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                    <p className="font-caption font-caption-normal text-xs text-blue-200 flex items-center justify-end">
+                      <Icon name="Calendar" size={12} className="mr-1" />
+                      Année scolaire 2025-2026
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+          {/* Quick Stats - Ultra Compact */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
             {quickStats?.map((stat, index) => (
-              <div key={index} className="bg-card rounded-lg border border-border p-4">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-12 h-12 ${stat?.bgColor} rounded-lg flex items-center justify-center`}>
+              <div 
+                key={index} 
+                className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:border-blue-300"
+              >
+                <div className="flex items-center justify-between mb-3">
+                  <div className={`w-12 h-12 ${stat?.bgColor} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
                     <Icon name={stat?.icon} size={24} className={stat?.color} />
                   </div>
-                  <div>
-                    <p className="font-heading font-heading-bold text-2xl text-text-primary">
-                      {stat?.value}
-                    </p>
-                    <p className="font-caption font-caption-normal text-sm text-text-secondary">
-                      {stat?.label}
-                    </p>
-                  </div>
+                </div>
+                <div>
+                  <p className="font-heading font-heading-bold text-2xl text-text-primary mb-0.5">
+                    {stat?.value}
+                  </p>
+                  <p className="font-body font-body-medium text-sm text-text-secondary">
+                    {stat?.label}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Tab Navigation */}
-          <div className="bg-card rounded-lg border border-border mb-6">
+          {/* Tab Navigation - Modernisé & Sticky */}
+          <div className="sticky top-16 z-40 bg-white rounded-2xl shadow-md border border-gray-200 mb-4 backdrop-blur-xl bg-white/95">
             {/* Desktop Tab Navigation - Compact Grid */}
-            <div className="hidden lg:block p-6">
-              {/* Main Tabs - Grid Layout */}
-              <div className="grid grid-cols-4 gap-3 mb-4">
+            <div className="hidden lg:block p-4">
+              <div className="flex items-center mb-3">
+                <div className="w-1 h-6 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-2"></div>
+                <h2 className="font-heading font-heading-bold text-base text-text-primary">
+                  Modules de Gestion
+                </h2>
+              </div>
+
+              {/* Main Tabs - Compact Grid */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
                 {tabs?.map((tab) => (
                   <button
                     key={tab?.id}
                     onClick={() => setActiveTab(tab?.id)}
-                    className={`flex items-center space-x-3 p-4 rounded-lg border transition-micro ${
+                    className={`group relative overflow-hidden rounded-xl p-3 transition-all duration-300 ${
                       activeTab === tab?.id
-                        ? 'border-primary bg-primary/5 text-primary' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50 text-text-secondary hover:text-text-primary'
+                        ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg'
+                        : 'bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-blue-300 hover:shadow-md'
                     }`}
                   >
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                      activeTab === tab?.id ? 'bg-primary/10' : 'bg-muted/30'
-                    }`}>
-                      <Icon name={tab?.icon} size={20} />
-                    </div>
-                    <div className="text-left flex-1">
-                      <div className="font-body font-body-semibold text-sm">{tab?.label}</div>
-                      <div className="font-caption font-caption-normal text-xs opacity-70">
-                        {tab?.description}
+                    {/* Badge notification */}
+                    {tab?.badge && (
+                      <span className={`absolute top-2 right-2 w-5 h-5 flex items-center justify-center text-xs font-bold rounded-full ${
+                        activeTab === tab?.id 
+                          ? 'bg-white text-blue-600 shadow-sm' 
+                          : 'bg-red-500 text-white'
+                      }`}>
+                        {tab?.badge}
+                      </span>
+                    )}
+                    
+                    <div className="flex items-center space-x-3">
+                      <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-300 flex-shrink-0 ${
+                        activeTab === tab?.id
+                          ? 'bg-white/20 backdrop-blur-sm'
+                          : 'bg-white group-hover:bg-blue-50 shadow-sm'
+                      }`}>
+                        <Icon 
+                          name={tab?.icon} 
+                          size={20} 
+                          className={activeTab === tab?.id ? 'text-white' : 'text-blue-600'}
+                        />
+                      </div>
+                      <div className="text-left flex-1 min-w-0">
+                        <p className={`font-body font-body-semibold text-sm truncate ${
+                          activeTab === tab?.id ? 'text-white' : 'text-text-primary'
+                        }`}>
+                          {tab?.label}
+                        </p>
+                        <p className={`font-caption font-caption-normal text-xs truncate ${
+                          activeTab === tab?.id ? 'text-blue-100' : 'text-text-secondary'
+                        }`}>
+                          {tab?.description}
+                        </p>
                       </div>
                     </div>
+
+                    {/* Active indicator */}
+                    {activeTab === tab?.id && (
+                      <div className="absolute bottom-0 left-0 right-0 h-1 bg-white rounded-full"></div>
+                    )}
                   </button>
                 ))}
               </div>
               
-              {/* Secondary Tabs - Inline */}
-              <div className="flex space-x-3 pt-4 border-t border-border">
-                <span className="text-xs font-medium text-text-secondary px-2 py-1">Autres :</span>
+              {/* Secondary Tabs - Compact Pills */}
+              <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-200">
+                <span className="text-xs font-medium text-text-secondary px-2 py-1 flex items-center">
+                  <Icon name="Grid" size={14} className="mr-1" />
+                  Autres modules :
+                </span>
                 {secondaryTabs?.map((tab) => (
                   <button
                     key={tab?.id}
                     onClick={() => setActiveTab(tab?.id)}
-                    className={`flex items-center space-x-2 px-3 py-2 rounded-lg border text-sm transition-micro ${
+                    className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm transition-all duration-300 ${
                       activeTab === tab?.id
-                        ? 'border-primary bg-primary/5 text-primary' 
-                        : 'border-border hover:border-primary/50 hover:bg-muted/50 text-text-secondary hover:text-text-primary'
+                        ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md' 
+                        : 'bg-gray-100 hover:bg-gray-200 text-text-secondary hover:text-text-primary border border-gray-300 hover:border-blue-400'
                     }`}
                   >
                     <Icon name={tab?.icon} size={16} />
@@ -474,22 +524,25 @@ const SecretaryDashboard = () => {
               </div>
             </div>
 
-            {/* Mobile Tab Navigation */}
+            {/* Mobile Tab Navigation - Modernisé */}
             <div className="lg:hidden p-4">
-              <div className="relative mb-4">
+              <div className="relative">
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <Icon name="Layers" size={18} className="text-blue-600" />
+                </div>
                 <select
                   value={activeTab}
                   onChange={(e) => setActiveTab(e?.target?.value)}
-                  className="w-full appearance-none bg-input border border-border rounded-md px-4 py-2 pr-8 font-body font-body-normal text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  className="w-full appearance-none bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl pl-12 pr-10 py-3 font-body font-body-semibold text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
                 >
-                  <optgroup label="Fonctions principales">
+                  <optgroup label="📋 Fonctions principales">
                     {tabs?.map((tab) => (
                       <option key={tab?.id} value={tab?.id}>
                         {tab?.label} - {tab?.description}
                       </option>
                     ))}
                   </optgroup>
-                  <optgroup label="Autres fonctions">
+                  <optgroup label="⚙️ Autres fonctions">
                     {secondaryTabs?.map((tab) => (
                       <option key={tab?.id} value={tab?.id}>
                         {tab?.label} - {tab?.description}
@@ -497,61 +550,72 @@ const SecretaryDashboard = () => {
                     ))}
                   </optgroup>
                 </select>
-                <Icon 
-                  name="ChevronDown" 
-                  size={16} 
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground pointer-events-none"
-                />
+                <div className="absolute right-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <Icon name="ChevronDown" size={18} className="text-blue-600" />
+                </div>
               </div>
             </div>
 
             {/* Tab Content */}
-            <div className="p-6">
+            <div className="p-6 animate-fadeIn">
               {ActiveComponent && <ActiveComponent isDemo={isDemo} />}
             </div>
           </div>
 
-          {/* Quick Actions Footer */}
-          <div className="bg-accent/5 rounded-lg border border-accent/20 p-6">
-            <h3 className="font-heading font-heading-semibold text-lg text-text-primary mb-4">
-              Actions rapides
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          {/* Quick Actions Footer - Modernisé */}
+          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 rounded-2xl border-2 border-amber-200 p-4 shadow-md">
+            <div className="flex items-center mb-5">
+              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                <Icon name="Zap" size={20} className="text-white" />
+              </div>
+              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
+                Actions rapides
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Button
                 variant="outline"
                 iconName="CheckSquare"
                 iconPosition="left"
                 onClick={() => setActiveTab('tasks')}
-                className="justify-start"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 border-2 border-green-200 hover:border-green-400 hover:shadow-md transition-all duration-300 py-6 group"
               >
-                Mes tâches du jour
+                <span className="font-body font-body-semibold group-hover:text-green-700">
+                  Mes tâches du jour
+                </span>
               </Button>
               <Button
                 variant="outline"
                 iconName="Phone"
                 iconPosition="left"
                 onClick={() => setActiveTab('justifications')}
-                className="justify-start"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all duration-300 py-6 group"
               >
-                Appels parents urgents
+                <span className="font-body font-body-semibold group-hover:text-blue-700">
+                  Appels parents urgents
+                </span>
               </Button>
               <Button
                 variant="outline"
                 iconName="Calendar"
                 iconPosition="left"
                 onClick={() => setActiveTab('planning')}
-                className="justify-start"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 border-2 border-purple-200 hover:border-purple-400 hover:shadow-md transition-all duration-300 py-6 group"
               >
-                Planning rendez-vous
+                <span className="font-body font-body-semibold group-hover:text-purple-700">
+                  Planning rendez-vous
+                </span>
               </Button>
               <Button
                 variant="outline"
                 iconName="FileText"
                 iconPosition="left"
                 onClick={() => setActiveTab('documents')}
-                className="justify-start"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 border-2 border-orange-200 hover:border-orange-400 hover:shadow-md transition-all duration-300 py-6 group"
               >
-                Certificats à imprimer
+                <span className="font-body font-body-semibold group-hover:text-orange-700">
+                  Certificats à imprimer
+                </span>
               </Button>
             </div>
           </div>

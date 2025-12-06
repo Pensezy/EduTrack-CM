@@ -407,23 +407,33 @@ const PrincipalDashboard = () => {
               ))}
             </div>
             
-            {/* Charts Section - Responsive */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Aperçu des performances</h3>
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8">
-                <div className="min-h-[200px] sm:min-h-[250px]">
+            {/* Charts Section - Modernisée */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                  <Icon name="TrendingUp" size={20} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Aperçu des performances</h3>
+              </div>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 min-h-[250px] border border-blue-200">
                   <ClassAverageChart />
                 </div>
-                <div className="min-h-[200px] sm:min-h-[250px]">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-xl p-4 min-h-[250px] border border-green-200">
                   <AttendanceChart />
                 </div>
               </div>
             </div>
             
-            {/* Payment Status - Compact et responsive */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">État des paiements</h3>
-              <div className="min-h-[150px] sm:min-h-[200px]">
+            {/* Payment Status - Modernisé */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6 hover:shadow-xl transition-shadow">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                  <Icon name="CreditCard" size={20} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">État des paiements</h3>
+              </div>
+              <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 min-h-[200px] border border-amber-200">
                 <PaymentStatusChart />
               </div>
             </div>
@@ -433,66 +443,76 @@ const PrincipalDashboard = () => {
         return <SchoolYearValidationTab />;
       case 'actions':
         return (
-          <div className="space-y-4 sm:space-y-6">
-            {/* Raccourcis directs - Responsifs */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4">
+          <div className="space-y-6">
+            {/* Raccourcis directs - Modernisés */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               <button
                 onClick={() => navigate('/principal-dashboard?tab=accounts&subtab=create')}
-                className="p-3 sm:p-4 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-xl transition-all duration-200 text-left group"
+                className="group p-5 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-2 border-blue-200 hover:border-blue-400 rounded-2xl transition-all duration-300 text-left hover:shadow-xl hover:scale-105"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icon name="UserPlus" size={16} className="text-blue-600 sm:size-5" />
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Icon name="UserPlus" size={24} className="text-white" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-blue-900 text-sm sm:text-base">Créer Personnel</h3>
-                    <p className="text-xs sm:text-sm text-blue-700 truncate">Ajouter enseignant/secrétaire</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-blue-900 text-base mb-1">Créer Personnel</h3>
+                    <p className="text-sm text-blue-700">Ajouter enseignant/secrétaire</p>
                   </div>
                 </div>
               </button>
               
               <button
                 onClick={() => navigate('/notification-management')}
-                className="p-3 sm:p-4 bg-green-50 hover:bg-green-100 border border-green-200 hover:border-green-300 rounded-xl transition-all duration-200 text-left group"
+                className="group p-5 bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-2 border-green-200 hover:border-green-400 rounded-2xl transition-all duration-300 text-left hover:shadow-xl hover:scale-105"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icon name="Bell" size={16} className="text-green-600 sm:size-5" />
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Icon name="Bell" size={24} className="text-white" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-green-900 text-sm sm:text-base">Notification</h3>
-                    <p className="text-xs sm:text-sm text-green-700 truncate">Message à l'école</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-green-900 text-base mb-1">Notification</h3>
+                    <p className="text-sm text-green-700">Message à l'école</p>
                   </div>
                 </div>
               </button>
               
               <button
                 onClick={() => navigate('/report-generation')}
-                className="p-3 sm:p-4 bg-purple-50 hover:bg-purple-100 border border-purple-200 hover:border-purple-300 rounded-xl transition-all duration-200 text-left group sm:col-span-2 lg:col-span-1"
+                className="group p-5 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-2 border-purple-200 hover:border-purple-400 rounded-2xl transition-all duration-300 text-left hover:shadow-xl hover:scale-105 sm:col-span-2 lg:col-span-1"
               >
-                <div className="flex items-center space-x-3">
-                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-purple-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                    <Icon name="FileBarChart" size={16} className="text-purple-600 sm:size-5" />
+                <div className="flex items-center space-x-4">
+                  <div className="w-14 h-14 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
+                    <Icon name="FileBarChart" size={24} className="text-white" />
                   </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-purple-900 text-sm sm:text-base">Rapport</h3>
-                    <p className="text-xs sm:text-sm text-purple-700 truncate">Générer analyse</p>
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-purple-900 text-base mb-1">Rapport</h3>
+                    <p className="text-sm text-purple-700">Générer analyse</p>
                   </div>
                 </div>
               </button>
             </div>
             
-            {/* Section complète - Responsive */}
-            <div className="bg-white rounded-xl border border-gray-200 p-4 sm:p-6">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-4 sm:mb-6">Toutes les Actions</h3>
+            {/* Section complète - Modernisée */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                  <Icon name="Zap" size={20} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">Toutes les Actions</h3>
+              </div>
               <QuickActions />
             </div>
           </div>
         );
       case 'system':
         return (
-          <div className="bg-white rounded-xl border border-gray-200 p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-6">État du Système</h3>
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+            <div className="flex items-center mb-6">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                <Icon name="Settings" size={20} className="text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">État du Système</h3>
+            </div>
             <SystemStatus />
           </div>
         );
@@ -501,9 +521,14 @@ const PrincipalDashboard = () => {
       case 'school-info':
         return (
           <div className="space-y-6">
-            {/* Informations générales de l'école */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">🏛️ Informations de l'Établissement</h3>
+            {/* Informations générales de l'école - Modernisé */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                  <Icon name="Building2" size={20} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">🏛️ Informations de l'Établissement</h3>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div className="flex items-center space-x-3">
@@ -583,12 +608,18 @@ const PrincipalDashboard = () => {
               </div>
             </div>
             
-            {/* Gestion intelligente des classes */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
+            {/* Gestion intelligente des classes - Modernisée */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">📚 Classes de l'École</h3>
-                <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm">
-                  + Ajouter une classe
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <Icon name="BookOpen" size={20} className="text-white" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-gray-900">📚 Classes de l'École</h3>
+                </div>
+                <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg text-sm font-semibold flex items-center space-x-2">
+                  <Icon name="Plus" size={16} />
+                  <span>Ajouter une classe</span>
                 </button>
               </div>
               
@@ -825,29 +856,34 @@ const PrincipalDashboard = () => {
               </div>
             </div>
             
-            {/* Statistiques rapides */}
-            <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">📊 Aperçu Rapide</h3>
+            {/* Statistiques rapides - Modernisées */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+              <div className="flex items-center mb-6">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                  <Icon name="BarChart3" size={20} className="text-white" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900">📊 Aperçu Rapide</h3>
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-r from-blue-50 to-blue-100 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-blue-800">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 hover:shadow-lg transition-shadow">
+                  <div className="text-3xl font-bold text-blue-800 mb-1">
                     {keyMetrics.find(m => m.title === 'Élèves')?.value || 0}
                   </div>
-                  <div className="text-sm text-blue-600">Élèves inscrits</div>
+                  <div className="text-sm text-blue-600 font-medium">Élèves inscrits</div>
                 </div>
-                <div className="bg-gradient-to-r from-green-50 to-green-100 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-green-800">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-200 hover:shadow-lg transition-shadow">
+                  <div className="text-3xl font-bold text-green-800 mb-1">
                     {data?.schoolStats?.teachers || 0}
                   </div>
-                  <div className="text-sm text-green-600">Enseignants</div>
+                  <div className="text-sm text-green-600 font-medium">Enseignants</div>
                 </div>
-                <div className="bg-gradient-to-r from-purple-50 to-purple-100 p-4 rounded-lg">
-                  <div className="text-2xl font-bold text-purple-800">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-200 hover:shadow-lg transition-shadow">
+                  <div className="text-3xl font-bold text-purple-800 mb-1">
                     {schoolData?.available_classes?.length || 0}
                   </div>
-                  <div className="text-sm text-purple-600">Classes actives</div>
+                  <div className="text-sm text-purple-600 font-medium">Classes actives</div>
                 </div>
-                <div className="bg-gradient-to-r from-orange-50 to-orange-100 p-4 rounded-lg">
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 p-5 rounded-xl border-2 border-orange-200 hover:shadow-lg transition-shadow">
                   <div className="text-2xl font-bold text-orange-800">
                     {(() => {
                       const schoolType = schoolData?.type?.toLowerCase().trim();
@@ -988,7 +1024,7 @@ const PrincipalDashboard = () => {
         <title>Tableau de bord Principal - EduTrack CM</title>
         <meta name="description" content="Tableau de bord principal pour la supervision et l'administration de l'école avec analyses en temps réel" />
       </Helmet>
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gradient-to-br from-gray-50 via-blue-50/30 to-indigo-50/30">
         {/* Header */}
         <Header
           userRole="principal"
@@ -1018,94 +1054,79 @@ const PrincipalDashboard = () => {
         } overflow-x-hidden min-h-screen`}>
           <div className="p-3 sm:p-4 lg:p-6 w-full">
             <div className="max-w-full w-full overflow-x-auto">
-            {/* Page Header - Simplifié et responsive */}
-            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 sm:p-6 mb-4 sm:mb-6 border border-blue-100">
+            {/* Page Header - Modernisé */}
+            <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white mb-8 animate-fadeIn">
               <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                <div className="flex items-center space-x-3 sm:space-x-4">
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-xl flex items-center justify-center flex-shrink-0">
-                    <Icon name="BarChart3" size={20} className="text-blue-600 sm:size-6" />
+                <div>
+                  <div className="inline-flex items-center px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-medium mb-3">
+                    <span className="w-2 h-2 bg-green-400 rounded-full mr-2 animate-pulse"></span>
+                    En ligne
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-3 mb-1">
-                      <h1 className="text-lg sm:text-xl lg:text-2xl font-bold text-gray-900 truncate">
-                        Dashboard Principal
-                      </h1>
-                      {/* Mode Indicator Badge */}
-                      {modeLoading ? (
-                        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-medium bg-blue-100 text-blue-800">
-                          <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-1.5"></div>
-                          Chargement...
-                        </span>
-                      ) : (
-                        <span className={`inline-flex items-center px-2 py-1 rounded-md text-xs font-medium ${
-                          isProduction 
-                            ? 'bg-green-100 text-green-800 border border-green-200' 
-                            : 'bg-orange-100 text-orange-800 border border-orange-200'
-                        }`}>
-                          {isProduction ? (
-                            <>
-                              <Icon name="CheckCircle2" size={12} className="mr-1" />
-                              Mode PRODUCTION
-                            </>
-                          ) : (
-                            <>
-                              <Icon name="AlertCircle" size={12} className="mr-1" />
-                              Mode DÉMO
-                            </>
-                          )}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-gray-600">
-                      {/* Nom de l'école - priorité sur mobile */}
-                      {schoolData && (
-                        <span className="font-medium text-blue-600 truncate">
-                          🏛️ {schoolData.name}
-                        </span>
-                      )}
-                      {/* Directeur - masqué sur très petits écrans */}
-                      {(schoolData?.director_name || schoolData?.directorName || schoolData?.users?.full_name) && (
-                        <div className="hidden sm:block text-green-600 font-medium truncate">
-                          👤 {schoolData.director_name || schoolData.directorName || schoolData.users?.full_name}
-                        </div>
-                      )}
-                      {/* Date - masquée sur mobile */}
-                      <span className="hidden md:block">
-                        📅 {new Date().toLocaleDateString('fr-FR', { 
-                          weekday: 'short', 
-                          day: 'numeric', 
-                          month: 'short' 
-                        })}
-                      </span>
-                    </div>
-                  </div>
+                  <h1 className="font-heading font-heading-bold text-4xl mb-2">
+                    Bienvenue, {schoolData?.director_name || 
+                    schoolData?.directorName || 
+                    schoolData?.users?.full_name ||
+                    user?.schoolData?.users?.full_name ||
+                    user?.full_name ||
+                    user?.email?.split('@')[0] || 
+                    'Directeur'} 👋
+                  </h1>
+                  <p className="font-body font-body-normal text-blue-100 text-lg">
+                    Tableau de Bord Principal - {schoolData?.name || 'Établissement'}
+                  </p>
                 </div>
-                
-                <div className="flex items-center justify-between lg:justify-end space-x-2 sm:space-x-3">
-                  {/* Statistiques rapides - responsive */}
-                  <div className="hidden sm:flex items-center space-x-2 bg-white/60 backdrop-blur-sm rounded-lg px-2 py-1 sm:px-3 sm:py-2">
-                    <Icon name="Users" size={14} className="text-blue-600" />
-                    <span className="text-xs sm:text-sm font-medium text-gray-700">
-                      {data.schoolStats?.totalStudents || (isDemo ? '400' : '0')}
+                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
+                  <div className="text-right bg-white/10 backdrop-blur-sm rounded-xl p-4 border border-white/20">
+                    <p className="font-body font-body-semibold text-sm mb-1">
+                      {new Date()?.toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                    <p className="font-caption font-caption-normal text-xs text-blue-200 flex items-center justify-end">
+                      <Icon name="Calendar" size={14} className="mr-1" />
+                      Année scolaire 2025-2026
+                    </p>
+                  </div>
+                  {/* Mode Indicator Badge */}
+                  {modeLoading ? (
+                    <span className="inline-flex items-center px-3 py-2 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm border border-white/30 text-white">
+                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
+                      Chargement...
                     </span>
-                  </div>
-                  
-                  {/* Statut système - simplifié */}
-                  <div className="flex items-center space-x-1 sm:space-x-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <span className="text-xs text-gray-600 hidden sm:inline">OK</span>
-                  </div>
-                  
-                  <NotificationCenter userRole="principal" />
-                  <AccessibilityControls />
+                  ) : (
+                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-bold shadow-md ${
+                      isProduction 
+                        ? 'bg-green-500 text-white border-2 border-green-300' 
+                        : 'bg-amber-500 text-white border-2 border-amber-300'
+                    }`}>
+                      {isProduction ? (
+                        <>
+                          <Icon name="CheckCircle2" size={14} className="mr-1" />
+                          🚀 PRODUCTION
+                        </>
+                      ) : (
+                        <>
+                          <Icon name="AlertCircle" size={14} className="mr-1" />
+                          🎭 DÉMO
+                        </>
+                      )}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
 
-            {/* Tab Navigation - Version desktop */}
-            <div className="mb-6 sm:mb-8 hidden sm:block">
-              <div className="bg-gray-100 p-1 rounded-lg overflow-x-auto scrollbar-hide w-full">
-                <div className="flex space-x-1 min-w-max pb-1">
+            {/* Tab Navigation - Version desktop modernisée */}
+            <div className="mb-8 hidden sm:block">
+              <div className="bg-white rounded-2xl shadow-md border border-gray-200 p-6">
+                <div className="flex items-center mb-4">
+                  <div className="w-1 h-8 bg-gradient-to-b from-blue-600 to-indigo-600 rounded-full mr-3"></div>
+                  <h2 className="font-heading font-heading-bold text-xl text-text-primary">Modules de Gestion</h2>
+                </div>
+                <div className="flex flex-wrap gap-3">
                   {tabOptions?.map((tab) => {
                     // Ajouter des indicateurs contextuels
                     const getTabBadge = (tabId) => {
@@ -1125,22 +1146,34 @@ const PrincipalDashboard = () => {
                       <button
                         key={tab?.id}
                         onClick={() => handleTabChange(tab?.id)}
-                        className={`flex items-center space-x-2 px-3 lg:px-4 py-2 text-sm rounded-md transition-all duration-200 relative whitespace-nowrap flex-shrink-0 ${
+                        className={`group relative overflow-hidden rounded-xl px-5 py-3 transition-all duration-300 ${
                           activeTab === tab?.id
-                            ? 'bg-white text-blue-600 shadow-sm font-medium' 
-                            : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                            ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg scale-105'
+                            : 'bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-blue-300 hover:shadow-md hover:scale-102 text-gray-700'
                         }`}
                       >
-                        <Icon name={tab?.icon} size={16} className="flex-shrink-0" />
-                        <span className={`transition-all duration-200 ${
-                          !isSidebarCollapsed ? 'text-xs lg:text-sm' : 'text-sm'
-                        }`}>
-                          {!isSidebarCollapsed && tab?.label.length > 12 
-                            ? tab?.label.split(' ').map(word => word.substring(0, 4)).join(' ')
-                            : tab?.label
-                          }
-                        </span>
-                        {getTabBadge(tab?.id)}
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${
+                            activeTab === tab?.id
+                              ? 'bg-white/20 backdrop-blur-sm'
+                              : 'bg-white group-hover:bg-blue-50 shadow-sm'
+                          }`}>
+                            <Icon 
+                              name={tab?.icon} 
+                              size={20} 
+                              className={activeTab === tab?.id ? 'text-white' : 'text-blue-600'}
+                            />
+                          </div>
+                          <span className={`font-body font-body-semibold text-sm whitespace-nowrap ${
+                            activeTab === tab?.id ? 'text-white' : 'text-gray-900'
+                          }`}>
+                            {tab?.label}
+                          </span>
+                          {getTabBadge(tab?.id)}
+                        </div>
+                        {activeTab === tab?.id && (
+                          <div className="absolute bottom-0 left-0 right-0 h-1 bg-white rounded-full"></div>
+                        )}
                       </button>
                     );
                   })}
@@ -1148,17 +1181,17 @@ const PrincipalDashboard = () => {
               </div>
             </div>
 
-            {/* Tab Navigation - Version mobile avec dropdown */}
+            {/* Tab Navigation - Version mobile modernisée */}
             <div className="mb-6 sm:hidden">
               <div className="relative" data-mobile-menu>
+                <div className="absolute left-4 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <Icon name="Layers" size={18} className="text-blue-600" />
+                </div>
                 <button
                   onClick={() => setShowMobileMenu(!showMobileMenu)}
-                  className={`w-full flex items-center justify-between px-4 py-3 bg-gray-100 rounded-lg text-sm font-medium ${
-                    activeTab ? 'text-blue-600' : 'text-gray-600'
-                  }`}
+                  className="w-full flex items-center justify-between pl-12 pr-4 py-3 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl text-sm font-semibold text-text-primary transition-all"
                 >
                   <div className="flex items-center space-x-2">
-                    <Icon name={tabOptions?.find(t => t.id === activeTab)?.icon} size={16} />
                     <span>{tabOptions?.find(t => t.id === activeTab)?.label}</span>
                     {/* Indicateur d'alertes */}
                     {((activeTab === 'system' && true) || 
@@ -1168,14 +1201,14 @@ const PrincipalDashboard = () => {
                   </div>
                   <Icon 
                     name={showMobileMenu ? "ChevronUp" : "ChevronDown"} 
-                    size={16} 
-                    className="text-gray-400"
+                    size={18} 
+                    className="text-blue-600"
                   />
                 </button>
                 
                 {showMobileMenu && (
-                  <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
-                    <div className="py-1">
+                  <div className="absolute top-full left-0 right-0 mt-2 bg-white border-2 border-gray-200 rounded-2xl shadow-2xl z-50 animate-fadeIn">
+                    <div className="py-2">
                       {tabOptions?.map((tab) => {
                         const hasAlert = (tab.id === 'personnel') || (tab.id === 'system') || (tab.id === 'school-year');
                         
@@ -1186,18 +1219,22 @@ const PrincipalDashboard = () => {
                               handleTabChange(tab?.id);
                               setShowMobileMenu(false);
                             }}
-                            className={`w-full flex items-center justify-between px-4 py-3 text-sm transition-colors ${
+                            className={`w-full flex items-center justify-between px-4 py-3 mx-2 my-1 rounded-xl text-sm transition-all duration-300 ${
                               activeTab === tab?.id
-                                ? 'bg-blue-50 text-blue-600 font-medium' 
-                                : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                                ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-md font-semibold' 
+                                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700'
                             }`}
                           >
                             <div className="flex items-center space-x-3">
-                              <Icon name={tab?.icon} size={16} className="flex-shrink-0" />
-                              <span>{tab?.label}</span>
+                              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                                activeTab === tab?.id ? 'bg-white/20' : 'bg-blue-100'
+                              }`}>
+                                <Icon name={tab?.icon} size={16} className={activeTab === tab?.id ? 'text-white' : 'text-blue-600'} />
+                              </div>
+                              <span className="font-body font-body-semibold">{tab?.label}</span>
                             </div>
                             {hasAlert && (
-                              <div className="w-2 h-2 bg-warning rounded-full flex-shrink-0"></div>
+                              <div className="w-2 h-2 bg-amber-400 rounded-full flex-shrink-0 animate-pulse"></div>
                             )}
                           </button>
                         );
@@ -1208,18 +1245,24 @@ const PrincipalDashboard = () => {
               </div>
             </div>
 
-            {/* Notification mode démo - Compacte */}
+            {/* Notification mode démo - Modernisée */}
             {isDemo && (
-              <div className="mb-4 sm:mb-6 bg-gradient-to-r from-orange-50 to-yellow-50 border-l-4 border-orange-400 p-3 sm:p-4 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Icon name="AlertTriangle" size={18} className="text-orange-400 flex-shrink-0" />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-xs sm:text-sm text-orange-700">
-                      <strong>Mode Demo :</strong> <span className="hidden sm:inline">Données fictives pour test. </span>
+              <div className="mb-6 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-300 p-5 rounded-2xl shadow-md animate-fadeIn">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                    <Icon name="AlertTriangle" size={24} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-amber-900 mb-1">
+                      🎭 Mode Démonstration Actif
+                    </p>
+                    <p className="text-xs text-amber-700">
+                      Données fictives pour test. 
                       <button
                         onClick={() => navigate('/school-management')}
-                        className="text-orange-600 hover:text-orange-800 font-medium underline"
+                        className="ml-2 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors inline-flex items-center"
                       >
+                        <Icon name="LogIn" size={14} className="mr-1" />
                         Se connecter
                       </button>
                     </p>
@@ -1228,12 +1271,14 @@ const PrincipalDashboard = () => {
               </div>
             )}
 
-            {/* Indicateur de chargement - Compact */}
+            {/* Indicateur de chargement - Modernisé */}
             {modeLoading && (
-              <div className="mb-4 sm:mb-6 bg-blue-50 border border-blue-200 p-3 sm:p-4 rounded-lg">
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600 flex-shrink-0"></div>
-                  <span className="text-xs sm:text-sm text-blue-700">Chargement...</span>
+              <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-5 rounded-2xl shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                  </div>
+                  <span className="text-sm font-semibold text-blue-700">Chargement des données...</span>
                 </div>
               </div>
             )}
@@ -1243,28 +1288,27 @@ const PrincipalDashboard = () => {
               {renderTabContent()}
             </div>
 
-            {/* Footer Info - Simplifié */}
-            <div className="mt-8 sm:mt-12 pt-4 sm:pt-6 border-t border-border">
-              <div className="bg-gray-50 rounded-xl p-3 sm:p-4">
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 text-xs sm:text-sm text-muted-foreground">
-                  <div className="flex flex-wrap items-center gap-2 sm:gap-4">
-                    <div className="flex items-center space-x-2">
-                      <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-                      <span className="font-medium">Système OK</span>
+            {/* Footer Info - Modernisé */}
+            <div className="mt-12 pt-6 border-t border-gray-200">
+              <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-purple-50 rounded-2xl p-5 shadow-sm border border-blue-200">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 text-sm">
+                  <div className="flex flex-wrap items-center gap-4">
+                    <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-sm">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      <span className="font-semibold text-gray-900">Système Opérationnel</span>
                     </div>
-                    <div className="text-xs text-gray-500">
+                    <div className="text-xs text-gray-600">
                       EduTrack CM © {new Date().getFullYear()} - Tous droits réservés
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 sm:space-x-4">
-                    <div className="flex items-center space-x-2">
-                      <Icon name="Activity" size={12} className="text-green-500" />
-                      <span className="hidden sm:inline">Temps réel</span>
-                      <span className="sm:hidden">Live</span>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-sm">
+                      <Icon name="Activity" size={14} className="text-green-500" />
+                      <span className="font-medium text-gray-900">Temps réel</span>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Icon name="Clock" size={12} />
-                      <span>{currentTime?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className="flex items-center space-x-2 bg-white px-3 py-2 rounded-lg shadow-sm">
+                      <Icon name="Clock" size={14} className="text-blue-600" />
+                      <span className="font-medium text-gray-900">{currentTime?.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</span>
                     </div>
                   </div>
                 </div>

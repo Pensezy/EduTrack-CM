@@ -372,6 +372,7 @@ const TeacherManagementTab = ({ isDemo = false }) => {
       }
 
       // Charger les assignations depuis teacher_assignments
+      console.log('🔍 Recherche assignations pour school_id:', schoolId);
       const { data: assignments, error: assignError } = await supabase
         .from('teacher_assignments')
         .select('id, teacher_id, class_name, subject_name, schedule, start_date, is_active')
@@ -379,16 +380,59 @@ const TeacherManagementTab = ({ isDemo = false }) => {
         .eq('is_active', true)
         .order('created_at', { ascending: false });
 
+      console.log('📊 Résultat assignations:', { assignments, error: assignError });
+
       if (assignError) {
-        console.error('Erreur chargement assignations:', assignError);
+        console.error('❌ Erreur chargement assignations:', assignError);
         setTeachers([]);
         setLoading(false);
         return;
       }
 
       if (!assignments || assignments.length === 0) {
-        console.log('Aucune assignation trouvée');
-        setTeachers([]);
+        console.log('⚠️ Aucune assignation trouvée pour cette école');
+        console.log('💡 Vérification: y a-t-il des enseignants dans la table teachers ?');
+        
+        // Charger quand même les enseignants sans assignation
+        const { data: allTeachers, error: allTeachersError } = await supabase
+          .from('teachers')
+          .select('id, user_id, school_id')
+          .eq('school_id', schoolId);
+        
+        console.log('👨‍🏫 Enseignants dans la table teachers:', allTeachers);
+        
+        if (allTeachers && allTeachers.length > 0) {
+          // Il y a des enseignants, mais pas d'assignations
+          const userIds = allTeachers.map(t => t.user_id);
+          const { data: users, error: userError } = await supabase
+            .from('users')
+            .select('id, email, phone, full_name')
+            .in('id', userIds)
+            .eq('role', 'teacher');
+          
+          console.log('👤 Utilisateurs enseignants:', users);
+          
+          const teachersWithoutAssignment = allTeachers.map(teacher => {
+            const user = users?.find(u => u.id === teacher.user_id);
+            return {
+              id: teacher.id,
+              fullName: user?.full_name || 'Nom inconnu',
+              email: user?.email || 'Non renseigné',
+              phone: user?.phone || 'Non renseigné',
+              subjects: ['Aucune matière assignée'],
+              classes: ['Aucune classe assignée'],
+              status: 'active',
+              teacherId: `PROF${String(teacher.id).padStart(3, '0')}`,
+              avatar: '/public/assets/images/no_image.png'
+            };
+          });
+          
+          setTeachers(teachersWithoutAssignment);
+          console.log('✅ Enseignants chargés sans assignation:', teachersWithoutAssignment.length);
+        } else {
+          setTeachers([]);
+        }
+        
         setLoading(false);
         return;
       }

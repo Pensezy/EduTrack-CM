@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { supabase } from '../../../lib/supabase';
 import { parentMultiSchoolService } from '../../../services/parentMultiSchoolServiceDemo.js';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
@@ -9,31 +10,135 @@ const ParentSearchSelector = ({
   onCreateNew, 
   selectedParent, 
   searchTerm, 
-  onSearchChange 
+  onSearchChange,
+  isDemo = false  // Ajouter le prop isDemo
 }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showResults, setShowResults] = useState(false);
 
   useEffect(() => {
+    console.log('🔍 ParentSearchSelector - searchTerm changed:', searchTerm, '| Mode:', isDemo ? 'DEMO' : 'PRODUCTION');
     if (searchTerm && searchTerm.length >= 2) {
+      console.log('✅ Longueur >= 2, lancement recherche');
       searchParents(searchTerm);
     } else {
+      console.log('❌ Longueur < 2, reset résultats');
       setSearchResults([]);
       setShowResults(false);
     }
-  }, [searchTerm]);
+  }, [searchTerm, isDemo]);
 
   const searchParents = async (term) => {
+    console.log('🔎 searchParents appelé avec term:', term, '| Mode:', isDemo ? 'DEMO' : 'PRODUCTION');
     setLoading(true);
     try {
-      const results = await parentMultiSchoolService.searchExistingParents(term);
+      let results = [];
+      
+      if (isDemo) {
+        // Mode démo : utiliser les données fictives
+        console.log('📡 Appel parentMultiSchoolService.searchExistingParents (DEMO)...');
+        results = await parentMultiSchoolService.searchExistingParents(term);
+      } else {
+        // Mode production : chercher dans Supabase
+        console.log('📡 Recherche dans Supabase (PRODUCTION)...');
+        const searchLower = term.toLowerCase();
+        
+        const { data: parents, error } = await supabase
+          .from('parents')
+          .select(`
+            id,
+            first_name,
+            last_name,
+            email,
+            phone,
+            address,
+            profession,
+            user_id,
+            created_at
+          `)
+          .or(`first_name.ilike.%${term}%,last_name.ilike.%${term}%,email.ilike.%${term}%,phone.ilike.%${term}%`)
+          .limit(10);
+        
+        console.log('📊 Résultats Supabase parents:', { parents, error });
+        
+        if (error) {
+          console.error('❌ Erreur recherche Supabase:', error);
+          results = [];
+        } else {
+          // Charger les relations enfants pour chaque parent
+          const parentsWithRelations = await Promise.all(
+            (parents || []).map(async (parent) => {
+              // Charger les élèves de ce parent
+              const { data: students, error: studentsError } = await supabase
+                .from('students')
+                .select(`
+                  id,
+                  first_name,
+                  last_name,
+                  current_class,
+                  school_id,
+                  schools (
+                    id,
+                    name,
+                    city,
+                    type
+                  )
+                `)
+                .eq('parent_id', parent.id)
+                .eq('is_active', true);
+              
+              console.log(`👶 Élèves du parent ${parent.first_name} ${parent.last_name}:`, students);
+              
+              if (studentsError) {
+                console.error('❌ Erreur chargement élèves:', studentsError);
+              }
+              
+              // Formater les relations
+              const relations = (students || []).map(student => ({
+                student: {
+                  id: student.id,
+                  firstName: student.first_name,
+                  lastName: student.last_name,
+                  className: student.current_class
+                },
+                school: student.schools ? {
+                  id: student.schools.id,
+                  name: student.schools.name,
+                  city: student.schools.city || 'Non renseigné',
+                  type: student.schools.type
+                } : null
+              }));
+              
+              return {
+                id: parent.id,
+                globalParentId: parent.id,
+                firstName: parent.first_name,
+                lastName: parent.last_name,
+                email: parent.email,
+                phone: parent.phone,
+                address: parent.address,
+                profession: parent.profession,
+                userId: parent.user_id,
+                createdAt: parent.created_at,
+                studentRelations: relations
+              };
+            })
+          );
+          
+          results = parentsWithRelations;
+          console.log('✅ Parents avec relations chargés:', results);
+        }
+      }
+      
+      console.log('✅ Résultats reçus:', results.length, 'parents trouvés', results);
       setSearchResults(results);
       setShowResults(true);
     } catch (error) {
-      console.error('Erreur lors de la recherche:', error);
+      console.error('❌ Erreur lors de la recherche:', error);
     } finally {
       setLoading(false);
+      console.log('⏹️ Recherche terminée');
     }
   };
 
@@ -113,7 +218,9 @@ const ParentSearchSelector = ({
                     <p className="text-xs text-gray-500 mb-1">Enfants actuels:</p>
                     {parent.studentRelations.map((relation, idx) => (
                       <div key={idx} className="text-xs text-gray-600">
-                        • {relation.student.firstName} {relation.student.lastName} - {relation.school.name} ({relation.school.city})
+                        • {relation.student.firstName} {relation.student.lastName}
+                        {relation.student.className && ` - ${relation.student.className}`}
+                        {relation.school && ` - ${relation.school.name} (${relation.school.city})`}
                       </div>
                     ))}
                   </div>
@@ -154,12 +261,25 @@ const ParentSearchSelector = ({
               
               {selectedParent.studentRelations && selectedParent.studentRelations.length > 0 && (
                 <div className="mt-2">
-                  <p className="text-xs text-green-700 font-medium">Enfants dans d'autres écoles:</p>
+                  <p className="text-xs text-green-700 font-medium">
+                    Enfants inscrits ({selectedParent.studentRelations.length}) :
+                  </p>
                   {selectedParent.studentRelations.map((relation, idx) => (
                     <div key={idx} className="text-xs text-green-600">
-                      • {relation.student.firstName} à {relation.school.name} ({relation.school.city})
+                      • {relation.student.firstName} {relation.student.lastName}
+                      {relation.student.className && ` - ${relation.student.className}`}
+                      {relation.school && ` à ${relation.school.name} (${relation.school.city})`}
                     </div>
                   ))}
+                </div>
+              )}
+              
+              {selectedParent.studentRelations && selectedParent.studentRelations.length === 0 && (
+                <div className="mt-2">
+                  <p className="text-xs text-green-600">
+                    <Icon name="Info" size={12} className="inline mr-1" />
+                    Aucun enfant inscrit actuellement
+                  </p>
                 </div>
               )}
             </div>
