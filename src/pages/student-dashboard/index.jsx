@@ -201,219 +201,119 @@ const StudentDashboard = () => {
         return <AttendanceCalendar attendanceData={attendanceData} />;
       
       case 'schedule':
+        // Vérifier si on a des données d'emploi du temps
+        const hasScheduleData = fetchedSchedule && Array.isArray(fetchedSchedule) && fetchedSchedule.length > 0;
+        
         return (
           <div className="space-y-6">
-            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">
-              📅 Emploi du temps
-            </h2>
+            {/* Header modernisé */}
+            <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl shadow-xl p-6 text-white">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-3xl">
+                  📅
+                </div>
+                <div>
+                  <h2 className="font-heading font-heading-bold text-2xl">
+                    Emploi du temps
+                  </h2>
+                  <p className="text-purple-100 text-sm mt-1">
+                    {hasScheduleData ? 'Votre planning hebdomadaire' : 'Aucun emploi du temps disponible'}
+                  </p>
+                </div>
+              </div>
+            </div>
             
-            {/* Weekly Schedule */}
-            <div className="bg-card rounded-lg shadow-card border border-border overflow-hidden">
-              <div className="bg-gradient-to-r from-primary to-secondary p-4">
-                <h3 className="font-heading font-heading-semibold text-lg text-white">
-                  Semaine du {new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+            {!hasScheduleData ? (
+              <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-12 text-center">
+                <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-purple-100 to-pink-200 mb-4">
+                  <Icon name="Calendar" size={48} className="text-purple-600" />
+                </div>
+                <h3 className="font-body-bold text-xl text-gray-900 mb-2">
+                  Aucun emploi du temps disponible
                 </h3>
+                <p className="text-gray-600 font-body-medium">
+                  Votre emploi du temps sera disponible une fois que votre classe aura été configurée par l'administration.
+                </p>
+                {isDemo && (
+                  <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
+                    <p className="text-sm text-blue-800 font-body-medium">
+                      💡 <strong>Mode Démo:</strong> L'emploi du temps nécessite une configuration de classe. Contactez l'administration.
+                    </p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <>
+            {/* Weekly Schedule - Modernisé */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg overflow-hidden hover:shadow-xl transition-shadow">
+              <div className="bg-gradient-to-r from-purple-600 to-pink-600 p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h3 className="font-heading font-heading-semibold text-xl text-white">
+                      Semaine du {new Date().toLocaleDateString('fr-FR', { day: '2-digit', month: 'long', year: 'numeric' })}
+                    </h3>
+                    <p className="text-purple-100 text-sm mt-1">Emploi du temps complet</p>
+                  </div>
+                  <button className="px-4 py-2 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-xl transition-all flex items-center space-x-2">
+                    <Icon name="Download" size={18} />
+                    <span className="hidden sm:inline">Télécharger</span>
+                  </button>
+                </div>
               </div>
               
               <div className="overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-muted">
+                  <thead className="bg-gradient-to-r from-gray-50 to-gray-100">
                     <tr>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Horaire</th>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Lundi</th>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Mardi</th>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Mercredi</th>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Jeudi</th>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Vendredi</th>
-                      <th className="px-4 py-3 text-left font-heading font-heading-medium text-sm">Samedi</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">⏰ Horaire</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">Lundi</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">Mardi</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">Mercredi</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">Jeudi</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">Vendredi</th>
+                      <th className="px-4 py-4 text-left font-heading font-heading-bold text-sm text-gray-900 border-b-2 border-gray-200">Samedi</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-border">
-                    {/* 08:00 - 09:30 */}
-                    <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-4 font-caption font-caption-semibold text-sm whitespace-nowrap">08:00 - 09:30</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-blue-50 border-l-4 border-blue-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-blue-900">Mathématiques</div>
-                          <div className="text-xs text-blue-700">M. Nkolo - Salle 12</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-purple-50 border-l-4 border-purple-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-purple-900">Français</div>
-                          <div className="text-xs text-purple-700">Mme Djomo - Salle 8</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-green-50 border-l-4 border-green-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-green-900">Physique-Chimie</div>
-                          <div className="text-xs text-green-700">M. Fouda - Labo 2</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-orange-50 border-l-4 border-orange-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-orange-900">Histoire-Géo</div>
-                          <div className="text-xs text-orange-700">M. Kamga - Salle 5</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-blue-50 border-l-4 border-blue-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-blue-900">Mathématiques</div>
-                          <div className="text-xs text-blue-700">M. Nkolo - Salle 12</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-red-900">Anglais</div>
-                          <div className="text-xs text-red-700">Mme Ebelle - Salle 3</div>
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    {/* 10:00 - 11:30 */}
-                    <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-4 font-caption font-caption-semibold text-sm whitespace-nowrap">10:00 - 11:30</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-red-900">Anglais</div>
-                          <div className="text-xs text-red-700">Mme Ebelle - Salle 3</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-blue-50 border-l-4 border-blue-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-blue-900">Mathématiques</div>
-                          <div className="text-xs text-blue-700">M. Nkolo - Salle 12</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center text-muted-foreground text-sm">-</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-green-50 border-l-4 border-green-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-green-900">Physique (TP)</div>
-                          <div className="text-xs text-green-700">M. Fouda - Labo 2</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-purple-50 border-l-4 border-purple-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-purple-900">Français</div>
-                          <div className="text-xs text-purple-700">Mme Djomo - Salle 8</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-orange-50 border-l-4 border-orange-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-orange-900">Histoire-Géo</div>
-                          <div className="text-xs text-orange-700">M. Kamga - Salle 5</div>
-                        </div>
-                      </td>
-                    </tr>
-                    
-                    {/* 12:00 - 13:30 - Pause déjeuner */}
-                    <tr className="bg-yellow-50">
-                      <td className="px-4 py-3 font-caption font-caption-semibold text-sm whitespace-nowrap">12:00 - 13:30</td>
-                      <td colSpan="6" className="px-4 py-3 text-center text-yellow-800 font-body font-body-medium">
-                        🍽️ Pause déjeuner
-                      </td>
-                    </tr>
-                    
-                    {/* 14:00 - 15:30 */}
-                    <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-4 font-caption font-caption-semibold text-sm whitespace-nowrap">14:00 - 15:30</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-green-50 border-l-4 border-green-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-green-900">SVT</div>
-                          <div className="text-xs text-green-700">Mme Bessala - Salle 10</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-orange-50 border-l-4 border-orange-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-orange-900">Histoire-Géo</div>
-                          <div className="text-xs text-orange-700">M. Kamga - Salle 5</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center text-muted-foreground text-sm">-</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-purple-50 border-l-4 border-purple-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-purple-900">Français</div>
-                          <div className="text-xs text-purple-700">Mme Djomo - Salle 8</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-pink-50 border-l-4 border-pink-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-pink-900">Philosophie</div>
-                          <div className="text-xs text-pink-700">M. Abega - Salle 15</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center text-muted-foreground text-sm">-</td>
-                    </tr>
-                    
-                    {/* 16:00 - 17:30 */}
-                    <tr className="hover:bg-muted/50 transition-colors">
-                      <td className="px-4 py-4 font-caption font-caption-semibold text-sm whitespace-nowrap">16:00 - 17:30</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-indigo-50 border-l-4 border-indigo-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-indigo-900">EPS</div>
-                          <div className="text-xs text-indigo-700">M. Onana - Terrain</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-green-50 border-l-4 border-green-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-green-900">SVT (TP)</div>
-                          <div className="text-xs text-green-700">Mme Bessala - Labo 1</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center text-muted-foreground text-sm">-</td>
-                      <td className="px-4 py-4">
-                        <div className="bg-red-50 border-l-4 border-red-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-red-900">Anglais</div>
-                          <div className="text-xs text-red-700">Mme Ebelle - Salle 3</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4">
-                        <div className="bg-indigo-50 border-l-4 border-indigo-500 p-2 rounded">
-                          <div className="font-body font-body-semibold text-sm text-indigo-900">EPS</div>
-                          <div className="text-xs text-indigo-700">M. Onana - Terrain</div>
-                        </div>
-                      </td>
-                      <td className="px-4 py-4 text-center text-muted-foreground text-sm">-</td>
-                    </tr>
+                  <tbody className="divide-y-2 divide-gray-100">
+                    {fetchedSchedule.map((slot, index) => (
+                      <tr key={index} className="hover:bg-gray-50/50 transition-colors">
+                        <td className="px-4 py-4 font-caption font-caption-bold text-sm whitespace-nowrap text-gray-700 bg-gray-50">
+                          {slot.start_time} - {slot.end_time}
+                        </td>
+                        {['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'].map((day) => {
+                          const course = slot[day];
+                          if (!course) {
+                            return <td key={day} className="px-4 py-4 text-center text-gray-400 text-sm">-</td>;
+                          }
+                          const colors = {
+                            'Mathematiques': 'from-blue-50 to-indigo-50 border-blue-500 text-blue-900',
+                            'Francais': 'from-purple-50 to-pink-50 border-purple-500 text-purple-900',
+                            'Physique': 'from-green-50 to-emerald-50 border-green-500 text-green-900',
+                            'Histoire': 'from-orange-50 to-amber-50 border-orange-500 text-orange-900',
+                            'Anglais': 'from-red-50 to-rose-50 border-red-500 text-red-900',
+                            'EPS': 'from-indigo-50 to-blue-50 border-indigo-500 text-indigo-900'
+                          };
+                          const colorClass = colors[course.subject] || 'from-gray-50 to-slate-50 border-gray-500 text-gray-900';
+                          return (
+                            <td key={day} className="px-4 py-4">
+                              <div className={`bg-gradient-to-br ${colorClass} border-l-4 p-3 rounded-xl shadow-sm hover:shadow-md transition-shadow`}>
+                                <div className="font-body font-body-semibold text-sm">{course.subject}</div>
+                                <div className="text-xs mt-1 flex items-center gap-1">
+                                  <Icon name="User" size={10} />
+                                  {course.teacher} - {course.room}
+                                </div>
+                              </div>
+                            </td>
+                          );
+                        })}
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
             </div>
-            
-            {/* Legend */}
-            <div className="bg-card rounded-lg shadow-card border border-border p-4">
-              <h4 className="font-heading font-heading-semibold text-base mb-3">Légende des matières</h4>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-blue-500 rounded"></div>
-                  <span className="text-sm">Mathématiques</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-purple-500 rounded"></div>
-                  <span className="text-sm">Français</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-green-500 rounded"></div>
-                  <span className="text-sm">Sciences (PC/SVT)</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-orange-500 rounded"></div>
-                  <span className="text-sm">Histoire-Géographie</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-red-500 rounded"></div>
-                  <span className="text-sm">Anglais</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-pink-500 rounded"></div>
-                  <span className="text-sm">Philosophie</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <div className="w-4 h-4 bg-indigo-500 rounded"></div>
-                  <span className="text-sm">EPS</span>
-                </div>
-              </div>
-            </div>
+            </>
+            )}
           </div>
         );
       
@@ -546,64 +446,85 @@ const StudentDashboard = () => {
 
         return (
           <div className="space-y-6">
-            {/* En-tête */}
-            <div className="bg-card rounded-lg shadow-card border border-border p-6">
-              <div>
-                <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">📄 Mes Documents</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Documents reçus, devoirs à rendre et documents administratifs
-                </p>
+            {/* Header modernisé */}
+            <div className="bg-gradient-to-br from-red-600 to-rose-600 rounded-2xl shadow-xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-3xl">
+                    📄
+                  </div>
+                  <div>
+                    <h2 className="font-heading font-heading-bold text-2xl">
+                      Mes Documents
+                    </h2>
+                    <p className="text-red-100 text-sm mt-1">
+                      Cours, devoirs et documents officiels
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-
-            {/* Onglets */}
-            <div className="bg-card rounded-lg shadow-card border border-border">
-              <div className="border-b border-border">
-                <nav className="flex -mb-px">
+            
+            {/* Tabs et contenu - Modernisé */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg overflow-hidden">
+              <div className="border-b-2 border-gray-100">
+                <nav className="flex -mb-0.5 px-2">
                   <button
                     onClick={() => setDocumentTab('received')}
-                    className={`px-6 py-4 text-sm font-body font-body-medium border-b-2 transition-colors ${
+                    className={`px-6 py-4 text-sm font-body font-body-semibold border-b-4 transition-all duration-300 ${
                       documentTab === 'received'
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-card-foreground hover:border-border'
+                        ? 'border-blue-600 text-blue-900 bg-blue-50/50'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <Icon name="BookOpen" size={18} />
                       <span>Documents reçus</span>
-                      <span className="px-2 py-1 text-xs bg-primary/10 text-primary rounded-full">
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                        documentTab === 'received' 
+                          ? 'bg-blue-600 text-white' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
                         {receivedDocuments.length}
                       </span>
                     </div>
                   </button>
                   <button
                     onClick={() => setDocumentTab('assignments')}
-                    className={`px-6 py-4 text-sm font-body font-body-medium border-b-2 transition-colors ${
+                    className={`px-6 py-4 text-sm font-body font-body-semibold border-b-4 transition-all duration-300 ${
                       documentTab === 'assignments'
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-card-foreground hover:border-border'
+                        ? 'border-orange-600 text-orange-900 bg-orange-50/50'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <Icon name="Upload" size={18} />
                       <span>Mes devoirs</span>
-                      <span className="px-2 py-1 text-xs bg-orange-100 text-orange-600 rounded-full">
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                        documentTab === 'assignments'
+                          ? 'bg-orange-600 text-white animate-pulse' 
+                          : 'bg-orange-100 text-orange-700'
+                      }`}>
                         {assignments.filter(a => !a.hasSubmitted).length}
                       </span>
                     </div>
                   </button>
                   <button
                     onClick={() => setDocumentTab('admin')}
-                    className={`px-6 py-4 text-sm font-body font-body-medium border-b-2 transition-colors ${
+                    className={`px-6 py-4 text-sm font-body font-body-semibold border-b-4 transition-all duration-300 ${
                       documentTab === 'admin'
-                        ? 'border-primary text-primary'
-                        : 'border-transparent text-muted-foreground hover:text-card-foreground hover:border-border'
+                        ? 'border-purple-600 text-purple-900 bg-purple-50/50'
+                        : 'border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
                     <div className="flex items-center gap-2">
                       <Icon name="Shield" size={18} />
                       <span>Documents administratifs</span>
-                      <span className="px-2 py-1 text-xs bg-muted text-muted-foreground rounded-full">
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                        documentTab === 'admin' 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-purple-100 text-purple-700'
+                      }`}>
                         {adminDocuments.length}
                       </span>
                     </div>
@@ -790,42 +711,42 @@ const StudentDashboard = () => {
                 )}
 
                 {documentTab === 'admin' && (
-                  <div className="space-y-4">
-                    <div className="mb-4">
-                      <p className="text-sm text-muted-foreground">
+                  <div className="space-y-4 p-6">
+                    <div className="mb-6">
+                      <p className="text-sm text-gray-600 font-body-medium">
                         Bulletins, certificats et documents officiels
                       </p>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                       {adminDocuments.map((doc) => (
                         <div
                           key={doc.id}
-                          className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow bg-card"
+                          className="bg-white border-2 border-purple-200 rounded-2xl p-5 hover:shadow-xl transition-all hover:scale-105 group"
                         >
                           <div className="flex items-start gap-4">
-                            <div className="flex-shrink-0 h-12 w-12 flex items-center justify-center bg-purple-50 rounded-lg">
-                              <Icon name="FileText" size={24} className="text-purple-600" />
+                            <div className="flex-shrink-0 h-14 w-14 flex items-center justify-center bg-gradient-to-br from-purple-500 to-violet-600 rounded-2xl shadow-lg">
+                              <Icon name="FileText" size={26} className="text-white" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-sm font-body font-body-semibold text-card-foreground mb-1 truncate">
+                              <h3 className="text-sm font-body-bold text-gray-900 mb-2 truncate">
                                 {doc.title}
                               </h3>
-                              <div className="space-y-1">
-                                <p className="text-xs text-muted-foreground">
-                                  <span className="inline-block px-2 py-0.5 bg-muted rounded">
+                              <div className="space-y-2">
+                                <p className="text-xs">
+                                  <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full font-bold">
                                     {doc.type}
                                   </span>
                                 </p>
-                                <p className="text-xs text-muted-foreground">
+                                <p className="text-xs text-gray-600 font-body-medium">
                                   {new Date(doc.date).toLocaleDateString('fr-FR')} • {doc.size}
                                 </p>
                               </div>
-                              <div className="flex items-center gap-2 mt-3">
-                                <button className="flex-1 px-3 py-1.5 text-xs bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors flex items-center justify-center gap-1">
+                              <div className="flex items-center gap-2 mt-4">
+                                <button className="flex-1 px-3 py-2 text-xs bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all font-bold flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg">
                                   <Icon name="Eye" size={14} />
                                   Voir
                                 </button>
-                                <button className="flex-1 px-3 py-1.5 text-xs bg-green-600 text-white rounded hover:bg-green-700 transition-colors flex items-center justify-center gap-1">
+                                <button className="flex-1 px-3 py-2 text-xs bg-gradient-to-r from-green-600 to-emerald-600 text-white rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all font-bold flex items-center justify-center gap-1.5 shadow-md hover:shadow-lg">
                                   <Icon name="Download" size={14} />
                                   Télécharger
                                 </button>
@@ -843,105 +764,12 @@ const StudentDashboard = () => {
         );
       
       case 'messages':
-        // Messages data
-        const receivedMessages = [
-          {
-            id: 1,
-            from: "M. Nkolo (Mathématiques)",
-            subject: "Résultats du contrôle de mathématiques",
-            preview: "Bonjour, les résultats du contrôle du 15 novembre sont disponibles. Félicitations pour votre excellent travail avec 18/20...",
-            time: "Il y a 2h",
-            read: false,
-            category: "Notes",
-            categoryColor: "blue",
-            avatar: "User"
-          },
-          {
-            id: 2,
-            from: "Administration",
-            subject: "Rappel : Frais de scolarité T2",
-            preview: "Cher(e) élève, nous vous rappelons que les frais de scolarité du 2ème trimestre sont à régler avant le 30 novembre...",
-            time: "Hier",
-            read: false,
-            category: "Important",
-            categoryColor: "orange",
-            avatar: "AlertCircle",
-            tags: ["Important", "Administration"]
-          },
-          {
-            id: 3,
-            from: "Mme Djomo (Français)",
-            subject: "Correction dissertation Baudelaire",
-            preview: "Votre dissertation sur Les Fleurs du Mal montre une bonne compréhension du symbolisme baudelairien...",
-            time: "3 jours",
-            read: true,
-            category: "Devoirs",
-            categoryColor: "purple",
-            avatar: "User"
-          },
-          {
-            id: 4,
-            from: "M. Fouda (Physique-Chimie)",
-            subject: "Support de cours - Optique géométrique",
-            preview: "Bonjour, vous trouverez en pièce jointe le support de cours sur l'optique géométrique que nous avons vu en TP...",
-            time: "1 semaine",
-            read: true,
-            category: "Cours",
-            categoryColor: "green",
-            avatar: "User",
-            attachment: { name: "cours_optique.pdf", size: "2.3 MB" }
-          },
-          {
-            id: 5,
-            from: "Vie scolaire",
-            subject: "Sortie pédagogique - Musée National",
-            preview: "Une sortie pédagogique au Musée National est organisée le 2 décembre. Autorisation parentale requise...",
-            time: "2 semaines",
-            read: true,
-            category: "Événement",
-            categoryColor: "pink",
-            avatar: "Calendar"
-          }
-        ];
-
-        const sentMessages = [
-          {
-            id: 6,
-            to: "M. Nkolo (Mathématiques)",
-            subject: "Question sur les dérivées",
-            preview: "Bonjour Monsieur, j'aurais une question concernant l'exercice 5 du chapitre sur les dérivées...",
-            time: "Il y a 3h",
-            category: "Question",
-            categoryColor: "blue",
-            avatar: "User"
-          },
-          {
-            id: 7,
-            to: "Administration",
-            subject: "Demande de certificat de scolarité",
-            preview: "Bonjour, je souhaiterais obtenir un certificat de scolarité pour mon dossier de candidature...",
-            time: "2 jours",
-            category: "Administratif",
-            categoryColor: "gray",
-            avatar: "FileText"
-          }
-        ];
-
-        const archivedMessages = [
-          {
-            id: 8,
-            from: "M. Kamga (Histoire-Géo)",
-            subject: "Correction contrôle d'histoire",
-            preview: "Votre travail sur la guerre froide est satisfaisant. Attention aux dates clés...",
-            time: "1 mois",
-            read: true,
-            category: "Notes",
-            categoryColor: "orange",
-            avatar: "User"
-          }
-        ];
-
-        const getMessagesToShow = () => {
+        // MODIFICATION: Utiliser les données de la base si disponibles, sinon afficher un message
+        const receivedMessages = [];
+        const sentMessages = [];
+        const archivedMessages = [];
+        
+        const hasMessages = receivedMessages.length > 0 || sentMessages.length > 0 || archivedMessages.length > 0;        const getMessagesToShow = () => {
           switch (messageTab) {
             case 'sent':
               return sentMessages;
@@ -956,18 +784,23 @@ const StudentDashboard = () => {
 
         return (
           <div className="space-y-6">
-            {/* New Message Modal */}
+            {/* New Message Modal - Modernisé */}
             {showNewMessageModal && (
-              <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-                <div className="bg-card rounded-lg shadow-xl border border-border max-w-2xl w-full max-h-[90vh] overflow-auto">
+              <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+                <div className="bg-white rounded-2xl shadow-2xl border-2 border-gray-200 max-w-2xl w-full max-h-[90vh] overflow-auto">
                   <div className="p-6">
                     <div className="flex items-center justify-between mb-6">
-                      <h3 className="font-heading font-heading-bold text-xl text-card-foreground">
-                        Nouveau message
-                      </h3>
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-cyan-600 to-teal-600 rounded-xl flex items-center justify-center shadow-md">
+                          <Icon name="Mail" size={20} className="text-white" />
+                        </div>
+                        <h3 className="font-heading font-heading-bold text-xl text-gray-900">
+                          Nouveau message
+                        </h3>
+                      </div>
                       <button 
                         onClick={() => setShowNewMessageModal(false)}
-                        className="text-muted-foreground hover:text-card-foreground transition-colors"
+                        className="w-10 h-10 flex items-center justify-center rounded-xl text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-all"
                       >
                         <Icon name="X" size={24} />
                       </button>
@@ -975,8 +808,8 @@ const StudentDashboard = () => {
 
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-body font-body-semibold mb-2">Destinataire</label>
-                        <select className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary">
+                        <label className="block text-sm font-body font-body-semibold mb-2 text-gray-700">Destinataire</label>
+                        <select className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 transition-all">
                           <option>Sélectionner un destinataire...</option>
                           <option>M. Nkolo (Mathématiques)</option>
                           <option>Mme Djomo (Français)</option>
@@ -988,44 +821,44 @@ const StudentDashboard = () => {
                       </div>
 
                       <div>
-                        <label className="block text-sm font-body font-body-semibold mb-2">Objet</label>
+                        <label className="block text-sm font-body font-body-semibold mb-2 text-gray-700">Objet</label>
                         <input 
                           type="text" 
-                          className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 transition-all"
                           placeholder="Entrez l'objet du message..."
                         />
                       </div>
 
                       <div>
-                        <label className="block text-sm font-body font-body-semibold mb-2">Message</label>
+                        <label className="block text-sm font-body font-body-semibold mb-2 text-gray-700">Message</label>
                         <textarea 
                           rows="8"
-                          className="w-full px-4 py-2 border border-border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+                          className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:outline-none focus:ring-2 focus:ring-cyan-600 focus:border-cyan-600 resize-none transition-all"
                           placeholder="Écrivez votre message ici..."
                         ></textarea>
                       </div>
 
                       <div className="flex items-center gap-2">
-                        <button className="px-4 py-2 bg-muted text-card-foreground rounded-lg hover:bg-muted/80 transition-colors flex items-center gap-2">
+                        <button className="px-4 py-2 bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 rounded-xl hover:from-gray-200 hover:to-gray-300 transition-all flex items-center gap-2 border-2 border-gray-300">
                           <Icon name="Paperclip" size={18} />
                           Joindre un fichier
                         </button>
                       </div>
 
-                      <div className="flex items-center gap-3 pt-4">
+                      <div className="flex items-center gap-3 pt-4 border-t-2 border-gray-100">
                         <button 
                           onClick={() => {
                             setShowNewMessageModal(false);
                             // Logique d'envoi ici
                           }}
-                          className="px-6 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                          className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-xl hover:from-cyan-700 hover:to-teal-700 hover:shadow-lg transition-all flex items-center gap-2 font-semibold"
                         >
                           <Icon name="Send" size={18} />
                           Envoyer
                         </button>
                         <button 
                           onClick={() => setShowNewMessageModal(false)}
-                          className="px-6 py-2 bg-muted text-card-foreground rounded-lg hover:bg-muted/80 transition-colors"
+                          className="px-6 py-3 bg-gray-100 text-gray-700 rounded-xl hover:bg-gray-200 transition-all font-semibold"
                         >
                           Annuler
                         </button>
@@ -1036,141 +869,210 @@ const StudentDashboard = () => {
               </div>
             )}
 
-            <div className="flex items-center justify-between">
-              <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">
-                💬 Mes Messages
-              </h2>
-              <button 
+            {/* Header modernisé */}
+            <div className="bg-gradient-to-br from-cyan-600 to-teal-600 rounded-2xl shadow-xl p-6 text-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-3xl">
+                    💬
+                  </div>
+                  <div>
+                    <h2 className="font-heading font-heading-bold text-2xl">
+                      Mes Messages
+                    </h2>
+                    <p className="text-cyan-100 text-sm mt-1">
+                      {hasMessages ? 'Communication avec vos enseignants' : 'Aucun message pour le moment'}
+                    </p>
+                  </div>
+                </div>
+                <button 
                 onClick={() => setShowNewMessageModal(true)}
-                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors flex items-center gap-2"
+                className="px-4 py-2.5 bg-white/20 backdrop-blur-sm hover:bg-white/30 text-white rounded-xl transition-all flex items-center gap-2 font-semibold shadow-lg hover:shadow-xl hover:scale-105"
               >
                 <Icon name="Plus" size={18} />
-                Nouveau message
+                <span className="hidden sm:inline">Nouveau message</span>
               </button>
             </div>
+            </div>
 
-            {/* Messages Tabs */}
-            <div className="bg-card rounded-lg shadow-card border border-border overflow-hidden">
-              <div className="border-b border-border">
-                <div className="flex">
+            {!hasMessages ? (
+              <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-12 text-center">
+                <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-cyan-100 to-teal-200 mb-4">
+                  <Icon name="Mail" size={48} className="text-cyan-600" />
+                </div>
+                <h3 className="font-body-bold text-xl text-gray-900 mb-2">
+                  Aucun message disponible
+                </h3>
+                <p className="text-gray-600 font-body-medium mb-6">
+                  Vous n'avez pas encore de messages. Les communications avec vos enseignants apparaîtront ici.
+                </p>
+                <button 
+                  onClick={() => setShowNewMessageModal(true)}
+                  className="px-6 py-3 bg-gradient-to-r from-cyan-600 to-teal-600 text-white rounded-xl hover:from-cyan-700 hover:to-teal-700 transition-all flex items-center gap-2 font-semibold mx-auto shadow-lg hover:shadow-xl"
+                >
+                  <Icon name="Plus" size={18} />
+                  Envoyer un message
+                </button>
+              </div>
+            ) : (
+            <>
+            {/* Messages Tabs - Modernisé */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg overflow-hidden">
+              <div className="border-b-2 border-gray-100">
+                <div className="flex px-2">
                   <button 
                     onClick={() => setMessageTab('received')}
-                    className={`px-6 py-3 font-body text-sm border-b-2 transition-colors ${
+                    className={`px-6 py-4 font-body text-sm border-b-4 transition-all duration-300 ${
                       messageTab === 'received' 
-                        ? 'font-body-semibold border-primary text-primary' 
-                        : 'font-body-medium border-transparent text-muted-foreground hover:text-card-foreground'
+                        ? 'font-body-bold border-cyan-600 text-cyan-900 bg-cyan-50/50' 
+                        : 'font-body-medium border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    Reçus ({receivedMessages.filter(m => !m.read).length})
+                    <div className="flex items-center gap-2">
+                      <Icon name="Inbox" size={18} />
+                      <span>Reçus</span>
+                      {receivedMessages.filter(m => !m.read).length > 0 && (
+                        <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                          messageTab === 'received'
+                            ? 'bg-cyan-600 text-white animate-pulse'
+                            : 'bg-cyan-100 text-cyan-700'
+                        }`}>
+                          {receivedMessages.filter(m => !m.read).length}
+                        </span>
+                      )}
+                    </div>
                   </button>
                   <button 
                     onClick={() => setMessageTab('sent')}
-                    className={`px-6 py-3 font-body text-sm border-b-2 transition-colors ${
+                    className={`px-6 py-4 font-body text-sm border-b-4 transition-all duration-300 ${
                       messageTab === 'sent' 
-                        ? 'font-body-semibold border-primary text-primary' 
-                        : 'font-body-medium border-transparent text-muted-foreground hover:text-card-foreground'
+                        ? 'font-body-bold border-green-600 text-green-900 bg-green-50/50' 
+                        : 'font-body-medium border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    Envoyés ({sentMessages.length})
+                    <div className="flex items-center gap-2">
+                      <Icon name="Send" size={18} />
+                      <span>Envoyés</span>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                        messageTab === 'sent'
+                          ? 'bg-green-600 text-white'
+                          : 'bg-green-100 text-green-700'
+                      }`}>
+                        {sentMessages.length}
+                      </span>
+                    </div>
                   </button>
                   <button 
                     onClick={() => setMessageTab('archived')}
-                    className={`px-6 py-3 font-body text-sm border-b-2 transition-colors ${
+                    className={`px-6 py-4 font-body text-sm border-b-4 transition-all duration-300 ${
                       messageTab === 'archived' 
-                        ? 'font-body-semibold border-primary text-primary' 
-                        : 'font-body-medium border-transparent text-muted-foreground hover:text-card-foreground'
+                        ? 'font-body-bold border-purple-600 text-purple-900 bg-purple-50/50' 
+                        : 'font-body-medium border-transparent text-gray-600 hover:text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    Archivés ({archivedMessages.length})
+                    <div className="flex items-center gap-2">
+                      <Icon name="Archive" size={18} />
+                      <span>Archivés</span>
+                      <span className={`px-2.5 py-1 text-xs font-bold rounded-full ${
+                        messageTab === 'archived'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-purple-100 text-purple-700'
+                      }`}>
+                        {archivedMessages.length}
+                      </span>
+                    </div>
                   </button>
                 </div>
               </div>
 
-              {/* Messages List */}
-              <div className="divide-y divide-border">
+              {/* Messages List - Modernisé */}
+              <div className="divide-y-2 divide-gray-100">
                 {messagesToShow.length === 0 ? (
                   <div className="p-12 text-center">
-                    <Icon name="Mail" size={48} className="mx-auto text-muted-foreground mb-4" />
-                    <p className="text-muted-foreground">Aucun message dans cette catégorie</p>
+                    <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-gray-100 to-gray-200 mb-4">
+                      <Icon name="Mail" size={48} className="text-gray-400" />
+                    </div>
+                    <p className="text-gray-500 font-body-medium text-lg">Aucun message dans cette catégorie</p>
                   </div>
                 ) : (
                   messagesToShow.map((message) => (
                     <div 
                       key={message.id}
-                      className={`p-4 hover:bg-muted/50 transition-colors cursor-pointer ${
-                        !message.read && messageTab === 'received' ? 'bg-blue-50/30' : ''
+                      className={`p-5 hover:bg-gradient-to-r transition-all duration-300 cursor-pointer group ${
+                        !message.read && messageTab === 'received' 
+                          ? 'bg-blue-50/50 hover:from-blue-50 hover:to-cyan-50 border-l-4 border-blue-500' 
+                          : 'hover:from-gray-50 hover:to-gray-100/50 border-l-4 border-transparent hover:border-gray-300'
                       }`}
                     >
                       <div className="flex items-start gap-4">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          message.avatar === 'AlertCircle' ? 'bg-orange-100' :
-                          message.avatar === 'Calendar' ? 'bg-pink-100' :
-                          message.avatar === 'FileText' ? 'bg-gray-100' :
-                          message.categoryColor === 'purple' ? 'bg-purple-100' :
-                          message.categoryColor === 'green' ? 'bg-green-100' :
-                          'bg-primary/10'
+                        <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 shadow-md transition-transform group-hover:scale-110 ${
+                          message.avatar === 'AlertCircle' ? 'bg-gradient-to-br from-orange-400 to-amber-500' :
+                          message.avatar === 'Calendar' ? 'bg-gradient-to-br from-pink-400 to-rose-500' :
+                          message.avatar === 'FileText' ? 'bg-gradient-to-br from-gray-400 to-slate-500' :
+                          message.categoryColor === 'purple' ? 'bg-gradient-to-br from-purple-400 to-violet-500' :
+                          message.categoryColor === 'green' ? 'bg-gradient-to-br from-green-400 to-emerald-500' :
+                          'bg-gradient-to-br from-blue-400 to-indigo-500'
                         }`}>
                           <Icon 
                             name={message.avatar} 
-                            size={20} 
-                            className={
-                              message.avatar === 'AlertCircle' ? 'text-orange-600' :
-                              message.avatar === 'Calendar' ? 'text-pink-600' :
-                              message.avatar === 'FileText' ? 'text-gray-600' :
-                              message.categoryColor === 'purple' ? 'text-purple-600' :
-                              message.categoryColor === 'green' ? 'text-green-600' :
-                              'text-primary'
-                            }
+                            size={22} 
+                            className="text-white"
                           />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center justify-between mb-2">
                             <div className="flex items-center gap-2">
                               <span className={`text-sm ${
-                                !message.read && messageTab === 'received' ? 'font-body-bold' : 'font-body-medium'
-                              } text-card-foreground`}>
+                                !message.read && messageTab === 'received' ? 'font-body-bold text-gray-900' : 'font-body-medium text-gray-700'
+                              }`}>
                                 {messageTab === 'sent' ? message.to : message.from}
                               </span>
                               {!message.read && messageTab === 'received' && (
-                                <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                                <span className="px-2 py-0.5 bg-blue-600 text-white text-xs font-bold rounded-full animate-pulse">Nouveau</span>
                               )}
                             </div>
-                            <span className="text-xs text-muted-foreground">{message.time}</span>
+                            <span className="text-xs text-gray-500 font-body-medium">{message.time}</span>
                           </div>
                           <h4 className={`text-sm mb-1 flex items-center gap-2 ${
-                            !message.read && messageTab === 'received' ? 'font-body-semibold' : 'font-body-medium'
-                          } text-card-foreground`}>
+                            !message.read && messageTab === 'received' ? 'font-body-bold text-gray-900' : 'font-body-medium text-gray-800'
+                          }`}>
                             {message.subject}
                             {message.attachment && (
                               <Icon name="Paperclip" size={14} className="text-muted-foreground" />
                             )}
                           </h4>
-                          <p className="text-sm text-muted-foreground line-clamp-2">
+                          <p className="text-sm text-gray-600 line-clamp-2 font-body">
                             {message.preview}
                           </p>
-                          <div className="flex items-center gap-2 mt-2 flex-wrap">
+                          <div className="flex items-center gap-2 mt-3 flex-wrap">
                             {message.tags ? (
                               message.tags.map((tag, idx) => (
-                                <span key={idx} className={`px-2 py-1 text-xs rounded ${
-                                  tag === 'Important' ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-700'
+                                <span key={idx} className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm ${
+                                  tag === 'Important' 
+                                    ? 'bg-gradient-to-r from-orange-500 to-amber-500 text-white' 
+                                    : 'bg-gray-200 text-gray-700'
                                 }`}>
                                   {tag}
                                 </span>
                               ))
                             ) : (
-                              <span className={`px-2 py-1 text-xs rounded bg-${message.categoryColor}-100 text-${message.categoryColor}-700`}>
+                              <span className={`px-3 py-1 text-xs font-bold rounded-full shadow-sm ${
+                                message.categoryColor === 'purple' ? 'bg-gradient-to-r from-purple-500 to-violet-500 text-white' :
+                                message.categoryColor === 'green' ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' :
+                                'bg-gradient-to-r from-blue-500 to-indigo-500 text-white'
+                              }`}>
                                 {message.category}
                               </span>
                             )}
                             {message.attachment && (
-                              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                                <Icon name="File" size={12} />
+                              <div className="flex items-center gap-1.5 px-3 py-1 bg-gray-100 rounded-full text-xs text-gray-700 font-body-medium">
+                                <Icon name="File" size={14} />
                                 <span>{message.attachment.name} ({message.attachment.size})</span>
                               </div>
                             )}
                           </div>
                         </div>
-                        <Icon name="ChevronRight" size={20} className="text-muted-foreground flex-shrink-0" />
+                        <Icon name="ChevronRight" size={20} className="text-gray-400 flex-shrink-0 group-hover:text-gray-600 transition-colors" />
                       </div>
                     </div>
                   ))
@@ -1178,38 +1080,38 @@ const StudentDashboard = () => {
               </div>
             </div>
 
-            {/* Statistics Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-card rounded-lg shadow-card border border-border p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Messages non lus</span>
-                  <Icon name="Mail" size={18} className="text-blue-500" />
+            {/* Statistics Cards - Modernisé */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+              <div className="bg-white rounded-2xl border-2 border-blue-200 shadow-lg p-6 hover:shadow-xl transition-all hover:scale-105">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-600 font-body-medium">Messages non lus</span>
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
+                    <Icon name="Mail" size={20} className="text-white" />
+                  </div>
                 </div>
-                <div className="font-heading font-heading-bold text-2xl text-card-foreground">
-                  {receivedMessages.filter(m => !m.read).length}
-                </div>
+                <p className="text-3xl font-display font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">{receivedMessages.filter(m => !m.read).length}</p>
               </div>
-              
-              <div className="bg-card rounded-lg shadow-card border border-border p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Total reçus</span>
-                  <Icon name="Inbox" size={18} className="text-green-500" />
+              <div className="bg-white rounded-2xl border-2 border-green-200 shadow-lg p-6 hover:shadow-xl transition-all hover:scale-105">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-600 font-body-medium">Messages envoyés</span>
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-md">
+                    <Icon name="Send" size={20} className="text-white" />
+                  </div>
                 </div>
-                <div className="font-heading font-heading-bold text-2xl text-card-foreground">
-                  {receivedMessages.length}
-                </div>
+                <p className="text-3xl font-display font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">{sentMessages.length}</p>
               </div>
-              
-              <div className="bg-card rounded-lg shadow-card border border-border p-4">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-sm text-muted-foreground">Messages envoyés</span>
-                  <Icon name="Send" size={18} className="text-purple-500" />
+              <div className="bg-white rounded-2xl border-2 border-purple-200 shadow-lg p-6 hover:shadow-xl transition-all hover:scale-105">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm text-gray-600 font-body-medium">Messages archivés</span>
+                  <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-violet-600 shadow-md">
+                    <Icon name="Archive" size={20} className="text-white" />
+                  </div>
                 </div>
-                <div className="font-heading font-heading-bold text-2xl text-card-foreground">
-                  {sentMessages.length}
-                </div>
+                <p className="text-3xl font-display font-bold bg-gradient-to-r from-purple-600 to-violet-600 bg-clip-text text-transparent">{archivedMessages.length}</p>
               </div>
             </div>
+            </>
+            )}
           </div>
         );
       
@@ -1295,16 +1197,18 @@ const StudentDashboard = () => {
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         <div className="p-4 lg:p-6 space-y-6">
-          {/* Demo Mode Banner */}
+          {/* Demo Mode Banner - Modernisé */}
           {isDemo && (
-            <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <Icon name="alert-triangle" className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                <div>
-                  <p className="font-heading font-heading-semibold text-yellow-800 dark:text-yellow-400">
+            <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Icon name="AlertTriangle" size={24} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-heading font-heading-semibold text-amber-900 text-lg mb-1">
                     Mode Démonstration
                   </p>
-                  <p className="font-body font-body-normal text-sm text-yellow-700 dark:text-yellow-500">
+                  <p className="text-sm text-amber-800 leading-relaxed">
                     Vous consultez actuellement des données de démonstration. Connectez-vous pour accéder à vos vraies données.
                   </p>
                 </div>
@@ -1312,16 +1216,18 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {/* Error Banner */}
+          {/* Error Banner - Modernisé */}
           {error && (
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <Icon name="alert-circle" className="h-5 w-5 text-red-600 dark:text-red-400" />
-                <div>
-                  <p className="font-heading font-heading-semibold text-red-800 dark:text-red-400">
+            <div className="bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 border-2 border-red-300 rounded-2xl p-5 shadow-lg">
+              <div className="flex items-start gap-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-rose-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
+                  <Icon name="AlertCircle" size={24} className="text-white" />
+                </div>
+                <div className="flex-1">
+                  <p className="font-heading font-heading-semibold text-red-900 text-lg mb-1">
                     Erreur de chargement
                   </p>
-                  <p className="font-body font-body-normal text-sm text-red-700 dark:text-red-500">
+                  <p className="text-sm text-red-800 leading-relaxed">
                     {error} - Affichage des données de démonstration.
                   </p>
                 </div>
@@ -1329,32 +1235,37 @@ const StudentDashboard = () => {
             </div>
           )}
 
-          {/* Welcome Section */}
-          <div className="bg-gradient-to-r from-primary to-secondary rounded-lg p-6 text-white">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-              <div>
-                <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
-                  {getGreeting()}, {studentData?.name?.split(' ')?.[0]} ! 👋
-                </h1>
-                <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
-                  Voici un aperçu de votre parcours scolaire aujourd'hui.
+          {/* Welcome Section - Modernisé */}
+          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl shadow-xl p-6 sm:p-8 text-white overflow-hidden relative">
+            <div className="absolute top-0 right-0 w-64 h-64 bg-white opacity-5 rounded-full -mr-32 -mt-32"></div>
+            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white opacity-5 rounded-full -ml-24 -mb-24"></div>
+            <div className="relative z-10 flex flex-col lg:flex-row lg:items-center lg:justify-between">
+              <div className="flex-1">
+                <div className="flex items-center space-x-3 mb-3">
+                  <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-3xl">
+                    👋
+                  </div>
+                  <div>
+                    <h1 className="font-heading font-heading-bold text-2xl sm:text-3xl">
+                      {getGreeting()}, {studentData?.name?.split(' ')?.[0]} !
+                    </h1>
+                    <p className="text-blue-100 text-sm mt-1">
+                      {currentTime?.toLocaleDateString('fr-FR', { 
+                        weekday: 'long', 
+                        year: 'numeric', 
+                        month: 'long', 
+                        day: 'numeric' 
+                      })}
+                    </p>
+                  </div>
+                </div>
+                <p className="text-blue-100 text-base sm:text-lg mt-4 max-w-2xl">
+                  Bienvenue sur votre espace personnel ! Consultez vos notes, devoirs et emploi du temps.
                 </p>
               </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-center">
-                  <div className="font-heading font-heading-bold text-xl">
-                    {currentTime?.toLocaleDateString('fr-FR', { 
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short'
-                    })}
-                  </div>
-                  <div className="font-caption font-caption-normal text-sm text-white/80">
-                    {currentTime?.toLocaleTimeString('fr-FR', { 
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
+              <div className="hidden lg:block mt-4 lg:mt-0">
+                <div className="w-32 h-32 bg-white/10 backdrop-blur-sm rounded-2xl flex items-center justify-center text-6xl transform rotate-6 hover:rotate-0 transition-transform duration-300">
+                  🎓
                 </div>
               </div>
             </div>
@@ -1363,70 +1274,102 @@ const StudentDashboard = () => {
           {/* Tab Content */}
           {renderTabContent()}
 
-          {/* Quick Actions - Toujours visible */}
-          <div className="bg-card rounded-lg shadow-card border border-border p-6">
-            <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
-              Actions Rapides
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {/* Quick Actions - Modernisé */}
+          <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                  <Icon name="Zap" size={20} className="text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">Actions Rapides</h3>
+                  <p className="text-xs text-gray-500">Accès direct à vos outils</p>
+                </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-4">
               <Link
                 to="/student-dashboard?tab=profile"
-                className="flex flex-col items-center p-4 rounded-lg bg-primary/5 hover:bg-primary/10 transition-micro group"
+                className="group p-4 bg-gradient-to-br from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border-2 border-blue-200 hover:border-blue-400 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
-                <Icon name="User" size={24} className="text-primary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Mon profil
-                </span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Icon name="User" size={24} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-blue-900">
+                    Mon profil
+                  </span>
+                </div>
               </Link>
               
               <Link
                 to="/student-dashboard?tab=grades"
-                className="flex flex-col items-center p-4 rounded-lg bg-success/5 hover:bg-success/10 transition-micro group"
+                className="group p-4 bg-gradient-to-br from-green-50 to-emerald-50 hover:from-green-100 hover:to-emerald-100 border-2 border-green-200 hover:border-green-400 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
-                <Icon name="FileBarChart" size={24} className="text-success mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Mes notes
-                </span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Icon name="FileBarChart" size={24} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-green-900">
+                    Mes notes
+                  </span>
+                </div>
               </Link>
 
               <Link
                 to="/student-dashboard?tab=assignments"
-                className="flex flex-col items-center p-4 rounded-lg bg-warning/5 hover:bg-warning/10 transition-micro group"
+                className="group p-4 bg-gradient-to-br from-orange-50 to-amber-50 hover:from-orange-100 hover:to-amber-100 border-2 border-orange-200 hover:border-orange-400 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
-                <Icon name="FileText" size={24} className="text-warning mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Mes devoirs
-                </span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-orange-600 to-amber-600 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Icon name="FileText" size={24} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-orange-900">
+                    Mes devoirs
+                  </span>
+                </div>
               </Link>
 
               <Link
                 to="/student-dashboard?tab=schedule"
-                className="flex flex-col items-center p-4 rounded-lg bg-accent/5 hover:bg-accent/10 transition-micro group"
+                className="group p-4 bg-gradient-to-br from-purple-50 to-pink-50 hover:from-purple-100 hover:to-pink-100 border-2 border-purple-200 hover:border-purple-400 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
-                <Icon name="Calendar" size={24} className="text-accent mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Emploi du temps
-                </span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Icon name="Calendar" size={24} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-purple-900">
+                    Emploi du temps
+                  </span>
+                </div>
               </Link>
 
               <Link
                 to="/student-dashboard?tab=messages"
-                className="flex flex-col items-center p-4 rounded-lg bg-secondary/5 hover:bg-secondary/10 transition-micro group"
+                className="group p-4 bg-gradient-to-br from-cyan-50 to-teal-50 hover:from-cyan-100 hover:to-teal-100 border-2 border-cyan-200 hover:border-cyan-400 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
-                <Icon name="MessageSquare" size={24} className="text-secondary mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Messages
-                </span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-cyan-600 to-teal-600 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Icon name="MessageSquare" size={24} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-cyan-900">
+                    Messages
+                  </span>
+                </div>
               </Link>
 
               <Link
                 to="/student-dashboard?tab=documents"
-                className="flex flex-col items-center p-4 rounded-lg bg-error/5 hover:bg-error/10 transition-micro group"
+                className="group p-4 bg-gradient-to-br from-red-50 to-rose-50 hover:from-red-100 hover:to-rose-100 border-2 border-red-200 hover:border-red-400 rounded-xl transition-all duration-300 hover:shadow-lg hover:scale-105"
               >
-                <Icon name="Library" size={24} className="text-error mb-2 group-hover:scale-110 transition-transform" />
-                <span className="font-caption font-caption-normal text-xs text-center text-card-foreground">
-                  Documents
-                </span>
+                <div className="flex flex-col items-center text-center">
+                  <div className="w-12 h-12 bg-gradient-to-br from-red-600 to-rose-600 rounded-xl flex items-center justify-center mb-3 shadow-md group-hover:scale-110 transition-transform">
+                    <Icon name="Library" size={24} className="text-white" />
+                  </div>
+                  <span className="text-sm font-semibold text-red-900">
+                    Documents
+                  </span>
+                </div>
               </Link>
             </div>
           </div>

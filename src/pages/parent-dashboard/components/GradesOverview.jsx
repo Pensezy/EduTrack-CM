@@ -30,22 +30,27 @@ const GradesOverview = ({ grades }) => {
     : 0;
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Aperçu des Notes
-        </h3>
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
-          <Icon name="BarChart3" size={16} className="text-primary" />
-          <span className="font-heading font-heading-semibold text-sm text-primary">
-            Moyenne générale: {overallAverage?.toFixed(1)}/20
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-md">
+            <Icon name="BookOpen" size={24} className="text-white" />
+          </div>
+          <h3 className="font-display font-bold text-2xl text-gray-900">
+            Aperçu des Notes
+          </h3>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-purple-500 to-pink-600 rounded-xl shadow-md text-white">
+          <Icon name="BarChart3" size={18} />
+          <span className="font-body-bold text-sm">
+            {overallAverage?.toFixed(1)}/20
           </span>
         </div>
       </div>
 
       <div className="space-y-4">
         {grades?.map(subject => (
-          <div key={subject?.id} className="border border-border rounded-lg p-4">
+          <div key={subject?.id} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <h4 className="font-heading font-heading-semibold text-lg text-card-foreground">
@@ -95,9 +100,11 @@ const GradesOverview = ({ grades }) => {
         ))}
 
         {grades?.length === 0 && (
-          <div className="text-center py-8">
-            <Icon name="BookOpen" size={48} className="text-muted-foreground mx-auto mb-3" />
-            <p className="font-body font-body-normal text-muted-foreground">
+          <div className="text-center py-12 px-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl border-2 border-purple-200">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-purple-500 to-pink-600 w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Icon name="BookOpen" size={40} className="text-white" />
+            </div>
+            <p className="font-body-bold text-base text-gray-700">
               Aucune note disponible pour le moment
             </p>
           </div>

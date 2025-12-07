@@ -48,43 +48,48 @@ const AttendanceTracker = ({ attendance, childName }) => {
   const sortedDates = dates?.sort((a, b) => new Date(b) - new Date(a))?.slice(0, 14);
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Suivi des Présences
-        </h3>
-        <div className="flex items-center gap-2 px-3 py-2 bg-success/10 rounded-lg">
-          <Icon name="Calendar" size={16} className="text-success" />
-          <span className="font-heading font-heading-semibold text-sm text-success">
-            {attendanceRate?.toFixed(1)}% de présence
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
+            <Icon name="Calendar" size={24} className="text-white" />
+          </div>
+          <h3 className="font-display font-bold text-2xl text-gray-900">
+            Suivi des Présences
+          </h3>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-md">
+          <Icon name="TrendingUp" size={18} className="text-white" />
+          <span className="font-body-bold text-sm text-white">
+            {attendanceRate?.toFixed(1)}%
           </span>
         </div>
       </div>
 
       {/* Statistics Cards */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-        <div className="text-center p-3 bg-success/10 rounded-lg">
-          <Icon name="Check" size={20} className="text-success mx-auto mb-2" />
-          <div className="font-heading font-heading-bold text-lg text-success">{presentDays}</div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">Présent(e)</p>
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="text-center p-5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl shadow-lg text-white hover:scale-105 transition-transform">
+          <Icon name="Check" size={24} className="mx-auto mb-2" />
+          <div className="font-display font-bold text-2xl">{presentDays}</div>
+          <p className="font-body-medium text-xs mt-1 text-white/90">Présent(e)</p>
         </div>
 
-        <div className="text-center p-3 bg-error/10 rounded-lg">
-          <Icon name="X" size={20} className="text-error mx-auto mb-2" />
-          <div className="font-heading font-heading-bold text-lg text-error">{absentDays}</div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">Absent(e)</p>
+        <div className="text-center p-5 bg-gradient-to-br from-red-500 to-rose-600 rounded-xl shadow-lg text-white hover:scale-105 transition-transform">
+          <Icon name="X" size={24} className="mx-auto mb-2" />
+          <div className="font-display font-bold text-2xl">{absentDays}</div>
+          <p className="font-body-medium text-xs mt-1 text-white/90">Absent(e)</p>
         </div>
 
-        <div className="text-center p-3 bg-warning/10 rounded-lg">
-          <Icon name="Clock" size={20} className="text-warning mx-auto mb-2" />
-          <div className="font-heading font-heading-bold text-lg text-warning">{lateDays}</div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">Retards</p>
+        <div className="text-center p-5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl shadow-lg text-white hover:scale-105 transition-transform">
+          <Icon name="Clock" size={24} className="mx-auto mb-2" />
+          <div className="font-display font-bold text-2xl">{lateDays}</div>
+          <p className="font-body-medium text-xs mt-1 text-white/90">Retards</p>
         </div>
 
-        <div className="text-center p-3 bg-primary/10 rounded-lg">
-          <Icon name="FileText" size={20} className="text-primary mx-auto mb-2" />
-          <div className="font-heading font-heading-bold text-lg text-primary">{excusedDays}</div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">Excusé(e)</p>
+        <div className="text-center p-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-xl shadow-lg text-white hover:scale-105 transition-transform">
+          <Icon name="FileText" size={24} className="mx-auto mb-2" />
+          <div className="font-display font-bold text-2xl">{excusedDays}</div>
+          <p className="font-body-medium text-xs mt-1 text-white/90">Excusé(e)</p>
         </div>
       </div>
 
@@ -143,38 +148,40 @@ const AttendanceTracker = ({ attendance, childName }) => {
         </div>
 
         {/* Legend */}
-        <div className="flex flex-wrap items-center justify-center gap-4 mt-6 p-4 bg-muted/20 rounded-lg">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-success rounded-full flex items-center justify-center">
-              <Icon name="Check" size={10} className="text-white" />
+        <div className="flex flex-wrap items-center justify-center gap-4 mt-6 p-5 bg-gradient-to-r from-gray-100 to-gray-50 rounded-xl border-2 border-gray-200">
+          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+            <div className="w-5 h-5 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+              <Icon name="Check" size={12} className="text-white" />
             </div>
-            <span className="font-caption font-caption-normal text-xs">Présent(e)</span>
+            <span className="font-body-bold text-xs text-gray-700">Présent(e)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-error rounded-full flex items-center justify-center">
-              <Icon name="X" size={10} className="text-white" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+            <div className="w-5 h-5 bg-gradient-to-br from-red-500 to-rose-600 rounded-full flex items-center justify-center">
+              <Icon name="X" size={12} className="text-white" />
             </div>
-            <span className="font-caption font-caption-normal text-xs">Absent(e)</span>
+            <span className="font-body-bold text-xs text-gray-700">Absent(e)</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-warning rounded-full flex items-center justify-center">
-              <Icon name="Clock" size={10} className="text-white" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+            <div className="w-5 h-5 bg-gradient-to-br from-orange-500 to-amber-600 rounded-full flex items-center justify-center">
+              <Icon name="Clock" size={12} className="text-white" />
             </div>
-            <span className="font-caption font-caption-normal text-xs">En retard</span>
+            <span className="font-body-bold text-xs text-gray-700">En retard</span>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 bg-primary rounded-full flex items-center justify-center">
-              <Icon name="FileText" size={10} className="text-white" />
+          <div className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg shadow-sm">
+            <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
+              <Icon name="FileText" size={12} className="text-white" />
             </div>
-            <span className="font-caption font-caption-normal text-xs">Excusé(e)</span>
+            <span className="font-body-bold text-xs text-gray-700">Excusé(e)</span>
           </div>
         </div>
       </div>
 
       {totalDays === 0 && (
-        <div className="text-center py-8">
-          <Icon name="Calendar" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="font-body font-body-normal text-muted-foreground">
+        <div className="text-center py-12 px-4 bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl border-2 border-gray-200">
+          <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-lg">
+            <Icon name="Calendar" size={40} className="text-white" />
+          </div>
+          <p className="font-body-bold text-base text-gray-700">
             Aucune donnée de présence disponible
           </p>
         </div>

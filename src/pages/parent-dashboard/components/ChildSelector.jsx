@@ -12,20 +12,27 @@ const ChildSelector = ({
   onManageChild
 }) => {
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 p-8">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
-        <h2 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Sélection Enfant & École
-        </h2>
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md">
+            <Icon name="Users" size={24} className="text-white" />
+          </div>
+          <h2 className="font-display font-bold text-2xl text-gray-900">
+            Sélection Enfant & École
+          </h2>
+        </div>
         
-        {/* Multi-School Selector */}
+        {/* Multi-School Selector - Modernisé */}
         {schools?.length > 1 && (
-          <div className="flex items-center gap-3">
-            <Icon name="School" size={18} className="text-primary" />
+          <div className="flex items-center gap-3 bg-gradient-to-br from-blue-50 to-indigo-50 px-4 py-3 rounded-xl border-2 border-blue-200">
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 shadow-sm">
+              <Icon name="School" size={18} className="text-white" />
+            </div>
             <select
               value={selectedSchool || ''}
               onChange={(e) => onSchoolChange(e?.target?.value)}
-              className="px-4 py-2 bg-background border border-border rounded-lg font-body font-body-normal text-sm text-card-foreground focus:outline-none focus:ring-2 focus:ring-primary/50"
+              className="px-4 py-2 bg-white border-2 border-blue-200 rounded-lg font-body-bold text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Toutes les écoles</option>
               {schools?.map(school => (
@@ -37,7 +44,8 @@ const ChildSelector = ({
           </div>
         )}
       </div>
-      {/* Children Cards */}
+      
+      {/* Children Cards - Modernisées */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {children?.map(child => {
           // Show child if no school selected or if child belongs to selected school
@@ -49,79 +57,86 @@ const ChildSelector = ({
           return (
             <div
               key={child?.id}
-              className={`relative p-4 rounded-lg border-2 transition-all duration-300 group ${
+              className={`relative p-5 rounded-2xl border-2 transition-all duration-200 group cursor-pointer ${
                 isSelected 
-                  ? 'border-primary bg-primary/5 shadow-md' 
-                  : 'border-border hover:border-primary/50 hover:bg-primary/2'
+                  ? 'border-indigo-500 bg-gradient-to-br from-indigo-50 to-purple-50 shadow-xl scale-105' 
+                  : 'border-gray-200 hover:border-indigo-300 hover:shadow-lg hover:scale-102'
               }`}
+              onClick={() => onChildSelect(child)}
             >
-              {/* Selection Indicator */}
+              {/* Selection Indicator - Modernisé */}
               {isSelected && (
-                <div className="absolute -top-2 -right-2 w-6 h-6 bg-primary rounded-full flex items-center justify-center">
-                  <Icon name="Check" size={14} className="text-white" />
+                <div className="absolute -top-2 -right-2 w-8 h-8 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Icon name="Check" size={18} className="text-white" />
                 </div>
               )}
 
-              {/* Manage Button */}
+              {/* Manage Button - Modernisé */}
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onManageChild?.(child);
                 }}
-                className="absolute top-2 right-2 p-2 bg-white hover:bg-gray-50 border border-gray-200 rounded-lg shadow-sm transition-all opacity-0 group-hover:opacity-100"
+                className="absolute top-3 right-3 p-2 bg-white hover:bg-gray-100 border-2 border-gray-200 rounded-lg shadow-md transition-all opacity-0 group-hover:opacity-100 hover:scale-110"
                 title="Gérer cet enfant"
               >
                 <Icon name="Settings" size={16} className="text-gray-600" />
               </button>
 
-              <div className="flex items-center gap-4 cursor-pointer" onClick={() => onChildSelect(child)}>
-                {/* Child Photo */}
+              <div className="flex items-center gap-4">
+                {/* Child Photo - Modernisé */}
                 <div className="relative">
                   <img
-                    src={child?.photo}
+                    src={child?.photo || 'https://via.placeholder.com/64'}
                     alt={child?.name}
-                    className="w-16 h-16 rounded-full object-cover border-2 border-border group-hover:border-primary/50 transition-colors"
+                    className={`w-16 h-16 rounded-xl object-cover border-2 transition-all ${
+                      isSelected ? 'border-indigo-500' : 'border-gray-200 group-hover:border-indigo-300'
+                    }`}
                   />
-                  {/* Notification Badge */}
+                  {/* Notification Badge - Modernisé */}
                   {child?.unreadNotifications > 0 && (
-                    <div className="absolute -top-1 -right-1 w-5 h-5 bg-error rounded-full flex items-center justify-center">
-                      <span className="font-caption font-caption-semibold text-xs text-white">
+                    <div className="absolute -top-1 -right-1 w-6 h-6 bg-gradient-to-br from-red-500 to-rose-600 rounded-full flex items-center justify-center shadow-md">
+                      <span className="font-display font-bold text-xs text-white">
                         {child?.unreadNotifications}
                       </span>
                     </div>
                   )}
                 </div>
 
-                {/* Child Info */}
+                {/* Child Info - Modernisé */}
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-heading font-heading-semibold text-lg text-card-foreground mb-1 truncate">
+                  <h3 className="font-display font-bold text-lg text-gray-900 mb-1 truncate">
                     {child?.name}
                   </h3>
-                  <p className="font-body font-body-normal text-sm text-muted-foreground mb-1">
+                  <p className="font-body-medium text-sm text-gray-600 mb-1">
                     {child?.class} • {child?.matricule}
                   </p>
-                  <p className="font-caption font-caption-normal text-xs text-muted-foreground truncate">
+                  <p className="font-body-medium text-xs text-gray-500 truncate">
                     {child?.school}
                   </p>
 
-                  {/* Quick Stats */}
+                  {/* Quick Stats - Modernisés */}
                   <div className="flex items-center gap-3 mt-3">
-                    <div className="flex items-center gap-1">
-                      <Icon name="TrendingUp" size={12} className="text-success" />
-                      <span className="font-caption font-caption-semibold text-xs text-success">
-                        {child?.averageGrade}/20
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Icon name="Calendar" size={12} className="text-primary" />
-                      <span className="font-caption font-caption-semibold text-xs text-primary">
-                        {child?.attendanceRate}%
-                      </span>
-                    </div>
+                    {child?.averageGrade > 0 && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-lg">
+                        <Icon name="TrendingUp" size={12} className="text-green-600" />
+                        <span className="font-body-bold text-xs text-green-700">
+                          {child?.averageGrade}/20
+                        </span>
+                      </div>
+                    )}
+                    {child?.attendanceRate > 0 && (
+                      <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-lg">
+                        <Icon name="Calendar" size={12} className="text-blue-600" />
+                        <span className="font-body-bold text-xs text-blue-700">
+                          {child?.attendanceRate}%
+                        </span>
+                      </div>
+                    )}
                     {child?.pendingPayments > 0 && (
-                      <div className="flex items-center gap-1">
-                        <Icon name="CreditCard" size={12} className="text-warning" />
-                        <span className="font-caption font-caption-semibold text-xs text-warning">
+                      <div className="flex items-center gap-1 px-2 py-1 bg-orange-100 rounded-lg">
+                        <Icon name="CreditCard" size={12} className="text-orange-600" />
+                        <span className="font-body-bold text-xs text-orange-700">
                           {child?.pendingPayments}
                         </span>
                       </div>
@@ -133,11 +148,14 @@ const ChildSelector = ({
           );
         })}
       </div>
-      {/* No Children Message */}
+      
+      {/* No Children Message - Modernisé */}
       {children?.length === 0 && (
-        <div className="text-center py-8">
-          <Icon name="Users" size={48} className="text-muted-foreground mx-auto mb-3" />
-          <p className="font-body font-body-normal text-muted-foreground">
+        <div className="text-center py-12 bg-gradient-to-br from-gray-50 to-white rounded-2xl border-2 border-gray-200">
+          <div className="w-20 h-20 mx-auto mb-4 rounded-2xl bg-gradient-to-br from-gray-400 to-gray-600 flex items-center justify-center shadow-md">
+            <Icon name="Users" size={40} className="text-white" />
+          </div>
+          <p className="font-body-bold text-gray-700 text-lg">
             Aucun enfant trouvé pour cette école
           </p>
         </div>

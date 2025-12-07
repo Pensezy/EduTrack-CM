@@ -80,21 +80,26 @@ const UpcomingAssignments = ({ assignments }) => {
   const sortedAssignments = filteredAssignments?.sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate));
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border">
-      <div className="p-6 border-b border-border">
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-orange-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-orange-50 to-amber-50 p-6 border-b-2 border-orange-100">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
-          <h3 className="font-heading font-heading-semibold text-lg text-card-foreground">
-            Devoirs à Venir
-          </h3>
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-600 to-amber-600 shadow-lg">
+              <Icon name="Calendar" size={22} className="text-white" />
+            </div>
+            <h3 className="font-display font-bold text-xl bg-gradient-to-r from-orange-700 to-amber-700 bg-clip-text text-transparent">
+              Devoirs à Venir
+            </h3>
+          </div>
           <div className="flex flex-wrap gap-2">
             {filters?.map((filterOption) => (
               <button
                 key={filterOption?.value}
                 onClick={() => setFilter(filterOption?.value)}
-                className={`px-3 py-1 rounded-full text-xs font-caption font-caption-normal transition-micro ${
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-md hover:shadow-lg hover:scale-105 ${
                   filter === filterOption?.value
-                    ? 'bg-primary text-primary-foreground'
-                    : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    ? 'bg-gradient-to-r from-orange-600 to-amber-600 text-white'
+                    : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
                 }`}
               >
                 {filterOption?.label}
@@ -105,9 +110,11 @@ const UpcomingAssignments = ({ assignments }) => {
       </div>
       <div className="p-6">
         {sortedAssignments?.length === 0 ? (
-          <div className="text-center py-8">
-            <Icon name="CheckCircle" size={32} className="text-success mx-auto mb-2" />
-            <p className="font-body font-body-normal text-muted-foreground">
+          <div className="text-center py-12">
+            <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-green-100 to-emerald-200 mb-4">
+              <Icon name="CheckCircle" size={40} className="text-green-600" />
+            </div>
+            <p className="font-body-medium text-gray-600 text-lg">
               Aucun devoir pour cette période
             </p>
           </div>
@@ -120,78 +127,89 @@ const UpcomingAssignments = ({ assignments }) => {
               return (
                 <div
                   key={assignment?.id}
-                  className={`p-4 rounded-lg border transition-micro hover:shadow-sm ${
-                    isOverdue ? 'bg-error/5 border-error/20' : getUrgencyColor(daysLeft)
+                  className={`p-5 rounded-2xl border-2 transition-all hover:shadow-lg group ${
+                    isOverdue 
+                      ? 'bg-red-50/50 border-red-300 hover:border-red-400' 
+                      : daysLeft <= 1 
+                        ? 'bg-orange-50/50 border-orange-300 hover:border-orange-400'
+                        : daysLeft <= 3
+                          ? 'bg-yellow-50/50 border-yellow-300 hover:border-yellow-400'
+                          : 'bg-blue-50/50 border-blue-200 hover:border-blue-300'
                   }`}
                 >
                   <div className="flex items-start space-x-4">
-                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${getTypeColor(assignment?.type)}`}>
-                      <Icon name={getTypeIcon(assignment?.type)} size={16} />
+                    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center shadow-md transition-transform group-hover:scale-110 ${
+                      assignment?.type === 'homework' ? 'bg-gradient-to-br from-blue-500 to-indigo-600' :
+                      assignment?.type === 'project' ? 'bg-gradient-to-br from-purple-500 to-violet-600' :
+                      assignment?.type === 'exam' ? 'bg-gradient-to-br from-red-500 to-rose-600' :
+                      assignment?.type === 'presentation' ? 'bg-gradient-to-br from-green-500 to-emerald-600' :
+                      'bg-gradient-to-br from-gray-500 to-slate-600'
+                    }`}>
+                      <Icon name={getTypeIcon(assignment?.type)} size={18} className="text-white" />
                     </div>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-body font-body-semibold text-card-foreground">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-body-bold text-gray-900 text-base">
                           {assignment?.title}
                         </h4>
                         <div className="flex items-center space-x-2">
                           {isOverdue ? (
-                            <span className="bg-error text-error-foreground text-xs font-caption font-caption-normal px-2 py-1 rounded-full">
+                            <span className="bg-gradient-to-r from-red-600 to-rose-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
                               En retard
                             </span>
                           ) : daysLeft === 0 ? (
-                            <span className="bg-warning text-warning-foreground text-xs font-caption font-caption-normal px-2 py-1 rounded-full">
+                            <span className="bg-gradient-to-r from-orange-600 to-amber-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md animate-pulse">
                               Aujourd'hui
                             </span>
                           ) : daysLeft === 1 ? (
-                            <span className="bg-error text-error-foreground text-xs font-caption font-caption-normal px-2 py-1 rounded-full">
+                            <span className="bg-gradient-to-r from-red-600 to-orange-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-md">
                               Demain
                             </span>
                           ) : (
-                            <span className="bg-muted text-muted-foreground text-xs font-caption font-caption-normal px-2 py-1 rounded-full">
+                            <span className="bg-gray-200 text-gray-700 text-xs font-bold px-3 py-1.5 rounded-full">
                               {daysLeft} jours
                             </span>
                           )}
                         </div>
                       </div>
                       
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground mb-2">
-                        <span className="flex items-center space-x-1">
-                          <Icon name="BookOpen" size={14} />
+                      <div className="flex items-center flex-wrap gap-3 text-sm text-gray-600 mb-3">
+                        <span className="flex items-center space-x-1.5 font-body-medium">
+                          <Icon name="BookOpen" size={16} />
                           <span>{assignment?.subject}</span>
                         </span>
-                        <span className="flex items-center space-x-1">
-                          <Icon name="User" size={14} />
+                        <span className="flex items-center space-x-1.5 font-body-medium">
+                          <Icon name="User" size={16} />
                           <span>{assignment?.teacher}</span>
                         </span>
-                        <span className="flex items-center space-x-1">
-                          <Icon name="Calendar" size={14} />
+                        <span className="flex items-center space-x-1.5 font-body-medium">
+                          <Icon name="Calendar" size={16} />
                           <span>{new Date(assignment.dueDate)?.toLocaleDateString('fr-FR')}</span>
                         </span>
                       </div>
                       
                       {assignment?.description && (
-                        <p className="font-body font-body-normal text-sm text-card-foreground mb-3">
+                        <p className="font-body text-sm text-gray-700 mb-4">
                           {assignment?.description}
                         </p>
                       )}
                       
                       {assignment?.resources && assignment?.resources?.length > 0 && (
-                        <div className="mb-3">
-                          <h6 className="font-body font-body-semibold text-xs text-muted-foreground mb-2">
+                        <div className="mb-4">
+                          <h6 className="font-body-bold text-xs text-gray-700 mb-2 flex items-center gap-2">
+                            <Icon name="Paperclip" size={14} />
                             Ressources:
                           </h6>
                           <div className="flex flex-wrap gap-2">
                             {assignment?.resources?.map((resource, index) => (
-                              <Button
+                              <button
                                 key={index}
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs h-auto py-1"
+                                className="px-3 py-1.5 bg-white border-2 border-gray-200 text-gray-700 text-xs font-body-medium rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all flex items-center gap-1.5 shadow-sm hover:shadow-md"
                               >
-                                <Icon name="Paperclip" size={12} className="mr-1" />
+                                <Icon name="Paperclip" size={12} />
                                 {resource?.name}
-                              </Button>
+                              </button>
                             ))}
                           </div>
                         </div>
@@ -200,12 +218,12 @@ const UpcomingAssignments = ({ assignments }) => {
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-2">
                           {assignment?.completed ? (
-                            <span className="flex items-center space-x-1 text-success text-xs">
+                            <span className="flex items-center space-x-1.5 px-3 py-1.5 bg-green-100 text-green-700 text-xs font-bold rounded-full">
                               <Icon name="CheckCircle" size={14} />
                               <span>Terminé</span>
                             </span>
                           ) : (
-                            <span className="flex items-center space-x-1 text-muted-foreground text-xs">
+                            <span className="flex items-center space-x-1.5 px-3 py-1.5 bg-gray-100 text-gray-600 text-xs font-bold rounded-full">
                               <Icon name="Clock" size={14} />
                               <span>En cours</span>
                             </span>
@@ -214,14 +232,14 @@ const UpcomingAssignments = ({ assignments }) => {
                         
                         <div className="flex items-center space-x-2">
                           {!assignment?.completed && (
-                            <Button variant="outline" size="sm">
-                              <Icon name="Check" size={14} className="mr-1" />
+                            <button className="px-4 py-2 bg-gradient-to-r from-green-600 to-emerald-600 text-white text-xs font-bold rounded-xl hover:from-green-700 hover:to-emerald-700 transition-all shadow-md hover:shadow-lg flex items-center gap-1.5">
+                              <Icon name="Check" size={14} />
                               Marquer terminé
-                            </Button>
+                            </button>
                           )}
-                          <Button variant="ghost" size="sm">
-                            <Icon name="ExternalLink" size={14} />
-                          </Button>
+                          <button className="p-2 bg-white border-2 border-gray-200 text-gray-600 rounded-xl hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm hover:shadow-md">
+                            <Icon name="ExternalLink" size={16} />
+                          </button>
                         </div>
                       </div>
                     </div>

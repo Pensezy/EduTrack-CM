@@ -156,14 +156,16 @@ const QuickActions = () => {
 
   return (
     <div className="space-y-6">
-      {/* Indicateur de mode */}
+      {/* Indicateur de mode - Modernisé */}
       {isDemo && (
-        <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
+        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-300 rounded-2xl p-5 shadow-md animate-fadeIn">
           <div className="flex items-center space-x-3">
-            <Icon name="AlertTriangle" size={20} className="text-orange-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
+              <Icon name="AlertTriangle" size={24} className="text-white" />
+            </div>
             <div>
-              <h3 className="font-semibold text-orange-800">Mode Démonstration</h3>
-              <p className="text-sm text-orange-700">
+              <h3 className="font-semibold text-amber-900 mb-1">Mode Démonstration</h3>
+              <p className="text-sm text-amber-700">
                 Les activités affichées sont fictives. Connectez-vous avec un compte réel pour voir vos vraies données.
               </p>
             </div>
@@ -171,26 +173,26 @@ const QuickActions = () => {
         </div>
       )}
 
-      {/* Quick Actions Grid */}
-      <div className="bg-card border border-border rounded-lg p-6 shadow-card">
+      {/* Quick Actions Grid - Modernisé */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-accent/10 rounded-lg flex items-center justify-center">
-              <Icon name="Zap" size={20} className="text-accent" />
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
+              <Icon name="Zap" size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="font-heading font-heading-semibold text-lg text-card-foreground">
-                Actions rapides
+              <h2 className="text-lg font-semibold text-gray-900">
+                Actions Rapides
               </h2>
-              <p className="font-caption font-caption-normal text-sm text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 Accès direct aux fonctions principales {isProduction && `pour ${user?.schoolData?.name}`}
               </p>
             </div>
           </div>
           {isProduction && (
-            <div className="flex items-center space-x-2 bg-green-50 border border-green-200 rounded-lg px-3 py-2">
+            <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg px-3 py-2 shadow-sm">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-medium text-green-700">Données réelles</span>
+              <span className="text-sm font-semibold text-green-700">Données réelles</span>
             </div>
           )}
         </div>
@@ -200,67 +202,72 @@ const QuickActions = () => {
             <button
               key={action?.id}
               onClick={() => navigate(action?.path)}
-              className={`p-4 rounded-lg border border-border hover:border-primary transition-micro text-left group hover:bg-muted/50`}
+              className="group p-5 bg-gradient-to-br from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 border-2 border-gray-200 hover:border-blue-400 rounded-2xl transition-all duration-300 text-left hover:shadow-lg hover:scale-105"
             >
               <div className="flex items-start space-x-3">
-                <div className={`w-10 h-10 ${action?.color}/10 rounded-lg flex items-center justify-center group-hover:${action?.color}/20 transition-micro`}>
-                  <Icon name={action?.icon} size={20} className={`${action?.color?.replace('bg-', 'text-')}`} />
+                <div className={`w-12 h-12 bg-gradient-to-br ${action?.color?.replace('bg-', 'from-')} ${action?.color?.replace('bg-primary', 'to-blue-600').replace('bg-secondary', 'to-indigo-600').replace('bg-success', 'to-green-600').replace('bg-warning', 'to-amber-600').replace('bg-accent', 'to-purple-600')} rounded-xl flex items-center justify-center shadow-md group-hover:scale-110 transition-transform`}>
+                  <Icon name={action?.icon} size={20} className="text-white" />
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-body font-body-semibold text-sm text-card-foreground group-hover:text-primary transition-micro">
+                  <h3 className="font-bold text-gray-900 text-sm mb-1 group-hover:text-blue-700">
                     {action?.title}
                   </h3>
-                  <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
+                  <p className="text-xs text-gray-600">
                     {action?.description}
                   </p>
                 </div>
-                <Icon name="ChevronRight" size={16} className="text-muted-foreground group-hover:text-primary transition-micro" />
+                <Icon name="ChevronRight" size={16} className="text-gray-400 group-hover:text-blue-600 group-hover:translate-x-1 transition-all" />
               </div>
             </button>
           ))}
         </div>
       </div>
-      {/* Recent Activities */}
-      <div className="bg-card border border-border rounded-lg p-6 shadow-card">
+      {/* Recent Activities - Modernisé */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Icon name="Activity" size={20} className="text-primary" />
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+              <Icon name="Activity" size={20} className="text-white" />
             </div>
             <div>
-              <h2 className="font-heading font-heading-semibold text-lg text-card-foreground">
-                Activités récentes
+              <h2 className="text-lg font-semibold text-gray-900">
+                Activités Récentes
               </h2>
-              <p className="font-caption font-caption-normal text-sm text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 Historique des dernières actions
               </p>
             </div>
           </div>
-          <Button variant="ghost" size="sm">
-            <Icon name="ExternalLink" size={14} className="mr-2" />
-            Voir tout
-          </Button>
+          <button className="px-3 py-1.5 text-sm font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-1">
+            <Icon name="ExternalLink" size={14} />
+            <span>Voir tout</span>
+          </button>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3">
           {recentActivities?.map((activity) => (
             <div
               key={activity?.id}
-              className="flex items-start space-x-3 p-3 rounded-lg hover:bg-muted/50 transition-micro"
+              className="flex items-start space-x-3 p-4 rounded-xl bg-gradient-to-r from-gray-50 to-white hover:from-blue-50 hover:to-indigo-50 border border-gray-200 hover:border-blue-300 transition-all duration-300 hover:shadow-md"
             >
-              <div className={`flex-shrink-0 mt-1 ${getActivityColor(activity?.type)}`}>
+              <div className={`flex-shrink-0 mt-1 w-8 h-8 rounded-lg flex items-center justify-center ${
+                activity?.type === 'success' ? 'bg-gradient-to-br from-green-100 to-emerald-100 text-green-600' :
+                activity?.type === 'warning' ? 'bg-gradient-to-br from-amber-100 to-orange-100 text-amber-600' :
+                activity?.type === 'error' ? 'bg-gradient-to-br from-red-100 to-pink-100 text-red-600' :
+                'bg-gradient-to-br from-blue-100 to-indigo-100 text-blue-600'
+              }`}>
                 <Icon name={getActivityIcon(activity?.type)} size={16} />
               </div>
               <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <h3 className="font-body font-body-semibold text-sm text-card-foreground">
+                <div className="flex items-center justify-between mb-1">
+                  <h3 className="font-semibold text-sm text-gray-900">
                     {activity?.title}
                   </h3>
-                  <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                  <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
                     Il y a {activity?.time}
                   </span>
                 </div>
-                <p className="font-body font-body-normal text-sm text-muted-foreground mt-1">
+                <p className="text-sm text-gray-600">
                   {activity?.description}
                 </p>
               </div>
@@ -268,11 +275,11 @@ const QuickActions = () => {
           ))}
         </div>
 
-        <div className="flex items-center justify-center mt-6 pt-4 border-t border-border">
-          <Button variant="ghost" size="sm">
-            <Icon name="RefreshCw" size={14} className="mr-2" />
-            Actualiser
-          </Button>
+        <div className="flex items-center justify-center mt-6 pt-4 border-t border-gray-200">
+          <button className="px-4 py-2 text-sm font-medium bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 rounded-lg hover:from-blue-100 hover:to-indigo-100 transition-all flex items-center space-x-2">
+            <Icon name="RefreshCw" size={14} />
+            <span>Actualiser</span>
+          </button>
         </div>
       </div>
     </div>

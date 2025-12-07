@@ -290,65 +290,82 @@ const SchoolYearValidationTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header avec indicateur de mode */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3 mb-2">
-            <h2 className="font-heading font-heading-bold text-xl text-text-primary">
-              Validation Année Scolaire
-            </h2>
-            {/* Indicateur de mode */}
-            <div className={`px-2 py-1 rounded-full text-xs font-medium ${
-              isDemo 
-                ? 'bg-amber-100 text-amber-800' 
-                : 'bg-green-100 text-green-800'
-            }`}>
-              {isDemo ? '🔄 Données Démo' : '🏫 Données Réelles'}
+      {/* Header avec indicateur de mode - Modernisé */}
+      <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3 mb-2">
+              <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center shadow-md">
+                <Icon name="Calendar" size={24} className="text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold">
+                  Validation Année Scolaire
+                </h2>
+                {/* Indicateur de mode */}
+                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
+                  isDemo 
+                    ? 'bg-amber-500 text-white' 
+                    : 'bg-green-500 text-white'
+                }`}>
+                  {isDemo ? '🎭 Données Démo' : '🏫 Données Réelles'}
+                </div>
+              </div>
             </div>
+            <p className="text-blue-100 text-sm ml-14">
+              Décisions et approbations pour {currentSchoolYear} → {nextSchoolYear}
+              {isDemo && (
+                <span className="block text-xs text-amber-200 mt-1">
+                  Mode démonstration - Données d'exemple uniquement
+                </span>
+              )}
+            </p>
           </div>
-          <p className="text-sm text-text-secondary">
-            Décisions et approbations pour {currentSchoolYear} → {nextSchoolYear}
-            {isDemo && (
-              <span className="block text-xs text-amber-600 mt-1">
-                Mode démonstration - Données d'exemple uniquement
-              </span>
+          <div className="flex items-center space-x-3">
+            {validationStats.enAttente > 0 ? (
+              <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 shadow-md">
+                <span className="text-sm font-semibold text-white">
+                  ⚠️ {validationStats.enAttente} demandes en attente
+                </span>
+              </div>
+            ) : (
+              <div className="bg-white/20 backdrop-blur-sm px-4 py-2 rounded-xl border border-white/30 shadow-md">
+                <span className="text-sm font-semibold text-white">
+                  ✅ Aucune demande en attente
+                </span>
+              </div>
             )}
-          </p>
-        </div>
-        <div className="flex items-center space-x-3">
-          {validationStats.enAttente > 0 ? (
-            <div className="bg-warning/10 px-3 py-2 rounded-lg">
-              <span className="text-sm font-medium text-warning">
-                ⚠️ {validationStats.enAttente} demandes en attente
-              </span>
-            </div>
-          ) : (
-            <div className="bg-green-50 px-3 py-2 rounded-lg">
-              <span className="text-sm font-medium text-green-700">
-                ✅ Aucune demande en attente
-              </span>
-            </div>
-          )}
+          </div>
         </div>
       </div>
 
-      {/* Navigation */}
-      <div className="border-b border-border">
-        <nav className="flex space-x-8">
+      {/* Navigation - Modernisée */}
+      <div className="bg-white rounded-2xl shadow-md border-2 border-gray-200 p-2">
+        <nav className="flex flex-wrap gap-2">
           {sections.map((section) => (
             <button
               key={section.id}
               onClick={() => setActiveSection(section.id)}
-              className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+              className={`flex items-center space-x-2 px-4 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
                 activeSection === section.id
-                  ? 'border-primary text-primary'
-                  : 'border-transparent text-text-secondary hover:text-text-primary hover:border-border'
+                  ? 'bg-gradient-to-br from-blue-600 to-indigo-600 text-white shadow-lg scale-105'
+                  : 'bg-gray-50 text-gray-700 hover:bg-gray-100 border border-gray-200 hover:border-blue-300 hover:shadow-md'
               }`}
             >
-              <Icon name={section.icon} size={16} />
+              <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${
+                activeSection === section.id
+                  ? 'bg-white/20 backdrop-blur-sm'
+                  : 'bg-white shadow-sm'
+              }`}>
+                <Icon name={section.icon} size={16} className={activeSection === section.id ? 'text-white' : 'text-blue-600'} />
+              </div>
               <span>{section.label}</span>
               {section.id === 'pending' && validationStats.enAttente > 0 && (
-                <span className="bg-warning text-warning-foreground text-xs rounded-full px-2 py-1">
+                <span className={`text-xs rounded-full px-2 py-1 font-bold ${
+                  activeSection === section.id
+                    ? 'bg-amber-500 text-white'
+                    : 'bg-amber-100 text-amber-800'
+                }`}>
                   {validationStats.enAttente}
                 </span>
               )}
@@ -360,60 +377,60 @@ const SchoolYearValidationTab = () => {
       {/* Section Demandes en attente */}
       {activeSection === 'pending' && (
         <div className="space-y-6">
-          {/* Statistiques rapides */}
+          {/* Statistiques rapides - Modernisées */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-warning/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Clock" size={20} className="text-warning" />
+                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
+                  <Icon name="Clock" size={20} className="text-white" />
                 </div>
                 <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                  <p className="text-3xl font-bold text-amber-900">
                     {validationStats.enAttente}
                   </p>
-                  <p className="text-xs text-text-secondary">En attente</p>
+                  <p className="text-sm font-medium text-amber-700">En attente</p>
                 </div>
               </div>
             </div>
             
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-success/10 rounded-lg flex items-center justify-center">
-                  <Icon name="CheckCircle" size={20} className="text-success" />
+                <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Icon name="CheckCircle" size={20} className="text-white" />
                 </div>
                 <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                  <p className="text-3xl font-bold text-green-900">
                     {validationStats.approuvees}
                   </p>
-                  <p className="text-xs text-text-secondary">Approuvées</p>
+                  <p className="text-sm font-medium text-green-700">Approuvées</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-blue/10 rounded-lg flex items-center justify-center">
-                  <Icon name="Eye" size={20} className="text-blue" />
+                <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+                  <Icon name="Eye" size={20} className="text-white" />
                 </div>
                 <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                  <p className="text-3xl font-bold text-blue-900">
                     {validationStats.enRevision}
                   </p>
-                  <p className="text-xs text-text-secondary">En révision</p>
+                  <p className="text-sm font-medium text-blue-700">En révision</p>
                 </div>
               </div>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-4">
+            <div className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl p-5 shadow-lg hover:shadow-xl transition-shadow">
               <div className="flex items-center space-x-3">
-                <div className="w-10 h-10 bg-error/10 rounded-lg flex items-center justify-center">
-                  <Icon name="XCircle" size={20} className="text-error" />
+                <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+                  <Icon name="XCircle" size={20} className="text-white" />
                 </div>
                 <div>
-                  <p className="font-heading font-heading-semibold text-lg text-text-primary">
+                  <p className="text-3xl font-bold text-red-900">
                     {validationStats.refusees}
                   </p>
-                  <p className="text-xs text-text-secondary">Refusées</p>
+                  <p className="text-sm font-medium text-red-700">Refusées</p>
                 </div>
               </div>
             </div>

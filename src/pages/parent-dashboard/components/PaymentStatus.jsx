@@ -49,32 +49,36 @@ const PaymentStatus = ({ payments }) => {
   const totalPaid = payments?.filter(p => p?.status === 'completed')?.reduce((sum, p) => sum + p?.amount, 0) || 0;
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Statut des Paiements
-        </h3>
-        <Icon name="CreditCard" size={20} className="text-primary" />
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-md">
+            <Icon name="CreditCard" size={24} className="text-white" />
+          </div>
+          <h3 className="font-display font-bold text-2xl text-gray-900">
+            Statut des Paiements
+          </h3>
+        </div>
       </div>
 
       {/* Payment Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
-        <div className="bg-success/10 rounded-lg p-4 text-center">
-          <Icon name="CheckCircle" size={24} className="text-success mx-auto mb-2" />
-          <div className="font-heading font-heading-bold text-lg text-success">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-8">
+        <div className="bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl p-6 text-center shadow-lg text-white hover:scale-105 transition-transform">
+          <Icon name="CheckCircle" size={28} className="mx-auto mb-3" />
+          <div className="font-display font-bold text-2xl">
             {formatAmount(totalPaid)}
           </div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+          <p className="font-body-medium text-sm mt-1 text-white/90">
             Montant payé
           </p>
         </div>
 
-        <div className="bg-warning/10 rounded-lg p-4 text-center">
-          <Icon name="Clock" size={24} className="text-warning mx-auto mb-2" />
-          <div className="font-heading font-heading-bold text-lg text-warning">
+        <div className="bg-gradient-to-br from-orange-500 to-amber-600 rounded-xl p-6 text-center shadow-lg text-white hover:scale-105 transition-transform">
+          <Icon name="Clock" size={28} className="mx-auto mb-3" />
+          <div className="font-display font-bold text-2xl">
             {formatAmount(totalPending)}
           </div>
-          <p className="font-caption font-caption-normal text-xs text-muted-foreground">
+          <p className="font-body-medium text-sm mt-1 text-white/90">
             Montant en attente
           </p>
         </div>
@@ -83,7 +87,7 @@ const PaymentStatus = ({ payments }) => {
       {/* Payment List */}
       <div className="space-y-4">
         {payments?.map(payment => (
-          <div key={payment?.id} className="border border-border rounded-lg p-4">
+          <div key={payment?.id} className="bg-gradient-to-br from-gray-50 to-gray-100 border-2 border-gray-200 rounded-xl p-5 hover:shadow-lg transition-all">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-3">
                 <div className={`w-3 h-3 rounded-full ${
@@ -129,9 +133,9 @@ const PaymentStatus = ({ payments }) => {
 
             {/* Action Button for Pending Payments */}
             {payment?.status === 'pending' && (
-              <div className="mt-4 pt-3 border-t border-border">
-                <button className="w-full bg-primary hover:bg-primary/90 text-white font-body font-body-semibold py-2 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                  <Icon name="Smartphone" size={16} />
+              <div className="mt-4 pt-3 border-t-2 border-gray-200">
+                <button className="w-full bg-gradient-to-br from-orange-500 to-amber-600 hover:from-orange-600 hover:to-amber-700 text-white font-body-bold py-3 px-4 rounded-xl transition-all hover:scale-105 shadow-lg flex items-center justify-center gap-2">
+                  <Icon name="Smartphone" size={18} />
                   Payer via Mobile Money
                 </button>
               </div>
@@ -140,9 +144,11 @@ const PaymentStatus = ({ payments }) => {
         ))}
 
         {payments?.length === 0 && (
-          <div className="text-center py-8">
-            <Icon name="CreditCard" size={48} className="text-muted-foreground mx-auto mb-3" />
-            <p className="font-body font-body-normal text-muted-foreground">
+          <div className="text-center py-12 px-4 bg-gradient-to-br from-orange-50 to-amber-50 rounded-xl border-2 border-orange-200">
+            <div className="p-4 rounded-2xl bg-gradient-to-br from-orange-500 to-amber-600 w-20 h-20 flex items-center justify-center mx-auto mb-4 shadow-lg">
+              <Icon name="CreditCard" size={40} className="text-white" />
+            </div>
+            <p className="font-body-bold text-base text-gray-700">
               Aucun paiement en cours
             </p>
           </div>

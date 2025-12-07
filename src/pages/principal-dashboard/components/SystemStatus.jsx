@@ -255,18 +255,22 @@ const SystemStatus = () => {
       default:
         return (
           <div className="space-y-6">
-            {/* System Health Overview avec indicateur de mode */}
-            <div className="bg-card border border-border rounded-lg p-6 shadow-card">
+            {/* System Health Overview avec indicateur de mode - Modernisé */}
+            <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center space-x-3">
-            <div className={`w-10 h-10 ${isDemo ? 'bg-yellow/10' : 'bg-success/10'} rounded-lg flex items-center justify-center`}>
-              <Icon name="Activity" size={20} className={isDemo ? 'text-yellow-600' : 'text-success'} />
+          <div className="flex items-center">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center mr-3 shadow-md ${
+              isDemo 
+                ? 'bg-gradient-to-br from-amber-500 to-orange-500' 
+                : 'bg-gradient-to-br from-green-600 to-emerald-600'
+            }`}>
+              <Icon name="Activity" size={24} className="text-white" />
             </div>
             <div>
-              <h2 className="font-heading font-heading-semibold text-lg text-card-foreground">
-                État du système {isDemo ? '(Démo)' : ''}
+              <h2 className="text-lg font-semibold text-gray-900">
+                État du Système {isDemo ? '(Démo)' : ''}
               </h2>
-              <p className="font-caption font-caption-normal text-sm text-muted-foreground">
+              <p className="text-xs text-gray-500">
                 {isDemo 
                   ? 'Surveillance simulée en temps réel' 
                   : `Surveillance réelle - ${user?.schoolData?.name || 'Votre école'}`
@@ -274,16 +278,24 @@ const SystemStatus = () => {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-success rounded-full animate-pulse" />
-              <span className={`font-caption font-caption-normal text-xs ${isDemo ? 'text-yellow-600' : 'text-success'}`}>
+          <div className="flex items-center space-x-3">
+            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+              isDemo 
+                ? 'bg-gradient-to-r from-amber-50 to-orange-50 border-2 border-amber-200' 
+                : 'bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200'
+            }`}>
+              <div className={`w-2 h-2 rounded-full animate-pulse ${
+                isDemo ? 'bg-amber-500' : 'bg-green-500'
+              }`} />
+              <span className={`text-xs font-semibold ${
+                isDemo ? 'text-amber-700' : 'text-green-700'
+              }`}>
                 {isDemo ? 'Système simulé' : 'Système opérationnel'}
               </span>
             </div>
-            <Button variant="ghost" size="icon">
-              <Icon name="RefreshCw" size={16} />
-            </Button>
+            <button className="p-2 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+              <Icon name="RefreshCw" size={16} className="text-gray-700" />
+            </button>
           </div>
         </div>
 
@@ -291,12 +303,18 @@ const SystemStatus = () => {
           {systemMetrics?.map((metric) => (
             <div
               key={metric?.id}
-              className="p-4 border border-border rounded-lg hover:border-primary/50 transition-micro"
+              className="p-5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-2xl hover:border-blue-400 hover:shadow-lg hover:scale-105 transition-all duration-300"
             >
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 ${getStatusBg(metric?.status)} rounded-lg flex items-center justify-center`}>
-                    <Icon name={metric?.icon} size={16} className={getStatusColor(metric?.status)} />
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center shadow-md ${
+                    metric?.status === 'online' 
+                      ? 'bg-gradient-to-br from-green-600 to-emerald-600' 
+                      : metric?.status === 'warning'
+                      ? 'bg-gradient-to-br from-amber-500 to-orange-500'
+                      : 'bg-gradient-to-br from-red-500 to-pink-500'
+                  }`}>
+                    <Icon name={metric?.icon} size={16} className="text-white" />
                   </div>
                   <div>
                     <h3 className="font-body font-body-semibold text-sm text-card-foreground">

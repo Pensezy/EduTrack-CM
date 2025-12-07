@@ -71,14 +71,19 @@ const CommunicationCenter = ({ notifications, childName }) => {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Centre de Communication
-        </h3>
-        <div className="flex items-center gap-2 px-3 py-2 bg-primary/10 rounded-lg">
-          <Icon name="Bell" size={16} className="text-primary" />
-          <span className="font-heading font-heading-semibold text-sm text-primary">
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-500 to-teal-600 shadow-md">
+            <Icon name="MessageSquare" size={24} className="text-white" />
+          </div>
+          <h3 className="font-display font-bold text-2xl text-gray-900">
+            Centre de Communication
+          </h3>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-cyan-500 to-teal-600 rounded-xl shadow-md text-white">
+          <Icon name="Bell" size={18} />
+          <span className="font-body-bold text-sm">
             {unreadCount} non lu{unreadCount > 1 ? 's' : ''}
           </span>
         </div>
@@ -90,17 +95,17 @@ const CommunicationCenter = ({ notifications, childName }) => {
           <button
             key={filterOption?.value}
             onClick={() => setFilter(filterOption?.value)}
-            className={`px-3 py-2 rounded-lg font-caption font-caption-semibold text-sm transition-all ${
+            className={`px-4 py-2.5 rounded-xl font-body-bold text-sm transition-all hover:scale-105 ${
               filter === filterOption?.value
-                ? 'bg-primary text-white shadow-sm'
-                : 'bg-muted/20 text-muted-foreground hover:bg-muted/30'
+                ? 'bg-gradient-to-br from-cyan-500 to-teal-600 text-white shadow-lg'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-200'
             }`}
           >
             {filterOption?.label}
             {filterOption?.count > 0 && (
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs ${
+              <span className={`ml-2 px-2 py-1 rounded-full text-xs font-bold ${
                 filter === filterOption?.value
-                  ? 'bg-white/20' :'bg-muted'
+                  ? 'bg-white/20 text-white' : 'bg-gray-300 text-gray-700'
               }`}>
                 {filterOption?.count}
               </span>
@@ -117,10 +122,10 @@ const CommunicationCenter = ({ notifications, childName }) => {
             onClick={() => setSelectedNotification(
               selectedNotification?.id === notification?.id ? null : notification
             )}
-            className={`border-l-4 ${getPriorityColor(notification?.priority)} bg-white rounded-lg p-4 cursor-pointer transition-all hover:shadow-md ${
-              !notification?.read ? 'ring-2 ring-primary/20' : ''
+            className={`border-l-4 ${getPriorityColor(notification?.priority)} bg-gradient-to-r from-white to-gray-50 rounded-xl p-4 cursor-pointer transition-all hover:shadow-lg border-2 border-gray-200 ${
+              !notification?.read ? 'ring-2 ring-cyan-300' : ''
             } ${
-              selectedNotification?.id === notification?.id ? 'shadow-lg bg-primary/2' : ''
+              selectedNotification?.id === notification?.id ? 'shadow-xl scale-[1.02]' : ''
             }`}
           >
             <div className="flex items-start gap-3">

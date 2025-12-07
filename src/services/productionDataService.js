@@ -29,9 +29,28 @@ export const productionDataService = {
         supabase.from("classes").select("id", { count: "exact" }).eq("school_id", targetSchoolId)
       ]);
 
-      const students = studentsCount.status === "fulfilled" ? (studentsCount.value.count || 0) : 0;
-      const teachers = teachersCount.status === "fulfilled" ? (teachersCount.value.count || 0) : 0;
-      const classes = classesCount.status === "fulfilled" ? (classesCount.value.count || 0) : 0;
+      // Gestion robuste des erreurs 403 et autres
+      let students = 0;
+      let teachers = 0;
+      let classes = 0;
+
+      if (studentsCount.status === "fulfilled" && !studentsCount.value.error) {
+        students = studentsCount.value.count || 0;
+      } else if (studentsCount.status === "fulfilled" && studentsCount.value.error) {
+        console.warn('⚠️ Erreur students:', studentsCount.value.error.message);
+      }
+
+      if (teachersCount.status === "fulfilled" && !teachersCount.value.error) {
+        teachers = teachersCount.value.count || 0;
+      } else if (teachersCount.status === "fulfilled" && teachersCount.value.error) {
+        console.warn('⚠️ Erreur teachers:', teachersCount.value.error.message);
+      }
+
+      if (classesCount.status === "fulfilled" && !classesCount.value.error) {
+        classes = classesCount.value.count || 0;
+      } else if (classesCount.status === "fulfilled" && classesCount.value.error) {
+        console.warn('⚠️ Erreur classes:', classesCount.value.error.message);
+      }
 
       const metrics = [
         { title: "Eleves", value: students, icon: "Users", trend: null },
@@ -274,6 +293,7 @@ export const productionDataService = {
 
         if (schoolError) {
           console.error("Erreur recuperation ecole par ID:", schoolError);
+          // Ne pas throw, retourner null pour permettre au système de continuer
           return { data: null, error: schoolError };
         }
 
@@ -293,6 +313,10 @@ export const productionDataService = {
 
         if (schoolError) {
           console.error("Erreur recherche ecole par directeur:", schoolError);
+          // Si c'est une erreur 403 (forbidden), logger mais ne pas bloquer
+          if (schoolError.code === '403' || schoolError.message?.includes('403')) {
+            console.warn('⚠️ Erreur 403 (permissions) lors de la recherche école - continuer sans données');
+          }
           return { data: null, error: schoolError };
         }
 
@@ -314,7 +338,8 @@ export const productionDataService = {
 
       if (schoolError) {
         console.error("Erreur recuperation ecole (contexte):", schoolError);
-        throw schoolError;
+        // Ne pas throw, retourner null
+        return { data: null, error: schoolError };
       }
 
       console.log("Details ecole recuperes (contexte):", schoolData);

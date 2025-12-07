@@ -164,16 +164,16 @@ const PrincipalDashboard = () => {
   // Les métriques proviennent maintenant du hook qui switch automatiquement
   const keyMetrics = data.metrics || [];
 
-  // Onglets du dashboard - L'onglet Debug est visible uniquement en mode développement
+  // Onglets du dashboard - Organisés par catégorie
   const tabOptions = [
-    { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
-    { id: 'school-year', label: 'Validation Année', icon: 'Calendar' },
-    { id: 'school-info', label: 'École', icon: 'School' },
-    { id: 'actions', label: 'Actions', icon: 'Zap' },
-    { id: 'system', label: 'Système', icon: 'Settings' },
-    { id: 'accounts', label: 'Comptes', icon: 'UserCheck' },
+    { id: 'overview', label: 'Tableau de Bord', icon: 'LayoutDashboard', description: 'Vue d\'ensemble' },
+    { id: 'actions', label: 'Actions Rapides', icon: 'Zap', description: 'Outils de gestion' },
+    { id: 'school-year', label: 'Validation Année', icon: 'Calendar', description: 'Passage année scolaire' },
+    { id: 'school-info', label: 'Mon Établissement', icon: 'School', description: 'Informations école' },
+    { id: 'accounts', label: 'Gestion Comptes', icon: 'UserCheck', description: 'Personnel & accès' },
+    { id: 'system', label: 'État Système', icon: 'Settings', description: 'Paramètres & statut' },
     // Debug visible uniquement en développement ou via URL directe
-    ...(import.meta.env.DEV || activeTab === 'debug' ? [{ id: 'debug', label: 'Debug DB', icon: 'Bug' }] : [])
+    ...(import.meta.env.DEV || activeTab === 'debug' ? [{ id: 'debug', label: 'Diagnostic', icon: 'Bug', description: 'Outils techniques' }] : [])
   ];
 
   const formatDateTime = (date) => {
@@ -409,11 +409,27 @@ const PrincipalDashboard = () => {
             
             {/* Charts Section - Modernisée */}
             <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-center mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                  <Icon name="TrendingUp" size={20} className="text-white" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <Icon name="TrendingUp" size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Performances Académiques</h3>
+                    <p className="text-xs text-gray-500">Moyennes et présences par classe</p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Aperçu des performances</h3>
+                {/* Filtres rapides */}
+                <div className="hidden lg:flex items-center space-x-2">
+                  <button className="px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors flex items-center space-x-1">
+                    <Icon name="Filter" size={14} />
+                    <span>Filtrer</span>
+                  </button>
+                  <button className="px-3 py-1.5 text-xs font-medium bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors flex items-center space-x-1">
+                    <Icon name="Download" size={14} />
+                    <span>Export</span>
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl p-4 min-h-[250px] border border-blue-200">
@@ -427,11 +443,21 @@ const PrincipalDashboard = () => {
             
             {/* Payment Status - Modernisé */}
             <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6 hover:shadow-xl transition-shadow">
-              <div className="flex items-center mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                  <Icon name="CreditCard" size={20} className="text-white" />
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center">
+                  <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <Icon name="CreditCard" size={20} className="text-white" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">Suivi des Paiements</h3>
+                    <p className="text-xs text-gray-500">Frais scolaires & redevances</p>
+                  </div>
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">État des paiements</h3>
+                <div className="hidden lg:flex items-center space-x-2">
+                  <span className="px-3 py-1.5 text-xs font-semibold bg-green-100 text-green-700 rounded-lg">
+                    Mois en cours
+                  </span>
+                </div>
               </div>
               <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-xl p-4 min-h-[200px] border border-amber-200">
                 <PaymentStatusChart />
@@ -455,8 +481,8 @@ const PrincipalDashboard = () => {
                     <Icon name="UserPlus" size={24} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-blue-900 text-base mb-1">Créer Personnel</h3>
-                    <p className="text-sm text-blue-700">Ajouter enseignant/secrétaire</p>
+                    <h3 className="font-bold text-blue-900 text-base mb-1">Créer un Compte</h3>
+                    <p className="text-sm text-blue-700">Ajouter enseignant ou secrétaire</p>
                   </div>
                 </div>
               </button>
@@ -470,8 +496,8 @@ const PrincipalDashboard = () => {
                     <Icon name="Bell" size={24} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-green-900 text-base mb-1">Notification</h3>
-                    <p className="text-sm text-green-700">Message à l'école</p>
+                    <h3 className="font-bold text-green-900 text-base mb-1">Envoyer Message</h3>
+                    <p className="text-sm text-green-700">Notifier élèves, parents ou personnel</p>
                   </div>
                 </div>
               </button>
@@ -485,23 +511,15 @@ const PrincipalDashboard = () => {
                     <Icon name="FileBarChart" size={24} className="text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-purple-900 text-base mb-1">Rapport</h3>
-                    <p className="text-sm text-purple-700">Générer analyse</p>
+                    <h3 className="font-bold text-purple-900 text-base mb-1">Générer Rapport</h3>
+                    <p className="text-sm text-purple-700">Statistiques et analyses détaillées</p>
                   </div>
                 </div>
               </button>
             </div>
             
-            {/* Section complète - Modernisée */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
-              <div className="flex items-center mb-6">
-                <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                  <Icon name="Zap" size={20} className="text-white" />
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900">Toutes les Actions</h3>
-              </div>
-              <QuickActions />
-            </div>
+            {/* Section complète */}
+            <QuickActions />
           </div>
         );
       case 'system':
@@ -511,7 +529,10 @@ const PrincipalDashboard = () => {
               <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
                 <Icon name="Settings" size={20} className="text-white" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">État du Système</h3>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">État du Système</h3>
+                <p className="text-xs text-gray-500">Statut technique et paramètres</p>
+              </div>
             </div>
             <SystemStatus />
           </div>
@@ -609,15 +630,18 @@ const PrincipalDashboard = () => {
             </div>
             
             {/* Gestion intelligente des classes - Modernisée */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6 hover:shadow-xl transition-shadow">
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                    <Icon name="BookOpen" size={20} className="text-white" />
+                  <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <Icon name="BookOpen" size={24} className="text-white" />
                   </div>
-                  <h3 className="text-lg font-semibold text-gray-900">📚 Classes de l'École</h3>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">📚 Classes de l'École</h3>
+                    <p className="text-xs text-gray-500">Gérez les classes de votre établissement</p>
+                  </div>
                 </div>
-                <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all shadow-md hover:shadow-lg text-sm font-semibold flex items-center space-x-2">
+                <button className="px-4 py-2 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 hover:scale-105 transition-all shadow-md hover:shadow-lg text-sm font-semibold flex items-center space-x-2">
                   <Icon name="Plus" size={16} />
                   <span>Ajouter une classe</span>
                 </button>
@@ -626,23 +650,24 @@ const PrincipalDashboard = () => {
               {/* Classes actives de l'école */}
               {schoolData?.available_classes && schoolData.available_classes.length > 0 ? (
                 <div className="mb-6">
-                  <h4 className="text-md font-medium text-gray-700 mb-3">
+                  <h4 className="text-md font-semibold text-gray-700 mb-4 flex items-center">
+                    <span className="w-2 h-2 bg-green-500 rounded-full mr-2 animate-pulse"></span>
                     🎯 Vos Classes Actives ({schoolData.available_classes.length})
                   </h4>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
                     {schoolData.available_classes.map((classe, index) => (
-                      <div key={index} className="bg-green-50 border border-green-200 rounded-lg p-4 text-center hover:bg-green-100 transition-colors group relative">
-                        <div className="text-green-800 font-semibold text-lg">{classe}</div>
-                        <div className="text-xs text-green-600 mt-1">Prête à utiliser</div>
+                      <div key={index} className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl p-4 text-center hover:from-green-100 hover:to-emerald-100 hover:scale-105 hover:shadow-lg transition-all group relative">
+                        <div className="text-green-900 font-bold text-lg mb-1">{classe}</div>
+                        <div className="text-xs text-green-600 font-medium mb-2">Prête à utiliser</div>
                         <div className="mt-2 flex justify-center space-x-1">
                           <button 
-                            className="p-1 text-green-600 hover:bg-green-200 rounded"
+                            className="p-2 text-green-600 hover:bg-green-200 rounded-lg transition-colors"
                             title="Voir les élèves"
                           >
                             <Icon name="Users" size={14} />
                           </button>
                           <button 
-                            className="p-1 text-green-600 hover:bg-green-200 rounded"
+                            className="p-2 text-green-600 hover:bg-green-200 rounded-lg transition-colors"
                             title="Paramètres de la classe"
                           >
                             <Icon name="Settings" size={14} />
@@ -650,7 +675,7 @@ const PrincipalDashboard = () => {
                           <button 
                             onClick={() => handleRemoveClass(classe)}
                             disabled={addingClass}
-                            className="p-1 text-red-600 hover:bg-red-100 rounded disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="p-2 text-red-600 hover:bg-red-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             title="Supprimer cette classe"
                           >
                             <Icon name="Trash2" size={14} />
@@ -661,11 +686,13 @@ const PrincipalDashboard = () => {
                   </div>
                 </div>
               ) : (
-                <div className="mb-6 bg-yellow-50 border border-yellow-200 rounded-lg p-4">
-                  <div className="text-center text-yellow-700">
-                    <Icon name="AlertTriangle" size={24} className="mx-auto mb-2" />
-                    <div className="font-medium">Aucune classe active</div>
-                    <div className="text-sm">Configurez vos classes pour commencer</div>
+                <div className="mb-6 bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-6 shadow-md">
+                  <div className="text-center text-amber-900">
+                    <div className="w-16 h-16 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mx-auto mb-3 shadow-md">
+                      <Icon name="AlertTriangle" size={32} className="text-white" />
+                    </div>
+                    <div className="font-bold text-lg mb-1">Aucune classe active</div>
+                    <div className="text-sm text-amber-700">Configurez vos classes pour commencer</div>
                   </div>
                 </div>
               )}
@@ -813,14 +840,19 @@ const PrincipalDashboard = () => {
                 </div>
               )}
 
-              {/* Option pour créer une classe personnalisée */}
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
-                <h4 className="text-md font-medium text-gray-700 mb-3">🎨 Classe Personnalisée</h4>
+              {/* Option pour créer une classe personnalisée - Modernisée */}
+              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-5 shadow-md">
+                <div className="flex items-center mb-4">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                    <Icon name="Plus" size={20} className="text-white" />
+                  </div>
+                  <h4 className="text-md font-semibold text-blue-900">🎨 Classe Personnalisée</h4>
+                </div>
                 <div className="flex items-center space-x-3">
                   <input
                     type="text"
                     placeholder="Ex: Ti, 1ère Anglophone, BTS Comptabilité..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="flex-1 px-4 py-3 border-2 border-blue-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white shadow-sm"
                     value={newClassName}
                     onChange={(e) => setNewClassName(e.target.value)}
                     onKeyPress={(e) => e.key === 'Enter' && handleAddCustomClass()}
@@ -828,7 +860,7 @@ const PrincipalDashboard = () => {
                   <button 
                     onClick={handleAddCustomClass}
                     disabled={!newClassName.trim() || addingClass}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center space-x-2"
+                    className="px-5 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white rounded-xl hover:from-blue-700 hover:to-indigo-700 hover:scale-105 transition-all shadow-md hover:shadow-lg disabled:from-gray-400 disabled:to-gray-500 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center space-x-2 font-semibold"
                   >
                     {addingClass ? (
                       <>
@@ -836,55 +868,60 @@ const PrincipalDashboard = () => {
                         <span>Ajout...</span>
                       </>
                     ) : (
-                      <span>Créer</span>
+                      <>
+                        <Icon name="Plus" size={16} />
+                        <span>Créer</span>
+                      </>
                     )}
                   </button>
                 </div>
-                <div className="text-xs text-gray-500 mt-2">
-                  Créez des classes avec des noms spécifiques à votre établissement
+                <div className="text-xs text-blue-700 mt-2 font-medium">
+                  💡 Créez des classes avec des noms spécifiques à votre établissement
                 </div>
                 {classError && (
-                  <div className="mt-2 text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2 py-1">
-                    {classError}
+                  <div className="mt-3 text-sm text-red-700 bg-gradient-to-r from-red-50 to-pink-50 border-2 border-red-200 rounded-xl px-4 py-2 shadow-sm">
+                    ❌ {classError}
                   </div>
                 )}
                 {classSuccess && (
-                  <div className="mt-2 text-xs text-green-600 bg-green-50 border border-green-200 rounded px-2 py-1">
-                    {classSuccess}
+                  <div className="mt-3 text-sm text-green-700 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-xl px-4 py-2 shadow-sm">
+                    ✅ {classSuccess}
                   </div>
                 )}
               </div>
             </div>
             
             {/* Statistiques rapides - Modernisées */}
-            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
-              <div className="flex items-center mb-6">
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6 hover:shadow-xl transition-shadow\n">              <div className="flex items-center mb-6">
                 <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
                   <Icon name="BarChart3" size={20} className="text-white" />
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">📊 Aperçu Rapide</h3>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900">📊 Aperçu Rapide</h3>
+                  <p className="text-xs text-gray-500">Statistiques générales de l'établissement</p>
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 hover:shadow-lg transition-shadow">
+                <div className="bg-gradient-to-br from-blue-50 to-indigo-50 p-5 rounded-xl border-2 border-blue-200 hover:shadow-lg hover:scale-105 transition-all">
                   <div className="text-3xl font-bold text-blue-800 mb-1">
                     {keyMetrics.find(m => m.title === 'Élèves')?.value || 0}
                   </div>
                   <div className="text-sm text-blue-600 font-medium">Élèves inscrits</div>
                 </div>
-                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-200 hover:shadow-lg transition-shadow">
+                <div className="bg-gradient-to-br from-green-50 to-emerald-50 p-5 rounded-xl border-2 border-green-200 hover:shadow-lg hover:scale-105 transition-all">
                   <div className="text-3xl font-bold text-green-800 mb-1">
                     {data?.schoolStats?.teachers || 0}
                   </div>
                   <div className="text-sm text-green-600 font-medium">Enseignants</div>
                 </div>
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-200 hover:shadow-lg transition-shadow">
+                <div className="bg-gradient-to-br from-purple-50 to-pink-50 p-5 rounded-xl border-2 border-purple-200 hover:shadow-lg hover:scale-105 transition-all">
                   <div className="text-3xl font-bold text-purple-800 mb-1">
                     {schoolData?.available_classes?.length || 0}
                   </div>
                   <div className="text-sm text-purple-600 font-medium">Classes actives</div>
                 </div>
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 p-5 rounded-xl border-2 border-orange-200 hover:shadow-lg transition-shadow">
-                  <div className="text-2xl font-bold text-orange-800">
+                <div className="bg-gradient-to-br from-orange-50 to-red-50 p-5 rounded-xl border-2 border-orange-200 hover:shadow-lg hover:scale-105 transition-all">
+                  <div className="text-2xl font-bold text-orange-800 mb-1">
                     {(() => {
                       const schoolType = schoolData?.type?.toLowerCase().trim();
                       const currentClasses = schoolData?.available_classes || [];
@@ -1072,7 +1109,7 @@ const PrincipalDashboard = () => {
                     'Directeur'} 👋
                   </h1>
                   <p className="font-body font-body-normal text-blue-100 text-lg">
-                    Tableau de Bord Principal - {schoolData?.name || 'Établissement'}
+                    Tableau de Bord Principal • {schoolData?.name || 'Établissement'}
                   </p>
                 </div>
                 <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">

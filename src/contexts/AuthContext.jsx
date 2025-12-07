@@ -170,8 +170,16 @@ export const AuthProvider = ({ children }) => {
 
     // Écouter les changements de session Supabase (connexion/déconnexion principal)
     let isProcessingAuth = false;
+    let lastProcessedUserId = null; // Tracker le dernier utilisateur traité
+    
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('🔐 Changement d\'état Supabase:', event, session?.user?.email);
+      
+      // Ignorer les événements TOKEN_REFRESHED, USER_UPDATED, etc. si l'utilisateur est déjà connecté
+      if (event !== 'SIGNED_IN' && event !== 'SIGNED_OUT' && event !== 'INITIAL_SESSION') {
+        console.log('⏭️ Événement ignoré (type non géré):', event);
+        return;
+      }
       
       // Éviter les appels multiples simultanés
       if (isProcessingAuth) {
@@ -179,14 +187,21 @@ export const AuthProvider = ({ children }) => {
         return;
       }
       
-      if (event === 'SIGNED_IN' && session?.user) {
+      if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session?.user) {
+        // Vérifier si on a déjà traité cet utilisateur
+        if (lastProcessedUserId === session.user.id) {
+          console.log('✅ Utilisateur déjà traité, ignorer l\'événement');
+          return;
+        }
+        
         // Principal connecté - Ne traiter que si ce n'est pas déjà fait
         const currentUser = localStorage.getItem('edutrack-user');
         if (currentUser) {
           try {
             const userData = JSON.parse(currentUser);
             if (userData.id === session.user.id) {
-              console.log('✅ Utilisateur déjà défini, ignorer l\'événement');
+              console.log('✅ Utilisateur déjà défini dans localStorage, ignorer');
+              lastProcessedUserId = session.user.id;
               return;
             }
           } catch (e) {
@@ -200,12 +215,16 @@ export const AuthProvider = ({ children }) => {
           setUser(session.user);
           setUserProfile(session.user);
           localStorage.setItem('edutrack-user', JSON.stringify(session.user));
+          lastProcessedUserId = session.user.id;
+          console.log('✅ Utilisateur configuré avec succès');
         } finally {
           isProcessingAuth = false;
         }
       } else if (event === 'SIGNED_OUT') {
         // Principal déconnecté
         console.log('👋 Déconnexion Supabase');
+        lastProcessedUserId = null;
+        
         // Ne pas nettoyer si un compte local est actif
         const savedUser = localStorage.getItem('edutrack-user');
         if (savedUser) {
@@ -301,33 +320,24 @@ export const AuthProvider = ({ children }) => {
 
   const ensureUserInDatabase = async (authUser) => {
     try {
-      // Ensure user exists in users table with proper permissions
-      const { data: userData, error: userError } = await supabase
+      // Vérifier d'abord si l'utilisateur existe déjà (lecture seule, pas d'écriture)
+      const { data: existingUser, error: fetchError } = await supabase
         .from('users')
-        .upsert({
-          id: authUser.id,
-          email: authUser.email,
-          full_name: authUser.user_metadata?.full_name || authUser.email.split('@')[0],
-          role: authUser.user_metadata?.role || 'student',
-          phone: authUser.user_metadata?.phone || '',
-          is_active: true,
-          photo: '/assets/images/no_image.png',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        })
-        .select()
+        .select('*')
+        .eq('id', authUser.id)
         .single();
 
-      if (userError) {
-        console.warn('⚠️ Could not ensure user in database:', userError);
-        // Don't throw error, continue
-      } else {
-        console.log('✅ User ensured in database:', userData);
+      if (existingUser && !fetchError) {
+        console.log('✅ User already exists in database:', existingUser.email);
+        return existingUser;
       }
-      
-      return userData;
+
+      // Si l'utilisateur n'existe pas, ne PAS essayer de l'ajouter ici
+      // Le trigger handle_new_user_automatic() s'en charge automatiquement
+      console.log('ℹ️ User not found in database, will be created by trigger');
+      return null;
     } catch (err) {
-      console.warn('⚠️ Exception ensuring user in database:', err);
+      console.warn('⚠️ Exception checking user in database:', err);
       return null;
     }
   };

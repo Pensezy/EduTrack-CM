@@ -409,32 +409,59 @@ const SecretaryDashboard = () => {
             </div>
           </div>
 
-          {/* Quick Stats - Ultra Compact */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-            {quickStats?.map((stat, index) => (
-              <div 
-                key={index} 
-                className="group bg-white rounded-xl border border-gray-200 p-4 hover:shadow-xl hover:scale-105 transition-all duration-300 hover:border-blue-300"
-              >
-                <div className="flex items-center justify-between mb-3">
-                  <div className={`w-12 h-12 ${stat?.bgColor} rounded-lg flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
-                    <Icon name={stat?.icon} size={24} className={stat?.color} />
+          {/* Quick Stats - Modernisées avec gradients */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            {quickStats?.map((stat, index) => {
+              const gradientColors = [
+                'from-blue-50 to-indigo-50 border-blue-200',
+                'from-green-50 to-emerald-50 border-green-200',
+                'from-amber-50 to-orange-50 border-amber-200',
+                'from-purple-50 to-pink-50 border-purple-200'
+              ];
+              const iconGradients = [
+                'from-blue-600 to-indigo-600',
+                'from-green-600 to-emerald-600',
+                'from-amber-500 to-orange-500',
+                'from-purple-600 to-pink-600'
+              ];
+              const textColors = [
+                'text-blue-900',
+                'text-green-900',
+                'text-amber-900',
+                'text-purple-900'
+              ];
+              const subtitleColors = [
+                'text-blue-700',
+                'text-green-700',
+                'text-amber-700',
+                'text-purple-700'
+              ];
+              
+              return (
+                <div 
+                  key={index} 
+                  className={`group bg-gradient-to-br ${gradientColors[index]} border-2 rounded-2xl p-5 hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg`}
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className={`w-14 h-14 bg-gradient-to-br ${iconGradients[index]} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                      <Icon name={stat?.icon} size={24} className="text-white" />
+                    </div>
+                  </div>
+                  <div>
+                    <p className={`text-3xl font-bold ${textColors[index]} mb-1`}>
+                      {stat?.value}
+                    </p>
+                    <p className={`text-sm font-semibold ${subtitleColors[index]}`}>
+                      {stat?.label}
+                    </p>
                   </div>
                 </div>
-                <div>
-                  <p className="font-heading font-heading-bold text-2xl text-text-primary mb-0.5">
-                    {stat?.value}
-                  </p>
-                  <p className="font-body font-body-medium text-sm text-text-secondary">
-                    {stat?.label}
-                  </p>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
 
           {/* Tab Navigation - Modernisé & Sticky */}
-          <div className="sticky top-16 z-40 bg-white rounded-2xl shadow-md border border-gray-200 mb-4 backdrop-blur-xl bg-white/95">
+          <div className="sticky top-16 z-40 bg-white rounded-2xl shadow-xl border-2 border-gray-200 mb-6 backdrop-blur-xl bg-white/95">
             {/* Desktop Tab Navigation - Compact Grid */}
             <div className="hidden lg:block p-4">
               <div className="flex items-center mb-3">
@@ -563,14 +590,17 @@ const SecretaryDashboard = () => {
           </div>
 
           {/* Quick Actions Footer - Modernisé */}
-          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 rounded-2xl border-2 border-amber-200 p-4 shadow-md">
-            <div className="flex items-center mb-5">
-              <div className="w-10 h-10 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
-                <Icon name="Zap" size={20} className="text-white" />
+          <div className="bg-gradient-to-br from-amber-50 via-orange-50 to-red-50 rounded-2xl border-2 border-amber-300 p-6 shadow-lg hover:shadow-xl transition-shadow">
+            <div className="flex items-center mb-6">
+              <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center mr-3 shadow-md">
+                <Icon name="Zap" size={24} className="text-white" />
               </div>
-              <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-                Actions rapides
-              </h3>
+              <div>
+                <h3 className="text-lg font-semibold text-amber-900">
+                  Actions Rapides
+                </h3>
+                <p className="text-xs text-amber-700">Raccourcis pour vos tâches courantes</p>
+              </div>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <Button
@@ -578,9 +608,9 @@ const SecretaryDashboard = () => {
                 iconName="CheckSquare"
                 iconPosition="left"
                 onClick={() => setActiveTab('tasks')}
-                className="justify-start bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 border-2 border-green-200 hover:border-green-400 hover:shadow-md transition-all duration-300 py-6 group"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 border-2 border-green-200 hover:border-green-400 hover:shadow-lg hover:scale-105 transition-all duration-300 py-6 group rounded-xl"
               >
-                <span className="font-body font-body-semibold group-hover:text-green-700">
+                <span className="font-semibold group-hover:text-green-700">
                   Mes tâches du jour
                 </span>
               </Button>
@@ -589,9 +619,9 @@ const SecretaryDashboard = () => {
                 iconName="Phone"
                 iconPosition="left"
                 onClick={() => setActiveTab('justifications')}
-                className="justify-start bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 border-2 border-blue-200 hover:border-blue-400 hover:shadow-md transition-all duration-300 py-6 group"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 border-2 border-blue-200 hover:border-blue-400 hover:shadow-lg hover:scale-105 transition-all duration-300 py-6 group rounded-xl"
               >
-                <span className="font-body font-body-semibold group-hover:text-blue-700">
+                <span className="font-semibold group-hover:text-blue-700">
                   Appels parents urgents
                 </span>
               </Button>
@@ -600,9 +630,9 @@ const SecretaryDashboard = () => {
                 iconName="Calendar"
                 iconPosition="left"
                 onClick={() => setActiveTab('planning')}
-                className="justify-start bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 border-2 border-purple-200 hover:border-purple-400 hover:shadow-md transition-all duration-300 py-6 group"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-pink-50 border-2 border-purple-200 hover:border-purple-400 hover:shadow-lg hover:scale-105 transition-all duration-300 py-6 group rounded-xl"
               >
-                <span className="font-body font-body-semibold group-hover:text-purple-700">
+                <span className="font-semibold group-hover:text-purple-700">
                   Planning rendez-vous
                 </span>
               </Button>
@@ -611,9 +641,9 @@ const SecretaryDashboard = () => {
                 iconName="FileText"
                 iconPosition="left"
                 onClick={() => setActiveTab('documents')}
-                className="justify-start bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 border-2 border-orange-200 hover:border-orange-400 hover:shadow-md transition-all duration-300 py-6 group"
+                className="justify-start bg-white hover:bg-gradient-to-r hover:from-orange-50 hover:to-red-50 border-2 border-orange-200 hover:border-orange-400 hover:shadow-lg hover:scale-105 transition-all duration-300 py-6 group rounded-xl"
               >
-                <span className="font-body font-body-semibold group-hover:text-orange-700">
+                <span className="font-semibold group-hover:text-orange-700">
                   Certificats à imprimer
                 </span>
               </Button>

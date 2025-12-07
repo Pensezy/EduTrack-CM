@@ -92,56 +92,67 @@ const AttendanceCalendar = ({ attendanceData }) => {
   const attendanceRate = totalDays > 0 ? Math.round((attendanceStats?.present / totalDays) * 100) : 0;
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border">
-      <div className="p-6 border-b border-border">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="font-heading font-heading-semibold text-lg text-card-foreground">
-            Présences
-          </h3>
+    <div className="bg-white rounded-2xl shadow-lg border-2 border-cyan-200 overflow-hidden">
+      <div className="bg-gradient-to-r from-cyan-50 to-teal-50 p-6 border-b-2 border-cyan-100">
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-gradient-to-br from-cyan-600 to-teal-600 shadow-lg">
+              <Icon name="Calendar" size={22} className="text-white" />
+            </div>
+            <h3 className="font-display font-bold text-xl bg-gradient-to-r from-cyan-700 to-teal-700 bg-clip-text text-transparent">
+              Présences
+            </h3>
+          </div>
           <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" onClick={() => navigateMonth(-1)}>
-              <Icon name="ChevronLeft" size={16} />
-            </Button>
-            <span className="font-body font-body-semibold text-sm text-card-foreground min-w-[120px] text-center">
+            <button 
+              onClick={() => navigateMonth(-1)}
+              className="p-2 rounded-xl bg-white border-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 transition-all shadow-sm hover:shadow-md"
+            >
+              <Icon name="ChevronLeft" size={18} />
+            </button>
+            <span className="font-body-bold text-sm text-gray-800 min-w-[120px] text-center px-3">
               {monthNames?.[currentMonth?.getMonth()]} {currentMonth?.getFullYear()}
             </span>
-            <Button variant="ghost" size="icon" onClick={() => navigateMonth(1)}>
-              <Icon name="ChevronRight" size={16} />
-            </Button>
+            <button 
+              onClick={() => navigateMonth(1)}
+              className="p-2 rounded-xl bg-white border-2 border-cyan-200 text-cyan-700 hover:bg-cyan-50 hover:border-cyan-300 transition-all shadow-sm hover:shadow-md"
+            >
+              <Icon name="ChevronRight" size={18} />
+            </button>
           </div>
         </div>
 
-        {/* Attendance Stats */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-4">
-          <div className="bg-success/10 rounded-lg p-3 text-center">
-            <div className="font-heading font-heading-bold text-lg text-success">
+        {/* Attendance Stats - Modernisé */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
+          <div className="bg-white border-2 border-green-200 rounded-xl p-4 text-center shadow-md hover:shadow-lg transition-all hover:scale-105">
+            <div className="text-2xl font-display font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
               {attendanceStats?.present}
             </div>
-            <div className="font-caption font-caption-normal text-xs text-muted-foreground">
+            <div className="font-body-medium text-xs text-gray-600 mt-1">
               Présent
             </div>
           </div>
-          <div className="bg-error/10 rounded-lg p-3 text-center">
-            <div className="font-heading font-heading-bold text-lg text-error">
+          <div className="bg-white border-2 border-red-200 rounded-xl p-4 text-center shadow-md hover:shadow-lg transition-all hover:scale-105">
+            <div className="text-2xl font-display font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
               {attendanceStats?.absent}
             </div>
-            <div className="font-caption font-caption-normal text-xs text-muted-foreground">
+            <div className="font-body-medium text-xs text-gray-600 mt-1">
               Absent
             </div>
           </div>
-          <div className="bg-warning/10 rounded-lg p-3 text-center">
-            <div className="font-heading font-heading-bold text-lg text-warning">
+          <div className="bg-white border-2 border-yellow-200 rounded-xl p-4 text-center shadow-md hover:shadow-lg transition-all hover:scale-105">
+            <div className="text-2xl font-display font-bold bg-gradient-to-r from-yellow-600 to-amber-600 bg-clip-text text-transparent">
               {attendanceStats?.late}
             </div>
-            <div className="font-caption font-caption-normal text-xs text-muted-foreground">
+            <div className="font-body-medium text-xs text-gray-600 mt-1">
               Retard
             </div>
           </div>
-          <div className="bg-primary/10 rounded-lg p-3 text-center">
-            <div className="font-heading font-heading-bold text-lg text-primary">
+          <div className="bg-white border-2 border-blue-200 rounded-xl p-4 text-center shadow-md hover:shadow-lg transition-all hover:scale-105">
+            <div className="text-2xl font-display font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               {attendanceRate}%
             </div>
-            <div className="font-caption font-caption-normal text-xs text-muted-foreground">
+            <div className="font-body-medium text-xs text-gray-600 mt-1">
               Taux
             </div>
           </div>
@@ -149,10 +160,10 @@ const AttendanceCalendar = ({ attendanceData }) => {
       </div>
       <div className="p-6">
         {/* Calendar Header */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-1 mb-3">
           {dayNames?.map(day => (
             <div key={day} className="p-2 text-center">
-              <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+              <span className="font-body-bold text-xs text-gray-700">
                 {day}
               </span>
             </div>

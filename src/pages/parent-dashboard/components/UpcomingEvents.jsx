@@ -83,24 +83,29 @@ const UpcomingEvents = ({ events, selectedSchool, selectedChild }) => {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Événements à Venir
-        </h3>
-        <div className="flex items-center gap-2">
-          <Icon name="Calendar" size={16} className="text-primary" />
-          <span className="font-caption font-caption-semibold text-sm text-primary">
-            {sortedEvents?.length} événement{sortedEvents?.length > 1 ? 's' : ''}
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-8">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 shadow-md">
+            <Icon name="Calendar" size={24} className="text-white" />
+          </div>
+          <h3 className="font-display font-bold text-2xl text-gray-900">
+            Événements à Venir
+          </h3>
+        </div>
+        <div className="flex items-center gap-2 px-4 py-2.5 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl shadow-md text-white">
+          <Icon name="Star" size={18} />
+          <span className="font-body-bold text-sm">
+            {sortedEvents?.length}
           </span>
         </div>
       </div>
 
       {selectedChild && (
-        <div className="mb-6 p-3 bg-primary/5 rounded-lg border border-primary/20">
-          <p className="font-body font-body-normal text-sm text-muted-foreground">
-            Événements concernant <span className="font-body-semibold text-primary">{selectedChild?.name}</span> à 
-            <span className="font-body-semibold text-primary"> {selectedChild?.school}</span>
+        <div className="mb-6 p-4 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl border-2 border-indigo-200 shadow-sm">
+          <p className="font-body-medium text-sm text-gray-700">
+            Événements concernant <span className="font-body-bold text-indigo-700">{selectedChild?.name}</span> à 
+            <span className="font-body-bold text-indigo-700"> {selectedChild?.school}</span>
           </p>
         </div>
       )}
@@ -114,9 +119,11 @@ const UpcomingEvents = ({ events, selectedSchool, selectedChild }) => {
           return (
             <div
               key={event?.id}
-              className={`border-l-4 rounded-lg p-4 transition-all ${
-                isPast ? 'border-l-muted bg-muted/5 opacity-60' : isUrgent ?'border-l-error bg-error/5' : 'border-l-primary bg-primary/5'
-              } ${isUrgent && !isPast ? 'shadow-md' : 'shadow-sm'}`}
+              className={`border-l-4 rounded-xl p-5 transition-all border-2 hover:scale-[1.02] ${
+                isPast ? 'border-l-gray-400 border-gray-200 bg-gray-50 opacity-60' : 
+                isUrgent ? 'border-l-red-500 border-red-200 bg-gradient-to-r from-red-50 to-rose-50 shadow-lg' : 
+                'border-l-indigo-500 border-indigo-200 bg-gradient-to-r from-indigo-50 to-purple-50 shadow-md'
+              }`}
             >
               <div className="flex items-start gap-4">
                 <div className={`p-3 rounded-lg ${getEventColor(event?.type)} ${isPast ? 'opacity-60' : ''}`}>

@@ -1963,98 +1963,120 @@ const AccountsManagement = () => {
     }
   };
 
-  // Vue d'ensemble avec statistiques
+  // Vue d'ensemble avec statistiques - Modernisée
   const renderOverview = () => (
     <div className="space-y-6">
-      {/* Statistiques générales */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-blue-50 rounded-lg p-6">
+      {/* Statistiques générales - Modernisées */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-blue-600">Total Comptes</p>
-              <p className="text-2xl font-bold text-blue-900">{accountStats.total}</p>
+              <p className="text-sm font-semibold text-blue-700 mb-1">Total Comptes</p>
+              <p className="text-3xl font-bold text-blue-900">{accountStats.total}</p>
             </div>
-            <Icon name="Users" size={24} className="text-blue-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
+              <Icon name="Users" size={24} className="text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-green-50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-green-600">Comptes Actifs</p>
-              <p className="text-2xl font-bold text-green-900">{accountStats.active}</p>
+              <p className="text-sm font-semibold text-green-700 mb-1">Comptes Actifs</p>
+              <p className="text-3xl font-bold text-green-900">{accountStats.active}</p>
             </div>
-            <Icon name="CheckCircle" size={24} className="text-green-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center shadow-md">
+              <Icon name="CheckCircle" size={24} className="text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-red-50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-red-50 to-pink-50 border-2 border-red-200 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-red-600">Comptes Inactifs</p>
-              <p className="text-2xl font-bold text-red-900">{accountStats.inactive}</p>
+              <p className="text-sm font-semibold text-red-700 mb-1">Comptes Inactifs</p>
+              <p className="text-3xl font-bold text-red-900">{accountStats.inactive}</p>
             </div>
-            <Icon name="XCircle" size={24} className="text-red-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-red-500 to-pink-500 rounded-xl flex items-center justify-center shadow-md">
+              <Icon name="XCircle" size={24} className="text-white" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-orange-50 rounded-lg p-6">
+        <div className="bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-amber-200 rounded-2xl p-6 shadow-lg hover:shadow-xl hover:scale-105 transition-all">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-orange-600">Comptes Bloqués</p>
-              <p className="text-2xl font-bold text-orange-900">{accountStats.locked}</p>
+              <p className="text-sm font-semibold text-amber-700 mb-1">Comptes Bloqués</p>
+              <p className="text-3xl font-bold text-amber-900">{accountStats.locked}</p>
             </div>
-            <Icon name="Lock" size={24} className="text-orange-600" />
+            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
+              <Icon name="Lock" size={24} className="text-white" />
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Répartition par rôle */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Répartition par rôle</h3>
+      {/* Répartition par rôle - Modernisée */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="flex items-center mb-6">
+          <div className="w-10 h-10 bg-gradient-to-br from-purple-600 to-pink-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+            <Icon name="BarChart3" size={20} className="text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">Répartition par rôle</h3>
+            <p className="text-xs text-gray-500">Statistiques des différents types de comptes</p>
+          </div>
+        </div>
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {Object.entries(accountStats.byRole)
             .filter(([role]) => role !== 'principal') // Exclure les directeurs
             .map(([role, count]) => (
-            <div key={role} className="text-center p-4 bg-gray-50 rounded-lg">
-              <Icon name={
-                role === 'teacher' ? 'GraduationCap' :
-                role === 'secretary' ? 'UserCheck' :
-                role === 'student' ? 'User' : 'Users'
-              } size={20} className="mx-auto mb-2 text-gray-600" />
-              <p className="text-sm font-medium text-gray-600 capitalize">
+            <div key={role} className="text-center p-5 bg-gradient-to-br from-gray-50 to-white border-2 border-gray-200 rounded-xl hover:border-blue-400 hover:shadow-lg hover:scale-105 transition-all">
+              <div className="w-10 h-10 bg-gradient-to-br from-blue-100 to-indigo-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                <Icon name={
+                  role === 'teacher' ? 'GraduationCap' :
+                  role === 'secretary' ? 'UserCheck' :
+                  role === 'student' ? 'User' : 'Users'
+                } size={20} className="text-blue-600" />
+              </div>
+              <p className="text-sm font-semibold text-gray-700 capitalize mb-1">
                 {role === 'teacher' ? 'Enseignants' :
                  role === 'secretary' ? 'Secrétaires' :
                  role === 'student' ? 'Élèves' :
                  role === 'parent' ? 'Parents' : role}
               </p>
-              <p className="text-xl font-bold text-gray-900">{count}</p>
+              <p className="text-2xl font-bold text-gray-900">{count}</p>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Indicateur de configuration Email */}
-      <div className={`rounded-lg border p-4 flex items-start space-x-3 ${
+      {/* Indicateur de configuration Email - Modernisé */}
+      <div className={`rounded-2xl border-2 p-5 flex items-start space-x-4 shadow-md ${
         isEmailConfigured() 
-          ? 'bg-green-50 border-green-200' 
-          : 'bg-yellow-50 border-yellow-200'
+          ? 'bg-gradient-to-r from-green-50 to-emerald-50 border-green-200' 
+          : 'bg-gradient-to-r from-amber-50 to-orange-50 border-amber-300'
       }`}>
-        <Icon 
-          name={isEmailConfigured() ? "CheckCircle" : "AlertTriangle"} 
-          size={20} 
-          className={isEmailConfigured() ? "text-green-600 mt-0.5" : "text-yellow-600 mt-0.5"} 
-        />
+        <div className={`w-12 h-12 rounded-xl flex items-center justify-center shadow-md ${
+          isEmailConfigured()
+            ? 'bg-gradient-to-br from-green-600 to-emerald-600'
+            : 'bg-gradient-to-br from-amber-500 to-orange-500'
+        }`}>
+          <Icon 
+            name={isEmailConfigured() ? "CheckCircle" : "AlertTriangle"} 
+            size={24} 
+            className="text-white"
+          />
+        </div>
         <div className="flex-1">
-          <div className="flex items-center space-x-2 mb-1">
-            <Icon name="Mail" size={16} className={isEmailConfigured() ? "text-green-600" : "text-yellow-600"} />
-            <h4 className={`text-sm font-semibold ${
-              isEmailConfigured() ? 'text-green-900' : 'text-yellow-900'
-            }`}>
+          <div className="flex items-center space-x-2 mb-2">
+            <Icon name="Mail" size={16} className={isEmailConfigured() ? "text-green-700" : "text-amber-700"} />
+            <h4 className={`text-sm font-semibold ${isEmailConfigured() ? "text-green-900" : "text-amber-900"}`}>
               {isEmailConfigured() ? '✅ Envoi automatique d\'emails activé' : '⚠️ Envoi automatique d\'emails désactivé'}
             </h4>
           </div>
-          <p className={`text-sm ${isEmailConfigured() ? 'text-green-700' : 'text-yellow-700'}`}>
+          <p className={`text-sm ${isEmailConfigured() ? 'text-green-700' : 'text-amber-700'}`}>
             {isEmailConfigured() 
               ? 'Les identifiants seront automatiquement envoyés par email au personnel lors de la création de leur compte.'
               : 'Les identifiants seront affichés à l\'écran pour communication manuelle. Pour activer l\'envoi automatique, consultez docs/GUIDE_RAPIDE_EMAIL.md'

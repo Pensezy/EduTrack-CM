@@ -468,6 +468,7 @@ const TeacherDashboard = () => {
           email: teacherInfo.users?.email,
           phone: teacherInfo.users?.phone,
           specialty: teacherInfo.specialty,
+          school: teacherInfo.schools?.name || 'Établissement non renseigné',
           employeeId: `ENS-${teacherInfo.id.substring(0, 8)}`,
           assignedClasses: (assignments || []).map(assignment => {
             const students = studentsDataByClass[assignment.id] || [];
@@ -729,171 +730,204 @@ const TeacherDashboard = () => {
       case 'account':
         return (
           <div className="space-y-6">
-            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mon Profil</h2>
+            {/* Header modernisé */}
+            <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
+              <div className="flex items-center space-x-3">
+                <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-3xl">
+                  👤
+                </div>
+                <div>
+                  <h2 className="font-display font-bold text-2xl">
+                    Mon Profil Enseignant
+                  </h2>
+                  <p className="text-indigo-100 text-sm mt-1">
+                    Informations personnelles et professionnelles
+                  </p>
+                </div>
+              </div>
+            </div>
             
-            {/* Carte principale du profil */}
-            <div className="bg-card rounded-lg border border-border p-6">
-              <div className="flex items-start space-x-6 mb-6">
-                <div className="w-24 h-24 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                  <Icon name="User" size={48} className="text-primary" />
+            {/* Carte principale du profil - Modernisée */}
+            <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-8">
+              <div className="flex items-start space-x-6 mb-8">
+                <div className="w-28 h-28 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                  <Icon name="User" size={56} className="text-white" />
                 </div>
                 <div className="flex-1">
-                  <h3 className="font-heading font-heading-bold text-2xl text-card-foreground mb-2">
+                  <h3 className="font-display font-bold text-3xl text-gray-900 mb-3">
                     {teacherData?.name || 'Nom non disponible'}
                   </h3>
-                  <div className="space-y-1 text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                      <Icon name="Mail" size={16} />
-                      <span>{teacherData?.email || 'Email non renseigné'}</span>
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+                      <div className="p-1.5 rounded-lg bg-blue-100">
+                        <Icon name="Mail" size={18} className="text-blue-600" />
+                      </div>
+                      <span className="font-body-medium text-gray-700">{teacherData?.email || 'Email non renseigné'}</span>
                     </div>
                     {teacherData?.phone && (
-                      <div className="flex items-center gap-2">
-                        <Icon name="Phone" size={16} />
-                        <span>{teacherData.phone}</span>
+                      <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+                        <div className="p-1.5 rounded-lg bg-green-100">
+                          <Icon name="Phone" size={18} className="text-green-600" />
+                        </div>
+                        <span className="font-body-medium text-gray-700">{teacherData.phone}</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-2">
-                      <Icon name="Hash" size={16} />
-                      <span>Matricule: {teacherData?.employeeId || 'Non attribué'}</span>
+                    <div className="flex items-center gap-3 p-2 bg-gray-50 rounded-xl">
+                      <div className="p-1.5 rounded-lg bg-purple-100">
+                        <Icon name="Hash" size={18} className="text-purple-600" />
+                      </div>
+                      <span className="font-body-medium text-gray-700">Matricule: {teacherData?.employeeId || 'Non attribué'}</span>
                     </div>
                   </div>
                 </div>
-                <div className="flex items-center gap-2 px-4 py-2 bg-success/10 text-success rounded-lg">
-                  <Icon name="CheckCircle" size={20} />
-                  <span className="font-caption font-caption-semibold">Actif</span>
+                <div className="flex items-center gap-2 px-5 py-3 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl shadow-md">
+                  <Icon name="CheckCircle" size={22} />
+                  <span className="font-body-bold">Actif</span>
                 </div>
               </div>
 
-              <div className="border-t border-border pt-6">
-                <h4 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+              <div className="border-t-2 border-gray-100 pt-8">
+                <h4 className="font-body-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
+                  <Icon name="Briefcase" size={24} className="text-indigo-600" />
                   Informations professionnelles
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {/* Spécialité - N'afficher que si disponible */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {/* Spécialité - Modernisée */}
                   {teacherData?.specialty && (
-                    <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon name="BookOpen" size={18} className="text-primary" />
-                        <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                    <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border-2 border-blue-200 shadow-md hover:shadow-lg transition-all">
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
+                          <Icon name="BookOpen" size={20} className="text-white" />
+                        </div>
+                        <div className="text-sm font-body-bold text-gray-600">
                           Spécialité
                         </div>
                       </div>
-                      <div className="font-heading font-heading-medium text-card-foreground">
+                      <div className="font-body-bold text-lg text-gray-900">
                         {teacherData.specialty}
                       </div>
                     </div>
                   )}
 
-                  {/* Établissement */}
-                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon name="School" size={18} className="text-primary" />
-                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                  {/* Établissement - Modernisé */}
+                  <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-5 border-2 border-purple-200 shadow-md hover:shadow-lg transition-all">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 shadow-md">
+                        <Icon name="School" size={20} className="text-white" />
+                      </div>
+                      <div className="text-sm font-body-bold text-gray-600">
                         Établissement
                       </div>
                     </div>
-                    <div className="font-heading font-heading-medium text-card-foreground">
-                      {teacherData?.assignedClasses?.[0]?.school || 'Non assigné'}
+                    <div className="font-body-bold text-lg text-gray-900">
+                      {teacherData?.school || teacherData?.assignedClasses?.[0]?.school || 'Non renseigné'}
                     </div>
                   </div>
+                </div>
 
+                {/* Statistiques - Modernisées */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {/* Classes assignées */}
-                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon name="GraduationCap" size={18} className="text-success" />
-                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                  <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border-2 border-green-200 shadow-md hover:shadow-xl transition-all hover:scale-105">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 shadow-md">
+                        <Icon name="GraduationCap" size={22} className="text-white" />
+                      </div>
+                      <div className="text-sm font-body-bold text-gray-600">
                         Classes assignées
                       </div>
                     </div>
-                    <div className="font-heading font-heading-bold text-2xl text-success">
+                    <div className="text-4xl font-display font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
                       {teacherData?.assignedClasses?.length || 0}
                     </div>
                   </div>
 
                   {/* Total élèves */}
-                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon name="Users" size={18} className="text-warning" />
-                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
+                  <div className="bg-gradient-to-br from-orange-50 to-amber-50 rounded-2xl p-5 border-2 border-orange-200 shadow-md hover:shadow-xl transition-all hover:scale-105">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-orange-500 to-amber-600 shadow-md">
+                        <Icon name="Users" size={22} className="text-white" />
+                      </div>
+                      <div className="text-sm font-body-bold text-gray-600">
                         Total élèves
                       </div>
                     </div>
-                    <div className="font-heading font-heading-bold text-2xl text-warning">
+                    <div className="text-4xl font-display font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
                       {getTotalStudents() || 0}
                     </div>
                   </div>
 
                   {/* Heures par semaine */}
-                  <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Icon name="Clock" size={18} className="text-accent-foreground" />
-                      <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
-                        Heures/semaine
+                  <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border-2 border-blue-200 shadow-md hover:shadow-xl transition-all hover:scale-105">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="p-2.5 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 shadow-md">
+                        <Icon name="Clock" size={22} className="text-white" />
+                      </div>
+                      <div className="text-sm font-body-bold text-gray-600">
+                        Heures / semaine
                       </div>
                     </div>
-                    <div className="font-heading font-heading-bold text-2xl text-accent-foreground">
+                    <div className="text-4xl font-display font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                       {teacherData?.assignedClasses?.reduce((total, cls) => {
                         return total + (cls.schedule?.weekly_hours || 0);
-                      }, 0) || 0}h
+                      }, 0) || 0}<span className="text-2xl">h</span>
                     </div>
                   </div>
-
-                  {/* ID utilisateur - N'afficher que si nécessaire */}
-                  {teacherData?.id && (
-                    <div className="bg-muted/30 rounded-lg p-4 border border-border">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Icon name="Key" size={18} className="text-muted-foreground" />
-                        <div className="text-sm font-caption font-caption-semibold text-muted-foreground">
-                          ID Utilisateur
-                        </div>
-                      </div>
-                      <div className="font-mono text-xs text-muted-foreground truncate">
-                        {teacherData.id.substring(0, 8)}...
-                      </div>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Liste des classes assignées */}
+              {/* Liste des classes assignées - Modernisée */}
               {teacherData?.assignedClasses && teacherData.assignedClasses.length > 0 && (
-                <div className="border-t border-border pt-6 mt-6">
-                  <h4 className="font-heading font-heading-semibold text-lg text-card-foreground mb-4">
+                <div className="border-t-2 border-gray-100 pt-8 mt-8">
+                  <h4 className="font-body-bold text-xl text-gray-900 mb-6 flex items-center gap-2">
+                    <Icon name="BookOpen" size={24} className="text-green-600" />
                     Mes classes et matières
                   </h4>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 gap-3">
                     {teacherData.assignedClasses.map((cls, index) => (
                       <div 
                         key={cls.id} 
-                        className="flex items-center justify-between p-3 bg-muted/20 rounded-lg border border-border hover:bg-muted/40 transition-colors"
+                        className="group bg-gradient-to-br from-gray-50 to-white rounded-2xl p-5 border-2 border-gray-200 shadow-md hover:shadow-xl hover:scale-102 transition-all duration-300"
                       >
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-                            <span className="font-heading font-heading-bold text-primary">
-                              {index + 1}
-                            </span>
-                          </div>
-                          <div>
-                            <div className="font-heading font-heading-medium text-card-foreground">
-                              {cls.name}
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center shadow-md group-hover:scale-110 transition-transform">
+                              <span className="font-display font-bold text-white text-lg">
+                                {index + 1}
+                              </span>
                             </div>
-                            <div className="text-sm text-muted-foreground">
-                              {cls.subject}
-                              {cls.level && cls.level !== 'Non défini' && ` • ${cls.level}`}
+                            <div>
+                              <div className="font-display font-bold text-lg text-gray-900">
+                                {cls.name}
+                              </div>
+                              <div className="flex items-center gap-2 text-sm text-gray-600 mt-1">
+                                <span className="px-3 py-1 bg-indigo-100 text-indigo-700 rounded-lg font-body-bold">
+                                  {cls.subject}
+                                </span>
+                                {cls.level && cls.level !== 'Non défini' && (
+                                  <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-lg font-body-bold">
+                                    {cls.level}
+                                  </span>
+                                )}
+                              </div>
                             </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm">
-                          <div className="flex items-center gap-1 text-muted-foreground">
-                            <Icon name="Users" size={14} />
-                            <span>{cls.students} élève{cls.students > 1 ? 's' : ''}</span>
-                          </div>
-                          {cls.schedule?.weekly_hours > 0 && (
-                            <div className="flex items-center gap-1 text-muted-foreground">
-                              <Icon name="Clock" size={14} />
-                              <span>{cls.schedule.weekly_hours}h/sem</span>
+                          <div className="flex items-center gap-6">
+                            <div className="flex items-center gap-2 px-4 py-2 bg-orange-50 rounded-xl border border-orange-200">
+                              <Icon name="Users" size={18} className="text-orange-600" />
+                              <span className="font-body-bold text-orange-700">
+                                {cls.students} élève{cls.students > 1 ? 's' : ''}
+                              </span>
                             </div>
-                          )}
+                            {cls.schedule?.weekly_hours > 0 && (
+                              <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 rounded-xl border border-blue-200">
+                                <Icon name="Clock" size={18} className="text-blue-600" />
+                                <span className="font-body-bold text-blue-700">
+                                  {cls.schedule.weekly_hours}h/sem
+                                </span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
@@ -907,65 +941,102 @@ const TeacherDashboard = () => {
       default: // 'dashboard'
         return (
           <>
-            {/* Message si aucune classe assignée - Affiché peu importe le mode */}
-            {(!teacherData?.assignedClasses || teacherData?.assignedClasses?.length === 0) && (
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-8 text-center">
-                <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Icon name="GraduationCap" size={40} className="text-blue-600" />
+            {/* Bandeau de bienvenue modernisé */}
+            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl shadow-xl p-6 text-white mb-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center text-3xl">
+                    🎓
+                  </div>
+                  <div>
+                    <p className="text-green-100 text-sm">{getGreeting()},</p>
+                    <h2 className="font-display font-bold text-2xl">
+                      {teacherData?.name || 'Enseignant'}
+                    </h2>
+                    <p className="text-green-100 text-sm mt-1">
+                      {teacherData?.specialty || 'Matière'} • {teacherData?.assignedClasses?.length || 0} classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}
+                    </p>
+                  </div>
                 </div>
-                <h3 className="text-xl font-semibold text-blue-900 mb-2">
+                <div className="text-right hidden sm:block">
+                  <p className="text-green-100 text-sm">{currentTime.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</p>
+                  <p className="font-display font-bold text-2xl">{currentTime.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Message si aucune classe assignée - Modernisé */}
+            {(!teacherData?.assignedClasses || teacherData?.assignedClasses?.length === 0) && (
+              <div className="bg-white border-2 border-blue-200 rounded-2xl shadow-lg p-12 text-center">
+                <div className="inline-flex p-4 rounded-full bg-gradient-to-br from-blue-100 to-indigo-200 mb-4">
+                  <Icon name="GraduationCap" size={48} className="text-blue-600" />
+                </div>
+                <h3 className="text-2xl font-display font-bold text-gray-900 mb-2">
                   Aucune classe assignée
                 </h3>
-                <p className="text-blue-700 mb-4">
+                <p className="text-gray-600 font-body-medium mb-6 max-w-md mx-auto">
                   Vous n'avez pas encore de classes assignées. Contactez votre directeur d'établissement pour obtenir vos affectations de cours.
                 </p>
-                <div className="bg-blue-100 rounded-lg p-4 inline-block">
-                  <p className="text-sm text-blue-800">
-                    <strong>💡 Conseil :</strong> Une fois vos classes assignées, vous pourrez :
+                <div className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-6 inline-block">
+                  <p className="text-sm text-gray-800 font-body-bold mb-3">
+                    💡 Conseil : Une fois vos classes assignées, vous pourrez :
                   </p>
-                  <ul className="text-sm text-blue-700 mt-2 text-left space-y-1">
-                    <li>• Gérer les notes de vos élèves</li>
-                    <li>• Suivre les présences</li>
-                    <li>• Partager des documents pédagogiques</li>
-                    <li>• Communiquer avec les élèves et parents</li>
+                  <ul className="text-sm text-gray-700 text-left space-y-2">
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Gérer les notes de vos élèves
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Suivre les présences
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Partager des documents pédagogiques
+                    </li>
+                    <li className="flex items-center gap-2">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full"></span>
+                      Communiquer avec les élèves et parents
+                    </li>
                   </ul>
                 </div>
               </div>
             )}
 
-            {/* Mode Selector - Affiché uniquement si l'enseignant a des classes */}
+            {/* Mode Selector - Modernisé */}
             {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 && (
-              <div className="bg-card rounded-lg border border-border p-4">
-                <div className="flex items-center justify-between">
+              <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg p-6">
+                <div className="flex items-center justify-between flex-wrap gap-4">
                   <div>
-                    <h3 className="font-heading font-heading-medium text-base text-text-primary mb-1">
+                    <h3 className="font-body-bold text-lg text-gray-900 mb-1 flex items-center gap-2">
+                      <Icon name="Layout" size={20} className="text-green-600" />
                       Mode d'affichage
                     </h3>
-                    <p className="text-sm text-text-secondary">
+                    <p className="text-sm text-gray-600 font-body-medium">
                       Choisissez entre vue établissement unique ou multi-établissements
                     </p>
                   </div>
-                  <div className="flex items-center space-x-2">
+                  <div className="flex items-center space-x-3">
                     <button
                       onClick={() => setViewMode('single')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg ${
                         viewMode === 'single'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-text-secondary hover:text-text-primary'
+                          ? 'bg-gradient-to-r from-green-600 to-emerald-600 text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
                       }`}
                     >
-                      <Icon name="School" size={16} className="mr-2 inline" />
+                      <Icon name="School" size={18} className="mr-2 inline" />
                       Vue Simple
                     </button>
                     <button
                       onClick={() => setViewMode('multi-school')}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      className={`px-6 py-3 rounded-xl text-sm font-bold transition-all shadow-md hover:shadow-lg ${
                         viewMode === 'multi-school'
-                          ? 'bg-primary text-primary-foreground'
-                          : 'bg-muted text-text-secondary hover:text-text-primary'
+                          ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white'
+                          : 'bg-white text-gray-600 hover:bg-gray-50 border-2 border-gray-200'
                       }`}
                     >
-                      <Icon name="Building" size={16} className="mr-2 inline" />
+                      <Icon name="Building" size={18} className="mr-2 inline" />
                       Multi-Établissements
                     </button>
                   </div>
@@ -1052,29 +1123,36 @@ const TeacherDashboard = () => {
       }`}>
         <div className="p-4 lg:p-6 space-y-6">
           
-          {/* Indicateur de chargement */}
+          {/* Indicateur de chargement modernisé */}
           {loading && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-              <p className="text-blue-700 font-medium">Chargement de vos données...</p>
+            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-2xl p-8 text-center shadow-lg">
+              <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+              <p className="text-blue-900 font-display font-bold text-lg">Chargement de vos données...</p>
+              <p className="text-blue-600 text-sm mt-2">Veuillez patienter</p>
             </div>
           )}
 
-          {/* Indicateur de mode */}
+          {/* Indicateur de mode modernisé */}
           {!loading && (
-            <div className={`rounded-lg p-3 ${
+            <div className={`rounded-2xl p-4 shadow-md border-2 ${
               isProduction 
-                ? 'bg-green-50 border border-green-200' 
-                : 'bg-orange-50 border border-orange-200'
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200' 
+                : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200'
             }`}>
-              <div className="flex items-center space-x-2">
-                <Icon 
-                  name={isProduction ? "CheckCircle2" : "AlertCircle"} 
-                  size={18} 
-                  className={isProduction ? "text-green-600" : "text-orange-600"} 
-                />
-                <span className={`text-sm font-medium ${
-                  isProduction ? 'text-green-800' : 'text-orange-800'
+              <div className="flex items-center space-x-3">
+                <div className={`p-2 rounded-xl shadow-md ${
+                  isProduction 
+                    ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+                    : 'bg-gradient-to-br from-orange-500 to-amber-600'
+                }`}>
+                  <Icon 
+                    name={isProduction ? "CheckCircle2" : "AlertCircle"} 
+                    size={20} 
+                    className="text-white" 
+                  />
+                </div>
+                <span className={`font-body-bold ${
+                  isProduction ? 'text-green-900' : 'text-orange-900'
                 }`}>
                   {isProduction ? '✅ Mode PRODUCTION - Données réelles' : '🎭 Mode DÉMO - Données fictives'}
                 </span>
@@ -1082,66 +1160,54 @@ const TeacherDashboard = () => {
             </div>
           )}
 
-          {/* Welcome Section */}
+          {/* Welcome Section modernisé */}
           {!loading && teacherData && (
-            <div className="bg-gradient-to-r from-primary to-secondary rounded-lg p-6 text-white">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-                <div>
-                  <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
-                    {getGreeting()}, {teacherData?.name} ! 👩‍🏫
-                  </h1>
-                  <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
+            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl shadow-xl p-8 text-white">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                <div className="flex-1">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                      👩‍🏫
+                    </div>
+                    <div>
+                      <h1 className="font-display font-bold text-3xl lg:text-4xl">
+                        {getGreeting()}, {teacherData?.name} !
+                      </h1>
+                      <p className="text-green-100 text-sm mt-1">
+                        {currentTime?.toLocaleDateString('fr-FR', { 
+                          weekday: 'long',
+                          day: 'numeric',
+                          month: 'long',
+                          year: 'numeric'
+                        })} • {currentTime?.toLocaleTimeString('fr-FR', { 
+                          hour: '2-digit',
+                          minute: '2-digit'
+                        })}
+                      </p>
+                    </div>
+                  </div>
+                  <p className="font-body-medium text-white text-lg mt-4">
                     {teacherData?.assignedClasses?.length > 0 
                       ? 'Gérez vos classes, évaluations et documents pédagogiques efficacement.'
                       : 'Aucune classe assignée pour le moment. Contactez votre directeur pour obtenir vos affectations.'}
                   </p>
                 </div>
                 {teacherData?.assignedClasses?.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-4 mt-3">
-                    <div className="bg-white/20 rounded-lg px-3 py-1">
-                      <span className="font-caption font-caption-semibold text-sm">
-                        {teacherData?.assignedClasses?.length} classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}
-                      </span>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md border border-white/30">
+                      <div className="text-2xl font-display font-bold">{teacherData?.assignedClasses?.length}</div>
+                      <div className="text-xs text-green-100 mt-1">Classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}</div>
                     </div>
-                    <div className="bg-white/20 rounded-lg px-3 py-1">
-                      <span className="font-caption font-caption-semibold text-sm">
-                        {getTotalStudents()} élèves
-                      </span>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md border border-white/30">
+                      <div className="text-2xl font-display font-bold">{getTotalStudents()}</div>
+                      <div className="text-xs text-green-100 mt-1">Élèves</div>
                     </div>
-                    <div className="bg-white/20 rounded-lg px-3 py-1">
-                      <span className="font-caption font-caption-semibold text-sm">
-                        {teacherData?.specialty || 'Enseignant'}
-                      </span>
-                    </div>
-                    {/* Indicateur de mode */}
-                    <div className={`rounded-lg px-3 py-1 ${
-                      isProduction 
-                        ? 'bg-green-500/30 border border-green-300' 
-                        : 'bg-orange-500/30 border border-orange-300'
-                    }`}>
-                      <span className="font-caption font-caption-semibold text-sm">
-                        {isProduction ? '✅ Production' : '🎭 Démo'}
-                      </span>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md border border-white/30 min-w-[120px]">
+                      <div className="text-sm font-body-bold">{teacherData?.specialty || 'Enseignant'}</div>
+                      <div className="text-xs text-green-100 mt-1">Spécialité</div>
                     </div>
                   </div>
                 )}
-              </div>
-              <div className="flex items-center space-x-4">
-                <div className="text-center">
-                  <div className="font-heading font-heading-bold text-xl">
-                    {currentTime?.toLocaleDateString('fr-FR', { 
-                      weekday: 'short',
-                      day: 'numeric',
-                      month: 'short'
-                    })}
-                  </div>
-                  <div className="font-caption font-caption-normal text-sm text-white/80">
-                    {currentTime?.toLocaleTimeString('fr-FR', { 
-                      hour: '2-digit',
-                      minute: '2-digit'
-                    })}
-                  </div>
-                </div>
               </div>
             </div>
           )}
@@ -1149,12 +1215,14 @@ const TeacherDashboard = () => {
           {/* Tab Content */}
           {!loading && teacherData && renderTabContent()}
           
-          {/* Message si pas de données */}
+          {/* Message si pas de données - Modernisé */}
           {!loading && !teacherData && (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
-              <Icon name="AlertTriangle" size={48} className="text-yellow-600 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-yellow-800 mb-2">Aucune donnée disponible</h3>
-              <p className="text-yellow-700">
+            <div className="bg-gradient-to-br from-yellow-50 to-amber-50 border-2 border-yellow-300 rounded-2xl p-8 text-center shadow-lg">
+              <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-yellow-500 to-amber-600 flex items-center justify-center shadow-md">
+                <Icon name="AlertTriangle" size={40} className="text-white" />
+              </div>
+              <h3 className="text-2xl font-display font-bold text-yellow-900 mb-3">Aucune donnée disponible</h3>
+              <p className="text-yellow-700 font-body-medium text-lg">
                 Veuillez contacter votre directeur pour configurer votre compte enseignant.
               </p>
             </div>

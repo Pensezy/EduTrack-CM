@@ -64,28 +64,49 @@ const parentProductionDataService = {
       }
       parentProductionDataService.ensureContext();
 
-      console.log('📚 Récupération enfants pour parent:', parentProductionDataService.currentParentId);
+      console.log('📚 Récupération enfants pour parent USER ID:', parentProductionDataService.currentParentId);
 
+      // D'abord, récupérer l'ID du parent depuis la table parents
+      const { data: parentData, error: parentError } = await supabase
+        .from('parents')
+        .select('id')
+        .eq('user_id', parentProductionDataService.currentParentId)
+        .single();
+
+      if (parentError) {
+        console.error('❌ Erreur récupération ID parent:', parentError);
+        throw parentError;
+      }
+
+      if (!parentData) {
+        console.error('❌ Aucun parent trouvé pour user_id:', parentProductionDataService.currentParentId);
+        return { data: [], error: null };
+      }
+
+      const parentTableId = parentData.id;
+      console.log('✅ ID parent dans table parents:', parentTableId);
+
+      // Maintenant, récupérer les enfants avec cet ID
       const { data, error } = await supabase
         .from('parent_students')
         .select(`
           relationship,
           is_primary,
-          student:students (
+          students!inner (
             id,
             matricule,
             full_name,
             gender,
-            birth_date,
+            date_of_birth,
             photo_url,
             is_active,
-            class:classes (
+            classes (
               id,
               name,
               level,
               section
             ),
-            school:schools (
+            schools (
               id,
               name,
               code,
@@ -95,19 +116,49 @@ const parentProductionDataService = {
             )
           )
         `)
-        .eq('parent_id', parentProductionDataService.currentParentId)
-        .eq('student.is_active', true);
+        .eq('parent_id', parentTableId)
+        .eq('students.is_active', true);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erreur Supabase:', error);
+        throw error;
+      }
+
+      console.log('📦 Données brutes reçues:', data);
 
       // Transformer les données pour avoir un format plat
-      const children = data?.map(item => ({
-        ...item.student,
-        relationship: item.relationship,
-        is_primary: item.is_primary
-      })) || [];
+      const children = data
+        ?.map(item => {
+          const student = item.students;
+          if (!student) return null;
+          
+          return {
+            id: student.id,
+            matricule: student.matricule,
+            full_name: student.full_name,
+            name: student.full_name,
+            gender: student.gender,
+            date_of_birth: student.date_of_birth,
+            birth_date: student.date_of_birth,
+            photo_url: student.photo_url,
+            photo: student.photo_url,
+            is_active: student.is_active,
+            class: student.classes,
+            class_name: student.classes?.name,
+            school: student.schools,
+            schoolId: student.schools?.id,
+            relationship: item.relationship,
+            is_primary: item.is_primary,
+            // Données par défaut pour compatibilité
+            averageGrade: 0,
+            attendanceRate: 0,
+            unreadNotifications: 0,
+            pendingPayments: 0
+          };
+        })
+        .filter(child => child !== null) || [];
 
-      console.log(`✅ ${children.length} enfant(s) trouvé(s)`);
+      console.log(`✅ ${children.length} enfant(s) trouvé(s) et formaté(s):`, children);
       return { data: children, error: null };
     } catch (error) {
       console.error('❌ Erreur récupération enfants:', error);
@@ -452,13 +503,33 @@ const parentProductionDataService = {
       }
       parentProductionDataService.ensureContext();
 
-      console.log('🏫 Récupération écoles pour parent:', parentProductionDataService.currentParentId);
+      console.log('🏫 Récupération écoles pour parent USER ID:', parentProductionDataService.currentParentId);
+
+      // D'abord, récupérer l'ID du parent depuis la table parents
+      const { data: parentData, error: parentError } = await supabase
+        .from('parents')
+        .select('id')
+        .eq('user_id', parentProductionDataService.currentParentId)
+        .single();
+
+      if (parentError) {
+        console.error('❌ Erreur récupération ID parent:', parentError);
+        throw parentError;
+      }
+
+      if (!parentData) {
+        console.error('❌ Aucun parent trouvé pour user_id:', parentProductionDataService.currentParentId);
+        return { data: [], error: null };
+      }
+
+      const parentTableId = parentData.id;
+      console.log('✅ ID parent dans table parents:', parentTableId);
 
       const { data, error } = await supabase
         .from('parent_students')
         .select(`
-          student:students (
-            school:schools (
+          students (
+            schools (
               id,
               name,
               code,
@@ -468,14 +539,19 @@ const parentProductionDataService = {
             )
           )
         `)
-        .eq('parent_id', parentProductionDataService.currentParentId);
+        .eq('parent_id', parentTableId);
 
-      if (error) throw error;
+      if (error) {
+        console.error('❌ Erreur Supabase:', error);
+        throw error;
+      }
+
+      console.log('📦 Données écoles brutes:', data);
 
       // Dédupliquer les écoles
       const schoolsMap = new Map();
       data?.forEach(item => {
-        const school = item.student?.school;
+        const school = item.students?.schools;
         if (school && !schoolsMap.has(school.id)) {
           schoolsMap.set(school.id, {
             ...school,
@@ -489,7 +565,7 @@ const parentProductionDataService = {
 
       const schools = Array.from(schoolsMap.values());
 
-      console.log(`✅ ${schools.length} école(s) trouvée(s)`);
+      console.log(`✅ ${schools.length} école(s) trouvée(s):`, schools);
       return { data: schools, error: null };
     } catch (error) {
       console.error('❌ Erreur récupération écoles:', error);

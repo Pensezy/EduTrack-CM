@@ -59,37 +59,49 @@ const DatabaseDiagnostic = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold text-gray-900">Diagnostic Base de Données</h3>
-        <div className="flex space-x-2">
-          <button
-            onClick={runDiagnostic}
-            disabled={loading}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
-          >
-            <Icon name="RefreshCw" size={16} className="mr-2" />
-            Actualiser
-          </button>
-          {permissions && !permissions?.summary?.userInTable && (
+      {/* Header - Modernisé */}
+      <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-red-600 rounded-2xl shadow-xl p-6 text-white">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center mr-3 shadow-md">
+              <Icon name="Activity" size={24} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-bold">Diagnostic Base de Données</h3>
+              <p className="text-purple-100 text-sm">Vérification de l'intégrité du système</p>
+            </div>
+          </div>
+          <div className="flex space-x-2">
             <button
-              onClick={repairPermissions}
-              disabled={repairing}
-              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 flex items-center"
+              onClick={runDiagnostic}
+              disabled={loading}
+              className="px-4 py-2 bg-white/20 backdrop-blur-sm text-white rounded-xl hover:bg-white/30 disabled:opacity-50 border border-white/30 transition-all shadow-md hover:shadow-lg flex items-center font-semibold"
             >
-              <Icon name="Wrench" size={16} className="mr-2" />
-              {repairing ? 'Réparation...' : 'Réparer'}
+              <Icon name="RefreshCw" size={16} className="mr-2" />
+              Actualiser
             </button>
-          )}
+            {permissions && !permissions?.summary?.userInTable && (
+              <button
+                onClick={repairPermissions}
+                disabled={repairing}
+                className="px-4 py-2 bg-green-500 text-white rounded-xl hover:bg-green-600 disabled:opacity-50 transition-all shadow-md hover:shadow-lg flex items-center font-semibold"
+              >
+                <Icon name="Wrench" size={16} className="mr-2" />
+                {repairing ? 'Réparation...' : 'Réparer'}
+              </button>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Auth Status */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-          <Icon name="User" size={16} className="mr-2" />
-          Statut Authentification
-        </h4>
+      {/* Auth Status - Modernisé */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="flex items-center mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+            <Icon name="User" size={20} className="text-white" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900">Statut Authentification</h4>
+        </div>
         {permissions?.authUser ? (
           <div className="space-y-2">
             <div className="flex items-center">
@@ -117,12 +129,14 @@ const DatabaseDiagnostic = () => {
         )}
       </div>
 
-      {/* User Table Status */}
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h4 className="font-medium text-gray-900 mb-3 flex items-center">
-          <Icon name="Database" size={16} className="mr-2" />
-          Table Utilisateurs
-        </h4>
+      {/* User Table Status - Modernisé */}
+      <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
+        <div className="flex items-center mb-4">
+          <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+            <Icon name="Database" size={20} className="text-white" />
+          </div>
+          <h4 className="text-lg font-semibold text-gray-900">Table Utilisateurs</h4>
+        </div>
         {permissions?.tableUser ? (
           <div className="space-y-2 text-green-600">
             <div className="flex items-center">

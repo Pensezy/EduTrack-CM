@@ -74,30 +74,43 @@ export const useParentDashboardData = () => {
 
   // Fonction pour charger les enfants
   const loadChildren = async () => {
-    if (modeLoading) return;
+    console.log('🎯 loadChildren appelé - modeLoading:', modeLoading, 'dataMode:', dataMode, 'user:', user?.id);
+    
+    if (modeLoading) {
+      console.log('⏸️ loadChildren bloqué - mode en cours de chargement');
+      return;
+    }
 
     setLoading(prev => ({ ...prev, children: true }));
     setErrors(prev => ({ ...prev, children: null }));
 
     try {
       const service = getService();
+      console.log('🔧 Service sélectionné:', dataMode === 'production' ? 'PRODUCTION' : 'DEMO');
       
       // En mode production, initialiser le contexte
       if (dataMode === 'production' && service.setUserContext) {
         const parentId = user?.id || user?.dbUser?.id;
+        console.log('🔑 Initialisation contexte avec parentId:', parentId);
         if (parentId) {
           service.setUserContext(parentId);
+        } else {
+          console.error('❌ Pas de parentId disponible !');
         }
       }
 
       const parentId = dataMode === 'production' ? user?.id : null;
+      console.log('📞 Appel getChildren avec parentId:', parentId);
       const result = await service.getChildren(parentId);
+
+      console.log('📦 Résultat getChildren:', result);
 
       if (result.error) {
         throw result.error;
       }
 
       const childrenList = result.data || [];
+      console.log('👨‍👩‍👧‍👦 Children list à définir:', childrenList);
       setChildren(childrenList);
 
       // Sélectionner le premier enfant par défaut
@@ -114,61 +127,67 @@ export const useParentDashboardData = () => {
   };
 
   // Fonction pour charger les données d'un enfant spécifique
-  const loadChildData = async (childId) => {
+  const loadChildData = async (childId, forceReload = false) => {
     if (!childId || modeLoading) return;
 
+    // ✨ Optimisation : vérifier si les données existent déjà en cache
+    const hasCache = !forceReload && (
+      gradesData[childId] && 
+      attendanceData[childId] && 
+      paymentData[childId] && 
+      notificationsData[childId]
+    );
+
+    if (hasCache) {
+      console.log('⚡ Données en cache pour enfant:', childId);
+      return; // Pas besoin de recharger
+    }
+
+    console.log('🔄 Chargement données enfant:', childId);
     const service = getService();
 
-    // Charger notes
-    setLoading(prev => ({ ...prev, grades: true }));
-    try {
-      const result = await service.getChildGrades(childId);
-      if (!result.error) {
-        setGradesData(prev => ({ ...prev, [childId]: result.data }));
-      }
-    } catch (error) {
-      console.error('Erreur chargement notes:', error);
-    } finally {
-      setLoading(prev => ({ ...prev, grades: false }));
-    }
+    // ✨ Optimisation : charger TOUTES les données en PARALLÈLE
+    setLoading(prev => ({ 
+      ...prev, 
+      grades: true, 
+      attendance: true, 
+      payments: true, 
+      notifications: true 
+    }));
 
-    // Charger présences
-    setLoading(prev => ({ ...prev, attendance: true }));
     try {
-      const result = await service.getChildAttendance(childId);
-      if (!result.error) {
-        setAttendanceData(prev => ({ ...prev, [childId]: result.data }));
-      }
-    } catch (error) {
-      console.error('Erreur chargement présences:', error);
-    } finally {
-      setLoading(prev => ({ ...prev, attendance: false }));
-    }
+      const [gradesResult, attendanceResult, paymentsResult, notificationsResult] = await Promise.all([
+        service.getChildGrades(childId),
+        service.getChildAttendance(childId),
+        service.getChildPayments(childId),
+        service.getChildNotifications(childId)
+      ]);
 
-    // Charger paiements
-    setLoading(prev => ({ ...prev, payments: true }));
-    try {
-      const result = await service.getChildPayments(childId);
-      if (!result.error) {
-        setPaymentData(prev => ({ ...prev, [childId]: result.data }));
+      // Mettre à jour les données seulement si pas d'erreur
+      if (!gradesResult.error) {
+        setGradesData(prev => ({ ...prev, [childId]: gradesResult.data }));
       }
-    } catch (error) {
-      console.error('Erreur chargement paiements:', error);
-    } finally {
-      setLoading(prev => ({ ...prev, payments: false }));
-    }
+      if (!attendanceResult.error) {
+        setAttendanceData(prev => ({ ...prev, [childId]: attendanceResult.data }));
+      }
+      if (!paymentsResult.error) {
+        setPaymentData(prev => ({ ...prev, [childId]: paymentsResult.data }));
+      }
+      if (!notificationsResult.error) {
+        setNotificationsData(prev => ({ ...prev, [childId]: notificationsResult.data }));
+      }
 
-    // Charger notifications
-    setLoading(prev => ({ ...prev, notifications: true }));
-    try {
-      const result = await service.getChildNotifications(childId);
-      if (!result.error) {
-        setNotificationsData(prev => ({ ...prev, [childId]: result.data }));
-      }
+      console.log('✅ Données enfant chargées avec succès');
     } catch (error) {
-      console.error('Erreur chargement notifications:', error);
+      console.error('❌ Erreur chargement données enfant:', error);
     } finally {
-      setLoading(prev => ({ ...prev, notifications: false }));
+      setLoading(prev => ({ 
+        ...prev, 
+        grades: false, 
+        attendance: false, 
+        payments: false, 
+        notifications: false 
+      }));
     }
   };
 
@@ -251,18 +270,34 @@ export const useParentDashboardData = () => {
     }
   }, [dataMode, modeLoading]);
 
-  // Charger les données de l'enfant sélectionné
+  // ✨ OPTIMISATION : Précharger les données de tous les enfants au démarrage
+  useEffect(() => {
+    if (children.length > 0 && !modeLoading) {
+      console.log('🚀 Préchargement des données de tous les enfants...');
+      children.forEach(child => {
+        // Charger en parallèle pour tous les enfants (sans attendre)
+        loadChildData(child.id);
+      });
+    }
+  }, [children.length, dataMode]);
+
+  // Charger les données de l'enfant sélectionné (si pas déjà en cache)
   useEffect(() => {
     if (selectedChild?.id) {
-      console.log('👶 Chargement données pour enfant:', selectedChild.full_name || selectedChild.name);
-      loadChildData(selectedChild.id);
+      console.log('👶 Vérification données pour enfant:', selectedChild.full_name || selectedChild.name);
+      loadChildData(selectedChild.id); // Le cache évitera le rechargement
     }
-  }, [selectedChild?.id, dataMode]);
+  }, [selectedChild?.id]);
 
-  // Fonction pour changer d'enfant
+  // Fonction pour changer d'enfant - ✨ OPTIMISÉE
   const handleChildSelect = (child) => {
+    console.log('⚡ Changement enfant rapide:', child?.full_name || child?.name);
+    
+    // Changement IMMÉDIAT de l'enfant sélectionné (pas d'attente)
     setSelectedChild(child);
     setSelectedSchool(child?.school?.id || child?.schoolId);
+    
+    // Les données seront chargées par useEffect de manière optimisée (cache)
   };
 
   // Fonction pour changer d'école
@@ -343,13 +378,13 @@ export const useParentDashboardData = () => {
     handleChildSelect,
     handleSchoolChange,
     markNotificationAsRead,
-    refreshData: () => {
+    refreshData: (forceReload = false) => {
       loadParentProfile();
       loadChildren();
       loadEvents();
       loadSchools();
       if (selectedChild?.id) {
-        loadChildData(selectedChild.id);
+        loadChildData(selectedChild.id, forceReload);
       }
     },
     

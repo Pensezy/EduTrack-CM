@@ -5,103 +5,120 @@ const ChildOverviewCard = ({ child }) => {
   if (!child) return null;
 
   const getPerformanceColor = (average) => {
-    if (average >= 16) return 'text-success';
-    if (average >= 14) return 'text-primary';
-    if (average >= 12) return 'text-warning';
-    return 'text-error';
+    if (average >= 16) return 'from-green-500 to-emerald-600';
+    if (average >= 14) return 'from-blue-500 to-indigo-600';
+    if (average >= 12) return 'from-orange-500 to-amber-600';
+    return 'from-red-500 to-rose-600';
+  };
+
+  const getPerformanceTextColor = (average) => {
+    if (average >= 16) return 'text-green-700';
+    if (average >= 14) return 'text-blue-700';
+    if (average >= 12) return 'text-orange-700';
+    return 'text-red-700';
   };
 
   const getAttendanceColor = (rate) => {
-    if (rate >= 95) return 'text-success';
-    if (rate >= 90) return 'text-primary';
-    if (rate >= 85) return 'text-warning';
-    return 'text-error';
+    if (rate >= 95) return 'from-green-500 to-emerald-600';
+    if (rate >= 90) return 'from-blue-500 to-indigo-600';
+    if (rate >= 85) return 'from-orange-500 to-amber-600';
+    return 'from-red-500 to-rose-600';
+  };
+
+  const getAttendanceTextColor = (rate) => {
+    if (rate >= 95) return 'text-green-700';
+    if (rate >= 90) return 'text-blue-700';
+    if (rate >= 85) return 'text-orange-700';
+    return 'text-red-700';
   };
 
   return (
-    <div className="bg-gradient-to-r from-primary/5 to-secondary/5 rounded-lg border border-primary/10 p-6">
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
-        {/* Child Profile Section */}
-        <div className="flex items-center gap-6 mb-6 lg:mb-0">
+    <div className="bg-gradient-to-br from-indigo-600 to-purple-600 rounded-2xl shadow-xl p-8 text-white">
+      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        {/* Child Profile Section - Modernisé */}
+        <div className="flex items-center gap-6">
           <div className="relative">
             <img
-              src={child?.photo}
+              src={child?.photo || 'https://via.placeholder.com/80'}
               alt={child?.name}
-              className="w-20 h-20 rounded-full object-cover border-4 border-white shadow-lg"
+              className="w-24 h-24 rounded-2xl object-cover border-4 border-white/30 shadow-lg backdrop-blur-sm"
             />
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 bg-success rounded-full border-2 border-white flex items-center justify-center">
-              <Icon name="User" size={12} className="text-white" />
+            <div className="absolute -bottom-2 -right-2 w-8 h-8 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl border-2 border-white flex items-center justify-center shadow-md">
+              <Icon name="User" size={16} className="text-white" />
             </div>
           </div>
 
           <div>
-            <h2 className="font-heading font-heading-bold text-2xl text-card-foreground mb-2">
+            <h2 className="font-display font-bold text-3xl mb-3">
               {child?.name}
             </h2>
-            <div className="space-y-1">
-              <p className="font-body font-body-normal text-muted-foreground">
-                <span className="font-body-semibold">Classe:</span> {child?.class}
-              </p>
-              <p className="font-body font-body-normal text-muted-foreground">
-                <span className="font-body-semibold">Matricule:</span> {child?.matricule}
-              </p>
-              <p className="font-body font-body-normal text-muted-foreground">
-                <span className="font-body-semibold">École:</span> {child?.school}
-              </p>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5">
+                <Icon name="GraduationCap" size={16} />
+                <span className="font-body-bold text-sm">{child?.class || 'Classe non renseignée'}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5">
+                <Icon name="Hash" size={16} />
+                <span className="font-body-medium text-sm">{child?.matricule || 'Matricule non renseigné'}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-white/20 backdrop-blur-sm rounded-lg px-3 py-1.5">
+                <Icon name="School" size={16} />
+                <span className="font-body-medium text-sm">{child?.school || 'École non renseignée'}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Performance Metrics */}
+        {/* Performance Metrics - Modernisés */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Academic Performance */}
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
-            <Icon name="TrendingUp" size={24} className={`mx-auto mb-2 ${getPerformanceColor(child?.averageGrade)}`} />
-            <div className={`font-heading font-heading-bold text-xl ${getPerformanceColor(child?.averageGrade)}`}>
-              {child?.averageGrade}/20
+          <div className="bg-white rounded-2xl p-5 shadow-lg text-center hover:scale-105 transition-transform">
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${getPerformanceColor(child?.averageGrade || 0)} flex items-center justify-center shadow-md`}>
+              <Icon name="TrendingUp" size={24} className="text-white" />
             </div>
-            <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
+            <div className={`font-display font-bold text-2xl ${getPerformanceTextColor(child?.averageGrade || 0)}`}>
+              {child?.averageGrade || 0}/20
+            </div>
+            <p className="font-body-medium text-xs text-gray-600 mt-2">
               Moyenne générale
             </p>
           </div>
 
           {/* Attendance Rate */}
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
-            <Icon name="Calendar" size={24} className={`mx-auto mb-2 ${getAttendanceColor(child?.attendanceRate)}`} />
-            <div className={`font-heading font-heading-bold text-xl ${getAttendanceColor(child?.attendanceRate)}`}>
-              {child?.attendanceRate}%
+          <div className="bg-white rounded-2xl p-5 shadow-lg text-center hover:scale-105 transition-transform">
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl bg-gradient-to-br ${getAttendanceColor(child?.attendanceRate || 0)} flex items-center justify-center shadow-md`}>
+              <Icon name="Calendar" size={24} className="text-white" />
             </div>
-            <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
-              Présence
+            <div className={`font-display font-bold text-2xl ${getAttendanceTextColor(child?.attendanceRate || 0)}`}>
+              {child?.attendanceRate || 0}%
+            </div>
+            <p className="font-body-medium text-xs text-gray-600 mt-2">
+              Taux de présence
             </p>
           </div>
 
           {/* Notifications */}
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
-            <Icon 
-              name="Bell" 
-              size={24} 
-              className={`mx-auto mb-2 ${child?.unreadNotifications > 0 ? 'text-warning' : 'text-muted-foreground'}`} 
-            />
-            <div className={`font-heading font-heading-bold text-xl ${child?.unreadNotifications > 0 ? 'text-warning' : 'text-muted-foreground'}`}>
-              {child?.unreadNotifications}
+          <div className="bg-white rounded-2xl p-5 shadow-lg text-center hover:scale-105 transition-transform">
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl ${child?.unreadNotifications > 0 ? 'bg-gradient-to-br from-orange-500 to-amber-600' : 'bg-gray-300'} flex items-center justify-center shadow-md`}>
+              <Icon name="Bell" size={24} className="text-white" />
             </div>
-            <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
+            <div className={`font-display font-bold text-2xl ${child?.unreadNotifications > 0 ? 'text-orange-700' : 'text-gray-500'}`}>
+              {child?.unreadNotifications || 0}
+            </div>
+            <p className="font-body-medium text-xs text-gray-600 mt-2">
               Notifications
             </p>
           </div>
 
           {/* Pending Payments */}
-          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
-            <Icon 
-              name="CreditCard" 
-              size={24} 
-              className={`mx-auto mb-2 ${child?.pendingPayments > 0 ? 'text-error' : 'text-success'}`} 
-            />
-            <div className={`font-heading font-heading-bold text-xl ${child?.pendingPayments > 0 ? 'text-error' : 'text-success'}`}>
-              {child?.pendingPayments}
+          <div className="bg-white rounded-2xl p-5 shadow-lg text-center hover:scale-105 transition-transform">
+            <div className={`w-12 h-12 mx-auto mb-3 rounded-xl ${child?.pendingPayments > 0 ? 'bg-gradient-to-br from-red-500 to-rose-600' : 'bg-gradient-to-br from-green-500 to-emerald-600'} flex items-center justify-center shadow-md`}>
+              <Icon name="CreditCard" size={24} className="text-white" />
             </div>
-            <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-1">
+            <div className={`font-display font-bold text-2xl ${child?.pendingPayments > 0 ? 'text-red-700' : 'text-green-700'}`}>
+              {child?.pendingPayments || 0}
+            </div>
+            <p className="font-body-medium text-xs text-gray-600 mt-2">
               Paiements dus
             </p>
           </div>

@@ -30,72 +30,89 @@ const GradesPanel = ({ grades }) => {
   };
 
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border">
-      <div className="p-6 border-b border-border">
+    <div className="bg-white rounded-2xl border-2 border-gray-200 shadow-lg hover:shadow-xl transition-shadow">
+      <div className="p-6 border-b-2 border-gray-100">
         <div className="flex items-center justify-between">
-          <h3 className="font-heading font-heading-semibold text-lg text-card-foreground">
-            Mes Notes
-          </h3>
-          <Button variant="outline" size="sm">
+          <div className="flex items-center">
+            <div className="w-10 h-10 bg-gradient-to-br from-green-600 to-emerald-600 rounded-xl flex items-center justify-center mr-3 shadow-md">
+              <Icon name="Award" size={20} className="text-white" />
+            </div>
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900">
+                Mes Notes
+              </h3>
+              <p className="text-xs text-gray-500">Résultats par matière</p>
+            </div>
+          </div>
+          <Button variant="outline" size="sm" className="bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 hover:border-blue-400 text-blue-700 hover:shadow-md transition-all">
             <Icon name="Download" size={16} className="mr-2" />
             Exporter
           </Button>
         </div>
       </div>
-      <div className="p-6 space-y-4">
+      <div className="p-6 space-y-3">
         {grades?.map((subject) => (
-          <div key={subject?.id} className="border border-border rounded-lg overflow-hidden">
+          <div key={subject?.id} className="border-2 border-gray-200 rounded-xl overflow-hidden hover:border-gray-300 transition-all hover:shadow-md">
             <button
               onClick={() => toggleSubject(subject?.id)}
-              className="w-full p-4 bg-muted/30 hover:bg-muted/50 transition-micro flex items-center justify-between"
+              className="w-full p-4 bg-gradient-to-r from-gray-50 to-gray-100 hover:from-gray-100 hover:to-gray-200 transition-all flex items-center justify-between"
             >
               <div className="flex items-center space-x-4">
-                <div className={`w-12 h-12 rounded-lg ${getGradeBg(subject?.average)} flex items-center justify-center`}>
-                  <span className={`font-heading font-heading-bold text-lg ${getGradeColor(subject?.average)}`}>
+                <div className={`w-14 h-14 rounded-xl ${getGradeBg(subject?.average)} flex items-center justify-center shadow-md border-2 ${
+                  subject?.average >= 16 ? 'border-green-300' :
+                  subject?.average >= 12 ? 'border-blue-300' :
+                  subject?.average >= 10 ? 'border-orange-300' : 'border-red-300'
+                }`}>
+                  <span className={`font-heading font-heading-bold text-xl ${getGradeColor(subject?.average)}`}>
                     {subject?.average}
                   </span>
                 </div>
                 <div className="text-left">
-                  <h4 className="font-body font-body-semibold text-card-foreground">
+                  <h4 className="font-body font-body-semibold text-gray-900 text-base">
                     {subject?.name}
                   </h4>
-                  <p className="font-caption font-caption-normal text-sm text-muted-foreground">
-                    {subject?.assignments?.length} évaluations • Coeff. {subject?.coefficient}
+                  <p className="font-caption font-caption-normal text-sm text-gray-500 flex items-center gap-2 mt-1">
+                    <span className="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">
+                      {subject?.assignments?.length} évals
+                    </span>
+                    <span className="text-gray-400">•</span>
+                    <span className="text-xs">Coeff. {subject?.coefficient}</span>
                   </p>
                 </div>
               </div>
               <Icon 
                 name={expandedSubjects?.has(subject?.id) ? "ChevronUp" : "ChevronDown"} 
                 size={20} 
-                className="text-muted-foreground"
+                className="text-gray-400"
               />
             </button>
 
             {expandedSubjects?.has(subject?.id) && (
-              <div className="p-4 bg-card space-y-3">
+              <div className="p-4 bg-white space-y-2">
                 {subject?.assignments?.map((assignment) => (
-                  <div key={assignment?.id} className="flex items-center justify-between p-3 bg-muted/20 rounded-lg">
+                  <div key={assignment?.id} className="flex items-center justify-between p-3 bg-gradient-to-r from-gray-50 to-gray-100 rounded-lg border border-gray-200 hover:shadow-sm transition-all">
                     <div className="flex-1">
-                      <h5 className="font-body font-body-semibold text-sm text-card-foreground">
+                      <h5 className="font-body font-body-semibold text-sm text-gray-900">
                         {assignment?.name}
                       </h5>
-                      <div className="flex items-center space-x-4 mt-1">
-                        <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+                      <div className="flex items-center space-x-3 mt-1.5">
+                        <span className="font-caption font-caption-normal text-xs text-gray-500 flex items-center gap-1">
+                          <Icon name="Calendar" size={12} />
                           {assignment?.date}
                         </span>
-                        <span className={`font-caption font-caption-normal text-xs px-2 py-1 rounded-full ${
-                          assignment?.type === 'Contrôle' ? 'bg-error/10 text-error' :
-                          assignment?.type === 'Devoir'? 'bg-warning/10 text-warning' : 'bg-primary/10 text-primary'
+                        <span className={`font-caption font-caption-semibold text-xs px-2.5 py-1 rounded-full ${
+                          assignment?.type === 'Contrôle' ? 'bg-red-100 text-red-700 border border-red-200' :
+                          assignment?.type === 'Devoir'? 'bg-orange-100 text-orange-700 border border-orange-200' : 'bg-blue-100 text-blue-700 border border-blue-200'
                         }`}>
                           {assignment?.type}
                         </span>
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className={`font-heading font-heading-bold text-lg ${getGradeColor(assignment?.grade)}`}>
-                        {assignment?.grade}/20
+                      <div className={`font-heading font-heading-bold text-xl ${getGradeColor(assignment?.grade)}`}>
+                        {assignment?.grade}<span className="text-sm text-gray-400">/20</span>
                       </div>
-                      <div className="font-caption font-caption-normal text-xs text-muted-foreground">
+                      <div className="font-caption font-caption-normal text-xs text-gray-500 mt-0.5">
                         Coeff. {assignment?.coefficient}
                       </div>
                     </div>
