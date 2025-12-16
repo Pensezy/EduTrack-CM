@@ -1338,134 +1338,240 @@ const TeacherManagementTab = ({ isDemo = false }) => {
 
       {/* Modal Assignation Multi-Établissements */}
       {showMultiSchoolAssignment && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg border border-border max-w-6xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h3 className="font-heading font-heading-semibold text-lg text-text-primary">
-                  🏫 Assignation Multi-Établissements
-                </h3>
-                <p className="text-sm text-text-secondary mt-1">
-                  Étape {currentStep} sur 3 - {currentStep === 1 ? 'Type d\'assignation' : currentStep === 2 ? 'Recherche enseignant' : 'Configuration assignation'}
-                </p>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card rounded-2xl border border-border/50 shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+            {/* En-tête moderne avec gradient */}
+            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 border-b border-border/50">
+              <div className="flex items-center justify-between p-6">
+                <div className="flex items-center space-x-4">
+                  <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center ring-2 ring-primary/30">
+                    <Icon name="School" size={24} className="text-primary" />
+                  </div>
+                  <div>
+                    <h3 className="font-heading font-heading-bold text-xl text-text-primary flex items-center gap-2">
+                      Assignation Multi-Établissements
+                      <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                        Nouveau
+                      </span>
+                    </h3>
+                    <p className="text-sm text-text-secondary mt-0.5 flex items-center gap-1">
+                      <Icon name="Circle" size={8} className="text-primary fill-current" />
+                      Étape {currentStep} sur 3 - {currentStep === 1 ? 'Type d\'assignation' : currentStep === 2 ? 'Sélection enseignant' : 'Configuration finale'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowMultiSchoolAssignment(false);
+                    resetMultiSchoolWorkflow();
+                  }}
+                  className="w-10 h-10 rounded-lg hover:bg-muted/50 transition-all duration-200 flex items-center justify-center group"
+                >
+                  <Icon name="X" size={20} className="text-text-secondary group-hover:text-text-primary transition-colors" />
+                </button>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => {
-                  setShowMultiSchoolAssignment(false);
-                  resetMultiSchoolWorkflow();
-                }}
-                iconName="X"
-              />
             </div>
             
-            {/* Indicateur de progression */}
-            <div className="px-6 py-4 border-b border-border">
-              <div className="flex items-center space-x-4">
-                {[1, 2, 3].map((step) => (
-                  <div key={step} className="flex items-center space-x-2">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium ${
-                      step === currentStep 
-                        ? 'bg-primary text-primary-foreground' 
-                        : step < currentStep 
-                        ? 'bg-success text-success-foreground' 
-                        : 'bg-muted text-muted-foreground'
-                    }`}>
-                      {step < currentStep ? <Icon name="Check" size={16} /> : step}
+            {/* Indicateur de progression moderne */}
+            <div className="px-6 py-6 bg-muted/30">
+              <div className="flex items-center justify-between max-w-2xl mx-auto">
+                {[1, 2, 3].map((step, index) => (
+                  <div key={step} className="flex items-center flex-1">
+                    <div className="flex flex-col items-center flex-1">
+                      {/* Icône de l'étape */}
+                      <div className={`relative w-12 h-12 rounded-xl flex items-center justify-center text-sm font-bold transition-all duration-300 ${
+                        step === currentStep 
+                          ? 'bg-gradient-to-br from-primary to-primary/80 text-white shadow-lg scale-110 ring-4 ring-primary/20' 
+                          : step < currentStep 
+                          ? 'bg-gradient-to-br from-success to-success/80 text-white shadow-md' 
+                          : 'bg-muted/50 text-muted-foreground border border-border'
+                      }`}>
+                        {step < currentStep ? (
+                          <Icon name="Check" size={20} className="animate-in zoom-in duration-200" />
+                        ) : (
+                          <span className="transition-all duration-200">{step}</span>
+                        )}
+                        {/* Pulse effect pour l'étape active */}
+                        {step === currentStep && (
+                          <span className="absolute inset-0 rounded-xl bg-primary animate-ping opacity-20"></span>
+                        )}
+                      </div>
+                      
+                      {/* Label de l'étape */}
+                      <div className="mt-3 text-center">
+                        <span className={`text-xs font-semibold block transition-colors duration-200 ${
+                          step === currentStep ? 'text-primary' : step < currentStep ? 'text-success' : 'text-text-secondary'
+                        }`}>
+                          {step === 1 ? 'Type' : step === 2 ? 'Enseignant' : 'Assignation'}
+                        </span>
+                        <span className="text-xs text-text-tertiary block mt-0.5">
+                          {step === 1 ? 'Choisir' : step === 2 ? 'Sélectionner' : 'Configurer'}
+                        </span>
+                      </div>
                     </div>
-                    <span className={`text-sm ${
-                      step === currentStep ? 'text-primary font-medium' : 'text-text-secondary'
-                    }`}>
-                      {step === 1 ? 'Type' : step === 2 ? 'Enseignant' : 'Assignation'}
-                    </span>
-                    {step < 3 && <div className="w-8 h-0.5 bg-border mx-2" />}
+                    
+                    {/* Ligne de connexion */}
+                    {step < 3 && (
+                      <div className="flex-1 h-1 mx-2 -mt-8 relative">
+                        <div className="absolute inset-0 bg-border rounded-full"></div>
+                        <div className={`absolute inset-0 bg-gradient-to-r from-primary to-success rounded-full transition-all duration-500 ${
+                          step < currentStep ? 'w-full' : 'w-0'
+                        }`}></div>
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
             </div>
 
-            <div className="p-6">
+            <div className="p-8 overflow-y-auto max-h-[calc(90vh-240px)]">
               {/* Étape 1: Choix du type */}
               {currentStep === 1 && (
-                <div className="space-y-6">
-                  <div className="text-center mb-6">
-                    <Icon name="School" size={48} className="text-primary mx-auto mb-2" />
-                    <h4 className="font-heading font-heading-semibold text-lg text-text-primary">
+                <div className="space-y-8 max-w-4xl mx-auto">
+                  {/* En-tête de l'étape avec animation */}
+                  <div className="text-center space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/20 to-secondary/20 rounded-2xl mb-2">
+                      <Icon name="School" size={32} className="text-primary" />
+                    </div>
+                    <h4 className="font-heading font-heading-bold text-2xl text-text-primary">
                       Type d'Assignation
                     </h4>
-                    <p className="text-sm text-text-secondary">
-                      Assignation d'un enseignant existant ou nouveau à un établissement
+                    <p className="text-base text-text-secondary max-w-md mx-auto">
+                      Choisissez si vous souhaitez assigner un enseignant existant ou créer un nouveau profil
                     </p>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  {/* Cartes de sélection modernes */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                    {/* Carte Enseignant Existant */}
                     <div 
                       onClick={() => setAssignationMode('existing')}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      className={`group relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
                         assignationMode === 'existing' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
+                          ? 'bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary shadow-xl shadow-primary/10 scale-105' 
+                          : 'bg-card border-2 border-border hover:border-primary/50 hover:shadow-lg hover:scale-102'
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          assignationMode === 'existing' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          <Icon name="Users" size={20} />
+                      {/* Badge de sélection */}
+                      {assignationMode === 'existing' && (
+                        <div className="absolute top-4 right-4 w-8 h-8 bg-primary rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                          <Icon name="Check" size={16} className="text-white" />
                         </div>
-                        <div>
-                          <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                      )}
+                      
+                      {/* Effet de brillance au hover */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                      
+                      <div className="relative space-y-4">
+                        {/* Icône avec animation */}
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          assignationMode === 'existing' 
+                            ? 'bg-primary text-white shadow-lg' 
+                            : 'bg-muted/50 text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary'
+                        }`}>
+                          <Icon name="Users" size={28} className="transition-transform group-hover:scale-110" />
+                        </div>
+                        
+                        {/* Contenu */}
+                        <div className="space-y-2">
+                          <h5 className="font-heading font-heading-bold text-lg text-text-primary">
                             Enseignant Existant
                           </h5>
-                          <p className="text-sm text-text-secondary">
-                            Assigner un enseignant déjà dans le système global
+                          <p className="text-sm text-text-secondary leading-relaxed">
+                            Recherchez et assignez un enseignant déjà enregistré dans le système global
                           </p>
+                        </div>
+                        
+                        {/* Avantages */}
+                        <div className="space-y-2 pt-2 border-t border-border/50">
+                          <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                            <Icon name="Check" size={14} className="text-success" />
+                            <span>Processus rapide</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                            <Icon name="Check" size={14} className="text-success" />
+                            <span>Profil déjà configuré</span>
+                          </div>
                         </div>
                       </div>
                     </div>
 
+                    {/* Carte Nouvel Enseignant */}
                     <div 
                       onClick={() => setAssignationMode('new')}
-                      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
+                      className={`group relative overflow-hidden rounded-2xl p-6 cursor-pointer transition-all duration-300 ${
                         assignationMode === 'new' 
-                          ? 'border-primary bg-primary/5' 
-                          : 'border-border hover:border-primary/50'
+                          ? 'bg-gradient-to-br from-success/10 to-success/5 border-2 border-success shadow-xl shadow-success/10 scale-105' 
+                          : 'bg-card border-2 border-border hover:border-success/50 hover:shadow-lg hover:scale-102'
                       }`}
                     >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          assignationMode === 'new' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
-                        }`}>
-                          <Icon name="UserPlus" size={20} />
+                      {/* Badge de sélection */}
+                      {assignationMode === 'new' && (
+                        <div className="absolute top-4 right-4 w-8 h-8 bg-success rounded-full flex items-center justify-center animate-in zoom-in duration-300">
+                          <Icon name="Check" size={16} className="text-white" />
                         </div>
-                        <div>
-                          <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                      )}
+                      
+                      {/* Effet de brillance au hover */}
+                      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
+                      
+                      <div className="relative space-y-4">
+                        {/* Icône avec animation */}
+                        <div className={`w-14 h-14 rounded-xl flex items-center justify-center transition-all duration-300 ${
+                          assignationMode === 'new' 
+                            ? 'bg-success text-white shadow-lg' 
+                            : 'bg-muted/50 text-muted-foreground group-hover:bg-success/10 group-hover:text-success'
+                        }`}>
+                          <Icon name="UserPlus" size={28} className="transition-transform group-hover:scale-110" />
+                        </div>
+                        
+                        {/* Contenu */}
+                        <div className="space-y-2">
+                          <h5 className="font-heading font-heading-bold text-lg text-text-primary">
                             Nouvel Enseignant
                           </h5>
-                          <p className="text-sm text-text-secondary">
-                            Créer un nouveau compte enseignant puis l'assigner
+                          <p className="text-sm text-text-secondary leading-relaxed">
+                            Créez un nouveau compte enseignant et assignez-le à votre établissement
                           </p>
+                        </div>
+                        
+                        {/* Avantages */}
+                        <div className="space-y-2 pt-2 border-t border-border/50">
+                          <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                            <Icon name="Check" size={14} className="text-success" />
+                            <span>Personnalisation complète</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-text-tertiary">
+                            <Icon name="Check" size={14} className="text-success" />
+                            <span>Nouveau dans le système</span>
+                          </div>
                         </div>
                       </div>
                     </div>
                   </div>
 
-                  <div className="mb-6">
-                    <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
-                          <Icon name="Building" size={20} className="text-primary" />
+                  {/* Informations sur l'établissement avec design moderne */}
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
+                    <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-secondary/5 border border-primary/20 rounded-xl p-5 shadow-sm">
+                      <div className="flex items-start gap-4">
+                        <div className="w-12 h-12 bg-primary/20 rounded-xl flex items-center justify-center shrink-0">
+                          <Icon name="Building" size={24} className="text-primary" />
                         </div>
-                        <div>
-                          <h5 className="font-heading font-heading-semibold text-sm text-text-primary">
-                            Établissement de destination
-                          </h5>
-                          <p className="text-sm text-text-secondary">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <h5 className="font-heading font-heading-bold text-base text-text-primary">
+                              Établissement de destination
+                            </h5>
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">
+                              Actif
+                            </span>
+                          </div>
+                          <p className="text-base font-semibold text-primary mb-1">
                             {currentSchool?.name || 'Chargement...'}
                           </p>
-                          <p className="text-xs text-text-tertiary">
-                            Vous ne pouvez assigner des enseignants que dans votre établissement
+                          <p className="text-xs text-text-tertiary flex items-center gap-1">
+                            <Icon name="Info" size={12} />
+                            Vous assignez les enseignants uniquement à votre établissement
                           </p>
                         </div>
                       </div>
@@ -1478,163 +1584,241 @@ const TeacherManagementTab = ({ isDemo = false }) => {
               {currentStep === 2 && (
                 <div className="space-y-6">
                   {assignationMode === 'existing' ? (
-                    <div>
-                      <div className="text-center mb-4">
-                        <Icon name="Search" size={40} className="text-primary mx-auto mb-2" />
-                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                          Rechercher un Enseignant Existant
+                    <div className="max-w-4xl mx-auto">
+                      <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl mb-3">
+                          <Icon name="Search" size={32} className="text-primary" />
+                        </div>
+                        <h5 className="font-heading font-heading-bold text-2xl text-text-primary mb-2">
+                          Rechercher un Enseignant
                         </h5>
-                        <p className="text-sm text-text-secondary">
-                          Système multi-établissements - Un enseignant peut avoir plusieurs assignations
+                        <p className="text-base text-text-secondary max-w-xl mx-auto">
+                          Recherchez dans la base de données globale. Les enseignants peuvent être assignés à plusieurs établissements.
                         </p>
                       </div>
 
-                      <TeacherSearchSelector
-                        onTeacherSelect={(teacher) => {
-                          setSelectedExistingTeacher(teacher);
-                        }}
-                        onCreateNew={() => {
-                          setAssignationMode('new');
-                          setSelectedExistingTeacher(null);
-                        }}
-                        selectedTeacher={selectedExistingTeacher}
-                        searchTerm={teacherSearchTerm}
-                        onSearchChange={setTeacherSearchTerm}
-                      />
+                      <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                        <TeacherSearchSelector
+                          onTeacherSelect={(teacher) => {
+                            setSelectedExistingTeacher(teacher);
+                          }}
+                          onCreateNew={() => {
+                            setAssignationMode('new');
+                            setSelectedExistingTeacher(null);
+                          }}
+                          selectedTeacher={selectedExistingTeacher}
+                          searchTerm={teacherSearchTerm}
+                          onSearchChange={setTeacherSearchTerm}
+                        />
+                      </div>
                     </div>
                   ) : (
-                    <div>
-                      <div className="text-center mb-6">
-                        <Icon name="UserPlus" size={40} className="text-success mx-auto mb-2" />
-                        <h5 className="font-heading font-heading-medium text-base text-text-primary">
-                          Créer un Nouveau Compte Enseignant
+                    <div className="max-w-4xl mx-auto">
+                      <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                        <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-success/20 to-success/10 rounded-2xl mb-3">
+                          <Icon name="UserPlus" size={32} className="text-success" />
+                        </div>
+                        <h5 className="font-heading font-heading-bold text-2xl text-text-primary mb-2">
+                          Créer un Nouveau Compte
                         </h5>
-                        <p className="text-sm text-text-secondary">
-                          Créez le profil enseignant puis assignez-le à l'établissement
+                        <p className="text-base text-text-secondary max-w-xl mx-auto">
+                          Remplissez les informations pour créer un nouveau profil enseignant dans le système
                         </p>
                       </div>
 
-                      <div className="bg-card rounded-lg border border-border p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Input
-                            label="Nom complet"
-                            placeholder="Ex: Marie Nguema"
-                            value={newTeacher.fullName}
-                            onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
-                            required
-                          />
-                          <Input
-                            label="Email"
-                            type="email"
-                            placeholder="marie.nguema@school.cm"
-                            value={newTeacher.email}
-                            onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
-                            required
-                          />
-                          <Input
-                            label="Téléphone"
-                            placeholder="+237 6XX XX XX XX"
-                            value={newTeacher.phone}
-                            onChange={(e) => setNewTeacher(prev => ({ ...prev, phone: e.target.value }))}
-                            required
-                          />
+                      <div className="bg-card rounded-2xl border border-border shadow-lg p-8 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                        {/* Informations personnelles */}
+                        <div className="mb-8">
+                          <h6 className="font-heading font-heading-bold text-lg text-text-primary mb-1 flex items-center gap-2">
+                            <Icon name="User" size={20} className="text-primary" />
+                            Informations Personnelles
+                          </h6>
+                          <p className="text-sm text-text-tertiary mb-4">Données de base de l'enseignant</p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <Input
+                              label="Nom complet"
+                              placeholder="Ex: Marie Nguema"
+                              value={newTeacher.fullName}
+                              onChange={(e) => setNewTeacher(prev => ({ ...prev, fullName: e.target.value }))}
+                              required
+                              className="transition-all duration-200 focus-within:shadow-sm"
+                            />
+                            <Input
+                              label="Email"
+                              type="email"
+                              placeholder="marie.nguema@school.cm"
+                              value={newTeacher.email}
+                              onChange={(e) => setNewTeacher(prev => ({ ...prev, email: e.target.value }))}
+                              required
+                              className="transition-all duration-200 focus-within:shadow-sm"
+                            />
+                            <Input
+                              label="Téléphone"
+                              placeholder="+237 6XX XX XX XX"
+                              value={newTeacher.phone}
+                              onChange={(e) => setNewTeacher(prev => ({ ...prev, phone: e.target.value }))}
+                              required
+                              className="transition-all duration-200 focus-within:shadow-sm"
+                            />
+                          </div>
                         </div>
 
-                        {/* Sélection multiple de matières */}
-                        <div className="mt-4 space-y-2">
-                          <label className="block text-sm font-body font-body-medium text-text-secondary">
-                            Matières enseignées *
-                          </label>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
-                            {schoolSubjects.map((subject) => (
-                              <label
-                                key={subject.id}
-                                className="flex items-center space-x-2 cursor-pointer hover:bg-muted p-2 rounded"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={newTeacher.subjects?.includes(subject.name)}
-                                  onChange={() => toggleSubjectSelection(subject.name)}
-                                  className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
-                                />
-                                <span className="text-sm text-text-primary">{subject.name}</span>
-                              </label>
-                            ))}
+                        {/* Sélection des matières avec design moderne */}
+                        <div className="mb-8">
+                          <h6 className="font-heading font-heading-bold text-lg text-text-primary mb-1 flex items-center gap-2">
+                            <Icon name="BookOpen" size={20} className="text-primary" />
+                            Matières Enseignées
+                          </h6>
+                          <p className="text-sm text-text-tertiary mb-4">Sélectionnez une ou plusieurs matières</p>
+                          
+                          <div className="bg-muted/30 border border-border rounded-xl p-4 max-h-64 overflow-y-auto">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {schoolSubjects.map((subject) => (
+                                <label
+                                  key={subject.id}
+                                  className={`relative flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                                    newTeacher.subjects?.includes(subject.name)
+                                      ? 'bg-primary/10 border-2 border-primary shadow-sm'
+                                      : 'bg-card border border-border hover:border-primary/50 hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={newTeacher.subjects?.includes(subject.name)}
+                                    onChange={() => toggleSubjectSelection(subject.name)}
+                                    className="w-4 h-4 text-primary border-border rounded focus:ring-primary focus:ring-2"
+                                  />
+                                  <span className="text-sm font-medium text-text-primary">{subject.name}</span>
+                                  {newTeacher.subjects?.includes(subject.name) && (
+                                    <div className="absolute top-1 right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                                      <Icon name="Check" size={12} className="text-white" />
+                                    </div>
+                                  )}
+                                </label>
+                              ))}
+                            </div>
                           </div>
+                          
                           {newTeacher.subjects?.length > 0 && (
-                            <p className="text-xs text-text-tertiary">
-                              {newTeacher.subjects.length} matière(s) sélectionnée(s): {newTeacher.subjects.join(', ')}
-                            </p>
+                            <div className="mt-3 flex items-center gap-2 text-sm">
+                              <Icon name="CheckCircle" size={16} className="text-success" />
+                              <span className="text-text-secondary">
+                                <span className="font-semibold text-primary">{newTeacher.subjects.length}</span> matière(s) sélectionnée(s)
+                              </span>
+                            </div>
                           )}
                         </div>
 
-                        {/* Sélection multiple de classes */}
-                        <div className="mt-4 space-y-2">
-                          <label className="block text-sm font-body font-body-medium text-text-secondary">
-                            Classes assignées *
-                          </label>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 max-h-48 overflow-y-auto border border-border rounded-lg p-3">
-                            {schoolClasses.map((cls) => (
-                              <label
-                                key={cls.id}
-                                className="flex items-center space-x-2 cursor-pointer hover:bg-muted p-2 rounded"
-                              >
-                                <input
-                                  type="checkbox"
-                                  checked={newTeacher.classes?.includes(cls.name)}
-                                  onChange={() => toggleClassSelection(cls.name)}
-                                  className="w-4 h-4 text-primary border-border rounded focus:ring-primary"
-                                />
-                                <span className="text-sm text-text-primary">{cls.name}</span>
-                              </label>
-                            ))}
+                        {/* Sélection des classes avec design moderne */}
+                        <div className="mb-8">
+                          <h6 className="font-heading font-heading-bold text-lg text-text-primary mb-1 flex items-center gap-2">
+                            <Icon name="Users" size={20} className="text-primary" />
+                            Classes Assignées
+                          </h6>
+                          <p className="text-sm text-text-tertiary mb-4">Sélectionnez les classes à gérer</p>
+                          
+                          <div className="bg-muted/30 border border-border rounded-xl p-4 max-h-64 overflow-y-auto">
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                              {schoolClasses.map((cls) => (
+                                <label
+                                  key={cls.id}
+                                  className={`relative flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
+                                    newTeacher.classes?.includes(cls.name)
+                                      ? 'bg-success/10 border-2 border-success shadow-sm'
+                                      : 'bg-card border border-border hover:border-success/50 hover:bg-muted/50'
+                                  }`}
+                                >
+                                  <input
+                                    type="checkbox"
+                                    checked={newTeacher.classes?.includes(cls.name)}
+                                    onChange={() => toggleClassSelection(cls.name)}
+                                    className="w-4 h-4 text-success border-border rounded focus:ring-success focus:ring-2"
+                                  />
+                                  <span className="text-sm font-medium text-text-primary">{cls.name}</span>
+                                  {newTeacher.classes?.includes(cls.name) && (
+                                    <div className="absolute top-1 right-1 w-5 h-5 bg-success rounded-full flex items-center justify-center">
+                                      <Icon name="Check" size={12} className="text-white" />
+                                    </div>
+                                  )}
+                                </label>
+                              ))}
+                            </div>
                           </div>
+                          
                           {newTeacher.classes?.length > 0 && (
-                            <p className="text-xs text-text-tertiary">
-                              {newTeacher.classes.length} classe(s) sélectionnée(s): {newTeacher.classes.join(', ')}
-                            </p>
+                            <div className="mt-3 flex items-center gap-2 text-sm">
+                              <Icon name="CheckCircle" size={16} className="text-success" />
+                              <span className="text-text-secondary">
+                                <span className="font-semibold text-success">{newTeacher.classes.length}</span> classe(s) sélectionnée(s)
+                              </span>
+                            </div>
                           )}
                         </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                          <div className="flex gap-2">
+                        {/* Sécurité du compte */}
+                        <div>
+                          <h6 className="font-heading font-heading-bold text-lg text-text-primary mb-1 flex items-center gap-2">
+                            <Icon name="Lock" size={20} className="text-primary" />
+                            Sécurité du Compte
+                          </h6>
+                          <p className="text-sm text-text-tertiary mb-4">Définissez un mot de passe sécurisé</p>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                            <div className="space-y-2">
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  label="Mot de passe"
+                                  type="password"
+                                  placeholder="Minimum 8 caractères"
+                                  value={newTeacher.password}
+                                  onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                                  required
+                                  className="flex-1 transition-all duration-200 focus-within:shadow-sm"
+                                />
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={generateSecurePassword}
+                                  className="mt-6 hover:bg-primary/10 hover:text-primary transition-all duration-200"
+                                  iconName="RefreshCw"
+                                >
+                                  Générer
+                                </Button>
+                              </div>
+                            </div>
                             <Input
-                              label="Mot de passe"
+                              label="Confirmer le mot de passe"
                               type="password"
-                              placeholder="Minimum 8 caractères"
-                              value={newTeacher.password}
-                              onChange={(e) => setNewTeacher(prev => ({ ...prev, password: e.target.value }))}
+                              placeholder="Répéter le mot de passe"
+                              value={newTeacher.confirmPassword}
+                              onChange={(e) => setNewTeacher(prev => ({ ...prev, confirmPassword: e.target.value }))}
                               required
+                              className="transition-all duration-200 focus-within:shadow-sm"
                             />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={generateSecurePassword}
-                              className="mt-6"
-                            >
-                              Générer
-                            </Button>
                           </div>
-                          <Input
-                            label="Confirmer le mot de passe"
-                            type="password"
-                            placeholder="Répéter le mot de passe"
-                            value={newTeacher.confirmPassword}
-                            onChange={(e) => setNewTeacher(prev => ({ ...prev, confirmPassword: e.target.value }))}
-                            required
-                          />
-                        </div>
 
-                        {newTeacher.password && !validatePassword(newTeacher.password) && (
-                          <div className="text-sm text-red-600 bg-red-50 p-2 rounded mt-4">
-                            Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)
-                          </div>
-                        )}
-                        {newTeacher.password && newTeacher.confirmPassword && newTeacher.password !== newTeacher.confirmPassword && (
-                          <div className="text-sm text-red-600 bg-red-50 p-2 rounded mt-4">
-                            Les mots de passe ne correspondent pas
-                          </div>
-                        )}
+                          {/* Messages de validation */}
+                          {newTeacher.password && !validatePassword(newTeacher.password) && (
+                            <div className="mt-4 bg-error/10 border border-error/30 rounded-lg p-3 animate-in fade-in duration-200">
+                              <div className="flex items-start gap-2">
+                                <Icon name="AlertCircle" size={16} className="text-error mt-0.5" />
+                                <div className="text-sm text-error">
+                                  <p className="font-semibold mb-1">Mot de passe trop faible</p>
+                                  <p className="text-xs">Le mot de passe doit contenir au moins 8 caractères avec : une majuscule, une minuscule, un chiffre et un caractère spécial (@$!%*?&)</p>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          {newTeacher.password && newTeacher.confirmPassword && newTeacher.password !== newTeacher.confirmPassword && (
+                            <div className="mt-4 bg-error/10 border border-error/30 rounded-lg p-3 animate-in fade-in duration-200">
+                              <div className="flex items-center gap-2">
+                                <Icon name="AlertCircle" size={16} className="text-error" />
+                                <p className="text-sm text-error font-medium">Les mots de passe ne correspondent pas</p>
+                              </div>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -1643,37 +1827,41 @@ const TeacherManagementTab = ({ isDemo = false }) => {
 
               {/* Étape 3: Configuration assignation */}
               {currentStep === 3 && selectedExistingTeacher && (
-                <div>
-                  <div className="text-center mb-6">
-                    <Icon name="Settings" size={40} className="text-success mx-auto mb-2" />
-                    <h5 className="font-heading font-heading-medium text-base text-text-primary">
+                <div className="max-w-4xl mx-auto">
+                  <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-success/20 to-success/10 rounded-2xl mb-3">
+                      <Icon name="Settings" size={32} className="text-success" />
+                    </div>
+                    <h5 className="font-heading font-heading-bold text-2xl text-text-primary mb-2">
                       Configuration de l'Assignation
                     </h5>
-                    <p className="text-sm text-text-secondary">
-                      Définir les classes et matières pour cet enseignant
+                    <p className="text-base text-text-secondary max-w-xl mx-auto">
+                      Définissez les classes et matières que cet enseignant gérera dans votre établissement
                     </p>
                   </div>
 
-                  <TeacherAssignmentManager
-                    teacher={selectedExistingTeacher}
-                    currentSchool={currentSchool}
-                    onAssignmentComplete={(assignment) => {
-                      alert('Assignation créée avec succès !');
-                      setShowMultiSchoolAssignment(false);
-                      resetMultiSchoolWorkflow();
-                      loadTeachers(); // Recharger la liste des enseignants
-                    }}
-                    onCancel={() => {
-                      setShowMultiSchoolAssignment(false);
-                      resetMultiSchoolWorkflow();
-                    }}
-                  />
+                  <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100">
+                    <TeacherAssignmentManager
+                      teacher={selectedExistingTeacher}
+                      currentSchool={currentSchool}
+                      onAssignmentComplete={(assignment) => {
+                        alert('Assignation créée avec succès !');
+                        setShowMultiSchoolAssignment(false);
+                        resetMultiSchoolWorkflow();
+                        loadTeachers(); // Recharger la liste des enseignants
+                      }}
+                      onCancel={() => {
+                        setShowMultiSchoolAssignment(false);
+                        resetMultiSchoolWorkflow();
+                      }}
+                    />
+                  </div>
                 </div>
               )}
 
               {/* Navigation (sauf pour l'étape 3 qui a ses propres boutons) */}
               {currentStep < 3 && (
-                <div className="flex items-center justify-between pt-6 border-t border-border">
+                <div className="flex items-center justify-between p-6 border-t border-border/50 bg-muted/20">
                   <div className="flex gap-3">
                     {currentStep > 1 && (
                       <Button 
@@ -1681,6 +1869,7 @@ const TeacherManagementTab = ({ isDemo = false }) => {
                         onClick={prevStep}
                         iconName="ChevronLeft"
                         iconPosition="left"
+                        className="px-6 hover:bg-muted/50 transition-all duration-200"
                       >
                         Précédent
                       </Button>
@@ -1694,6 +1883,7 @@ const TeacherManagementTab = ({ isDemo = false }) => {
                         setShowMultiSchoolAssignment(false);
                         resetMultiSchoolWorkflow();
                       }}
+                      className="px-6 hover:bg-error/10 hover:text-error hover:border-error/50 transition-all duration-200"
                     >
                       Annuler
                     </Button>
@@ -1742,6 +1932,7 @@ const TeacherManagementTab = ({ isDemo = false }) => {
                       }
                       iconName="ChevronRight"
                       iconPosition="right"
+                      className="px-6 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-primary/30 transition-all duration-200"
                     >
                       {currentStep === 2 && assignationMode === 'new' ? 'Créer et Continuer' : 'Suivant'}
                     </Button>
@@ -1755,74 +1946,94 @@ const TeacherManagementTab = ({ isDemo = false }) => {
 
       {/* Modal Ajouter une matière */}
       {showAddSubjectModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-card rounded-lg border border-border w-full max-w-md">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-6">
-                <h3 className="font-heading font-heading-semibold text-xl text-text-primary">
-                  Ajouter une matière
-                </h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-card rounded-2xl border border-border/50 shadow-2xl w-full max-w-md animate-in slide-in-from-bottom-4 duration-300">
+            {/* En-tête moderne */}
+            <div className="relative bg-gradient-to-r from-primary/10 via-primary/5 to-secondary/10 p-6 border-b border-border/50">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 bg-primary/20 rounded-xl flex items-center justify-center">
+                    <Icon name="BookOpen" size={20} className="text-primary" />
+                  </div>
+                  <h3 className="font-heading font-heading-bold text-xl text-text-primary">
+                    Ajouter une matière
+                  </h3>
+                </div>
                 <button
                   onClick={() => {
                     setShowAddSubjectModal(false);
                     setNewSubject('');
                   }}
-                  className="text-text-secondary hover:text-text-primary"
+                  className="w-8 h-8 rounded-lg hover:bg-muted/50 transition-all duration-200 flex items-center justify-center"
                 >
-                  <Icon name="X" size={20} />
+                  <Icon name="X" size={18} className="text-text-secondary" />
                 </button>
               </div>
+            </div>
 
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-body font-body-medium text-text-secondary mb-2">
-                    Nom de la matière *
-                  </label>
-                  <Input
-                    type="text"
-                    placeholder="Ex: Informatique, Biologie, etc."
-                    value={newSubject}
-                    onChange={(e) => setNewSubject(e.target.value)}
-                    onKeyPress={(e) => {
-                      if (e.key === 'Enter') {
-                        handleAddSubject();
-                      }
-                    }}
-                  />
-                  <p className="text-xs text-text-tertiary mt-1">
-                    Cette matière sera ajoutée à la liste des matières disponibles
-                  </p>
-                </div>
+            <div className="p-6 space-y-5">
+              {/* Champ de saisie avec style moderne */}
+              <div className="space-y-2">
+                <label className="block text-sm font-semibold text-text-primary">
+                  Nom de la matière *
+                </label>
+                <Input
+                  type="text"
+                  placeholder="Ex: Informatique, Biologie, Arts plastiques..."
+                  value={newSubject}
+                  onChange={(e) => setNewSubject(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      handleAddSubject();
+                    }
+                  }}
+                  className="transition-all duration-200 focus-within:shadow-md"
+                />
+                <p className="text-xs text-text-tertiary flex items-center gap-1">
+                  <Icon name="Info" size={12} />
+                  Cette matière sera ajoutée à la liste des matières disponibles
+                </p>
+              </div>
 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <div className="flex items-start space-x-2">
-                    <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
-                    <p className="text-xs text-blue-700">
-                      <strong>Note :</strong> Cette matière sera disponible uniquement pour votre établissement et restera enregistrée pour les prochaines assignations.
+              {/* Message informatif avec design moderne */}
+              <div className="bg-gradient-to-r from-blue-50 to-blue-50/50 border border-blue-200 rounded-xl p-4">
+                <div className="flex items-start gap-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center shrink-0">
+                    <Icon name="Info" size={16} className="text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-semibold text-blue-900 mb-1">
+                      Note importante
+                    </p>
+                    <p className="text-xs text-blue-700 leading-relaxed">
+                      Cette matière sera disponible uniquement pour votre établissement et restera enregistrée pour les prochaines assignations.
                     </p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowAddSubjectModal(false);
-                    setNewSubject('');
-                  }}
-                  className="flex-1"
-                >
-                  Annuler
-                </Button>
-                <Button
-                  onClick={handleAddSubject}
-                  className="flex-1"
-                  disabled={!newSubject.trim()}
-                >
-                  Ajouter
-                </Button>
-              </div>
+            {/* Boutons d'action avec design moderne */}
+            <div className="flex gap-3 p-6 border-t border-border/50 bg-muted/20">
+              <Button
+                variant="outline"
+                onClick={() => {
+                  setShowAddSubjectModal(false);
+                  setNewSubject('');
+                }}
+                className="flex-1 hover:bg-muted/50 transition-all duration-200"
+              >
+                Annuler
+              </Button>
+              <Button
+                onClick={handleAddSubject}
+                className="flex-1 bg-gradient-to-r from-primary to-primary/90 hover:from-primary/90 hover:to-primary shadow-lg hover:shadow-primary/30 transition-all duration-200"
+                disabled={!newSubject.trim()}
+                iconName="Plus"
+                iconPosition="left"
+              >
+                Ajouter
+              </Button>
             </div>
           </div>
         </div>

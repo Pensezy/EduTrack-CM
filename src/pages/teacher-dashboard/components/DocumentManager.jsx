@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Icon from '../../../components/AppIcon';
+import { documentService } from '../../../services/documentService';
 
 const DocumentManager = ({ classData, documents }) => {
   const [showUploadForm, setShowUploadForm] = useState(false);
@@ -20,8 +21,9 @@ const DocumentManager = ({ classData, documents }) => {
   ];
 
   const visibilityOptions = [
-    { value: 'students', label: 'Élèves seulement', icon: 'Users', description: 'Visible par les élèves uniquement' },
-    { value: 'students_parents', label: 'Élèves et Parents', icon: 'UserPlus', description: 'Visible par les élèves et leurs parents' }
+    { value: 'private', label: 'Privé (moi seul)', icon: 'Lock', description: 'Visible uniquement par vous' },
+    { value: 'students', label: 'Élèves seulement', icon: 'UserCheck', description: 'Visible par les élèves de la classe' },
+    { value: 'students_parents', label: 'Élèves et Parents', icon: 'Users', description: 'Visible par les élèves ET leurs parents' }
   ];
 
   const getTypeConfig = (type) => {
@@ -39,17 +41,32 @@ const DocumentManager = ({ classData, documents }) => {
     }
   };
 
-  const formatFileSize = (sizeInMB) => {
-    if (sizeInMB < 1) {
-      return `${(sizeInMB * 1024)?.toFixed(0)} KB`;
-    }
-    return `${sizeInMB} MB`;
+  // Utilitaire pour trouver la taille du fichier dans tous les cas
+  const getFileSize = (doc) => {
+    return doc?.file_size ?? doc?.fileSize ?? null;
+  };
+
+  const formatFileSize = (sizeInBytes) => {
+    if (!sizeInBytes || isNaN(sizeInBytes)) return 'Non renseigné';
+    const size = Number(sizeInBytes);
+    if (size < 1024) return `${size} o`;
+    if (size < 1024 * 1024) return `${(size / 1024).toFixed(0)} KB`;
+    return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  // Utilitaire pour trouver la date dans tous les cas
+  const getDate = (doc) => {
+    return doc?.created_at ?? doc?.upload_date ?? doc?.uploadDate ?? null;
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString)?.toLocaleDateString('fr-FR', {
+    if (!dateString) return 'Non renseigné';
+    const d = new Date(dateString);
+    if (isNaN(d.getTime())) return 'Non renseigné';
+    return d.toLocaleDateString('fr-FR', {
       day: 'numeric',
       month: 'long',
+      year: 'numeric',
       hour: '2-digit',
       minute: '2-digit'
     });
@@ -68,31 +85,101 @@ const DocumentManager = ({ classData, documents }) => {
   const handleDrop = (e) => {
     e?.preventDefault();
     setDragOver(false);
-    const files = Array.from(e?.dataTransfer?.files);
-    console.log('Files dropped:', files);
-    // Handle file upload logic here
+    const files = Array.from(e?.dataTransfer?.files || []);
+    if (files.length > 0) {
+      setSelectedFile(files[0]);
+    }
   };
 
-  const handleUploadSubmit = (e) => {
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploading, setUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(null);
+  const fileInputRef = useRef(null);
+
+  const handleFileChange = (e) => {
+    const f = e?.target?.files?.[0];
+    console.log('handleFileChange called, file:', f);
+    if (f) setSelectedFile(f);
+  };
+
+  const handleUploadSubmit = async (e) => {
     e?.preventDefault();
-    console.log('Document upload:', uploadForm);
-    
-    // Reset form and close
-    setUploadForm({
-      title: '',
-      type: '',
-      visibility: 'students',
-      description: ''
-    });
-    setShowUploadForm(false);
-    
-    alert('Document téléchargé avec succès!');
+    if (!selectedFile) return alert('Veuillez sélectionner un fichier à télécharger.');
+    if (!uploadForm?.title || !uploadForm?.type) return alert('Veuillez renseigner le titre et le type du document.');
+
+    setUploading(true);
+    try {
+      const documentData = {
+        title: uploadForm?.title,
+        description: uploadForm?.description,
+        document_type: uploadForm?.type,
+        class_name: classData?.name || classData?.id,
+        class_id: classData?.id, // ID de la classe cible pour les permissions
+        visibility: uploadForm?.visibility, // 'students', 'students_parents', ou 'private'
+        subject: uploadForm?.type || classData?.name
+      };
+
+      const { data, error } = await documentService.uploadTeacherDocument(documentData, selectedFile);
+      if (error) {
+        console.error('Upload error:', error);
+        const msg = typeof error === 'string' ? error : (error?.message || 'erreur inconnue');
+        setUploadError(msg);
+        alert('Erreur lors du téléchargement : ' + msg);
+      } else {
+        setUploadError(null);
+        alert('Document téléchargé avec succès!');
+        // Optionally refresh the page or invoke a parent refresh
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Erreur inattendue lors du téléchargement.');
+    } finally {
+      setUploading(false);
+      setUploadForm({ title: '', type: '', visibility: 'students', description: '' });
+      setSelectedFile(null);
+      setShowUploadForm(false);
+    }
   };
 
-  const handleDeleteDocument = (docId) => {
-    if (window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) {
-      console.log('Deleting document:', docId);
-      alert('Document supprimé!');
+  const handleDeleteDocument = async (docId) => {
+    if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) return;
+    try {
+      const { data, error } = await documentService.deleteDocument(docId);
+      if (error) {
+        alert('Erreur lors de la suppression : ' + error);
+      } else {
+        alert('Document supprimé !');
+        window.location.reload();
+      }
+    } catch (e) {
+      alert('Erreur inattendue lors de la suppression.');
+    }
+  };
+
+  const handleDownloadDocument = async (docId) => {
+    try {
+      const { data, error } = await documentService.downloadDocument(docId, 'download');
+      if (error || !data?.url) {
+        alert('Erreur lors du téléchargement : ' + (error || 'URL manquante'));
+        return;
+      }
+      window.open(data.url, '_blank');
+    } catch (e) {
+      alert('Erreur inattendue lors du téléchargement.');
+    }
+  };
+
+  const handleViewDocument = async (docId) => {
+    try {
+      const { data, error } = await documentService.downloadDocument(docId, 'view');
+      if (error || !data?.url) {
+        alert('Erreur lors de l\'ouverture : ' + (error || 'URL manquante'));
+        return;
+      }
+      window.open(data.url, '_blank');
+    } catch (e) {
+      alert('Erreur inattendue lors de l\'ouverture.');
     }
   };
 
@@ -112,6 +199,14 @@ const DocumentManager = ({ classData, documents }) => {
           </span>
         </button>
       </div>
+      {uploadError && (
+        <div className="mt-4 p-3 border rounded-lg bg-error/5 border-error text-error">
+          <div className="font-body font-body-semibold">Erreur de stockage : {uploadError}</div>
+          <div className="text-sm mt-1">Vérifiez que le bucket nommé <strong>documents</strong> existe dans votre projet Supabase (Dashboard → Storage → Buckets).</div>
+          <div className="text-sm mt-1">Si le bucket porte un autre nom, mettez à jour la variable dans <strong>src/services/documentService.js</strong> (ligne d'appel à <code>supabase.storage.from('documents')</code>).</div>
+          <div className="text-sm mt-1">Documentation Supabase Storage: <a className="underline" href="https://supabase.com/docs/guides/storage" target="_blank" rel="noreferrer">https://supabase.com/docs/guides/storage</a></div>
+        </div>
+      )}
       {/* Upload Form */}
       {showUploadForm && (
         <div className="mb-6 p-4 bg-primary/5 border border-primary/20 rounded-lg">
@@ -197,6 +292,14 @@ const DocumentManager = ({ classData, documents }) => {
               onDragOver={handleDragOver}
               onDragLeave={handleDragLeave}
               onDrop={handleDrop}
+              onClick={() => {
+                console.log('Drop zone clicked - opening file picker');
+                fileInputRef.current?.click();
+              }}
+              tabIndex={0}
+              onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { fileInputRef.current?.click(); } }}
+              role="button"
+              aria-label="Zone de dépôt ou ouvrir le sélecteur de fichiers"
               className={`border-2 border-dashed rounded-lg p-6 text-center transition-all ${
                 dragOver ? 'border-primary bg-primary/5' : 'border-border hover:border-primary/50'
               }`}
@@ -205,10 +308,24 @@ const DocumentManager = ({ classData, documents }) => {
               <p className="font-body font-body-normal text-sm text-muted-foreground mb-2">
                 Glissez-déposez votre fichier ici ou
               </p>
-              <label className="inline-block px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg cursor-pointer transition-colors">
-                <input type="file" className="hidden" accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png" />
+              <label
+                className="inline-block px-4 py-2 bg-primary/10 text-primary hover:bg-primary/20 rounded-lg cursor-pointer transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  style={{ display: 'none' }}
+                  accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png"
+                  onChange={handleFileChange}
+                />
                 Parcourir les fichiers
               </label>
+              {selectedFile ? (
+                <div className="mt-2 text-sm text-muted-foreground">Fichier sélectionné: {selectedFile?.name} — {(selectedFile?.size/1024)?.toFixed(0)} KB</div>
+              ) : (
+                <div className="mt-2 text-sm text-muted-foreground">Aucun fichier sélectionné</div>
+              )}
               <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-2">
                 PDF, Word, PowerPoint, Images (max 10MB)
               </p>
@@ -217,9 +334,10 @@ const DocumentManager = ({ classData, documents }) => {
             <div className="flex items-center gap-3">
               <button
                 type="submit"
-                className="flex-1 bg-primary text-white font-body font-body-semibold py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+                disabled={!selectedFile || uploading}
+                className={`flex-1 bg-primary text-white font-body font-body-semibold py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors ${(!selectedFile || uploading) ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                Télécharger le Document
+                {uploading ? 'Téléchargement...' : 'Télécharger le Document'}
               </button>
               <button
                 type="button"
@@ -235,15 +353,13 @@ const DocumentManager = ({ classData, documents }) => {
       {/* Documents List */}
       <div className="space-y-3">
         {documents?.map(doc => {
-          const typeConfig = getTypeConfig(doc?.type);
-          
+          const typeConfig = getTypeConfig(doc?.type || doc?.document_type);
           return (
             <div key={doc?.id} className="border border-border rounded-lg p-4 hover:shadow-md transition-shadow">
               <div className="flex items-start gap-4">
                 <div className="p-2 bg-primary/10 rounded-lg">
                   <Icon name={typeConfig?.icon} size={20} className={typeConfig?.color} />
                 </div>
-
                 <div className="flex-1 min-w-0">
                   <div className="flex items-start justify-between mb-2">
                     <h4 className="font-heading font-heading-semibold text-lg text-card-foreground truncate">
@@ -251,11 +367,18 @@ const DocumentManager = ({ classData, documents }) => {
                     </h4>
                     <div className="flex items-center gap-2 ml-3">
                       <button
-                        onClick={() => console.log('Download document:', doc?.id)}
+                        onClick={() => handleDownloadDocument(doc?.id)}
                         className="p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
                         title="Télécharger"
                       >
                         <Icon name="Download" size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleViewDocument(doc?.id)}
+                        className="p-2 text-accent hover:bg-accent/10 rounded-lg transition-colors"
+                        title="Visualiser"
+                      >
+                        <Icon name="Eye" size={16} />
                       </button>
                       <button
                         onClick={() => handleDeleteDocument(doc?.id)}
@@ -266,31 +389,48 @@ const DocumentManager = ({ classData, documents }) => {
                       </button>
                     </div>
                   </div>
-
                   <div className="flex flex-wrap items-center gap-3 mb-2">
                     <span className={`px-2 py-1 rounded text-xs font-caption font-caption-semibold bg-primary/10 ${typeConfig?.color}`}>
                       {typeConfig?.label}
                     </span>
-                    <span className={`px-2 py-1 rounded text-xs font-caption font-caption-semibold ${
-                      doc?.visibility === 'students_parents' ? 'bg-success/10 text-success' : 'bg-primary/10 text-primary'
+                    {/* Badge de visibilité / permissions */}
+                    <span className={`px-2 py-1 rounded text-xs font-caption font-caption-semibold flex items-center gap-1 ${
+                      doc?.visibility === 'school' || doc?.is_public 
+                        ? 'bg-success/10 text-success' 
+                        : doc?.visibility === 'private' 
+                          ? 'bg-warning/10 text-warning'
+                          : 'bg-primary/10 text-primary'
                     }`}>
-                      {doc?.visibility === 'students_parents' ? 'Élèves + Parents' : 'Élèves seulement'}
+                      <Icon name={doc?.visibility === 'private' ? 'Lock' : doc?.is_public ? 'Users' : 'UserCheck'} size={12} />
+                      {doc?.visibility === 'school' || doc?.is_public 
+                        ? 'Élèves + Parents' 
+                        : doc?.visibility === 'private'
+                          ? 'Privé (vous seul)'
+                          : 'Élèves seulement'}
                     </span>
+                    {/* Badge auteur */}
+                    {doc?.uploader?.full_name && (
+                      <span className="px-2 py-1 rounded text-xs font-caption font-caption-normal bg-muted/20 text-muted-foreground flex items-center gap-1">
+                        <Icon name="User" size={12} />
+                        Par {doc?.uploader?.full_name}
+                      </span>
+                    )}
                   </div>
-
                   <div className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-4 text-muted-foreground">
                       <span className="flex items-center gap-1">
-                        {getFileIcon(doc?.title)}
-                        {formatFileSize(doc?.fileSize)}
+                        {getFileIcon(doc?.file_name || doc?.title)}
+                        {formatFileSize(getFileSize(doc))}
                       </span>
+                      {/*
                       <span className="flex items-center gap-1">
                         <Icon name="Download" size={14} />
                         {doc?.downloads} téléchargements
                       </span>
+                      */}
                     </div>
                     <span className="font-caption font-caption-normal text-muted-foreground">
-                      {formatDate(doc?.uploadDate)}
+                      {formatDate(getDate(doc))}
                     </span>
                   </div>
                 </div>
@@ -321,7 +461,10 @@ const DocumentManager = ({ classData, documents }) => {
         </div>
         <div className="flex items-center justify-between text-sm">
           <span className="font-caption font-caption-normal text-muted-foreground">
-            {documents?.reduce((total, doc) => total + parseFloat(doc?.fileSize || 0), 0)?.toFixed(1)} MB utilisés sur 500 MB
+            {(() => {
+              const totalBytes = documents?.reduce((total, doc) => total + (parseFloat(doc?.file_size ?? doc?.fileSize ?? 0) || 0), 0);
+              return `${(totalBytes / (1024 * 1024)).toFixed(1)} MB utilisés sur 500 MB`;
+            })()}
           </span>
           <span className="font-caption font-caption-normal text-muted-foreground">
             {documents?.length} document{documents?.length > 1 ? 's' : ''}

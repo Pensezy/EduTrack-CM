@@ -23,6 +23,7 @@ const TeacherAssignmentManager = ({
     startDate: new Date().toISOString().split('T')[0],
     endDate: '2025-06-30'
   });
+  const [hoursPerSubject, setHoursPerSubject] = useState({}); // Heures par matière
   const [isLoading, setIsLoading] = useState(false);
 
   // Charger les classes et matières disponibles pour l'établissement
@@ -41,15 +42,41 @@ const TeacherAssignmentManager = ({
             return;
           }
 
-          // Charger les classes
+          // Charger les classes avec le comptage des élèves
           if (schoolData?.available_classes && Array.isArray(schoolData.available_classes)) {
+            // Récupérer tous les élèves de l'école
+            const { data: students, error: studentsError } = await supabase
+              .from('students')
+              .select('current_class, class_name')
+              .eq('school_id', currentSchool.id)
+              .eq('is_active', true);
+
+            if (studentsError) {
+              console.error('Erreur chargement élèves:', studentsError);
+            }
+
+            // Compter les élèves par classe
+            const studentCountsByClass = {};
+            if (students) {
+              students.forEach(student => {
+                // Utiliser class_name en priorité, sinon current_class
+                const className = student.class_name || student.current_class;
+                if (className) {
+                  studentCountsByClass[className] = (studentCountsByClass[className] || 0) + 1;
+                }
+              });
+            }
+
+            // Formatter les classes avec le nombre réel d'élèves
             const formattedClasses = schoolData.available_classes.map((className, index) => ({
               id: `class-${index}`,
               name: className,
-              studentsCount: 0
+              studentsCount: studentCountsByClass[className] || 0
             }));
+            
             setAvailableClasses(formattedClasses);
             console.log(`✅ ${formattedClasses.length} classe(s) chargée(s)`);
+            console.log('📊 Comptage élèves par classe:', studentCountsByClass);
           }
 
           // Charger les matières (par défaut + personnalisées, sans doublons)
@@ -91,11 +118,16 @@ const TeacherAssignmentManager = ({
     return subjects.map((name, index) => ({ id: `default-${index}`, name }));
   };
 
-  // Calculer automatiquement les heures en fonction des classes et matières
+  // Calculer automatiquement les heures en fonction des classes, matières et heures personnalisées
   useEffect(() => {
     const calculateWeeklyHours = () => {
-      const baseHoursPerClassPerSubject = 2; // 2h par semaine par matière par classe
-      const totalHours = assignmentData.classes.length * assignmentData.subjects.length * baseHoursPerClassPerSubject;
+      let totalHours = 0;
+      
+      // Parcourir chaque matière et calculer selon ses heures spécifiques
+      assignmentData.subjects.forEach(subject => {
+        const hoursForThisSubject = hoursPerSubject[subject] || 2; // Par défaut 2h si non défini
+        totalHours += assignmentData.classes.length * hoursForThisSubject;
+      });
       
       setAssignmentData(prev => ({
         ...prev,
@@ -103,10 +135,8 @@ const TeacherAssignmentManager = ({
       }));
     };
 
-    if (assignmentData.classes.length > 0 && assignmentData.subjects.length > 0) {
-      calculateWeeklyHours();
-    }
-  }, [assignmentData.classes, assignmentData.subjects]);
+    calculateWeeklyHours();
+  }, [assignmentData.subjects, assignmentData.classes, hoursPerSubject]);
 
   const handleSubjectChange = (subjectName, isChecked) => {
     setAssignmentData(prev => ({
@@ -114,6 +144,22 @@ const TeacherAssignmentManager = ({
       subjects: isChecked 
         ? [...prev.subjects, subjectName]
         : prev.subjects.filter(s => s !== subjectName)
+    }));
+    
+    // Initialiser avec 2h par défaut quand une matière est sélectionnée
+    if (isChecked && !hoursPerSubject[subjectName]) {
+      setHoursPerSubject(prev => ({
+        ...prev,
+        [subjectName]: 2
+      }));
+    }
+  };
+
+  const handleHoursChange = (subjectName, hours) => {
+    const numHours = parseInt(hours) || 0;
+    setHoursPerSubject(prev => ({
+      ...prev,
+      [subjectName]: numHours
     }));
   };
 
@@ -307,7 +353,6 @@ const TeacherAssignmentManager = ({
               is_active: true,
               hire_date: assignmentData.startDate
             })
-            .select('id')
             .single();
 
           if (teacherCreateError) {
@@ -328,7 +373,9 @@ const TeacherAssignmentManager = ({
       // Créer les assignations dans teacher_assignments
       // Une entrée par combinaison classe-matière
       const assignments = [];
-      const weeklyHoursPerAssignment = Math.round(assignmentData.weeklyHours / (assignmentData.classes.length * assignmentData.subjects.length));
+      
+      // Fonction pour obtenir les heures d'une matière spécifique
+      const getHoursForSubject = (subject) => hoursPerSubject[subject] || 2;
       
       for (const className of assignmentData.classes) {
         for (const subject of assignmentData.subjects) {
@@ -344,7 +391,7 @@ const TeacherAssignmentManager = ({
             start_date: assignmentData.startDate,
             end_date: assignmentData.endDate,
             schedule: {
-              weekly_hours: weeklyHoursPerAssignment
+              weekly_hours: getHoursForSubject(subject) // Utiliser les heures spécifiques de la matière
             }
           });
         }
@@ -477,13 +524,31 @@ const TeacherAssignmentManager = ({
               <span className="text-text-secondary">Matières enseignées:</span>
               <span className="font-medium text-text-primary">{assignmentData.subjects.length}</span>
             </div>
+            
+            {/* Détail des heures par matière */}
+            {assignmentData.subjects.length > 0 && (
+              <div className="border-t border-border pt-2">
+                <p className="text-xs text-text-secondary mb-2">Heures par matière (par classe):</p>
+                <div className="space-y-1">
+                  {assignmentData.subjects.map((subject, idx) => (
+                    <div key={idx} className="flex justify-between text-xs">
+                      <span className="text-text-secondary">{subject}:</span>
+                      <span className="font-medium text-text-primary">
+                        {hoursPerSubject[subject] || 2}h × {assignmentData.classes.length} classe(s) = {(hoursPerSubject[subject] || 2) * assignmentData.classes.length}h
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div className="flex justify-between text-sm">
               <span className="text-text-secondary">Total élèves:</span>
               <span className="font-medium text-text-primary">{totalStudents}</span>
             </div>
             <div className="border-t border-border pt-2">
               <div className="flex justify-between text-base">
-                <span className="font-medium text-text-primary">Heures/semaine:</span>
+                <span className="font-medium text-text-primary">Total heures/semaine:</span>
                 <span className="font-bold text-primary">{assignmentData.weeklyHours}h</span>
               </div>
             </div>
@@ -507,32 +572,25 @@ const TeacherAssignmentManager = ({
         </div>
       </div>
 
-      {/* Sélection des matières */}
+      {/* Sélection des matières avec heures personnalisables */}
       <div>
-        <div className="flex items-center justify-between mb-3">
-          <h5 className="font-heading font-heading-semibold text-md text-text-primary">
-            Matières à enseigner
-          </h5>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAddSubjectModal(true)}
-            iconName="Plus"
-            iconPosition="left"
-          >
-            Ajouter une matière
-          </Button>
-        </div>
-        
-        {assignmentData.subjects.length > 0 && (
-          <div className="mb-3 text-sm text-primary">
-            {assignmentData.subjects.length} matière(s) sélectionnée(s): {assignmentData.subjects.join(', ')}
-          </div>
-        )}
-        
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 max-h-60 overflow-y-auto border border-border rounded-lg p-3">
+        <h5 className="font-heading font-heading-semibold text-md text-text-primary mb-3 flex items-center gap-2">
+          <Icon name="BookOpen" size={18} className="text-primary" />
+          Matières à enseigner
+        </h5>
+        <p className="text-xs text-text-tertiary mb-3">
+          Sélectionnez les matières et définissez le nombre d'heures par semaine pour chaque matière
+        </p>
+        <div className="space-y-2">
           {availableSubjects.map((subject, index) => (
-            <div key={subject.id || index} className="flex items-center space-x-2">
+            <div 
+              key={subject.id || index} 
+              className={`flex items-center gap-3 p-3 rounded-lg border transition-all ${
+                assignmentData.subjects.includes(subject.name)
+                  ? 'bg-primary/5 border-primary/30'
+                  : 'bg-muted/20 border-border hover:border-primary/20'
+              }`}
+            >
               <Checkbox
                 id={`subject-${subject.id || index}`}
                 checked={assignmentData.subjects.includes(subject.name)}
@@ -540,13 +598,49 @@ const TeacherAssignmentManager = ({
               />
               <label 
                 htmlFor={`subject-${subject.id || index}`}
-                className="text-sm text-text-primary cursor-pointer"
+                className="flex-1 text-sm font-medium text-text-primary cursor-pointer"
               >
                 {subject.name}
               </label>
+              
+              {/* Champ de saisie des heures */}
+              {assignmentData.subjects.includes(subject.name) && (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type="number"
+                    min="1"
+                    max="10"
+                    value={hoursPerSubject[subject.name] || 2}
+                    onChange={(e) => handleHoursChange(subject.name, e.target.value)}
+                    className="w-16 text-center text-sm"
+                    placeholder="2"
+                  />
+                  <span className="text-xs text-text-secondary whitespace-nowrap">h/sem</span>
+                </div>
+              )}
             </div>
           ))}
         </div>
+        
+        {/* Résumé des heures par matière */}
+        {assignmentData.subjects.length > 0 && (
+          <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex items-start gap-2">
+              <Icon name="Info" size={14} className="text-blue-600 mt-0.5" />
+              <div className="text-xs text-blue-700">
+                <p className="font-semibold mb-1">Heures configurées :</p>
+                <div className="flex flex-wrap gap-2">
+                  {assignmentData.subjects.map((subject, idx) => (
+                    <span key={idx} className="bg-blue-100 px-2 py-0.5 rounded">
+                      {subject}: {hoursPerSubject[subject] || 2}h
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+        
         {availableSubjects.length === 0 && (
           <div className="text-center py-4">
             <p className="text-sm text-text-secondary">

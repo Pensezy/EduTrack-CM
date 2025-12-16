@@ -7,6 +7,7 @@ import { useState, useEffect } from 'react';
 import { useDataMode } from './useDataMode';
 import studentDemoDataService from '../services/studentDemoDataService';
 import studentProductionDataService from '../services/studentProductionDataService';
+import { computeSubjectAverage, computeOverallAverage } from '../utils/grading';
 
 export const useStudentDashboardData = (studentId) => {
   const { dataMode } = useDataMode();
@@ -101,6 +102,31 @@ export const useStudentDashboardData = (studentId) => {
       setBehavior(behaviorResult.data);
       setSchedule(scheduleResult.data);
 
+      // Calculer une moyenne dérivée plus précise à partir des notes récupérées
+      try {
+        const rawGrades = gradesResult.data || [];
+        const schoolType = profileResult?.data?.school?.type;
+
+        // Grouper par matière
+        const subjMap = {};
+        rawGrades.forEach(g => {
+          const name = g.subject || 'Matière inconnue';
+          if (!subjMap[name]) subjMap[name] = { grades: [] };
+          subjMap[name].grades.push(g);
+        });
+
+        const subjectsArray = Object.keys(subjMap).map(name => ({
+          subject: name,
+          average: computeSubjectAverage(subjMap[name].grades, { schoolType }),
+          coefficient: (subjMap[name].grades.reduce((acc, x) => acc + (Number(x.coefficient) || 1), 0) / Math.max(1, subjMap[name].grades.length))
+        }));
+
+        const derivedAverage = computeOverallAverage(subjectsArray, 1);
+        setStats(prev => ({ ...(prev || {}), averageGrade: derivedAverage }));
+      } catch (err) {
+        console.warn('⚠️ Impossible de calculer moyenne dérivée:', err);
+      }
+
       // Vérifier s'il y a des erreurs
       const hasError = [
         profileResult,
@@ -162,13 +188,13 @@ export const useStudentDashboardData = (studentId) => {
   /**
    * Obtenir les notes par matière
    */
-  const getGradesBySubject = () => {
+  const getGradesBySubject = (options = {}) => {
     if (!grades || grades.length === 0) return [];
 
     const subjectMap = {};
 
     grades.forEach(grade => {
-      const subjectName = grade.subject;
+      const subjectName = grade.subject || 'Matière inconnue';
       if (!subjectMap[subjectName]) {
         subjectMap[subjectName] = {
           subject: subjectName,
@@ -180,13 +206,15 @@ export const useStudentDashboardData = (studentId) => {
       }
 
       subjectMap[subjectName].grades.push(grade);
-      subjectMap[subjectName].average += parseFloat(grade.grade) || 0;
       subjectMap[subjectName].count += 1;
     });
 
-    // Calculer les moyennes
+    // Calculer les moyennes par matière en tenant compte des max_grade et coefficients
     Object.values(subjectMap).forEach(subject => {
-      subject.average = (subject.average / subject.count).toFixed(2);
+      subject.average = computeSubjectAverage(subject.grades, { schoolType: options.schoolType });
+      // Déterminer coefficient matière moyen si fournit
+      const coefs = subject.grades.map(g => Number(g.coefficient) || 1);
+      subject.coefficient = coefs.length > 0 ? (coefs.reduce((a,b)=>a+b,0)/coefs.length) : 1;
     });
 
     return Object.values(subjectMap);

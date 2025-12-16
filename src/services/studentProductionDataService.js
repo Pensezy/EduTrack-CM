@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '../lib/supabase';
+import { computeSubjectAverage, computeOverallAverage } from '../utils/grading';
 
 const studentProductionDataService = {
   /**
@@ -128,9 +129,30 @@ const studentProductionDataService = {
 
       if (gradesError) throw gradesError;
 
-      const averageGrade = gradesData && gradesData.length > 0
-        ? (gradesData.reduce((sum, g) => sum + (parseFloat(g.grade) || 0), 0) / gradesData.length).toFixed(2)
-        : '0.00';
+      // Calculer une moyenne robuste en tenant compte de max_grade et coefficients
+      let averageGrade = '0.00';
+      try {
+        if (gradesData && gradesData.length > 0) {
+          const subjMap = {};
+          gradesData.forEach(g => {
+            const name = g.subject || 'Matière';
+            if (!subjMap[name]) subjMap[name] = { grades: [] };
+            subjMap[name].grades.push({ grade: g.grade, max_grade: g.max_grade, coefficient: g.coefficient });
+          });
+
+          const subjectsArray = Object.keys(subjMap).map(name => ({
+            subject: name,
+            average: computeSubjectAverage(subjMap[name].grades),
+            coefficient: (subjMap[name].grades.reduce((acc, x) => acc + (Number(x.coefficient) || 1), 0) / Math.max(1, subjMap[name].grades.length))
+          }));
+
+          const overall = computeOverallAverage(subjectsArray, 1);
+          averageGrade = overall ? overall.toFixed(2) : '0.00';
+        }
+      } catch (err) {
+        console.warn('⚠️ Erreur calcul moyenne:', err);
+        averageGrade = '0.00';
+      }
 
       // Récupérer absences
       const { data: absencesData, error: absencesError } = await supabase

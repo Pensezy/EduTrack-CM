@@ -77,7 +77,7 @@ const StudentDashboard = () => {
   console.log('👤 Student Dashboard - Student Data:', studentData);
 
   // Transformer les données de notes pour correspondre au format attendu
-  const gradesBySubject = getGradesBySubject();
+  const gradesBySubject = getGradesBySubject({ schoolType: studentProfile?.school?.type });
   const gradesData = gradesBySubject.map((subjectData, index) => ({
     id: index + 1,
     name: subjectData.subject,

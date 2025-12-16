@@ -1,24 +1,98 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
+import { supabase } from '../../../lib/supabase';
 
-const GradeEntryPanel = ({ classData, students }) => {
+const GradeEntryPanel = ({ classData, students, onGradeAdded }) => {
   const [selectedStudent, setSelectedStudent] = useState(null);
+  const [schoolType, setSchoolType] = useState('secondaire'); // maternelle, primaire, secondaire
+  const [currentSequence, setCurrentSequence] = useState('1');
   const [gradeForm, setGradeForm] = useState({
     student: '',
     type: '',
     grade: '',
+    max_grade: '20',
     coefficient: '1',
     description: '',
+    sequence: '1',
+    trimester: '1',
     date: new Date()?.toISOString()?.split('T')?.[0]
   });
   const [showBulkEntry, setShowBulkEntry] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const evaluationTypes = [
-    { value: 'controle', label: 'Contrôle', color: 'text-error' },
-    { value: 'devoir', label: 'Devoir Maison', color: 'text-warning' },
-    { value: 'interrogation', label: 'Interrogation', color: 'text-primary' },
-    { value: 'tp', label: 'Travaux Pratiques', color: 'text-success' },
-    { value: 'expose', label: 'Exposé', color: 'text-accent-foreground' }
+  // Charger le type d'établissement
+  useEffect(() => {
+    const loadSchoolType = async () => {
+      if (classData?.school_id) {
+        const { data, error } = await supabase
+          .from('schools')
+          .select('type')
+          .eq('id', classData.school_id)
+          .single();
+        
+        if (!error && data) {
+          setSchoolType(data.type || 'secondaire');
+        }
+      }
+    };
+    loadSchoolType();
+  }, [classData]);
+
+  // Auto-calculer le trimestre selon la séquence
+  useEffect(() => {
+    const sequence = parseInt(gradeForm.sequence);
+    let trimester = '1';
+    if (sequence === 1 || sequence === 2) trimester = '1';
+    else if (sequence === 3 || sequence === 4) trimester = '2';
+    else if (sequence === 5 || sequence === 6) trimester = '3';
+    
+    setGradeForm(prev => ({ ...prev, trimester }));
+  }, [gradeForm.sequence]);
+
+  // Types d'évaluation selon le système camerounais
+  const getEvaluationTypes = () => {
+    if (schoolType === 'maternelle') {
+      return [
+        { value: 'observation', label: '🎨 Observation en classe', color: 'text-blue-600' },
+        { value: 'activite', label: '🎯 Activité pratique', color: 'text-green-600' },
+        { value: 'participation', label: '✋ Participation', color: 'text-purple-600' },
+        { value: 'autonomie', label: '🌟 Autonomie', color: 'text-orange-600' }
+      ];
+    } else if (schoolType === 'primaire') {
+      return [
+        { value: 'evaluation_continue', label: '📝 Évaluation continue', color: 'text-blue-600' },
+        { value: 'composition', label: '📚 Composition', color: 'text-red-600' },
+        { value: 'exercice', label: '✏️ Exercice', color: 'text-green-600' },
+        { value: 'interrogation', label: '❓ Interrogation écrite', color: 'text-purple-600' },
+        { value: 'oral', label: '🗣️ Interrogation orale', color: 'text-indigo-600' }
+      ];
+    } else {
+      // Secondaire (Collège/Lycée)
+      return [
+        { value: 'evaluation_sequence', label: '📋 Évaluation de séquence', color: 'text-blue-600' },
+        { value: 'devoir', label: '📝 Devoir surveillé', color: 'text-purple-600' },
+        { value: 'composition', label: '📚 Composition trimestrielle', color: 'text-red-600' },
+        { value: 'interrogation_ecrite', label: '✍️ Interrogation écrite', color: 'text-green-600' },
+        { value: 'tp', label: '🔬 Travaux Pratiques (TP)', color: 'text-cyan-600' },
+        { value: 'tpe', label: '👥 Travaux Pratiques Encadrés (TPE)', color: 'text-orange-600' },
+        { value: 'expose', label: '🎤 Exposé', color: 'text-pink-600' }
+      ];
+    }
+  };
+
+  const sequences = [
+    { value: '1', label: 'Séquence 1' },
+    { value: '2', label: 'Séquence 2' },
+    { value: '3', label: 'Séquence 3' },
+    { value: '4', label: 'Séquence 4' },
+    { value: '5', label: 'Séquence 5' },
+    { value: '6', label: 'Séquence 6' }
+  ];
+
+  const trimesters = [
+    { value: '1', label: '1er Trimestre (Séq. 1-2)' },
+    { value: '2', label: '2ème Trimestre (Séq. 3-4)' },
+    { value: '3', label: '3ème Trimestre (Séq. 5-6)' }
   ];
 
   const coefficients = [
@@ -26,7 +100,8 @@ const GradeEntryPanel = ({ classData, students }) => {
     { value: '2', label: 'Coefficient 2' },
     { value: '3', label: 'Coefficient 3' },
     { value: '4', label: 'Coefficient 4' },
-    { value: '5', label: 'Coefficient 5' }
+    { value: '5', label: 'Coefficient 5' },
+    { value: '6', label: 'Coefficient 6' }
   ];
 
   const getGradeColor = (grade) => {
@@ -43,22 +118,93 @@ const GradeEntryPanel = ({ classData, students }) => {
     return 'bg-error/10';
   };
 
-  const handleGradeSubmit = (e) => {
+  const handleGradeSubmit = async (e) => {
     e?.preventDefault();
-    console.log('Grade submitted:', gradeForm);
     
-    // Reset form
-    setGradeForm({
-      student: '',
-      type: '',
-      grade: '',
-      coefficient: '1',
-      description: '',
-      date: new Date()?.toISOString()?.split('T')?.[0]
-    });
+    // Validation
+    if (!gradeForm.student || !gradeForm.type || !gradeForm.grade) {
+      alert('Veuillez remplir tous les champs obligatoires (élève, type, note)');
+      return;
+    }
+
+    const gradeValue = parseFloat(gradeForm.grade);
+    const maxGrade = parseFloat(gradeForm.max_grade);
     
-    // Show success message (in real app, this would be handled by a notification system)
-    alert('Note enregistrée avec succès!');
+    if (isNaN(gradeValue) || gradeValue < 0 || gradeValue > maxGrade) {
+      alert(`La note doit être entre 0 et ${maxGrade}`);
+      return;
+    }
+
+    // Déterminer le trimestre en fonction de la séquence
+    let trimester = gradeForm.trimester;
+    if (gradeForm.sequence === '1' || gradeForm.sequence === '2') {
+      trimester = '1';
+    } else if (gradeForm.sequence === '3' || gradeForm.sequence === '4') {
+      trimester = '2';
+    } else {
+      trimester = '3';
+    }
+
+    setIsSubmitting(true);
+    
+    try {
+      // Récupérer les informations nécessaires
+      const selectedStudentData = students.find(s => s.id === gradeForm.student);
+      
+      // Insérer la note dans Supabase
+      const { data, error } = await supabase
+        .from('grades')
+        .insert({
+          student_id: gradeForm.student,
+          school_id: classData?.school_id || selectedStudentData?.school_id,
+          academic_year_id: classData?.academic_year_id,
+          class_id: selectedStudentData?.class_id,
+          subject_id: classData?.subject_id,
+          teacher_id: classData?.teacher_id,
+          grade: gradeValue,
+          max_grade: maxGrade,
+          grade_type: gradeForm.type,
+          coefficient: parseFloat(gradeForm.coefficient),
+          description: gradeForm.description || null,
+          sequence: parseInt(gradeForm.sequence),
+          trimester: parseInt(trimester),
+          date: gradeForm.date
+        })
+        .select();
+
+      if (error) {
+        console.error('Erreur enregistrement note:', error);
+        alert('Erreur lors de l\'enregistrement de la note: ' + error.message);
+        return;
+      }
+
+      console.log('✅ Note enregistrée:', data);
+      
+      // Reset form
+      setGradeForm({
+        student: '',
+        type: '',
+        grade: '',
+        max_grade: '20',
+        coefficient: '1',
+        description: '',
+        sequence: currentSequence,
+        trimester: trimester,
+        date: new Date()?.toISOString()?.split('T')?.[0]
+      });
+      
+      // Callback pour rafraîchir les données
+      if (onGradeAdded) {
+        onGradeAdded();
+      }
+      
+      alert('Note enregistrée avec succès!');
+    } catch (error) {
+      console.error('Exception enregistrement note:', error);
+      alert('Une erreur est survenue lors de l\'enregistrement');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleBulkSubmit = () => {
@@ -69,29 +215,54 @@ const GradeEntryPanel = ({ classData, students }) => {
 
   const getStudentAverage = (student) => {
     if (!student?.recentGrades?.length) return 0;
-    return student?.recentGrades?.reduce((sum, grade) => sum + grade?.grade, 0) / student?.recentGrades?.length;
+    
+    // Calculer la moyenne pondérée par coefficient
+    let totalPoints = 0;
+    let totalCoefficients = 0;
+    
+    student.recentGrades.forEach(grade => {
+      const coef = grade.coefficient || 1;
+      const normalizedGrade = (grade.grade / (grade.max_grade || 20)) * 20; // Normaliser sur 20
+      totalPoints += normalizedGrade * coef;
+      totalCoefficients += coef;
+    });
+    
+    return totalCoefficients > 0 ? totalPoints / totalCoefficients : 0;
   };
 
+  const evaluationTypes = getEvaluationTypes();
+
   return (
-    <div className="bg-card rounded-lg shadow-card border border-border p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h3 className="font-heading font-heading-semibold text-xl text-card-foreground">
-          Saisie des Notes - {classData?.name}
-        </h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowBulkEntry(!showBulkEntry)}
-            className="px-4 py-2 bg-success/10 text-success hover:bg-success/20 rounded-lg transition-colors flex items-center gap-2"
-          >
-            <Icon name="Users" size={16} />
-            <span className="font-caption font-caption-semibold text-sm">
-              Saisie groupée
-            </span>
-          </button>
-          <div className="px-3 py-2 bg-primary/10 rounded-lg">
-            <span className="font-caption font-caption-semibold text-sm text-primary">
-              {students?.length} élèves
-            </span>
+    <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 p-6">
+      {/* En-tête avec info sur la séquence actuelle */}
+      <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-xl p-4 mb-6 border-2 border-indigo-200">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-heading font-bold text-2xl text-gray-900 mb-1">
+              📊 Saisie des Notes
+            </h3>
+            <p className="text-sm text-gray-600">
+              {classData?.name} - {classData?.subject}
+            </p>
+          </div>
+          <div className="flex items-center gap-3">
+            <select
+              value={currentSequence}
+              onChange={(e) => {
+                setCurrentSequence(e.target.value);
+                setGradeForm({...gradeForm, sequence: e.target.value});
+              }}
+              className="px-4 py-2 bg-white border-2 border-indigo-300 rounded-lg font-bold text-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
+              {sequences.map(seq => (
+                <option key={seq.value} value={seq.value}>{seq.label}</option>
+              ))}
+            </select>
+            <div className="px-4 py-2 bg-white rounded-lg border-2 border-purple-300 shadow-md">
+              <span className="font-bold text-sm text-purple-700">
+                {students?.length} élève{students?.length > 1 ? 's' : ''}
+              </span>
+            </div>
           </div>
         </div>
       </div>
@@ -165,15 +336,15 @@ const GradeEntryPanel = ({ classData, students }) => {
             </div>
 
             {/* Grade and Coefficient */}
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-3 gap-3">
               <div>
                 <label className="block font-body font-body-semibold text-sm text-card-foreground mb-2">
-                  Note /20 *
+                  Note *
                 </label>
                 <input
                   type="number"
                   min="0"
-                  max="20"
+                  max={gradeForm.max_grade}
                   step="0.25"
                   value={gradeForm?.grade}
                   onChange={(e) => setGradeForm({...gradeForm, grade: e?.target?.value})}
@@ -182,10 +353,23 @@ const GradeEntryPanel = ({ classData, students }) => {
                   required
                 />
               </div>
-              
               <div>
                 <label className="block font-body font-body-semibold text-sm text-card-foreground mb-2">
-                  Coefficient
+                  Sur
+                </label>
+                <input
+                  type="number"
+                  min="10"
+                  max="100"
+                  value={gradeForm?.max_grade}
+                  onChange={(e) => setGradeForm({...gradeForm, max_grade: e?.target?.value})}
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background"
+                  placeholder="20"
+                />
+              </div>
+              <div>
+                <label className="block font-body font-body-semibold text-sm text-card-foreground mb-2">
+                  Coef.
                 </label>
                 <select
                   value={gradeForm?.coefficient}
@@ -194,8 +378,42 @@ const GradeEntryPanel = ({ classData, students }) => {
                 >
                   {coefficients?.map(coef => (
                     <option key={coef?.value} value={coef?.value}>
-                      {coef?.label}
+                      {coef?.value}
                     </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
+            {/* Sequence and Trimester */}
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block font-body font-body-semibold text-sm text-card-foreground mb-2">
+                  Séquence *
+                </label>
+                <select
+                  value={gradeForm?.sequence}
+                  onChange={(e) => setGradeForm({...gradeForm, sequence: e?.target?.value})}
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background"
+                  required
+                >
+                  {sequences.map(seq => (
+                    <option key={seq.value} value={seq.value}>{seq.label}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="block font-body font-body-semibold text-sm text-card-foreground mb-2">
+                  Trimestre
+                </label>
+                <select
+                  value={gradeForm?.trimester}
+                  onChange={(e) => setGradeForm({...gradeForm, trimester: e?.target?.value})}
+                  className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 bg-background"
+                  disabled
+                >
+                  {trimesters.map(tri => (
+                    <option key={tri.value} value={tri.value}>{tri.label}</option>
                   ))}
                 </select>
               </div>
@@ -230,10 +448,11 @@ const GradeEntryPanel = ({ classData, students }) => {
 
             <button
               type="submit"
-              className="w-full bg-primary text-white font-body font-body-semibold py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+              disabled={isSubmitting}
+              className="w-full bg-primary text-white font-body font-body-semibold py-3 px-4 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Icon name="Save" size={16} />
-              Enregistrer la Note
+              {isSubmitting ? 'Enregistrement...' : 'Enregistrer la Note'}
             </button>
           </form>
         </div>
@@ -257,11 +476,9 @@ const GradeEntryPanel = ({ classData, students }) => {
                   onClick={() => setSelectedStudent(selectedStudent?.id === student?.id ? null : student)}
                 >
                   <div className="flex items-center gap-3 mb-3">
-                    <img
-                      src={student?.photo}
-                      alt={student?.name}
-                      className="w-10 h-10 rounded-full object-cover border-2 border-border"
-                    />
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-indigo-600 flex items-center justify-center text-white font-bold text-sm shadow-md border-2 border-white">
+                      {student?.name?.charAt(0)?.toUpperCase() || 'E'}
+                    </div>
                     <div className="flex-1">
                       <h5 className="font-heading font-heading-semibold text-sm text-card-foreground">
                         {student?.name}

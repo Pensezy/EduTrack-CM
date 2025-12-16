@@ -205,14 +205,14 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                 key={item?.path}
                 to={item?.path}
                 className={`flex items-center ${!isCollapsed ? 'space-x-3' : 'justify-center'} px-3 py-3 rounded-xl text-sm font-body transition-all duration-300 group ${
-                  location?.pathname === item?.path
+                  ((location?.pathname || '') + (location?.search || '')) === item?.path
                     ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg scale-105'
                     : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:scale-102 hover:shadow-md'
                 }`}
                 title={isCollapsed ? item?.label : ''}
               >
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all ${
-                  location?.pathname === item?.path 
+                  ((location?.pathname || '') + (location?.search || '')) === item?.path 
                     ? 'bg-white/20 backdrop-blur-sm' 
                     : 'bg-blue-100 group-hover:bg-blue-200'
                 }`}>
@@ -220,17 +220,17 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
                     name={item?.icon} 
                     size={20} 
                     className={`flex-shrink-0 ${
-                      location?.pathname === item?.path ? 'text-white' : 'text-blue-600'
+                      ((location?.pathname || '') + (location?.search || '')) === item?.path ? 'text-white' : 'text-blue-600'
                     }`}
                   />
                 </div>
                 {!isCollapsed && (
                   <div className="flex-1 min-w-0">
                     <div className={`font-body font-body-semibold ${
-                      location?.pathname === item?.path ? 'text-white' : 'text-gray-900'
+                      ((location?.pathname || '') + (location?.search || '')) === item?.path ? 'text-white' : 'text-gray-900'
                     }`}>{item?.label}</div>
                     <div className={`font-caption font-caption-normal text-xs ${
-                      location?.pathname === item?.path ? 'text-blue-100' : 'text-gray-500 group-hover:text-blue-600'
+                      ((location?.pathname || '') + (location?.search || '')) === item?.path ? 'text-blue-100' : 'text-gray-500 group-hover:text-blue-600'
                     }`}>
                       {item?.description}
                     </div>

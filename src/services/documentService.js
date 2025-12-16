@@ -1,41 +1,119 @@
 import { supabase } from '../lib/supabase';
 
 class DocumentService {
+  // Helper method to get current user with valid database ID
+  async getCurrentUserWithDbId() {
+    let user = null;
+    let dbUserId = null;
+    
+    // Try Supabase Auth first
+    try {
+      const res = await supabase?.auth?.getUser();
+      user = res?.data?.user;
+      console.log('🔐 Supabase Auth user:', user?.email || 'none');
+    } catch (e) {
+      user = null;
+    }
+
+    // Fallback to localStorage-stored user for EmailJS/persisted sessions
+    if (!user) {
+      try {
+        const saved = localStorage.getItem('edutrack-user');
+        if (saved) {
+          user = JSON.parse(saved);
+          console.log('📦 localStorage user:', user?.email, 'id:', user?.id);
+        }
+      } catch (e) {
+        // ignore
+      }
+    }
+
+    if (!user) return { user: null, dbUserId: null };
+
+    // Get the actual user ID from the database by email
+    // This ensures we use an ID that exists in the users table (for FK constraint)
+    if (user?.email) {
+      try {
+        console.log('🔍 Searching user in DB by email:', user.email);
+        const { data: dbUser, error: dbError } = await supabase
+          ?.from('users')
+          ?.select('id, current_school_id')
+          ?.eq('email', user.email)
+          ?.single();
+        
+        if (dbError) {
+          console.error('❌ Error fetching user from DB:', dbError);
+        }
+        
+        if (dbUser) {
+          dbUserId = dbUser.id;
+          // Also attach school_id if available
+          user.db_school_id = dbUser.current_school_id;
+          console.log('✅ Found user in DB - dbUserId:', dbUserId, 'school:', dbUser.current_school_id);
+        } else {
+          console.warn('⚠️ User not found in DB for email:', user.email);
+        }
+      } catch (e) {
+        console.warn('Could not fetch user from database:', e);
+      }
+    }
+
+    // Fallback to user.id if no dbUserId found (for Supabase Auth users)
+    if (!dbUserId && user?.id) {
+      console.log('⚠️ Using fallback user.id:', user.id);
+      dbUserId = user.id;
+    }
+
+    console.log('📋 getCurrentUserWithDbId result - dbUserId:', dbUserId);
+    return { user, dbUserId };
+  }
+
   // Document CRUD operations
   async uploadDocument(documentData, file) {
     try {
-      const { data: { user } } = await supabase?.auth?.getUser();
-      if (!user) throw new Error('Non authentifié');
+      const { user, dbUserId } = await this.getCurrentUserWithDbId();
 
-      // Create file path
+      if (!user) throw new Error('Non authentifié');
+      if (!dbUserId) throw new Error('Utilisateur non trouvé dans la base de données. Veuillez vous reconnecter.');
+
+      // Bucket name configurable via Vite env var VITE_SUPABASE_STORAGE_BUCKET
+      const STORAGE_BUCKET = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || 'documents';
+
+      // Create file path using database user ID
       const timestamp = Date.now();
       const fileExtension = file?.name?.split('.')?.pop() || '';
       const fileName = `${documentData?.title?.replace(/\s+/g, '_')}_${timestamp}.${fileExtension}`;
-      const filePath = `teacher/${user?.id}/${documentData?.subject?.toLowerCase()}/${fileName}`;
+      const subjectSegment = (documentData?.subject || 'general').toString().replace(/\s+/g, '_').toLowerCase();
+      const filePath = `teacher/${dbUserId}/${subjectSegment}/${fileName}`;
 
       // Upload file to storage
-      const { data: storageData, error: storageError } = await supabase?.storage?.from('documents')?.upload(filePath, file, {
+      const { data: storageData, error: storageError } = await supabase?.storage?.from(STORAGE_BUCKET)?.upload(filePath, file, {
           cacheControl: '3600',
           upsert: false
         });
 
       if (storageError) throw storageError;
 
-      // Insert document record
+      // Determine school_id: use provided, or from user profile, or from database
+      const schoolId = documentData?.school_id || user?.current_school_id || user?.db_school_id;
+
+      // Insert document record with the valid database user ID
       const { data, error } = await supabase?.from('documents')?.insert({
-          title: documentData?.title,
-          description: documentData?.description,
-          file_name: file?.name,
-          file_path: filePath,
-          file_size: file?.size,
-          mime_type: file?.type,
-          document_type: documentData?.document_type,
-          uploaded_by: user?.id,
-          class_name: documentData?.class_name,
-          subject: documentData?.subject,
-          school_id: documentData?.school_id,
-          is_public: documentData?.is_public || false
-        })?.select()?.single();
+        title: documentData?.title,
+        description: documentData?.description,
+        file_name: file?.name,
+        file_path: filePath,
+        file_size: file?.size,
+        mime_type: file?.type,
+        document_type: documentData?.document_type,
+        uploaded_by: dbUserId, // Use the database user ID (valid FK)
+        class_name: documentData?.class_name,
+        subject: documentData?.subject,
+        school_id: schoolId,
+        is_public: documentData?.is_public || false
+      })?.select()?.single();
 
       if (error) throw error;
       return { data, error: null };
@@ -47,7 +125,7 @@ class DocumentService {
 
   async getDocuments(filters = {}) {
     try {
-      let query = supabase?.from('documents')?.select(`
+        let query = supabase?.from('documents')?.select(`
           id, title, description, file_name, file_path, file_size, mime_type,
           document_type, class_name, subject, is_public, created_at, updated_at,
           uploader:uploaded_by(id, full_name),
@@ -129,7 +207,11 @@ class DocumentService {
       }
 
       // Delete from storage
-      const { error: storageError } = await supabase?.storage?.from('documents')?.remove([document?.file_path]);
+      const STORAGE_BUCKET = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || 'documents';
+
+      const { error: storageError } = await supabase?.storage?.from(STORAGE_BUCKET)?.remove([document?.file_path]);
 
       if (storageError) {
         console.error('Erreur suppression storage:', storageError);
@@ -159,7 +241,11 @@ class DocumentService {
       }
 
       // Create signed URL for download
-      const { data: signedUrlData, error: urlError } = await supabase?.storage?.from('documents')?.createSignedUrl(document?.file_path, 3600); // 1 hour expiry
+      const STORAGE_BUCKET = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || 'documents';
+
+      const { data: signedUrlData, error: urlError } = await supabase?.storage?.from(STORAGE_BUCKET)?.createSignedUrl(document?.file_path, 3600); // 1 hour expiry
 
       if (urlError || !signedUrlData) {
         throw new Error('Impossible de générer l\'URL de téléchargement');
@@ -179,6 +265,113 @@ class DocumentService {
     } catch (error) {
       console.error('Erreur téléchargement document:', error);
       return { data: null, error: error?.message };
+    }
+  }
+
+  // Upload file and create a record in documents table (used by teacher dashboard)
+  // Utilise la table `documents` existante avec les colonnes correctes
+  async uploadTeacherDocument(documentData, file) {
+    try {
+      // Utiliser la méthode centralisée pour obtenir l'utilisateur avec son ID de la base de données
+      const { user, dbUserId } = await this.getCurrentUserWithDbId();
+
+      if (!user) throw new Error('Non authentifié');
+      if (!dbUserId) throw new Error('Utilisateur non trouvé dans la base de données. Veuillez vous reconnecter.');
+
+      // Récupérer school_id depuis plusieurs sources possibles
+      let schoolId = user?.current_school_id || user?.school_id || user?.db_school_id || documentData?.school_id;
+
+      // Si pas de schoolId, le chercher dans la base de données
+      if (!schoolId && dbUserId) {
+        try {
+          const { data: userData } = await supabase?.from('users')?.select('current_school_id')?.eq('id', dbUserId)?.single();
+          schoolId = userData?.current_school_id;
+        } catch (e) {
+          console.warn('Impossible de récupérer school_id:', e);
+        }
+      }
+
+      if (!schoolId) {
+        throw new Error('École non trouvée - veuillez vous reconnecter');
+      }
+
+      // Nom du bucket Storage (configurable via env ou défaut 'documents')
+      const STORAGE_BUCKET = (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || (typeof process !== 'undefined' && process.env && process.env.VITE_SUPABASE_STORAGE_BUCKET)
+        || 'documents';
+
+      console.log('📤 Upload document - bucket:', STORAGE_BUCKET, 'dbUserId:', dbUserId, 'school:', schoolId);
+
+      // Construire le chemin du fichier (utiliser dbUserId pour le path)
+      const timestamp = Date.now();
+      const fileExtension = file?.name?.split('.')?.pop() || '';
+      const safeTitle = (documentData?.title || 'document').toString().replace(/[^a-zA-Z0-9_-]/g, '_');
+      const fileName = `${safeTitle}_${timestamp}.${fileExtension}`;
+      const filePath = `teacher/${dbUserId}/${fileName}`;
+
+      // Upload vers Supabase Storage
+      const { data: storageData, error: storageError } = await supabase?.storage?.from(STORAGE_BUCKET)?.upload(filePath, file, { 
+        cacheControl: '3600', 
+        upsert: false 
+      });
+      
+      if (storageError) {
+        console.error('❌ Storage error:', storageError);
+        throw storageError;
+      }
+
+      console.log('✅ Fichier uploadé:', filePath);
+
+      // Insérer dans la table `documents` avec les colonnes existantes
+      // Colonnes disponibles: id, school_id, document_type, visibility, is_public, 
+      // uploaded_by, target_student_id, target_class_id, title, file_name, file_path, mime_type, class_name
+      
+      // Déterminer la visibilité selon le choix utilisateur
+      // - 'private' : seul l'enseignant voit
+      // - 'class' : élèves de la classe voient
+      // - 'school' : toute l'école voit (parents inclus si is_public=true)
+      let visibility = 'class'; // défaut: visible par la classe
+      if (documentData?.visibility === 'students') {
+        visibility = 'class';
+      } else if (documentData?.visibility === 'students_parents') {
+        visibility = 'school'; // visible par élèves ET parents
+      } else if (documentData?.visibility === 'private') {
+        visibility = 'private';
+      }
+
+      // DEBUG: Voir ce qui est envoyé
+      console.log('📋 documentData reçu:', documentData);
+
+      // Pour l'instant, on ne met pas target_class_id pour éviter les erreurs FK
+      // On utilise class_name pour stocker le nom de la classe (pas besoin de FK)
+      const record = {
+        school_id: schoolId,
+        document_type: documentData?.document_type || documentData?.type || 'cours',
+        visibility: visibility,
+        is_public: documentData?.visibility === 'students_parents', // parents peuvent voir
+        uploaded_by: dbUserId, // 👤 QUI a uploadé le document (ID de la table users)
+        // target_class_id: null, // Désactivé temporairement - pas de FK problématique
+        title: documentData?.title,
+        file_name: file?.name,
+        file_path: filePath,
+        mime_type: file?.type,
+        class_name: documentData?.class_name || documentData?.class_id // Nom de la classe pour affichage
+      };
+
+      console.log('📝 Insertion document record:', record);
+
+      const { data, error } = await supabase?.from('documents')?.insert(record)?.select()?.single();
+      
+      if (error) {
+        console.error('❌ DB insert error:', error);
+        throw error;
+      }
+
+      console.log('✅ Document enregistré:', data?.id);
+      return { data, error: null };
+    } catch (error) {
+      console.error('Erreur upload teacher document:', error);
+      return { data: null, error: error?.message || String(error) };
     }
   }
 

@@ -9,6 +9,9 @@ import { supabase } from '../../lib/supabase';
 import ClassSelector from './components/ClassSelector';
 import AssignedClassesOverview from './components/AssignedClassesOverview';
 import GradeEntryPanel from './components/GradeEntryPanel';
+import GradesSummaryPanel from './components/GradesSummaryPanel';
+import ConductPanel from './components/ConductPanel';
+import ReportCard from './components/ReportCard';
 import DocumentManager from './components/DocumentManager';
 import AttendanceManager from './components/AttendanceManager';
 import StudentCommunication from './components/StudentCommunication';
@@ -21,6 +24,8 @@ const TeacherDashboard = () => {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedSubject, setSelectedSubject] = useState(null);
+  const [gradesSubTab, setGradesSubTab] = useState('entry'); // 'entry' | 'summary' | 'conduct' | 'bulletin'
+  const [showReportCard, setShowReportCard] = useState(null); // student object or null
   const [currentTime, setCurrentTime] = useState(new Date());
   const [viewMode, setViewMode] = useState('single'); // 'single' ou 'multi-school'
   
@@ -319,7 +324,21 @@ const TeacherDashboard = () => {
 
         console.log('✅ Infos enseignant chargées:', teacherInfo);
 
-        // 2. Récupérer les assignations (classes assignées)
+        // 2. Récupérer l'année académique actuelle
+        const { data: academicYear, error: academicYearError } = await supabase
+          .from('academic_years')
+          .select('id, name, start_date, end_date')
+          .eq('school_id', teacherInfo.school_id)
+          .eq('is_current', true)
+          .single();
+        
+        if (academicYearError) {
+          console.warn('⚠️ Année académique non trouvée:', academicYearError);
+        } else {
+          console.log('✅ Année académique actuelle:', academicYear);
+        }
+
+        // 3. Récupérer les assignations (classes assignées)
         const { data: assignments, error: assignmentsError } = await supabase
           .from('teacher_assignments')
           .select(`
@@ -328,6 +347,7 @@ const TeacherDashboard = () => {
             subject_id,
             class_name,
             subject_name,
+            school_id,
             schedule,
             is_active,
             classes!teacher_assignments_class_id_fkey (
@@ -340,6 +360,10 @@ const TeacherDashboard = () => {
               id,
               name,
               code
+            ),
+            schools!teacher_assignments_school_id_fkey (
+              id,
+              name
             )
           `)
           .eq('teacher_id', teacherInfo.id)
@@ -358,35 +382,74 @@ const TeacherDashboard = () => {
         if (assignments && assignments.length > 0) {
           for (const assignment of assignments) {
             const classId = assignment.class_id;
+            const className = assignment.class_name;
+            const schoolId = assignment.school_id;
             
-            // Si pas de class_id, on ne peut pas charger les élèves
-            // (les assignations utilisent class_name/subject_name en mode texte)
-            if (!classId) {
-              console.log('ℹ️ Assignation sans class_id (mode texte):', assignment.class_name);
-              studentsDataByClass[assignment.id] = [];
-              continue;
-            }
+            let students = [];
             
-            // Récupérer les élèves
-            const { data: students, error: studentsError } = await supabase
-              .from('students')
-              .select(`
-                id,
-                matricule,
-                user_id,
-                class_id,
-                users!students_user_id_fkey (
+            // Si on a un class_id, on l'utilise
+            if (classId) {
+              const { data, error: studentsError } = await supabase
+                .from('students')
+                .select(`
                   id,
-                  full_name,
-                  email,
-                  phone
-                )
-              `)
-              .eq('class_id', classId)
-              .eq('is_active', true);
+                  matricule,
+                  user_id,
+                  class_id,
+                  users!students_user_id_fkey (
+                    id,
+                    full_name,
+                    email,
+                    phone
+                  )
+                `)
+                .eq('class_id', classId)
+                .eq('is_active', true);
 
-            if (studentsError) {
-              console.error('Erreur chargement élèves:', studentsError);
+              if (studentsError) {
+                console.error('Erreur chargement élèves par class_id:', studentsError);
+              } else {
+                students = data || [];
+              }
+            }
+            // Sinon, on utilise class_name + school_id
+            else if (className && schoolId) {
+              console.log(`🔍 Recherche élèves pour classe: ${className}, école: ${schoolId}`);
+              
+              const { data, error: studentsError } = await supabase
+                .from('students')
+                .select(`
+                  id,
+                  matricule,
+                  user_id,
+                  class_name,
+                  current_class,
+                  school_id,
+                  users!students_user_id_fkey (
+                    id,
+                    full_name,
+                    email,
+                    phone
+                  )
+                `)
+                .eq('school_id', schoolId)
+                .eq('is_active', true);
+
+              if (studentsError) {
+                console.error('❌ Erreur chargement élèves par class_name:', studentsError);
+              } else {
+                // Filtrer côté client pour gérer class_name OU current_class
+                const filteredStudents = (data || []).filter(student => 
+                  student.class_name === className || student.current_class === className
+                );
+                students = filteredStudents;
+                console.log(`✅ ${students.length} élève(s) trouvé(s) pour "${className}" sur ${data?.length || 0} élèves de l'école`);
+              }
+            }
+            // Si ni class_id ni class_name, on ne peut pas charger les élèves
+            else {
+              console.log('ℹ️ Assignation sans class_id ni class_name:', assignment);
+              studentsDataByClass[assignment.id] = [];
               continue;
             }
 
@@ -501,14 +564,20 @@ const TeacherDashboard = () => {
             return {
               id: assignment.id,
               name: assignment.class_name || assignment.classes?.name || 'Classe',
-              level: assignment.classes?.level || 'Non défini',
+              level: assignment.classes?.level || assignment.class_name || 'Non défini',
               section: assignment.classes?.section || '',
-              school: teacherInfo.schools?.name || 'École',
+              school: assignment.schools?.name || teacherInfo.schools?.name || 'École',
               subject: assignment.subject_name || assignment.subjects?.name || 'Matière',
               students: students.length,
               schedule: assignment.schedule || { weekly_hours: 0 },
               average: classAverage,
-              attendanceRate: attendanceRate
+              attendanceRate: attendanceRate,
+              // IDs nécessaires pour l'enregistrement des notes
+              school_id: assignment.school_id || teacherInfo.school_id,
+              subject_id: assignment.subject_id,
+              class_id: assignment.class_id,
+              teacher_id: teacherInfo.id,
+              academic_year_id: academicYear?.id || null
             };
           })
         };
@@ -537,8 +606,60 @@ const TeacherDashboard = () => {
         }
         console.log('✅ Emploi du temps généré:', scheduleData.length, 'créneaux');
 
+        // 6. Charger les documents de l'enseignant depuis la base de données
+        const documentsDataByClass = {};
+        try {
+          const { data: teacherDocs, error: docsError } = await supabase
+            .from('documents')
+            .select('*')
+            .eq('uploaded_by', user.id)
+            .order('created_at', { ascending: false });
+
+          if (docsError) {
+            console.warn('⚠️ Erreur chargement documents:', docsError);
+          } else if (teacherDocs && teacherDocs.length > 0) {
+            console.log('✅ Documents chargés:', teacherDocs.length);
+            
+            // Organiser les documents par classe (class_name)
+            teacherDocs.forEach(doc => {
+              const classKey = doc.class_name || 'general';
+              if (!documentsDataByClass[classKey]) {
+                documentsDataByClass[classKey] = [];
+              }
+              documentsDataByClass[classKey].push({
+                id: doc.id,
+                title: doc.title,
+                type: doc.document_type,
+                file_name: doc.file_name,
+                file_path: doc.file_path,
+                file_size: doc.file_size,
+                mime_type: doc.mime_type,
+                visibility: doc.visibility,
+                is_public: doc.is_public,
+                uploadedAt: doc.created_at,
+                class_name: doc.class_name
+              });
+            });
+            
+            // Aussi indexer par class_id si disponible dans les assignations
+            if (assignments && assignments.length > 0) {
+              assignments.forEach(assignment => {
+                const className = assignment.class_name || assignment.classes?.name;
+                if (className && documentsDataByClass[className]) {
+                  // Copier aussi sous l'ID de la classe pour compatibilité
+                  documentsDataByClass[assignment.class_id] = documentsDataByClass[className];
+                }
+              });
+            }
+          }
+        } catch (docErr) {
+          console.warn('⚠️ Erreur lors du chargement des documents:', docErr);
+        }
+        console.log('✅ Documents organisés par classe:', Object.keys(documentsDataByClass));
+
         setTeacherData(formattedTeacherData);
         setStudentsData(studentsDataByClass);
+        setDocumentsData(documentsDataByClass);
         setUpcomingSchedule(scheduleData);
         
         console.log('🎯 DONNÉES RÉELLES DÉFINIES:');
@@ -655,10 +776,69 @@ const TeacherDashboard = () => {
             <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Gestion des Notes</h2>
             {teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 ? (
               selectedClass ? (
-                <GradeEntryPanel 
-                  classData={selectedClass}
-                  students={studentsData?.[selectedClass?.id] || []}
-                />
+                <div>
+                  {/* Sous-onglets Notes */}
+                  <div className="flex items-center gap-2 mb-4 flex-wrap">
+                    <button
+                      onClick={() => setGradesSubTab('entry')}
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${gradesSubTab === 'entry' ? 'bg-indigo-600 text-white' : 'bg-white border border-border hover:bg-gray-50'}`}
+                    >
+                      <Icon name="Edit3" size={16} />
+                      Saisie
+                    </button>
+                    <button
+                      onClick={() => setGradesSubTab('summary')}
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${gradesSubTab === 'summary' ? 'bg-indigo-600 text-white' : 'bg-white border border-border hover:bg-gray-50'}`}
+                    >
+                      <Icon name="BarChart2" size={16} />
+                      Synthèse
+                    </button>
+                    <button
+                      onClick={() => setGradesSubTab('conduct')}
+                      className={`px-4 py-2 rounded-md flex items-center gap-2 ${gradesSubTab === 'conduct' ? 'bg-indigo-600 text-white' : 'bg-white border border-border hover:bg-gray-50'}`}
+                    >
+                      <Icon name="UserCheck" size={16} />
+                      Vie Scolaire
+                    </button>
+                    {/* Bouton Bulletins supprimé du dashboard enseignant */}
+                  </div>
+
+                  {gradesSubTab === 'entry' && (
+                    <GradeEntryPanel 
+                      classData={selectedClass}
+                      students={studentsData?.[selectedClass?.id] || []}
+                      onGradeAdded={() => {
+                        const loadTeacherData = async () => {
+                          setLoading(true);
+                          try {
+                            window.location.reload();
+                          } catch (error) {
+                            console.error('Erreur rechargement:', error);
+                          }
+                        };
+                        loadTeacherData();
+                      }}
+                    />
+                  )}
+
+                  {gradesSubTab === 'summary' && (
+                    <GradesSummaryPanel
+                      classData={selectedClass}
+                      students={studentsData?.[selectedClass?.id] || []}
+                    />
+                  )}
+
+                  {gradesSubTab === 'conduct' && (
+                    <ConductPanel
+                      classData={selectedClass}
+                      students={studentsData?.[selectedClass?.id] || []}
+                    />
+                  )}
+
+                  {/* Panneau Bulletins supprimé du dashboard enseignant */}
+
+                  {/* Modal Bulletin supprimé du dashboard enseignant */}
+                </div>
               ) : (
                 <div className="bg-card rounded-lg border border-border p-8 text-center">
                   <Icon name="BookOpen" size={48} className="mx-auto text-muted-foreground mb-4" />
@@ -702,6 +882,13 @@ const TeacherDashboard = () => {
         );
 
       case 'documents':
+        // Récupérer les documents pour la classe sélectionnée (par ID ou par nom)
+        const classDocuments = selectedClass 
+          ? (documentsData?.[selectedClass?.id] || documentsData?.[selectedClass?.name] || [])
+          : [];
+        console.log('📄 Documents pour la classe:', selectedClass?.name, '→', classDocuments?.length, 'documents');
+        console.log('📄 documentsData keys:', Object.keys(documentsData || {}));
+        
         return (
           <div className="space-y-6">
             <h2 className="font-heading font-heading-bold text-2xl text-card-foreground">Mes Documents</h2>
@@ -709,7 +896,7 @@ const TeacherDashboard = () => {
               selectedClass ? (
                 <DocumentManager 
                   classData={selectedClass}
-                  documents={documentsData?.[selectedClass?.id] || []}
+                  documents={classDocuments}
                 />
               ) : (
                 <div className="bg-card rounded-lg border border-border p-8 text-center">
@@ -1046,7 +1233,7 @@ const TeacherDashboard = () => {
 
             {/* Vue Multi-Établissements - Affiché uniquement si classes assignées */}
             {viewMode === 'multi-school' && teacherData?.assignedClasses && teacherData?.assignedClasses?.length > 0 && (
-              <TeacherMultiSchoolOverview teacherGlobalId="global-teacher-1" />
+              <TeacherMultiSchoolOverview teacherId={teacherData?.id} />
             )}
 
             {/* Vue Simple - Contenu existant */}
@@ -1073,6 +1260,10 @@ const TeacherDashboard = () => {
                       <GradeEntryPanel 
                         classData={selectedClass}
                         students={studentsData?.[selectedClass?.id] || []}
+                        onGradeAdded={() => {
+                          // Recharger les données après ajout d'une note
+                          window.location.reload();
+                        }}
                       />
                       <AttendanceManager
                         classData={selectedClass}
@@ -1084,7 +1275,11 @@ const TeacherDashboard = () => {
                     <div className="space-y-6">
                       <DocumentManager 
                         classData={selectedClass}
-                        documents={documentsData?.[selectedClass?.id] || []}
+                        documents={
+                          documentsData?.[selectedClass?.id] ||
+                          documentsData?.[selectedClass?.name] ||
+                          []
+                        }
                       />
                       <StudentCommunication 
                         classData={selectedClass}

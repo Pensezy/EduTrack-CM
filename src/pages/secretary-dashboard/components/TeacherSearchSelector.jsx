@@ -26,6 +26,9 @@ const TeacherSearchSelector = ({
 
       setIsSearching(true);
       try {
+        // Nettoyer le terme de recherche pour éviter les problèmes d'encodage
+        const cleanSearchTerm = searchTerm.trim().replace(/[%_]/g, '');
+        
         // Rechercher dans la table users avec le rôle teacher
         const { data: teachers, error } = await supabase
           .from('users')
@@ -37,7 +40,7 @@ const TeacherSearchSelector = ({
             role
           `)
           .eq('role', 'teacher')
-          .or(`full_name.ilike.%${searchTerm}%,email.ilike.%${searchTerm}%,phone.ilike.%${searchTerm}%`);
+          .or(`full_name.ilike.%${cleanSearchTerm}%,email.ilike.%${cleanSearchTerm}%,phone.ilike.%${cleanSearchTerm}%`);
 
         if (error) {
           console.error('Erreur de recherche:', error);
@@ -46,14 +49,14 @@ const TeacherSearchSelector = ({
         }
 
         // Formater les résultats pour correspondre au format attendu
-        const formattedResults = teachers.map(teacher => ({
+        const formattedResults = (teachers || []).map(teacher => ({
           id: teacher.id,
           fullName: teacher.full_name || 'Nom inconnu',
           firstName: teacher.full_name?.split(' ')[0] || '',
           lastName: teacher.full_name?.split(' ').slice(1).join(' ') || '',
           email: teacher.email || '',
           phone: teacher.phone || '',
-          specializations: [], // On pourrait charger cela depuis teacher_assignments si besoin
+          specializations: [],
           assignments: [],
           totalSchools: 0,
           totalWeeklyHours: 0,
@@ -101,7 +104,7 @@ const TeacherSearchSelector = ({
         return;
       }
 
-      const formattedResults = teachers.map(teacher => ({
+      const formattedResults = (teachers || []).map(teacher => ({
         id: teacher.id,
         fullName: teacher.full_name || 'Nom inconnu',
         firstName: teacher.full_name?.split(' ')[0] || '',

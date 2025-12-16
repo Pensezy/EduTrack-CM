@@ -1,10 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
+import { supabase } from '../../../lib/supabase';
 
 const AttendanceManager = ({ classData, students }) => {
   const [selectedDate, setSelectedDate] = useState(new Date()?.toISOString()?.split('T')?.[0]);
   const [attendanceData, setAttendanceData] = useState({});
   const [showQuickEntry, setShowQuickEntry] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const attendanceStatus = [
     { value: 'present', label: 'Présent(e)', icon: 'Check', color: 'text-success', bg: 'bg-success' },
@@ -18,13 +21,29 @@ const AttendanceManager = ({ classData, students }) => {
       ...prev,
       [selectedDate]: {
         ...prev?.[selectedDate],
-        [studentId]: status
+        [studentId]: {
+          ...(prev?.[selectedDate]?.[studentId] || {}),
+          status
+        }
       }
     }));
   };
 
   const getStudentAttendance = (studentId) => {
-    return attendanceData?.[selectedDate]?.[studentId] || 'present';
+    return attendanceData?.[selectedDate]?.[studentId]?.status || 'present';
+  };
+
+  const handleJustificationChange = (studentId, value) => {
+    setAttendanceData(prev => ({
+      ...prev,
+      [selectedDate]: {
+        ...(prev?.[selectedDate] || {}),
+        [studentId]: {
+          ...(prev?.[selectedDate]?.[studentId] || {}),
+          justification: value
+        }
+      }
+    }));
   };
 
   const getStatusConfig = (status) => {
@@ -32,8 +51,57 @@ const AttendanceManager = ({ classData, students }) => {
   };
 
   const saveAttendance = () => {
-    console.log('Saving attendance for', selectedDate, attendanceData?.[selectedDate]);
-    alert('Présences enregistrées avec succès!');
+    const dateAttendance = attendanceData?.[selectedDate] || {};
+    const rows = Object.keys(dateAttendance).map(studentId => {
+      const rec = dateAttendance[studentId];
+      return {
+        id: rec?.id || undefined,
+        student_id: studentId,
+        class_id: classData?.class_id || classData?.id,
+        school_id: classData?.school_id,
+        teacher_id: classData?.teacher_id,
+        date: selectedDate,
+        status: rec.status,
+        justification: rec.justification || null
+      };
+    });
+
+    if (rows.length === 0) {
+      alert('Aucune modification à enregistrer');
+      return;
+    }
+
+    setSaving(true);
+    (async () => {
+      try {
+        // Upsert rows based on unique constraint (student_id + date + class_id)
+        const { data, error } = await supabase
+          .from('attendances')
+          .upsert(rows, { onConflict: ['student_id', 'date', 'class_id'] })
+          .select();
+
+        if (error) throw error;
+
+        // Remap returned records to update local state with ids
+        const newMap = { ...(attendanceData || {}) };
+        newMap[selectedDate] = newMap[selectedDate] || {};
+        (data || []).forEach(rec => {
+          newMap[selectedDate][String(rec.student_id)] = {
+            id: rec.id,
+            status: rec.status,
+            justification: rec.justification
+          };
+        });
+
+        setAttendanceData(newMap);
+        alert('Présences enregistrées avec succès!');
+      } catch (err) {
+        console.error('Erreur enregistrement présences:', err);
+        alert('Erreur lors de l\'enregistrement des présences.');
+      } finally {
+        setSaving(false);
+      }
+    })();
   };
 
   const markAllPresent = () => {
@@ -58,7 +126,8 @@ const AttendanceManager = ({ classData, students }) => {
       total: students?.length || 0
     };
 
-    Object.values(dateData)?.forEach(status => {
+    Object.values(dateData)?.forEach(s => {
+      const status = s?.status || 'present';
       stats[status] = (stats?.[status] || 0) + 1;
     });
 
@@ -71,6 +140,45 @@ const AttendanceManager = ({ classData, students }) => {
   };
 
   const stats = getAttendanceStats();
+
+  // Charger les présences existantes pour la classe + date
+  useEffect(() => {
+    if (!classData || !classData.class_id) return;
+
+    const load = async () => {
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from('attendances')
+          .select('id, student_id, status, justification, date')
+          .eq('class_id', classData.class_id)
+          .eq('date', selectedDate);
+
+        if (error) {
+          console.warn('Erreur chargement présences:', error);
+          setLoading(false);
+          return;
+        }
+
+        const dateAttendance = {};
+        (data || []).forEach(rec => {
+          dateAttendance[String(rec.student_id)] = {
+            id: rec.id,
+            status: rec.status,
+            justification: rec.justification
+          };
+        });
+
+        setAttendanceData(prev => ({ ...prev, [selectedDate]: dateAttendance }));
+      } catch (err) {
+        console.error('Erreur chargement présences:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    load();
+  }, [classData, selectedDate]);
 
   const formatDate = (dateString) => {
     return new Date(dateString)?.toLocaleDateString('fr-FR', {
