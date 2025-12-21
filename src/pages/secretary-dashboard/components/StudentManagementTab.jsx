@@ -44,6 +44,7 @@ const StudentManagementTab = ({ isDemo = false }) => {
       lastName: '',
       class: '',
       dateOfBirth: '',
+      placeOfBirth: '',
       photo: '/public/assets/images/no_image.png',
       // Identifiants générés automatiquement
       username: '',
@@ -524,6 +525,7 @@ const StudentManagementTab = ({ isDemo = false }) => {
         lastName: '',
         class: '',
         dateOfBirth: '',
+        placeOfBirth: '',
         photo: '/public/assets/images/no_image.png',
         username: '',
         password: '',
@@ -574,6 +576,7 @@ const StudentManagementTab = ({ isDemo = false }) => {
         lastName: '',
         class: '',
         dateOfBirth: '',
+        placeOfBirth: '',
         photo: '/public/assets/images/no_image.png',
         username: '',
         password: '',
@@ -1520,6 +1523,29 @@ const StudentManagementTab = ({ isDemo = false }) => {
                             />
                           </div>
                         </div>
+                        
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Lieu de naissance <span className="text-red-500">*</span>
+                          </label>
+                          <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                              <Icon name="MapPin" size={18} className="text-gray-400" />
+                            </div>
+                            <Input
+                              type="text"
+                              value={student.placeOfBirth || ''}
+                              onChange={(e) => {
+                                const updatedStudents = [...familyData.students];
+                                updatedStudents[index].placeOfBirth = e.target.value;
+                                setFamilyData(prev => ({ ...prev, students: updatedStudents }));
+                              }}
+                              placeholder="Ex: Douala, Yaoundé..."
+                              className="h-11 pl-10"
+                              required
+                            />
+                          </div>
+                        </div>
                       </div>
                     </div>
                   ))}
@@ -1668,6 +1694,13 @@ const StudentManagementTab = ({ isDemo = false }) => {
                               <p className="text-sm text-text-secondary">
                                 {student.firstName} {student.lastName} - {student.class}
                               </p>
+                              {(student.dateOfBirth || student.placeOfBirth) && (
+                                <p className="text-xs text-text-secondary mt-1">
+                                  {student.dateOfBirth && `Né(e) le ${new Date(student.dateOfBirth).toLocaleDateString('fr-FR')}`}
+                                  {student.dateOfBirth && student.placeOfBirth && ' à '}
+                                  {student.placeOfBirth}
+                                </p>
+                              )}
                             </div>
                           </div>
                           <div className="space-y-4">

@@ -27,7 +27,12 @@ const DocumentManager = ({ classData, documents }) => {
   ];
 
   const getTypeConfig = (type) => {
-    return documentTypes?.find(t => t?.value === type) || documentTypes?.[0];
+    // Chercher le type correspondant, avec fallback sur un type par défaut
+    const found = documentTypes?.find(t => t?.value === type || t?.value === type?.toLowerCase());
+    if (found) return found;
+    
+    // Type par défaut si non trouvé
+    return { value: 'resource', label: 'Document', icon: 'File', color: 'text-muted-foreground' };
   };
 
   const getFileIcon = (fileName) => {
@@ -143,9 +148,16 @@ const DocumentManager = ({ classData, documents }) => {
   };
 
   const handleDeleteDocument = async (docId) => {
+    if (!docId) {
+      alert('ID du document manquant');
+      return;
+    }
     if (!window.confirm('Êtes-vous sûr de vouloir supprimer ce document ?')) return;
+    
+    console.log('🗑️ Suppression document:', docId);
     try {
       const { data, error } = await documentService.deleteDocument(docId);
+      console.log('🗑️ Résultat suppression:', { data, error });
       if (error) {
         alert('Erreur lors de la suppression : ' + error);
       } else {
@@ -153,33 +165,57 @@ const DocumentManager = ({ classData, documents }) => {
         window.location.reload();
       }
     } catch (e) {
-      alert('Erreur inattendue lors de la suppression.');
+      console.error('❌ Exception suppression:', e);
+      alert('Erreur inattendue lors de la suppression: ' + e.message);
     }
   };
 
   const handleDownloadDocument = async (docId) => {
+    if (!docId) {
+      alert('ID du document manquant');
+      return;
+    }
+    console.log('📥 Téléchargement document:', docId);
     try {
       const { data, error } = await documentService.downloadDocument(docId, 'download');
+      console.log('📥 Résultat téléchargement:', { data, error });
       if (error || !data?.url) {
         alert('Erreur lors du téléchargement : ' + (error || 'URL manquante'));
         return;
       }
-      window.open(data.url, '_blank');
+      
+      // Forcer le téléchargement en créant un lien temporaire
+      const link = document.createElement('a');
+      link.href = data.url;
+      link.download = data.fileName || 'document';
+      link.target = '_blank';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
     } catch (e) {
-      alert('Erreur inattendue lors du téléchargement.');
+      console.error('❌ Exception téléchargement:', e);
+      alert('Erreur inattendue lors du téléchargement: ' + e.message);
     }
   };
 
   const handleViewDocument = async (docId) => {
+    if (!docId) {
+      alert('ID du document manquant');
+      return;
+    }
+    console.log('👁️ Visualisation document:', docId);
     try {
       const { data, error } = await documentService.downloadDocument(docId, 'view');
+      console.log('👁️ Résultat visualisation:', { data, error });
       if (error || !data?.url) {
         alert('Erreur lors de l\'ouverture : ' + (error || 'URL manquante'));
         return;
       }
-      window.open(data.url, '_blank');
+      // Ouvrir dans un nouvel onglet pour visualiser
+      window.open(data.url, '_blank', 'noopener,noreferrer');
     } catch (e) {
-      alert('Erreur inattendue lors de l\'ouverture.');
+      console.error('❌ Exception visualisation:', e);
+      alert('Erreur inattendue lors de l\'ouverture: ' + e.message);
     }
   };
 

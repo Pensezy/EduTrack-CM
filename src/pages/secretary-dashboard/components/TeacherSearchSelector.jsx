@@ -1,35 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
-import Input from '../../../components/ui/Input';
 import { supabase } from '../../../lib/supabase';
 
 const TeacherSearchSelector = ({ 
   onTeacherSelect, 
   onCreateNew, 
-  selectedTeacher, 
-  searchTerm, 
-  onSearchChange 
+  selectedTeacher
 }) => {
-  const [searchResults, setSearchResults] = useState([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showResults, setShowResults] = useState(false);
+  const [allTeachers, setAllTeachers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Recherche en temps réel dans Supabase
+  // Charger tous les enseignants au montage du composant
   useEffect(() => {
-    const performSearch = async () => {
-      if (!searchTerm || searchTerm.length < 2) {
-        setSearchResults([]);
-        setShowResults(false);
-        return;
-      }
-
-      setIsSearching(true);
+    const loadAllTeachers = async () => {
+      setIsLoading(true);
       try {
-        // Nettoyer le terme de recherche pour éviter les problèmes d'encodage
-        const cleanSearchTerm = searchTerm.trim().replace(/[%_]/g, '');
-        
-        // Rechercher dans la table users avec le rôle teacher
         const { data: teachers, error } = await supabase
           .from('users')
           .select(`
@@ -40,15 +26,14 @@ const TeacherSearchSelector = ({
             role
           `)
           .eq('role', 'teacher')
-          .or(`full_name.ilike.%${cleanSearchTerm}%,email.ilike.%${cleanSearchTerm}%,phone.ilike.%${cleanSearchTerm}%`);
+          .order('full_name', { ascending: true });
 
         if (error) {
-          console.error('Erreur de recherche:', error);
-          setSearchResults([]);
+          console.error('Erreur chargement enseignants:', error);
+          setAllTeachers([]);
           return;
         }
 
-        // Formater les résultats pour correspondre au format attendu
         const formattedResults = (teachers || []).map(teacher => ({
           id: teacher.id,
           fullName: teacher.full_name || 'Nom inconnu',
@@ -63,69 +48,28 @@ const TeacherSearchSelector = ({
           availableHours: 40
         }));
 
-        setSearchResults(formattedResults);
-        setShowResults(true);
+        setAllTeachers(formattedResults);
+        console.log(`✅ ${formattedResults.length} enseignant(s) chargé(s)`);
       } catch (error) {
-        console.error('Erreur de recherche:', error);
-        setSearchResults([]);
+        console.error('Exception chargement enseignants:', error);
+        setAllTeachers([]);
       } finally {
-        setIsSearching(false);
+        setIsLoading(false);
       }
     };
 
-    const debounceTimer = setTimeout(performSearch, 300);
-    return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
+    loadAllTeachers();
+  }, []);
 
-  const handleTeacherSelect = (teacher) => {
-    onTeacherSelect(teacher);
-    setShowResults(false);
-  };
-
-  // Charger tous les enseignants
-  const loadAllTeachers = async () => {
-    setIsSearching(true);
-    try {
-      const { data: teachers, error } = await supabase
-        .from('users')
-        .select(`
-          id,
-          full_name,
-          email,
-          phone,
-          role
-        `)
-        .eq('role', 'teacher')
-        .order('full_name', { ascending: true });
-
-      if (error) {
-        console.error('Erreur chargement enseignants:', error);
-        setSearchResults([]);
-        return;
-      }
-
-      const formattedResults = (teachers || []).map(teacher => ({
-        id: teacher.id,
-        fullName: teacher.full_name || 'Nom inconnu',
-        firstName: teacher.full_name?.split(' ')[0] || '',
-        lastName: teacher.full_name?.split(' ').slice(1).join(' ') || '',
-        email: teacher.email || '',
-        phone: teacher.phone || '',
-        specializations: [],
-        assignments: [],
-        totalSchools: 0,
-        totalWeeklyHours: 0,
-        availableHours: 40
-      }));
-
-      setSearchResults(formattedResults);
-      setShowResults(true);
-      console.log(`✅ ${formattedResults.length} enseignant(s) chargé(s)`);
-    } catch (error) {
-      console.error('Exception chargement enseignants:', error);
-      setSearchResults([]);
-    } finally {
-      setIsSearching(false);
+  const handleSelectChange = (e) => {
+    const selectedId = e.target.value;
+    if (!selectedId) {
+      onTeacherSelect(null);
+      return;
+    }
+    const teacher = allTeachers.find(t => t.id === selectedId);
+    if (teacher) {
+      onTeacherSelect(teacher);
     }
   };
 
@@ -152,36 +96,42 @@ const TeacherSearchSelector = ({
 
   return (
     <div className="space-y-4">
-      {/* Zone de recherche */}
+      {/* Liste déroulante des enseignants */}
       <div className="space-y-2">
+        <label className="block font-body font-body-semibold text-sm text-text-primary mb-2">
+          Sélectionner un enseignant
+        </label>
         <div className="relative">
-          <Input
-            type="search"
-            placeholder="Rechercher par nom, email ou téléphone..."
-            value={searchTerm}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full pr-10"
-          />
-          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-            {isSearching ? (
-              <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+          <select
+            value={selectedTeacher?.id || ''}
+            onChange={handleSelectChange}
+            disabled={isLoading}
+            className="w-full px-4 py-3 pr-10 border border-border rounded-xl bg-background text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary transition-all appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <option value="">
+              {isLoading ? 'Chargement des enseignants...' : '-- Choisir un enseignant --'}
+            </option>
+            {allTeachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.fullName} {teacher.email ? `(${teacher.email})` : ''}
+              </option>
+            ))}
+          </select>
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+            {isLoading ? (
+              <div className="animate-spin h-5 w-5 border-2 border-primary border-t-transparent rounded-full" />
             ) : (
-              <Icon name="Search" size={16} className="text-muted-foreground" />
+              <Icon name="ChevronDown" size={20} className="text-muted-foreground" />
             )}
           </div>
         </div>
         
-        {/* Bouton pour afficher tous les enseignants */}
-        {!searchTerm && !showResults && (
-          <Button
-            onClick={loadAllTeachers}
-            variant="outline"
-            className="w-full"
-            disabled={isSearching}
-          >
-            <Icon name="Users" size={16} className="mr-2" />
-            Afficher tous les enseignants
-          </Button>
+        {/* Compteur d'enseignants disponibles */}
+        {!isLoading && (
+          <p className="text-xs text-text-tertiary flex items-center gap-1">
+            <Icon name="Users" size={12} />
+            {allTeachers.length} enseignant(s) disponible(s)
+          </p>
         )}
       </div>
 
@@ -262,98 +212,26 @@ const TeacherSearchSelector = ({
         </div>
       )}
 
-      {/* Résultats de recherche */}
-      {showResults && searchResults.length > 0 && !selectedTeacher && (
-        <div className="bg-card border border-border rounded-lg max-h-96 overflow-y-auto">
-          <div className="p-3 border-b border-border bg-muted/30">
-            <p className="font-medium text-sm text-text-primary">
-              {searchResults.length} enseignant(s) trouvé(s)
-            </p>
-          </div>
-          <div className="divide-y divide-border">
-            {searchResults.map((teacher) => (
-              <div
-                key={teacher.id}
-                className="p-4 hover:bg-muted/30 cursor-pointer transition-colors"
-                onClick={() => handleTeacherSelect(teacher)}
-              >
-                <div className="flex items-start justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-1">
-                      <h4 className="font-heading font-heading-medium text-sm text-text-primary">
-                        {teacher.fullName || `${teacher.firstName} ${teacher.lastName}`}
-                      </h4>
-                      {teacher.totalSchools > 1 && (
-                        <span className="bg-primary/10 text-primary text-xs px-2 py-1 rounded-full">
-                          Multi-établissements
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-text-secondary mb-2">
-                      {teacher.email} {teacher.phone && `• ${teacher.phone}`}
-                    </p>
-                    {teacher.specializations && teacher.specializations.length > 0 && (
-                      <div className="mb-2">
-                        {getSpecializationsBadges(teacher.specializations)}
-                      </div>
-                    )}
-                    <p className="text-xs text-text-secondary">
-                      {getAssignmentSummary(teacher)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-xs text-text-secondary">
-                      Disponible
-                    </div>
-                    <div className={`text-sm font-medium ${teacher.availableHours > 10 ? 'text-success' : teacher.availableHours > 5 ? 'text-warning' : 'text-error'}`}>
-                      {teacher.availableHours}h
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Aucun résultat */}
-      {showResults && searchResults.length === 0 && searchTerm.length >= 2 && !isSearching && (
+      {/* Aucun enseignant disponible */}
+      {!isLoading && allTeachers.length === 0 && (
         <div className="bg-card border border-border rounded-lg p-6 text-center">
           <Icon name="UserX" size={48} className="text-muted-foreground mx-auto mb-3" />
           <h4 className="font-heading font-heading-semibold text-base text-text-primary mb-2">
-            Aucun enseignant trouvé
+            Aucun enseignant disponible
           </h4>
           <p className="text-sm text-text-secondary mb-4">
-            Aucun enseignant ne correspond à votre recherche "{searchTerm}"
+            Il n'y a pas encore d'enseignant enregistré dans le système
           </p>
           
-          <div className="space-y-3">
-            <div className="bg-info/5 border border-info/20 rounded-lg p-3">
-              <div className="flex items-start space-x-2">
-                <Icon name="Lightbulb" size={16} className="text-info mt-0.5" />
-                <div className="text-left">
-                  <p className="text-sm font-medium text-text-primary mb-1">
-                    Suggestions de recherche :
-                  </p>
-                  <ul className="text-xs text-text-secondary space-y-1">
-                    <li>• Essayez avec le nom complet</li>
-                    <li>• Recherchez par spécialisation (ex: "Mathématiques")</li>
-                    <li>• Vérifiez l'email ou le numéro de téléphone</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <Button
-              variant="outline"
-              onClick={onCreateNew}
-              className="w-full"
-              iconName="UserPlus"
-              iconPosition="left"
-            >
-              Créer un nouveau compte enseignant
-            </Button>
-          </div>
+          <Button
+            variant="outline"
+            onClick={onCreateNew}
+            className="w-full"
+            iconName="UserPlus"
+            iconPosition="left"
+          >
+            Créer un nouveau compte enseignant
+          </Button>
         </div>
       )}
 
@@ -367,7 +245,7 @@ const TeacherSearchSelector = ({
             </p>
             <p className="text-xs text-text-secondary">
               Un enseignant peut travailler dans plusieurs établissements avec un seul compte. 
-              Recherchez d'abord si l'enseignant existe déjà pour éviter les doublons.
+              Sélectionnez un enseignant existant pour l'assigner à votre établissement.
             </p>
           </div>
         </div>

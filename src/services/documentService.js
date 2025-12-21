@@ -1,4 +1,5 @@
 import { supabase } from '../lib/supabase';
+import { pdfGenerator } from './pdfGenerator.js';
 
 class DocumentService {
   // Helper method to get current user with valid database ID
@@ -191,8 +192,9 @@ class DocumentService {
 
   async deleteDocument(documentId) {
     try {
-      const { data: { user } } = await supabase?.auth?.getUser();
-      if (!user) throw new Error('Non authentifié');
+      // Utiliser la méthode centralisée pour obtenir l'utilisateur
+      const { user, dbUserId } = await this.getCurrentUserWithDbId();
+      if (!user || !dbUserId) throw new Error('Non authentifié');
 
       // Get document info first
       const { data: document, error: fetchError } = await supabase?.from('documents')?.select('file_path, uploaded_by')?.eq('id', documentId)?.single();
@@ -201,8 +203,8 @@ class DocumentService {
         throw new Error('Document non trouvé');
       }
 
-      // Check if user owns the document
-      if (document?.uploaded_by !== user?.id) {
+      // Check if user owns the document (comparer avec dbUserId)
+      if (document?.uploaded_by !== dbUserId) {
         throw new Error('Non autorisé à supprimer ce document');
       }
 
@@ -230,8 +232,9 @@ class DocumentService {
 
   async downloadDocument(documentId, action = 'download') {
     try {
-      const { data: { user } } = await supabase?.auth?.getUser();
-      if (!user) throw new Error('Non authentifié');
+      // Utiliser la méthode centralisée pour obtenir l'utilisateur
+      const { user, dbUserId } = await this.getCurrentUserWithDbId();
+      if (!user || !dbUserId) throw new Error('Non authentifié');
 
       // Get document info
       const { data: document, error: fetchError } = await supabase?.from('documents')?.select('file_path, file_name, title')?.eq('id', documentId)?.single();
@@ -578,32 +581,39 @@ class DocumentService {
     }
   }
 
-  // Generate a certificate or administrative document
+  // Generate a certificate or administrative document with PDF
   async generateDocument(documentType, options = {}) {
     try {
       const { studentId = null, classId = null, visibility = 'private', isPublic = false } = options;
       
       let schoolId = null;
       let userId = null;
+      let schoolData = null;
+      let studentData = null;
+      let studentsData = [];
+      let classData = null;
 
-      // Essayer avec Auth Supabase d'abord
-      const { data: { user: authUser } } = await supabase?.auth?.getUser();
+      // Récupérer les infos utilisateur depuis localStorage d'abord (plus rapide)
+      const savedUser = localStorage.getItem('edutrack-user');
+      if (savedUser) {
+        const userData = JSON.parse(savedUser);
+        userId = userData.id;
+        schoolId = userData.current_school_id || userData.school_id;
+        schoolData = userData.schoolData || { name: userData.school_name };
+      }
       
-      if (authUser) {
-        userId = authUser.id;
-        const { data: userData } = await supabase
-          ?.from('users')
-          ?.select('current_school_id')
-          ?.eq('id', authUser.id)
-          ?.single();
-        schoolId = userData?.current_school_id;
-      } else {
-        // Fallback : localStorage
-        const savedUser = localStorage.getItem('edutrack-user');
-        if (savedUser) {
-          const userData = JSON.parse(savedUser);
-          userId = userData.id;
-          schoolId = userData.current_school_id || userData.school_id;
+      // Fallback Auth Supabase si pas de localStorage
+      if (!schoolId) {
+        const { data: { user: authUser } } = await supabase?.auth?.getUser();
+        if (authUser) {
+          userId = authUser.id;
+          const { data: userData } = await supabase
+            ?.from('users')
+            ?.select('current_school_id, school:schools!users_current_school_id_fkey(id, name, address, city, country)')
+            ?.eq('id', authUser.id)
+            ?.single();
+          schoolId = userData?.current_school_id;
+          schoolData = userData?.school;
         }
       }
 
@@ -611,47 +621,151 @@ class DocumentService {
         throw new Error('École non trouvée');
       }
 
-      const docTitle = `${documentType}_${Date.now()}`;
+      // Charger les données en parallèle pour plus de rapidité
+      const promises = [];
       
-      // Insert document record avec visibilité
+      if (studentId) {
+        promises.push(
+          supabase?.from('students')?.select('*')?.eq('id', studentId)?.single()
+            .then(({ data }) => { studentData = data; })
+        );
+      }
+      
+      if (classId) {
+        promises.push(
+          supabase?.from('classes')?.select('*')?.eq('id', classId)?.single()
+            .then(({ data }) => { classData = data; })
+        );
+        promises.push(
+          supabase?.from('students')?.select('*')?.eq('class_id', classId)?.order('last_name')
+            .then(({ data }) => { studentsData = data || []; })
+        );
+      }
+      
+      // Attendre toutes les requêtes en parallèle
+      if (promises.length > 0) {
+        await Promise.all(promises);
+      }
+      
+      // Préparer les données pour le PDF
+      const pdfData = {
+        student: studentData,
+        students: studentsData,
+        school: schoolData,
+        className: classData?.name || studentData?.class_name,
+        academicYear: `${new Date().getFullYear()}-${new Date().getFullYear() + 1}`,
+        date: new Date().toLocaleDateString('fr-FR')
+      };
+      
+      // Générer le PDF (pdfGenerator déjà importé statiquement)
+      const pdfDoc = pdfGenerator.generate(documentType, pdfData);
+      
+      // OUVRIR LE PDF IMMÉDIATEMENT (sans attendre l'upload)
+      pdfGenerator.preview(pdfDoc);
+      
+      // Sauvegarder en arrière-plan (non bloquant)
+      this.saveDocumentInBackground(pdfDoc, documentType, {
+        schoolId, userId, studentId, classId, visibility, isPublic,
+        studentData, classData, pdfGenerator
+      });
+      
+      return { success: true, document: null, error: null };
+    } catch (error) {
+      console.error('Erreur génération document:', error);
+      return { success: false, document: null, error: error?.message };
+    }
+  }
+
+  // Sauvegarde le document en arrière-plan sans bloquer l'interface
+  async saveDocumentInBackground(pdfDoc, documentType, options) {
+    const { schoolId, userId, studentId, classId, visibility, isPublic, studentData, classData, pdfGenerator } = options;
+    
+    try {
+      // Convertir en Blob
+      const pdfBlob = pdfGenerator.toBlob(pdfDoc);
+      
+      // Nom du fichier
+      const timestamp = Date.now();
+      const fileName = `${documentType}_${timestamp}.pdf`;
+      const filePath = `school_${schoolId}/documents/${fileName}`;
+      
+      // Uploader dans Supabase Storage (en arrière-plan)
+      const { error: uploadError } = await supabase.storage
+        .from('documents')
+        .upload(filePath, pdfBlob, {
+          contentType: 'application/pdf',
+          upsert: false
+        });
+      
+      if (uploadError) {
+        console.warn('⚠️ Erreur upload Storage:', uploadError.message);
+      }
+      
+      // Générer un titre lisible
+      const docTitle = this.generateDocumentTitle(documentType, studentData, classData);
+      
+      // Insert document record
       const documentData = {
         title: docTitle,
         document_type: documentType,
         school_id: schoolId,
-        file_name: `${docTitle}.pdf`,
+        file_name: fileName,
+        file_path: uploadError ? null : filePath,
+        file_size: pdfBlob.size,
         mime_type: 'application/pdf',
         visibility: visibility,
         is_public: isPublic
       };
       
-      // Ajouter target_student_id si fourni
-      if (studentId) {
-        documentData.target_student_id = studentId;
+      if (studentId) documentData.target_student_id = studentId;
+      if (classId) documentData.target_class_id = classId;
+      if (userId && userId.length === 36) documentData.uploaded_by = userId;
+      
+      const { error: insertError } = await supabase?.from('documents')?.insert(documentData);
+      
+      if (insertError) {
+        console.error('❌ Erreur insertion document:', insertError.message, insertError.details);
+      } else {
+        console.log('✅ Document sauvegardé en arrière-plan:', docTitle);
       }
-      
-      // Ajouter target_class_id si fourni
-      if (classId) {
-        documentData.target_class_id = classId;
-      }
-      
-      // N'ajouter uploaded_by que si on a un vrai userId Supabase
-      if (userId && userId.length === 36) {
-        documentData.uploaded_by = userId;
-      }
-      
-      const { data, error } = await supabase
-        ?.from('documents')
-        ?.insert(documentData)
-        ?.select()
-        ?.single();
-
-      if (error) throw error;
-      
-      return { success: true, document: data, error: null };
     } catch (error) {
-      console.error('Erreur génération document:', error);
-      return { success: false, document: null, error: error?.message };
+      console.warn('⚠️ Erreur sauvegarde en arrière-plan:', error);
+      // On ne bloque pas l'utilisateur, le PDF est déjà affiché
     }
+  }
+
+  // Génère un titre lisible pour le document
+  generateDocumentTitle(documentType, student, classData) {
+    const typeLabels = {
+      'certificat_scolarite': 'Certificat de scolarité',
+      'certificat_frequentation': 'Certificat de fréquentation',
+      'fiche_inscription': 'Fiche d\'inscription',
+      'attestation_paiement': 'Attestation de paiement',
+      'autorisation_sortie': 'Autorisation de sortie',
+      'bulletin': 'Bulletin scolaire',
+      'liste_eleves': 'Liste des élèves',
+      'liste_appel': 'Liste d\'appel',
+      'emploi_du_temps': 'Emploi du temps',
+      'certificats_classe': 'Certificats de classe',
+      'statistiques_classe': 'Statistiques de classe',
+      'bulletin_classe': 'Bulletins de classe',
+      'reglement_interieur': 'Règlement intérieur',
+      'calendrier_scolaire': 'Calendrier scolaire',
+      'circulaire': 'Circulaire',
+      'convocation': 'Convocation',
+      'avis_important': 'Avis important',
+      'avis_paiement': 'Avis de paiement'
+    };
+    
+    const label = typeLabels[documentType] || documentType;
+    
+    if (student) {
+      return `${label} - ${student.last_name} ${student.first_name}`;
+    } else if (classData) {
+      return `${label} - ${classData.name}`;
+    }
+    
+    return label;
   }
 }
 

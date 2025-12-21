@@ -1587,13 +1587,13 @@ const TeacherManagementTab = ({ isDemo = false }) => {
                     <div className="max-w-4xl mx-auto">
                       <div className="text-center mb-8 animate-in fade-in slide-in-from-bottom-2 duration-500">
                         <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary/20 to-primary/10 rounded-2xl mb-3">
-                          <Icon name="Search" size={32} className="text-primary" />
+                          <Icon name="Users" size={32} className="text-primary" />
                         </div>
                         <h5 className="font-heading font-heading-bold text-2xl text-text-primary mb-2">
-                          Rechercher un Enseignant
+                          Sélectionner un Enseignant
                         </h5>
                         <p className="text-base text-text-secondary max-w-xl mx-auto">
-                          Recherchez dans la base de données globale. Les enseignants peuvent être assignés à plusieurs établissements.
+                          Choisissez un enseignant dans la liste. Les enseignants peuvent être assignés à plusieurs établissements.
                         </p>
                       </div>
 
@@ -1607,8 +1607,6 @@ const TeacherManagementTab = ({ isDemo = false }) => {
                             setSelectedExistingTeacher(null);
                           }}
                           selectedTeacher={selectedExistingTeacher}
-                          searchTerm={teacherSearchTerm}
-                          onSearchChange={setTeacherSearchTerm}
                         />
                       </div>
                     </div>

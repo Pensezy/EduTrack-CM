@@ -607,12 +607,25 @@ const TeacherDashboard = () => {
         console.log('✅ Emploi du temps généré:', scheduleData.length, 'créneaux');
 
         // 6. Charger les documents de l'enseignant depuis la base de données
+        // Note: uploaded_by contient l'ID de la table users (pas auth.users)
+        // Pour les utilisateurs Supabase Auth classiques, user.id = users.id
+        // Mais on recherche aussi par school_id pour être sûr de récupérer tous les documents
         const documentsDataByClass = {};
         try {
+          // Récupérer d'abord l'ID utilisateur depuis la table users
+          const { data: dbUserData } = await supabase
+            .from('users')
+            .select('id')
+            .eq('email', user.email)
+            .single();
+          
+          const dbUserId = dbUserData?.id || user.id;
+          console.log('📄 Chargement documents pour user ID:', dbUserId);
+          
           const { data: teacherDocs, error: docsError } = await supabase
             .from('documents')
             .select('*')
-            .eq('uploaded_by', user.id)
+            .eq('uploaded_by', dbUserId)
             .order('created_at', { ascending: false });
 
           if (docsError) {
@@ -630,12 +643,14 @@ const TeacherDashboard = () => {
                 id: doc.id,
                 title: doc.title,
                 type: doc.document_type,
+                document_type: doc.document_type, // Double mapping pour compatibilité
                 file_name: doc.file_name,
                 file_path: doc.file_path,
                 file_size: doc.file_size,
                 mime_type: doc.mime_type,
                 visibility: doc.visibility,
                 is_public: doc.is_public,
+                created_at: doc.created_at, // Date de création
                 uploadedAt: doc.created_at,
                 class_name: doc.class_name
               });
