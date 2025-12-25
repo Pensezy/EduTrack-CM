@@ -370,9 +370,9 @@ const SecretaryDashboard = () => {
       />
       {/* Main Content */}
       <main className={`pt-16 transition-all duration-state ${
-        isSidebarCollapsed ? 'lg:pl-16' : 'lg:pl-64'
+        isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="p-6">
+        <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
           {/* Dashboard Header - Ultra Compact */}
           <div className="mb-4">
             <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-xl shadow-lg p-4 text-white">

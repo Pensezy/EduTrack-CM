@@ -1196,7 +1196,7 @@ const StudentDashboard = () => {
       <main className={`pt-16 transition-all duration-state ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="p-4 lg:p-6 space-y-6">
+        <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
           {/* Demo Mode Banner - Modernisé */}
           {isDemo && (
             <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 shadow-lg">

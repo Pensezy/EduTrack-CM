@@ -3647,7 +3647,7 @@ const AdminDashboard = () => {
       <main className={`pt-16 transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="p-4 lg:p-6 space-y-6">
+        <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
           {/* Welcome Section avec indicateur de mode */}
           <div className={`bg-gradient-to-r ${isDemo ? 'from-primary to-secondary' : 'from-green-600 to-blue-600'} rounded-lg p-6 text-white relative`}>
             {/* 🔍 Indicateur de mode données */}
