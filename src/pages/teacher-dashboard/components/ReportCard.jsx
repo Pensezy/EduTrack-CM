@@ -1,10 +1,11 @@
 import React, { useState, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import Icon from '../../../components/AppIcon';
-import { 
-  computeSubjectAverage, 
-  computeOverallAverage, 
-  computeRank, 
-  getMention, 
+import {
+  computeSubjectAverage,
+  computeOverallAverage,
+  computeRank,
+  getMention,
   getMentionHonorifique,
   detectLanguageSystem,
   detectSchoolLevel
@@ -75,12 +76,21 @@ const ReportCard = ({
     setPrinting(true);
     const printContent = reportRef.current;
     const printWindow = window.open('', '_blank');
-    
+
+    // Sanitize le contenu HTML pour prévenir les attaques XSS
+    const sanitizedContent = DOMPurify.sanitize(printContent.innerHTML, {
+      ALLOWED_TAGS: [
+        'div', 'span', 'p', 'h1', 'h2', 'h3', 'table', 'thead', 'tbody', 'tfoot',
+        'tr', 'th', 'td', 'strong', 'em', 'br', 'ul', 'ol', 'li'
+      ],
+      ALLOWED_ATTR: ['class', 'colspan', 'rowspan']
+    });
+
     printWindow.document.write(`
       <!DOCTYPE html>
       <html>
         <head>
-          <title>Bulletin - ${student?.name}</title>
+          <title>Bulletin - ${DOMPurify.sanitize(student?.name || 'Élève')}</title>
           <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body { font-family: 'Times New Roman', serif; font-size: 11pt; padding: 20px; }
@@ -104,11 +114,11 @@ const ReportCard = ({
           </style>
         </head>
         <body>
-          ${printContent.innerHTML}
+          ${sanitizedContent}
         </body>
       </html>
     `);
-    
+
     printWindow.document.close();
     printWindow.focus();
     setTimeout(() => {

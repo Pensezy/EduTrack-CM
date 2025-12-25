@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { X, Printer, Download, Eye } from 'lucide-react';
 import Button from '../../../components/ui/Button';
 import paymentService from '../../../services/paymentService';
@@ -31,26 +32,58 @@ export const ReceiptModal = ({ isOpen, onClose, paymentId, studentData }) => {
 
   const handlePrint = () => {
     if (printRef.current) {
-      const printContents = printRef.current.innerHTML;
-      const originalContents = document.body.innerHTML;
-      
-      document.body.innerHTML = printContents;
-      window.print();
-      document.body.innerHTML = originalContents;
-      window.location.reload();
+      // Sanitize le contenu HTML pour prévenir les attaques XSS
+      const sanitizedContent = DOMPurify.sanitize(printRef.current.innerHTML, {
+        ALLOWED_TAGS: [
+          'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody',
+          'tr', 'th', 'td', 'strong', 'em', 'br', 'ul', 'ol', 'li', 'hr'
+        ],
+        ALLOWED_ATTR: ['class']
+      });
+
+      const printWindow = window.open('', '_blank');
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Reçu de Paiement</title>
+            <style>
+              * { margin: 0; padding: 0; box-sizing: border-box; }
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              @media print { body { padding: 0; } }
+            </style>
+          </head>
+          <body>
+            ${sanitizedContent}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+        printWindow.close();
+      }, 250);
     }
   };
 
   const handleDownload = () => {
     if (receipt) {
-      // Créer un blob avec le contenu HTML du reçu
-      const htmlContent = printRef.current.innerHTML;
-      const blob = new Blob([htmlContent], { type: 'text/html' });
+      // Sanitize le contenu HTML avant téléchargement
+      const sanitizedContent = DOMPurify.sanitize(printRef.current.innerHTML, {
+        ALLOWED_TAGS: [
+          'div', 'span', 'p', 'h1', 'h2', 'h3', 'h4', 'table', 'thead', 'tbody',
+          'tr', 'th', 'td', 'strong', 'em', 'br', 'ul', 'ol', 'li', 'hr'
+        ],
+        ALLOWED_ATTR: ['class']
+      });
+
+      const blob = new Blob([sanitizedContent], { type: 'text/html' });
       const url = URL.createObjectURL(blob);
-      
+
       const a = document.createElement('a');
       a.href = url;
-      a.download = `recu_${receipt.receiptNumber}.html`;
+      a.download = `recu_${DOMPurify.sanitize(receipt.receiptNumber)}.html`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);

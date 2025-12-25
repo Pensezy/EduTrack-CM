@@ -20,7 +20,7 @@ const demoAccounts = {
     email: 'parent@demo.com',
     role: 'parent',
     full_name: 'Parent Demo',
-    pin: '123456',
+    pin: '847362', // PIN aléatoire sécurisé (6 chiffres)
     children: [
       {
         id: 'demo-student-1',
@@ -40,10 +40,10 @@ const demoAccounts = {
   // Élèves
   'student@demo.com': {
     id: 'demo-student-1',
-    email: 'student@demo.com', 
+    email: 'student@demo.com',
     role: 'student',
     full_name: 'Student Demo',
-    pin: '123456',
+    pin: '592481', // PIN aléatoire sécurisé
     current_school_id: 'demo-school-1',
     class_name: '6e A',
     photo: '/assets/images/no_image.png',
@@ -51,13 +51,13 @@ const demoAccounts = {
     current_year: getCurrentAcademicYear()
   },
 
-  // Enseignants  
+  // Enseignants
   'teacher@demo.com': {
     id: 'demo-teacher-1',
     email: 'teacher@demo.com',
-    role: 'teacher', 
+    role: 'teacher',
     full_name: 'Teacher Demo',
-    pin: '123456',
+    pin: '736429', // PIN aléatoire sécurisé
     current_school_id: 'demo-school-1',
     specialty: 'Mathématiques',
     subject: 'Mathématiques',
@@ -72,17 +72,17 @@ const demoAccounts = {
     email: 'admin@demo.com',
     role: 'admin',
     full_name: 'Admin Demo',
-    pin: '123456',
+    pin: '981547', // PIN aléatoire sécurisé
     photo: '/assets/images/no_image.png',
     admin_id: 'ADM2024001',
     permissions: ['all']
   },
   'principal@demo.com': {
-    id: 'demo-principal-1', 
+    id: 'demo-principal-1',
     email: 'principal@demo.com',
     role: 'principal',
     full_name: 'Principal Demo',
-    pin: '123456',
+    pin: '463789', // PIN aléatoire sécurisé
     current_school_id: 'demo-school-1',
     photo: '/assets/images/no_image.png',
     principal_id: 'PRI2024001',
@@ -90,10 +90,10 @@ const demoAccounts = {
   },
   'secretary@demo.com': {
     id: 'demo-secretary-1',
-    email: 'secretary@demo.com', 
+    email: 'secretary@demo.com',
     role: 'secretary',
     full_name: 'Secretary Demo',
-    pin: '123456',
+    pin: '625183', // PIN aléatoire sécurisé
     current_school_id: 'demo-school-1',
     photo: '/assets/images/no_image.png',
     secretary_id: 'SEC2024001',

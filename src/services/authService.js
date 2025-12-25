@@ -2,6 +2,7 @@
 // Utilise Supabase pour l'authentification et la gestion des données
 
 import { supabase } from '../lib/supabase.js';
+import { verifyPassword } from './passwordHashService.js';
 
 /**
  * Service de connexion pour directeur d'établissement
@@ -489,8 +490,35 @@ export const loginStudent = async (email, password) => {
       throw new Error('Email ou mot de passe incorrect');
     }
 
-    // Vérifier le mot de passe (stocké en clair pour l'instant)
-    if (userData.password_hash !== password) {
+    // Vérifier le mot de passe avec bcrypt
+    // Note: Si le hash ne commence pas par $2, c'est un ancien mot de passe en clair
+    let isPasswordValid = false;
+
+    if (userData.password_hash && userData.password_hash.startsWith('$2')) {
+      // Nouveau système: hash bcrypt
+      isPasswordValid = await verifyPassword(password, userData.password_hash);
+    } else {
+      // LEGACY: Ancien système (mot de passe en clair)
+      // ⚠️ À SUPPRIMER après migration complète
+      console.warn('⚠️ SÉCURITÉ: Mot de passe non hashé détecté pour', email);
+      isPasswordValid = userData.password_hash === password;
+
+      // TODO: Forcer la mise à jour du mot de passe avec hash
+      if (isPasswordValid) {
+        console.log('🔄 Migration automatique du mot de passe vers bcrypt...');
+        const { hashPassword } = await import('./passwordHashService.js');
+        const newHash = await hashPassword(password);
+
+        await supabase
+          .from('users')
+          .update({ password_hash: newHash })
+          .eq('id', userData.id);
+
+        console.log('✅ Mot de passe migré avec succès vers bcrypt');
+      }
+    }
+
+    if (!isPasswordValid) {
       throw new Error('Email ou mot de passe incorrect');
     }
 
