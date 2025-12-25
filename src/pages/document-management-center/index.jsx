@@ -63,7 +63,7 @@ const DEMO_DOCUMENTS = [
     file_size: '567 KB',
     visibility: 'class',
     description: 'Notes de cours - Littérature anglaise moderne'
-  }
+  } 
 ];
 
 const DEMO_CLASSES = ['3ème A', '4A', 'Terminale D', '6ème B', '5ème C'];
