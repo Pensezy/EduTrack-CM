@@ -5,10 +5,12 @@ import useDataMode from '../../hooks/useDataMode';
 import AppIcon from '../AppIcon';
 import Button from './Button';
 import AccessibilityControls from './AccessibilityControls';
+import MobileSidebar from './MobileSidebar';
 
 const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, onToggleSidebar }) => {
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
   const location = useLocation();
@@ -132,7 +134,41 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
     ]
   };
 
+  const quickActions = {
+    student: [
+      { label: 'Devoirs en retard', icon: 'AlertCircle', path: '/student-dashboard?tab=assignments' },
+      { label: 'Dernières notes', icon: 'TrendingUp', path: '/student-dashboard?tab=grades' },
+      { label: 'Mes badges', icon: 'Award', path: '/student-dashboard' },
+    ],
+    teacher: [
+      { label: 'Nouvelle note', icon: 'Plus', path: '/teacher-dashboard?tab=grades' },
+      { label: 'Prendre présence', icon: 'CheckSquare', path: '/teacher-dashboard?tab=attendance' },
+      { label: 'Voir mes classes', icon: 'Users', path: '/teacher-dashboard?tab=classes' },
+    ],
+    secretary: [
+      { label: 'Nouvel Élève', icon: 'UserPlus', path: '/secretary-dashboard?tab=students' },
+      { label: 'Nouveau Paiement', icon: 'Plus', path: '/secretary-dashboard?tab=payments' },
+      { label: 'Envoyer SMS', icon: 'MessageCircle', path: '/secretary-dashboard?tab=communications' }
+    ],
+    principal: [
+      { label: 'Créer compte', icon: 'UserPlus', path: '/principal-dashboard?tab=accounts' },
+      { label: 'Nouveau message', icon: 'Mail', path: '/notification-management' },
+      { label: 'Sauvegarde', icon: 'Database', path: '/data-backup' },
+    ],
+    parent: [
+      { label: 'Voir les notes', icon: 'BookOpen', path: '/parent-dashboard?tab=grades' },
+      { label: 'Consulter présences', icon: 'Calendar', path: '/parent-dashboard?tab=attendance' },
+      { label: 'Effectuer paiement', icon: 'CreditCard', path: '/parent-dashboard?tab=payments' },
+    ],
+    admin: [
+      { label: 'Utilisateurs', icon: 'Users', path: '/admin-dashboard?tab=users' },
+      { label: 'Finances', icon: 'DollarSign', path: '/admin-dashboard?tab=finances' },
+      { label: 'Sécurité', icon: 'Shield', path: '/admin-dashboard?tab=security' }
+    ]
+  };
+
   const currentNavItems = navigationItems?.[actualUserRole] || navigationItems?.student;
+  const currentQuickActions = quickActions?.[actualUserRole] || quickActions?.student;
 
   // Debug pour identifier les problèmes de rôle
   useEffect(() => {
@@ -179,10 +215,11 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
           <Button
             variant="ghost"
             size="icon"
-            onClick={onToggleSidebar}
+            onClick={() => setIsMobileSidebarOpen(true)}
             className="lg:hidden hover:bg-blue-100/50 transition-all duration-300"
+            aria-label="Ouvrir le menu"
           >
-            <AppIcon name="Menu" size={20} className="text-blue-600" />
+            <AppIcon name="Menu" size={24} className="text-blue-600" />
           </Button>
 
           {/* Logo - Modernisé */}
@@ -425,6 +462,16 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
           </div>
         </div>
       </div>
+
+      {/* Mobile Sidebar */}
+      <MobileSidebar
+        isOpen={isMobileSidebarOpen}
+        onClose={() => setIsMobileSidebarOpen(false)}
+        userRole={actualUserRole}
+        userName={userName}
+        navigationItems={currentNavItems}
+        quickActions={currentQuickActions}
+      />
     </header>
   );
 };

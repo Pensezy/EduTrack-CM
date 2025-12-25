@@ -155,9 +155,9 @@ const Sidebar = ({ userRole = 'student', isCollapsed = false, onToggle }) => {
   }, []);
 
   return (
-    <aside className={`fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gradient-to-b from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-xl border-r border-gray-200/50 z-navigation transition-all duration-300 shadow-lg ${
+    <aside className={`hidden lg:fixed left-0 top-16 h-[calc(100vh-4rem)] bg-gradient-to-b from-white via-blue-50/30 to-indigo-50/30 backdrop-blur-xl border-r border-gray-200/50 z-navigation transition-all duration-300 shadow-lg ${
       isCollapsed ? 'w-16' : 'w-64'
-    } lg:fixed`}>
+    }`}>
       <div className="flex flex-col h-full">
         {/* Toggle Button - Modernisé */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200/50 bg-gradient-to-r from-blue-50/50 to-indigo-50/50">

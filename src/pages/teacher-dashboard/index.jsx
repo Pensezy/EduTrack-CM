@@ -5,6 +5,8 @@ import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import { useDataMode } from '../../hooks/useDataMode';
 import { supabase } from '../../lib/supabase';
+import { RESPONSIVE_CLASSES } from '../../utils/responsive';
+import ResponsiveGrid, { MetricCard } from '../../components/ui/ResponsiveGrid';
 
 import ClassSelector from './components/ClassSelector';
 import AssignedClassesOverview from './components/AssignedClassesOverview';
@@ -993,7 +995,7 @@ const TeacherDashboard = () => {
                   <Icon name="Briefcase" size={24} className="text-indigo-600" />
                   Informations professionnelles
                 </h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4 sm:mb-6">
                   {/* Spécialité - Modernisée */}
                   {teacherData?.specialty && (
                     <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-5 border-2 border-blue-200 shadow-md hover:shadow-lg transition-all">
@@ -1028,7 +1030,7 @@ const TeacherDashboard = () => {
                 </div>
 
                 {/* Statistiques - Modernisées */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
                   {/* Classes assignées */}
                   <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-5 border-2 border-green-200 shadow-md hover:shadow-xl transition-all hover:scale-105">
                     <div className="flex items-center gap-3 mb-3">
@@ -1331,7 +1333,7 @@ const TeacherDashboard = () => {
       <main className={`pt-16 transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="p-4 lg:p-6 space-y-6">
+        <div className={RESPONSIVE_CLASSES.container + ' py-4 sm:py-6 space-y-4 sm:space-y-6'}>
           
           {/* Indicateur de chargement modernisé */}
           {loading && (
@@ -1344,27 +1346,28 @@ const TeacherDashboard = () => {
 
           {/* Indicateur de mode modernisé */}
           {!loading && (
-            <div className={`rounded-2xl p-4 shadow-md border-2 ${
-              isProduction 
-                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200' 
+            <div className={`rounded-lg sm:rounded-2xl p-3 sm:p-4 shadow-md border-2 ${
+              isProduction
+                ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-200'
                 : 'bg-gradient-to-br from-orange-50 to-amber-50 border-orange-200'
             }`}>
-              <div className="flex items-center space-x-3">
-                <div className={`p-2 rounded-xl shadow-md ${
-                  isProduction 
-                    ? 'bg-gradient-to-br from-green-500 to-emerald-600' 
+              <div className="flex items-center space-x-2 sm:space-x-3">
+                <div className={`p-1.5 sm:p-2 rounded-lg sm:rounded-xl shadow-md flex-shrink-0 ${
+                  isProduction
+                    ? 'bg-gradient-to-br from-green-500 to-emerald-600'
                     : 'bg-gradient-to-br from-orange-500 to-amber-600'
                 }`}>
-                  <Icon 
-                    name={isProduction ? "CheckCircle2" : "AlertCircle"} 
-                    size={20} 
-                    className="text-white" 
+                  <Icon
+                    name={isProduction ? "CheckCircle2" : "AlertCircle"}
+                    size={18}
+                    className="text-white sm:w-5 sm:h-5"
                   />
                 </div>
-                <span className={`font-body-bold ${
+                <span className={`font-body-bold text-xs sm:text-sm md:text-base ${
                   isProduction ? 'text-green-900' : 'text-orange-900'
                 }`}>
-                  {isProduction ? '✅ Mode PRODUCTION - Données réelles' : '🎭 Mode DÉMO - Données fictives'}
+                  <span className="hidden sm:inline">{isProduction ? '✅ Mode PRODUCTION - Données réelles' : '🎭 Mode DÉMO - Données fictives'}</span>
+                  <span className="sm:hidden">{isProduction ? '✅ PRODUCTION' : '🎭 DÉMO'}</span>
                 </span>
               </div>
             </div>
@@ -1372,49 +1375,52 @@ const TeacherDashboard = () => {
 
           {/* Welcome Section modernisé */}
           {!loading && teacherData && (
-            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-2xl shadow-xl p-8 text-white">
-              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+            <div className="bg-gradient-to-br from-green-600 to-emerald-600 rounded-lg sm:rounded-2xl shadow-xl p-4 sm:p-6 lg:p-8 text-white">
+              <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 sm:gap-6">
                 <div className="flex-1">
-                  <div className="flex items-center gap-4 mb-3">
-                    <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center text-4xl shadow-lg">
+                  <div className="flex items-start sm:items-center gap-3 sm:gap-4 mb-3">
+                    <div className="w-12 h-12 sm:w-14 sm:h-14 lg:w-16 lg:h-16 bg-white/20 backdrop-blur-sm rounded-xl sm:rounded-2xl flex items-center justify-center text-2xl sm:text-3xl lg:text-4xl shadow-lg flex-shrink-0">
                       👩‍🏫
                     </div>
-                    <div>
-                      <h1 className="font-display font-bold text-3xl lg:text-4xl">
-                        {getGreeting()}, {teacherData?.name} !
+                    <div className="min-w-0 flex-1">
+                      <h1 className={RESPONSIVE_CLASSES.heading1 + ' !text-white mb-1'}>
+                        {getGreeting()}, {teacherData?.name?.split(' ')[0] || teacherData?.name} !
                       </h1>
-                      <p className="text-green-100 text-sm mt-1">
-                        {currentTime?.toLocaleDateString('fr-FR', { 
-                          weekday: 'long',
-                          day: 'numeric',
-                          month: 'long',
-                          year: 'numeric'
-                        })} • {currentTime?.toLocaleTimeString('fr-FR', { 
+                      <p className="text-green-100 text-xs sm:text-sm">
+                        <span className="hidden sm:inline">
+                          {currentTime?.toLocaleDateString('fr-FR', {
+                            weekday: 'long',
+                            day: 'numeric',
+                            month: 'long',
+                            year: 'numeric'
+                          })} •{' '}
+                        </span>
+                        {currentTime?.toLocaleTimeString('fr-FR', {
                           hour: '2-digit',
                           minute: '2-digit'
                         })}
                       </p>
                     </div>
                   </div>
-                  <p className="font-body-medium text-white text-lg mt-4">
-                    {teacherData?.assignedClasses?.length > 0 
+                  <p className="font-body-medium text-white text-sm sm:text-base lg:text-lg mt-2 sm:mt-4">
+                    {teacherData?.assignedClasses?.length > 0
                       ? 'Gérez vos classes, évaluations et documents pédagogiques efficacement.'
                       : 'Aucune classe assignée pour le moment. Contactez votre directeur pour obtenir vos affectations.'}
                   </p>
                 </div>
                 {teacherData?.assignedClasses?.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-3">
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md border border-white/30">
-                      <div className="text-2xl font-display font-bold">{teacherData?.assignedClasses?.length}</div>
-                      <div className="text-xs text-green-100 mt-1">Classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}</div>
+                  <div className="grid grid-cols-3 lg:flex lg:flex-wrap items-center gap-2 sm:gap-3">
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 shadow-md border border-white/30">
+                      <div className="text-xl sm:text-2xl font-display font-bold">{teacherData?.assignedClasses?.length}</div>
+                      <div className="text-xs text-green-100 mt-0.5 sm:mt-1">Classe{teacherData?.assignedClasses?.length > 1 ? 's' : ''}</div>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md border border-white/30">
-                      <div className="text-2xl font-display font-bold">{getTotalStudents()}</div>
-                      <div className="text-xs text-green-100 mt-1">Élèves</div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 shadow-md border border-white/30">
+                      <div className="text-xl sm:text-2xl font-display font-bold">{getTotalStudents()}</div>
+                      <div className="text-xs text-green-100 mt-0.5 sm:mt-1">Élèves</div>
                     </div>
-                    <div className="bg-white/20 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md border border-white/30 min-w-[120px]">
-                      <div className="text-sm font-body-bold">{teacherData?.specialty || 'Enseignant'}</div>
-                      <div className="text-xs text-green-100 mt-1">Spécialité</div>
+                    <div className="bg-white/20 backdrop-blur-sm rounded-lg sm:rounded-xl px-3 sm:px-4 py-2 sm:py-3 shadow-md border border-white/30 col-span-3 lg:col-span-1 lg:min-w-[120px]">
+                      <div className="text-xs sm:text-sm font-body-bold truncate">{teacherData?.specialty || 'Enseignant'}</div>
+                      <div className="text-xs text-green-100 mt-0.5 sm:mt-1">Spécialité</div>
                     </div>
                   </div>
                 )}
