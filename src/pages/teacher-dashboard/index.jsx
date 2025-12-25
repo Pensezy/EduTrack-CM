@@ -1330,10 +1330,10 @@ const TeacherDashboard = () => {
         isCollapsed={sidebarCollapsed}
         onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
       />
-      <main className={`pt-16 transition-all duration-300 ${
+      <main className={`pt-20 sm:pt-16 transition-all duration-300 ${
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
-        <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
+        <div className="px-2 sm:px-4 lg:px-6 py-3 sm:py-4 space-y-3 sm:space-y-4 w-full overflow-x-hidden">
           
           {/* Indicateur de chargement */}
           {loading && (

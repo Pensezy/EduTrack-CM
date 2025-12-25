@@ -369,7 +369,7 @@ const SecretaryDashboard = () => {
         onToggle={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
       />
       {/* Main Content */}
-      <main className={`pt-16 transition-all duration-state ${
+      <main className={`pt-20 sm:pt-16 transition-all duration-state ${
         isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">

@@ -371,7 +371,7 @@ const ParentDashboard = () => {
           isCollapsed={sidebarCollapsed}
           onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
         />
-        <main className={`pt-16 transition-all duration-300 ${
+        <main className={`pt-20 sm:pt-16 transition-all duration-300 ${
           sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
         } ${isDemo ? 'mt-10' : ''}`}>
           <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">

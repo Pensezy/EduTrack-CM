@@ -122,6 +122,7 @@ const MobileSidebar = ({
                 <Link
                   key={index}
                   to={item.path}
+                  onClick={onClose}
                   className={cn(
                     'flex items-center space-x-3 px-4 py-3 rounded-lg transition-all',
                     'active:scale-95',
@@ -151,6 +152,7 @@ const MobileSidebar = ({
                 <Link
                   key={index}
                   to={action.path}
+                  onClick={onClose}
                   className={cn(
                     'flex items-center space-x-3 px-4 py-3 rounded-lg',
                     'text-gray-700 hover:bg-gray-100 transition-all active:scale-95'
