@@ -67,28 +67,28 @@ const LoginAuthentication = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header Controls */}
-      <div className="absolute top-4 left-4 flex items-center space-x-4 z-10">
-        <Link 
+      <div className="absolute top-4 left-4 flex items-center space-x-2 sm:space-x-4 z-10">
+        <Link
           to="/"
-          className="bg-primary/10 text-primary px-4 py-2 rounded-lg font-body-medium inline-flex items-center gap-2 hover:bg-primary/20 transition-colors"
+          className="bg-primary/10 text-primary px-2 sm:px-4 py-1.5 sm:py-2 rounded-lg font-body-medium inline-flex items-center gap-1 sm:gap-2 hover:bg-primary/20 transition-colors text-xs sm:text-sm"
         >
-          <span className="text-base">←</span>
-          Retour accueil
+          <span className="text-sm sm:text-base">←</span>
+          <span className="hidden xs:inline">Retour </span>accueil
         </Link>
       </div>
-      <div className="absolute top-4 right-4 flex items-center space-x-2 z-10">
+      <div className="absolute top-4 right-4 flex items-center space-x-1 sm:space-x-2 z-10">
         <LanguageToggle />
         <AccessibilityToggle />
       </div>
 
-      <div className="container mx-auto px-4 py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-20 sm:py-8 max-w-4xl">
         {/* App Logo and Title */}
-        <div className="text-center mb-8">
-          <AppLogo className="mb-4 w-32 mx-auto" />
-          <h1 className="text-3xl font-heading font-heading-bold text-foreground mb-3">
+        <div className="text-center mb-6 sm:mb-8">
+          <AppLogo className="mb-3 sm:mb-4 w-24 sm:w-32 mx-auto" />
+          <h1 className="text-2xl sm:text-3xl font-heading font-heading-bold text-foreground mb-2 sm:mb-3">
             Mode Démonstration
           </h1>
-          <p className="text-base text-muted-foreground max-w-xl mx-auto">
+          <p className="text-sm sm:text-base text-muted-foreground max-w-xl mx-auto px-2">
             Explorez EduTrack CM avec nos comptes de démonstration. Cliquez simplement sur un rôle pour accéder au tableau de bord.
           </p>
         </div>

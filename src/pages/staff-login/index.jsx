@@ -249,14 +249,14 @@ const StaffLogin = () => {
       </div>
 
       {/* Right Side - Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 lg:p-12 pt-20 sm:pt-8">
         <div className="w-full max-w-md">
           {/* Header */}
-          <div className="text-center mb-8">
-            <h2 className="text-2xl font-heading font-heading-bold text-foreground mb-2">
+          <div className="text-center mb-6 sm:mb-8">
+            <h2 className="text-xl sm:text-2xl font-heading font-heading-bold text-foreground mb-2">
               Connexion Personnel
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-sm sm:text-base text-muted-foreground">
               Accédez à votre espace de travail
             </p>
           </div>
@@ -331,13 +331,13 @@ const StaffLogin = () => {
           </div>
 
           {/* Demo Button */}
-          <div className="fixed top-4 right-4">
-            <Link 
+          <div className="fixed top-4 right-4 z-50">
+            <Link
               to="/demo"
-              className="bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2 rounded-full font-body font-body-semibold inline-flex items-center gap-2 transition-colors"
+              className="bg-secondary/10 hover:bg-secondary/20 text-secondary px-3 sm:px-4 py-1.5 sm:py-2 rounded-full font-body font-body-semibold inline-flex items-center gap-1 sm:gap-2 transition-colors text-xs sm:text-sm"
             >
-              <Icon name="Laptop" size={16} />
-              Accès Démo
+              <Icon name="Laptop" size={14} className="sm:w-4 sm:h-4" />
+              <span className="hidden xs:inline">Accès </span>Démo
             </Link>
           </div>
         </div>
