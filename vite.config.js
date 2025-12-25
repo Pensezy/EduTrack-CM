@@ -22,7 +22,53 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     sourcemap: true,
-    chunkSizeWarningLimit: 2000,
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // React core vendor chunk
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+
+          // UI libraries chunk
+          'ui-vendor': [
+            'lucide-react',
+            'framer-motion',
+            'class-variance-authority',
+            'clsx',
+            'tailwind-merge'
+          ],
+
+          // Supabase isolated (fixes dynamic import warning)
+          'supabase': ['@supabase/supabase-js'],
+
+          // Core services
+          'services': [
+            './src/services/authService.js',
+            './src/services/schoolService.js',
+            './src/services/edutrackService.js',
+            './src/services/databaseService.js'
+          ],
+
+          // Heavy libraries (PDF, Charts) - will be lazy loaded
+          'pdf-vendor': ['jspdf'],
+          'html2canvas-vendor': ['html2canvas'],
+          'charts-vendor': ['recharts', 'd3'],
+
+          // Form libraries
+          'form-vendor': ['react-hook-form'],
+
+          // Date utilities
+          'date-vendor': ['date-fns'],
+
+          // Context providers
+          'contexts': [
+            './src/contexts/AuthContext.jsx'
+          ]
+        }
+      }
+    },
+    // Disable compressed size reporting to speed up build
+    reportCompressedSize: false,
   },
   server: {
     port: 3000,

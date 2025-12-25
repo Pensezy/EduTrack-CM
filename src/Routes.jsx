@@ -1,70 +1,89 @@
-import React from "react";
+import React, { lazy, Suspense } from "react";
 import { BrowserRouter, Routes as RouterRoutes, Route } from "react-router-dom";
 import ScrollToTop from "./components/ScrollToTop";
 import ErrorBoundary from './components/ErrorBoundary';
+import LoadingFallback from './components/LoadingFallback';
 import NotFound from "./pages/NotFound";
-// Dashboard pages
-import LoginAuthentication from "./pages/login-authentication";
-import StudentDashboard from "./pages/student-dashboard";
-import PrincipalDashboard from "./pages/principal-dashboard";
-import SecretaryDashboard from "./pages/secretary-dashboard";
-import StudentProfileManagement from "./pages/student-profile-management";
-import GradeManagementSystem from "./pages/grade-management-system";
-import DocumentManagementHub from "./pages/document-management-hub";
-import DocumentManagementCenter from "./pages/document-management-center";
-import ParentDashboard from "./pages/parent-dashboard";
-import TeacherDashboard from "./pages/teacher-dashboard";
-import AdminDashboard from "./pages/admin-dashboard";
+
+// Critical pages - loaded immediately (auth & landing)
 import SchoolManagement from "./pages/school-management";
+import LoginAuthentication from "./pages/login-authentication";
 import StaffLogin from "./pages/staff-login";
-import NotificationManagement from "./pages/notification-management";
-import ReportGeneration from "./pages/report-generation";
-import StaffManagement from "./pages/staff-management";
-import SchoolSettings from "./pages/school-settings";
-import SchoolCalendar from "./pages/school-calendar";
-import DataBackup from "./pages/data-backup";
-import ProfileSettings from "./pages/profile-settings";
-import PasswordRecovery from "./pages/password-recovery";
-import PasswordReset from "./pages/password-reset";
-import ProductionLogin from "./pages/production-login";
 import AuthCallback from "./pages/AuthCallback";
-import HelpCenter from "./pages/HelpCenter";
+
+// Lazy-loaded Dashboard pages - loaded on demand
+const StudentDashboard = lazy(() => import("./pages/student-dashboard"));
+const ParentDashboard = lazy(() => import("./pages/parent-dashboard"));
+const TeacherDashboard = lazy(() => import("./pages/teacher-dashboard"));
+const AdminDashboard = lazy(() => import("./pages/admin-dashboard"));
+const PrincipalDashboard = lazy(() => import("./pages/principal-dashboard"));
+const SecretaryDashboard = lazy(() => import("./pages/secretary-dashboard"));
+
+// Lazy-loaded Feature pages - loaded on demand
+const StudentProfileManagement = lazy(() => import("./pages/student-profile-management"));
+const GradeManagementSystem = lazy(() => import("./pages/grade-management-system"));
+const DocumentManagementHub = lazy(() => import("./pages/document-management-hub"));
+const DocumentManagementCenter = lazy(() => import("./pages/document-management-center"));
+const NotificationManagement = lazy(() => import("./pages/notification-management"));
+const ReportGeneration = lazy(() => import("./pages/report-generation"));
+const StaffManagement = lazy(() => import("./pages/staff-management"));
+const SchoolSettings = lazy(() => import("./pages/school-settings"));
+const SchoolCalendar = lazy(() => import("./pages/school-calendar"));
+const DataBackup = lazy(() => import("./pages/data-backup"));
+const ProfileSettings = lazy(() => import("./pages/profile-settings"));
+const HelpCenter = lazy(() => import("./pages/HelpCenter"));
+
+// Lazy-loaded Auth pages - rarely used
+const PasswordRecovery = lazy(() => import("./pages/password-recovery"));
+const PasswordReset = lazy(() => import("./pages/password-reset"));
+const ProductionLogin = lazy(() => import("./pages/production-login"));
 
 const Routes = () => {
   return (
     <BrowserRouter>
       <ErrorBoundary>
         <ScrollToTop />
-        <RouterRoutes>
-          <Route path="/" element={<SchoolManagement />} />
-          <Route path="/auth/callback" element={<AuthCallback />} />
-          <Route path="/demo" element={<LoginAuthentication />} />
-          <Route path="/login-authentication" element={<LoginAuthentication />} />
-          <Route path="/staff-login" element={<StaffLogin />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route path="/parent-dashboard" element={<ParentDashboard />} />
-          <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
-          <Route path="/admin-dashboard" element={<AdminDashboard />} />
-          <Route path="/principal-dashboard" element={<PrincipalDashboard />} />
-          <Route path="/secretary-dashboard" element={<SecretaryDashboard />} />
-          <Route path="/student-profile-management" element={<StudentProfileManagement />} />
-          <Route path="/grade-management-system" element={<GradeManagementSystem />} />
-          <Route path="/document-management-hub" element={<DocumentManagementHub />} />
-          <Route path="/document-management-center" element={<DocumentManagementCenter />} />
-          <Route path="/school-management" element={<SchoolManagement />} />
-          <Route path="/notification-management" element={<NotificationManagement />} />
-          <Route path="/report-generation" element={<ReportGeneration />} />
-          <Route path="/staff-management" element={<StaffManagement />} />
-          <Route path="/school-settings" element={<SchoolSettings />} />
-          <Route path="/school-calendar" element={<SchoolCalendar />} />
-          <Route path="/data-backup" element={<DataBackup />} />
-          <Route path="/profile-settings" element={<ProfileSettings />} />
-          <Route path="/password-recovery" element={<PasswordRecovery />} />
-          <Route path="/password-reset" element={<PasswordReset />} />
-          <Route path="/production-login" element={<ProductionLogin />} />
-          <Route path="/help" element={<HelpCenter />} />
-          <Route path="*" element={<NotFound />} />
-        </RouterRoutes>
+        <Suspense fallback={<LoadingFallback />}>
+          <RouterRoutes>
+            {/* Critical routes - loaded immediately */}
+            <Route path="/" element={<SchoolManagement />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+            <Route path="/demo" element={<LoginAuthentication />} />
+            <Route path="/login-authentication" element={<LoginAuthentication />} />
+            <Route path="/staff-login" element={<StaffLogin />} />
+            <Route path="/school-management" element={<SchoolManagement />} />
+
+            {/* Dashboard routes - lazy loaded */}
+            <Route path="/student-dashboard" element={<StudentDashboard />} />
+            <Route path="/parent-dashboard" element={<ParentDashboard />} />
+            <Route path="/teacher-dashboard" element={<TeacherDashboard />} />
+            <Route path="/admin-dashboard" element={<AdminDashboard />} />
+            <Route path="/principal-dashboard" element={<PrincipalDashboard />} />
+            <Route path="/secretary-dashboard" element={<SecretaryDashboard />} />
+
+            {/* Feature routes - lazy loaded */}
+            <Route path="/student-profile-management" element={<StudentProfileManagement />} />
+            <Route path="/grade-management-system" element={<GradeManagementSystem />} />
+            <Route path="/document-management-hub" element={<DocumentManagementHub />} />
+            <Route path="/document-management-center" element={<DocumentManagementCenter />} />
+            <Route path="/notification-management" element={<NotificationManagement />} />
+            <Route path="/report-generation" element={<ReportGeneration />} />
+            <Route path="/staff-management" element={<StaffManagement />} />
+            <Route path="/school-settings" element={<SchoolSettings />} />
+            <Route path="/school-calendar" element={<SchoolCalendar />} />
+            <Route path="/data-backup" element={<DataBackup />} />
+            <Route path="/profile-settings" element={<ProfileSettings />} />
+            <Route path="/help" element={<HelpCenter />} />
+
+            {/* Auth routes - lazy loaded */}
+            <Route path="/password-recovery" element={<PasswordRecovery />} />
+            <Route path="/password-reset" element={<PasswordReset />} />
+            <Route path="/production-login" element={<ProductionLogin />} />
+
+            {/* 404 - loaded immediately */}
+            <Route path="*" element={<NotFound />} />
+          </RouterRoutes>
+        </Suspense>
       </ErrorBoundary>
     </BrowserRouter>
   );
