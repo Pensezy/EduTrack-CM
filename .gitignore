@@ -9,7 +9,9 @@ node_modules/
 .env.development.local
 .env.test.local
 .env.production.local
-.env.*
+
+# Exception: Autoriser .env.example (template)
+!.env.example
 
 # Build
 /build
