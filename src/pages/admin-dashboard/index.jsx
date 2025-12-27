@@ -7,6 +7,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import { useAuth } from '../../contexts/AuthContext';
 import { useDataMode } from '../../hooks/useDataMode';
 import { useDashboardData } from '../../hooks/useDashboardData';
+import { getAdminDashboardData } from '../../services/adminDataService';
 
 // Admin Dashboard Components
 
@@ -80,6 +81,7 @@ const AdminDashboard = () => {
   const { user } = useAuth();
   const { dataMode, isDemo } = useDataMode();
   const { data, loading, error } = useDashboardData();
+n  // États pour données réelles admin  const [adminRealData, setAdminRealData] = useState(null);  const [adminDataLoading, setAdminDataLoading] = useState(false);  const [adminDataError, setAdminDataError] = useState(null);
 
   // Admin data basé sur le mode
   const adminData = isDemo ? {
@@ -120,12 +122,12 @@ const AdminDashboard = () => {
     totalDocuments: 8934,
     recentLoginAttempts: 2345
   } : {
-    totalUsers: data?.totalUsers || 0,
+    totalUsers: adminRealData?.systemMetrics?.totalUsers || data?.totalUsers || 0,
     totalStudents: data?.totalStudents || 0,
     totalTeachers: data?.totalTeachers || 0,
     totalParents: data?.totalParents || 0,
     totalStaff: data?.totalStaff || 0,
-    activeSchools: data?.activeSchools || 1,
+    activeSchools: adminRealData?.systemMetrics?.activeSchools || data?.activeSchools || 1,
     systemUptime: 100,
     databaseHealth: 100,
     storageUsage: data?.storageUsage || 15.2,
@@ -170,22 +172,7 @@ const AdminDashboard = () => {
       { feature: 'Communication', usage: 72, users: 834 },
       { feature: 'Analytics', usage: 34, users: 298 }
     ]
-  } : {
-    userGrowth: data?.userGrowth || [
-      { month: 'Jan', users: 0, students: 0, teachers: 0, parents: 0 }
-    ],
-    schoolActivity: data?.schoolActivity || [
-      { name: user?.schoolData?.name || 'Votre école', students: 0, teachers: 0, activity: 100 }
-    ],
-    platformUsage: data?.platformUsage || [
-      { feature: 'Gestion Notes', usage: 0, users: 0 },
-      { feature: 'Présences', usage: 0, users: 0 },
-      { feature: 'Paiements', usage: 0, users: 0 },
-      { feature: 'Documents', usage: 0, users: 0 },
-      { feature: 'Communication', usage: 0, users: 0 },
-      { feature: 'Analytics', usage: 0, users: 0 }
-    ]
-  };
+} : {    userGrowth: adminRealData?.analyticsData?.newUsersChart?.map(item => ({      month: item.date,      users: item.users,      students: 0,      teachers: 0,      parents: 0    })) || data?.userGrowth || [      { month: 'Jan', users: 0, students: 0, teachers: 0, parents: 0 }    ],    schoolActivity: data?.schoolActivity || [      { name: user?.schoolData?.name || 'Votre école', students: 0, teachers: 0, activity: 100 }    ],    platformUsage: data?.platformUsage || [      { feature: 'Gestion Notes', usage: 0, users: 0 },      { feature: 'Présences', usage: 0, users: 0 },      { feature: 'Paiements', usage: 0, users: 0 },      { feature: 'Documents', usage: 0, users: 0 },      { feature: 'Communication', usage: 0, users: 0 },      { feature: 'Analytics', usage: 0, users: 0 }    ]  };
 
   // Security data basé sur le mode
   const securityData = isDemo ? {
@@ -232,6 +219,7 @@ const AdminDashboard = () => {
 
     return () => clearInterval(timer);
   }, []);
+n  // Charger les données admin en mode production  useEffect(() => {    if (isDemo) return; // Ne rien charger en mode démo        async function loadAdminData() {      setAdminDataLoading(true);      setAdminDataError(null);            try {        const data = await getAdminDashboardData();        setAdminRealData(data);        console.log("✅ Données admin réelles chargées:", data);      } catch (error) {        console.error("❌ Erreur chargement données admin:", error);        setAdminDataError(error.message || "Erreur inconnue");      } finally {        setAdminDataLoading(false);      }    }        loadAdminData();  }, [isDemo]);
 
   const getGreeting = () => {
     const hour = currentTime?.getHours();
@@ -538,7 +526,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Total Utilisateurs</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               {formatNumber(systemMetrics?.totalUsers)}
             </p>
             <div className="flex items-center mt-2 space-x-2">
@@ -561,7 +549,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Établissements</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               {systemMetrics?.activeSchools}
             </p>
             <div className="flex items-center mt-2 space-x-2">
@@ -609,7 +597,7 @@ const AdminDashboard = () => {
           </div>
           <div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Alertes Système</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               {systemMetrics?.criticalAlerts}
             </p>
             <div className="flex items-center mt-2 space-x-2">
@@ -714,16 +702,7 @@ const AdminDashboard = () => {
 
   const renderUserManagement = () => {
     // Données utilisateurs demo pour la recherche/filtrage
-    const demoUsers = isDemo ? [
-      { id: 1, name: 'Marie Ngono', email: 'marie.ngono@demo.cm', role: 'student', status: 'active', school: 'Lycée Bilingue', registeredAt: '2024-09-15', lastLogin: '2024-11-28' },
-      { id: 2, name: 'Paul Kamga', email: 'paul.kamga@demo.cm', role: 'student', status: 'active', school: 'Collège La Rochelle', registeredAt: '2024-08-20', lastLogin: '2024-11-29' },
-      { id: 3, name: 'Prof. Jean Talla', email: 'j.talla@demo.cm', role: 'teacher', status: 'active', school: 'Lycée Bilingue', registeredAt: '2024-01-10', lastLogin: '2024-11-29' },
-      { id: 4, name: 'Dr. Atangana', email: 'atangana@demo.cm', role: 'teacher', status: 'active', school: 'Lycée Général Leclerc', registeredAt: '2023-12-05', lastLogin: '2024-11-28' },
-      { id: 5, name: 'Mme Ebogo', email: 'ebogo.parent@demo.cm', role: 'parent', status: 'active', school: 'Collège Vogt', registeredAt: '2024-10-01', lastLogin: '2024-11-27' },
-      { id: 6, name: 'M. Fouda', email: 'fouda@demo.cm', role: 'parent', status: 'active', school: 'Lycée de Bonamoussadi', registeredAt: '2024-09-12', lastLogin: '2024-11-26' },
-      { id: 7, name: 'Sophie Manga', email: 'sophie.m@demo.cm', role: 'student', status: 'inactive', school: 'Lycée Bilingue', registeredAt: '2024-06-15', lastLogin: '2024-10-15' },
-      { id: 8, name: 'Secrétaire Admin', email: 'sec.admin@demo.cm', role: 'staff', status: 'active', school: 'Administration', registeredAt: '2024-01-01', lastLogin: '2024-11-29' }
-    ] : [];
+const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ngono@demo.cm', role: 'student', status: 'active', school: 'Lycée Bilingue', registeredAt: '2024-09-15', lastLogin: '2024-11-28' },      { id: 2, name: 'Paul Kamga', email: 'paul.kamga@demo.cm', role: 'student', status: 'active', school: 'Collège La Rochelle', registeredAt: '2024-08-20', lastLogin: '2024-11-29' },      { id: 3, name: 'Prof. Jean Talla', email: 'j.talla@demo.cm', role: 'teacher', status: 'active', school: 'Lycée Bilingue', registeredAt: '2024-01-10', lastLogin: '2024-11-29' },      { id: 4, name: 'Dr. Atangana', email: 'atangana@demo.cm', role: 'teacher', status: 'active', school: 'Lycée Général Leclerc', registeredAt: '2023-12-05', lastLogin: '2024-11-28' },      { id: 5, name: 'Mme Ebogo', email: 'ebogo.parent@demo.cm', role: 'parent', status: 'active', school: 'Collège Vogt', registeredAt: '2024-10-01', lastLogin: '2024-11-27' },      { id: 6, name: 'M. Fouda', email: 'fouda@demo.cm', role: 'parent', status: 'active', school: 'Lycée de Bonamoussadi', registeredAt: '2024-09-12', lastLogin: '2024-11-26' },      { id: 7, name: 'Sophie Manga', email: 'sophie.m@demo.cm', role: 'student', status: 'inactive', school: 'Lycée Bilingue', registeredAt: '2024-06-15', lastLogin: '2024-10-15' },      { id: 8, name: 'Secrétaire Admin', email: 'sec.admin@demo.cm', role: 'staff', status: 'active', school: 'Administration', registeredAt: '2024-01-01', lastLogin: '2024-11-29' }    ] : (adminRealData?.users || []);
 
     // Filtrage
     const filteredUsers = demoUsers.filter(user => {
@@ -1066,7 +1045,7 @@ const AdminDashboard = () => {
         {showAddUserModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Nouvel Utilisateur</h3>
                   <button 
@@ -1190,7 +1169,7 @@ const AdminDashboard = () => {
         {showImportModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Importer des Utilisateurs</h3>
                   <button 
@@ -1253,7 +1232,7 @@ const AdminDashboard = () => {
         {showUserDetailsModal && selectedUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Détails de l'utilisateur</h3>
                   <button 
@@ -1351,7 +1330,7 @@ const AdminDashboard = () => {
         {showEditUserModal && selectedUser && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Modifier l'utilisateur</h3>
                   <button 
@@ -1540,7 +1519,7 @@ const AdminDashboard = () => {
               <span className="text-xs font-caption font-caption-semibold text-success">+8.2%</span>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Taux d'Engagement</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">68.5%</p>
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">68.5%</p>
             <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-2">
               vs période précédente
             </p>
@@ -1554,7 +1533,7 @@ const AdminDashboard = () => {
               <span className="text-xs font-caption font-caption-semibold text-success">+12.7%</span>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Croissance Utilisateurs</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">+287</p>
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">+287</p>
             <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-2">
               nouveaux ce mois
             </p>
@@ -1568,7 +1547,7 @@ const AdminDashboard = () => {
               <span className="text-xs font-caption font-caption-semibold text-primary">Stable</span>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Temps Moyen Session</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">24min</p>
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">24min</p>
             <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-2">
               par utilisateur actif
             </p>
@@ -1582,7 +1561,7 @@ const AdminDashboard = () => {
               <span className="text-xs font-caption font-caption-semibold text-success">+4.3%</span>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Satisfaction Globale</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">4.6/5</p>
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">4.6/5</p>
             <p className="font-caption font-caption-normal text-xs text-muted-foreground mt-2">
               basé sur 543 avis
             </p>
@@ -2306,7 +2285,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="font-caption font-caption-normal text-sm text-muted-foreground">Revenus du Mois</p>
-              <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+              <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
                 {formatCurrency(systemMetrics?.monthlyRevenue)}
               </p>
               <div className="flex items-center mt-2 space-x-2">
@@ -2329,7 +2308,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="font-caption font-caption-normal text-sm text-muted-foreground">Transactions Réussies</p>
-              <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+              <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
                 {formatNumber(systemMetrics?.successfulTransactions)}
               </p>
               <div className="flex items-center mt-2 space-x-2">
@@ -2352,7 +2331,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="font-caption font-caption-normal text-sm text-muted-foreground">Paiements Pending</p>
-              <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+              <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
                 {formatNumber(systemMetrics?.pendingPayments)}
               </p>
               <div className="flex items-center mt-2 space-x-2">
@@ -2375,7 +2354,7 @@ const AdminDashboard = () => {
             </div>
             <div>
               <p className="font-caption font-caption-normal text-sm text-muted-foreground">Transactions Échouées</p>
-              <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+              <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
                 {formatNumber(systemMetrics?.failedTransactions)}
               </p>
               <div className="flex items-center mt-2 space-x-2">
@@ -2649,7 +2628,7 @@ const AdminDashboard = () => {
         {showTransactionDetails && selectedTransaction && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-lg w-full mx-4">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Détails de la transaction</h3>
                   <button 
@@ -2828,7 +2807,7 @@ const AdminDashboard = () => {
         revenue: 14805000,
         completionRate: 85
       }
-    ] : [];
+    ] : (adminRealData?.schools || []);
 
     return (
       <div className="space-y-6">
@@ -2844,7 +2823,7 @@ const AdminDashboard = () => {
               </span>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Établissements</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               {systemMetrics?.activeSchools}
             </p>
           </div>
@@ -2856,7 +2835,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Total Élèves</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               {formatNumber(systemMetrics?.totalStudents)}
             </p>
           </div>
@@ -2868,7 +2847,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Total Enseignants</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               {formatNumber(systemMetrics?.totalTeachers)}
             </p>
           </div>
@@ -2880,7 +2859,7 @@ const AdminDashboard = () => {
               </div>
             </div>
             <p className="font-caption font-caption-normal text-sm text-muted-foreground">Taux Moyen Réussite</p>
-            <p className="font-heading font-heading-bold text-3xl text-card-foreground mt-1">
+            <p className="font-heading font-heading-bold text-xl sm:text-2xl lg:text-3xl text-card-foreground mt-1">
               91%
             </p>
           </div>
@@ -2912,7 +2891,7 @@ const AdminDashboard = () => {
           <div className="grid grid-cols-1 gap-4">
             {schools.map((school) => (
               <div key={school.id} className="bg-muted/20 rounded-lg border border-border hover:shadow-md transition-shadow">
-                <div className="p-5">
+                <div className="p-3 sm:p-4 lg:p-5">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-start space-x-4">
                       <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center flex-shrink-0">
@@ -3077,7 +3056,7 @@ const AdminDashboard = () => {
         {showAddSchoolModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Nouvel Établissement</h3>
                   <button 
@@ -3239,7 +3218,7 @@ const AdminDashboard = () => {
         {showSchoolDetailsModal && selectedSchoolData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Détails de l'établissement</h3>
                   <button 
@@ -3349,7 +3328,7 @@ const AdminDashboard = () => {
         {showEditSchoolModal && selectedSchoolData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Modifier l'établissement</h3>
                   <button 
@@ -3509,7 +3488,7 @@ const AdminDashboard = () => {
         {showSchoolStatsModal && selectedSchoolData && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="bg-white rounded-lg shadow-xl max-w-3xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-              <div className="p-6">
+              <div className="p-3 sm:p-6">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-xl font-bold text-gray-900">Statistiques - {selectedSchoolData.name}</h3>
                   <button 
@@ -3526,22 +3505,22 @@ const AdminDashboard = () => {
                 <div className="space-y-6">
                   <div className="grid grid-cols-4 gap-4">
                     <div className="bg-blue-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-blue-600">{selectedSchoolData.students}</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">{selectedSchoolData.students}</p>
                       <p className="text-sm text-gray-600 mt-1">Élèves</p>
                       <p className="text-xs text-green-600 mt-1">+5% ce mois</p>
                     </div>
                     <div className="bg-green-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-green-600">{selectedSchoolData.teachers}</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">{selectedSchoolData.teachers}</p>
                       <p className="text-sm text-gray-600 mt-1">Enseignants</p>
                       <p className="text-xs text-green-600 mt-1">+2 cette année</p>
                     </div>
                     <div className="bg-purple-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-purple-600">{selectedSchoolData.staff}</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-purple-600">{selectedSchoolData.staff}</p>
                       <p className="text-sm text-gray-600 mt-1">Personnel</p>
                       <p className="text-xs text-gray-500 mt-1">Stable</p>
                     </div>
                     <div className="bg-orange-50 p-4 rounded-lg text-center">
-                      <p className="text-3xl font-bold text-orange-600">{selectedSchoolData.completionRate}%</p>
+                      <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-orange-600">{selectedSchoolData.completionRate}%</p>
                       <p className="text-sm text-gray-600 mt-1">Réussite</p>
                       <p className="text-xs text-green-600 mt-1">+3% vs l'an dernier</p>
                     </div>
@@ -3663,7 +3642,7 @@ const AdminDashboard = () => {
             
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div>
-                <h1 className="font-heading font-heading-bold text-2xl lg:text-3xl mb-2">
+                <h1 className="font-heading font-heading-bold text-2xl lg:text-xl sm:text-2xl lg:text-3xl mb-2">
                   {getGreeting()}, {adminData?.name?.split(' ')?.[0]} ! 🔧
                 </h1>
                 <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
@@ -3692,6 +3671,7 @@ const AdminDashboard = () => {
               </div>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
+{/* Loading State */}          {adminDataLoading && !isDemo && (            <div className="bg-blue-50 border-2 border-blue-200 p-3 sm:p-4 rounded-xl mb-2 sm:mb-3">              <div className="flex items-center gap-3">                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>                <span className="text-blue-800 font-medium text-sm">                  Chargement des données administrateur...                </span>              </div>            </div>          )}          {/* Error State */}          {adminDataError && !isDemo && (            <div className="bg-red-50 border-2 border-red-200 p-3 sm:p-4 rounded-xl mb-2 sm:mb-3">              <div className="flex items-center gap-3">                <Icon name="AlertTriangle" size={20} className="text-red-600" />                <div className="flex-1">                  <p className="text-red-800 font-semibold text-sm mb-1">                    Erreur de chargement des données                  </p>                  <p className="text-red-600 text-xs">                    {adminDataError}                  </p>                </div>                <button                   onClick={() => window.location.reload()}                  className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700 transition-colors"                >                  Réessayer                </button>              </div>            </div>          )}
                   <div className="font-heading font-heading-bold text-xl">
                     {currentTime?.toLocaleDateString('fr-FR', { 
                       weekday: 'short',
@@ -3887,7 +3867,7 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted mt-1">Module de saisie et gestion des notes</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-heading font-heading-bold text-primary">92%</div>
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-heading font-heading-bold text-primary">92%</div>
                       <p className="text-xs text-muted">Taux d'adoption</p>
                     </div>
                   </div>
@@ -3935,7 +3915,7 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted mt-1">Stockage et partage de documents</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-heading font-heading-bold text-primary">78%</div>
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-heading font-heading-bold text-primary">78%</div>
                       <p className="text-xs text-muted">Taux d'adoption</p>
                     </div>
                   </div>
@@ -3983,7 +3963,7 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted mt-1">Contrôle des absences et retards</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-heading font-heading-bold text-primary">85%</div>
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-heading font-heading-bold text-primary">85%</div>
                       <p className="text-xs text-muted">Taux d'adoption</p>
                     </div>
                   </div>
@@ -4031,7 +4011,7 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted mt-1">Gestion des frais et paiements</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-heading font-heading-bold text-primary">67%</div>
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-heading font-heading-bold text-primary">67%</div>
                       <p className="text-xs text-muted">Taux d'adoption</p>
                     </div>
                   </div>
@@ -4079,7 +4059,7 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted mt-1">Messagerie et notifications</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-heading font-heading-bold text-primary">73%</div>
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-heading font-heading-bold text-primary">73%</div>
                       <p className="text-xs text-muted">Taux d'adoption</p>
                     </div>
                   </div>
@@ -4127,7 +4107,7 @@ const AdminDashboard = () => {
                       <p className="text-sm text-muted mt-1">Planification et horaires</p>
                     </div>
                     <div className="text-right">
-                      <div className="text-3xl font-heading font-heading-bold text-primary">88%</div>
+                      <div className="text-xl sm:text-2xl lg:text-3xl font-heading font-heading-bold text-primary">88%</div>
                       <p className="text-xs text-muted">Taux d'adoption</p>
                     </div>
                   </div>

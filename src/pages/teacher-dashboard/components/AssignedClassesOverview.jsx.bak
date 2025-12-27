@@ -59,11 +59,11 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
   const todaySchedule = getTodaySchedule();
 
   return (
-    <div className="bg-gradient-to-r from-success/5 to-primary/5 rounded-lg border border-primary/10 p-3 sm:p-6">
+    <div className="bg-gradient-to-r from-success/5 to-primary/5 rounded-lg border border-primary/10 p-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
         {/* Selected Class Info */}
-        <div className="mb-3 sm:mb-4 lg:mb-0">
-          <h2 className="font-heading font-heading-bold text-lg sm:text-xl lg:text-2xl text-card-foreground mb-1 sm:mb-2">
+        <div className="mb-6 lg:mb-0">
+          <h2 className="font-heading font-heading-bold text-2xl text-card-foreground mb-2">
             Classe sélectionnée: {selectedClass?.name}
           </h2>
           <div className="space-y-1">
@@ -80,10 +80,10 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
         </div>
 
         {/* Teaching Statistics */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3 lg:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Students */}
-          <div className="bg-white rounded-lg p-2 sm:p-3 lg:p-4 shadow-sm border border-border text-center">
-            <Icon name="Users" size={18} className="mx-auto mb-2 text-primary" />
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
+            <Icon name="Users" size={24} className="mx-auto mb-2 text-primary" />
             <div className="font-heading font-heading-bold text-xl text-primary">
               {getTotalStudents()}
             </div>
@@ -93,8 +93,8 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
           </div>
 
           {/* Classes Count */}
-          <div className="bg-white rounded-lg p-2 sm:p-3 lg:p-4 shadow-sm border border-border text-center">
-            <Icon name="GraduationCap" size={18} className="mx-auto mb-2 text-success" />
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
+            <Icon name="GraduationCap" size={24} className="mx-auto mb-2 text-success" />
             <div className="font-heading font-heading-bold text-xl text-success">
               {classes?.length}
             </div>
@@ -104,8 +104,8 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
           </div>
 
           {/* Weekly Hours */}
-          <div className="bg-white rounded-lg p-2 sm:p-3 lg:p-4 shadow-sm border border-border text-center">
-            <Icon name="Clock" size={18} className="mx-auto mb-2 text-warning" />
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
+            <Icon name="Clock" size={24} className="mx-auto mb-2 text-warning" />
             <div className="font-heading font-heading-bold text-xl text-warning">
               {getWeeklyHours()}h
             </div>
@@ -115,8 +115,8 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
           </div>
 
           {/* Current Class Students */}
-          <div className="bg-white rounded-lg p-2 sm:p-3 lg:p-4 shadow-sm border border-border text-center">
-            <Icon name="User" size={18} className="mx-auto mb-2 text-accent-foreground" />
+          <div className="bg-white rounded-lg p-4 shadow-sm border border-border text-center">
+            <Icon name="User" size={24} className="mx-auto mb-2 text-accent-foreground" />
             <div className="font-heading font-heading-bold text-xl text-accent-foreground">
               {selectedClass?.students}
             </div>
@@ -128,7 +128,7 @@ const AssignedClassesOverview = ({ classes, selectedClass }) => {
       </div>
 
       {/* Today's Schedule & Next Class */}
-      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-3 sm:p-6">
+      <div className="mt-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Today's Schedule */}
         <div className="bg-white rounded-lg p-4 border border-border">
           <div className="flex items-center gap-2 mb-3">

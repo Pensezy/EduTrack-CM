@@ -28,7 +28,17 @@ const PrincipalDashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showMobileMenu, setShowMobileMenu] = useState(false);
-  
+
+  // Mode diagnostic secret (comme mode développeur Android)
+  const [diagnosticClickCount, setDiagnosticClickCount] = useState(() => {
+    const saved = localStorage.getItem('edutrack_diagnostic_mode');
+    return saved ? parseInt(saved) : 0;
+  });
+  const [diagnosticModeEnabled, setDiagnosticModeEnabled] = useState(() => {
+    return localStorage.getItem('edutrack_diagnostic_mode') === '7';
+  });
+  const [showDiagnosticToast, setShowDiagnosticToast] = useState(false);
+
   // États pour la gestion des classes personnalisées
   const [newClassName, setNewClassName] = useState('');
   const [addingClass, setAddingClass] = useState(false);
@@ -161,6 +171,35 @@ const PrincipalDashboard = () => {
     }
   };
 
+  // Gestionnaire pour le mode diagnostic secret (7 clics comme Android)
+  const handleDiagnosticClick = () => {
+    const newCount = diagnosticClickCount + 1;
+
+    if (newCount === 7) {
+      // Activer le mode diagnostic
+      setDiagnosticModeEnabled(true);
+      localStorage.setItem('edutrack_diagnostic_mode', '7');
+      setShowDiagnosticToast(true);
+      setDiagnosticClickCount(7);
+
+      // Masquer le toast après 5 secondes
+      setTimeout(() => {
+        setShowDiagnosticToast(false);
+      }, 5000);
+
+      console.log('🔧 Mode diagnostic activé');
+    } else if (newCount > 7) {
+      // Désactiver le mode diagnostic si on continue à cliquer
+      setDiagnosticModeEnabled(false);
+      localStorage.removeItem('edutrack_diagnostic_mode');
+      setDiagnosticClickCount(0);
+      console.log('🔧 Mode diagnostic désactivé');
+    } else {
+      setDiagnosticClickCount(newCount);
+      console.log(`🔧 Clics vers mode diagnostic: ${newCount}/7`);
+    }
+  };
+
   // Les métriques proviennent maintenant du hook qui switch automatiquement
   const keyMetrics = data.metrics || [];
 
@@ -171,7 +210,8 @@ const PrincipalDashboard = () => {
     { id: 'school-year', label: 'Validation Année', icon: 'Calendar', description: 'Passage année scolaire' },
     { id: 'school-info', label: 'Mon Établissement', icon: 'School', description: 'Informations école' },
     { id: 'accounts', label: 'Gestion Comptes', icon: 'UserCheck', description: 'Personnel & accès' },
-    { id: 'system', label: 'État Système', icon: 'Settings', description: 'Paramètres & statut' },
+    // État Système visible uniquement en mode diagnostic (comme mode développeur Android)
+    ...(diagnosticModeEnabled ? [{ id: 'system', label: 'État Système', icon: 'Settings', description: 'Paramètres & statut' }] : []),
     // Debug visible uniquement en développement ou via URL directe
     ...(import.meta.env.DEV || activeTab === 'debug' ? [{ id: 'debug', label: 'Diagnostic', icon: 'Bug', description: 'Outils techniques' }] : [])
   ];
@@ -1100,16 +1140,22 @@ const PrincipalDashboard = () => {
                     En ligne
                   </div>
                   <h1 className="font-heading font-heading-bold text-4xl mb-2">
-                    Bienvenue, {schoolData?.director_name || 
-                    schoolData?.directorName || 
+                    Bienvenue, {schoolData?.director_name ||
+                    schoolData?.directorName ||
                     schoolData?.users?.full_name ||
                     user?.schoolData?.users?.full_name ||
                     user?.full_name ||
-                    user?.email?.split('@')[0] || 
+                    user?.email?.split('@')[0] ||
                     'Directeur'} 👋
                   </h1>
                   <p className="font-body font-body-normal text-blue-100 text-lg">
-                    Tableau de Bord Principal • {schoolData?.name || 'Établissement'}
+                    Tableau de Bord Principal • <span
+                      onClick={handleDiagnosticClick}
+                      className="cursor-pointer select-none"
+                      title="Cliquez 7 fois pour activer le mode diagnostic"
+                    >
+                      {schoolData?.name || 'Établissement'}
+                    </span>
                   </p>
                 </div>
                 <div className="flex flex-col lg:flex-row items-start lg:items-center gap-3">
@@ -1282,6 +1328,31 @@ const PrincipalDashboard = () => {
               </div>
             </div>
 
+            {/* Toast Mode Diagnostic Activé */}
+            {showDiagnosticToast && (
+              <div className="mb-6 bg-gradient-to-r from-purple-50 via-indigo-50 to-blue-50 border-2 border-purple-300 p-5 rounded-2xl shadow-lg animate-fadeIn">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-gradient-to-br from-purple-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
+                    <Icon name="Settings" size={24} className="text-white" />
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-sm font-semibold text-purple-900 mb-1">
+                      🔧 Mode Diagnostic Activé
+                    </p>
+                    <p className="text-xs text-purple-700">
+                      L'onglet "État Système" est maintenant accessible. Cliquez à nouveau sur le nom de l'école pour désactiver.
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => setShowDiagnosticToast(false)}
+                    className="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-purple-200 transition-colors flex-shrink-0"
+                  >
+                    <Icon name="X" size={16} className="text-purple-600" />
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Notification mode démo - Modernisée */}
             {isDemo && (
               <div className="mb-6 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-300 p-5 rounded-2xl shadow-md animate-fadeIn">
@@ -1294,7 +1365,7 @@ const PrincipalDashboard = () => {
                       🎭 Mode Démonstration Actif
                     </p>
                     <p className="text-xs text-amber-700">
-                      Données fictives pour test. 
+                      Données fictives pour test.
                       <button
                         onClick={() => navigate('/school-management')}
                         className="ml-2 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors inline-flex items-center"

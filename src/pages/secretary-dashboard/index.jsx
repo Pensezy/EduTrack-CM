@@ -410,7 +410,7 @@ const SecretaryDashboard = () => {
           </div>
 
           {/* Quick Stats - Modernisées avec gradients */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
             {quickStats?.map((stat, index) => {
               const gradientColors = [
                 'from-blue-50 to-indigo-50 border-blue-200',
@@ -440,18 +440,18 @@ const SecretaryDashboard = () => {
               return (
                 <div 
                   key={index} 
-                  className={`group bg-gradient-to-br ${gradientColors[index]} border-2 rounded-2xl p-5 hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg`}
+                  className={`group bg-gradient-to-br ${gradientColors[index]} border-2 rounded-2xl p-3 sm:p-4 lg:p-5 hover:shadow-xl hover:scale-105 transition-all duration-300 shadow-lg`}
                 >
-                  <div className="flex items-center justify-between mb-3">
-                    <div className={`w-14 h-14 bg-gradient-to-br ${iconGradients[index]} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
-                      <Icon name={stat?.icon} size={24} className="text-white" />
+                  <div className="flex items-center justify-between mb-2 sm:mb-3">
+                    <div className={`w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 bg-gradient-to-br ${iconGradients[index]} rounded-xl flex items-center justify-center group-hover:scale-110 transition-transform duration-300 shadow-md`}>
+                      <Icon name={stat?.icon} size={18} className="text-white" />
                     </div>
                   </div>
                   <div>
-                    <p className={`text-3xl font-bold ${textColors[index]} mb-1`}>
+                    <p className={`text-xl sm:text-2xl lg:text-3xl font-bold ${textColors[index]} mb-1`}>
                       {stat?.value}
                     </p>
-                    <p className={`text-sm font-semibold ${subtitleColors[index]}`}>
+                    <p className={`text-xs sm:text-sm font-semibold ${subtitleColors[index]}`}>
                       {stat?.label}
                     </p>
                   </div>
