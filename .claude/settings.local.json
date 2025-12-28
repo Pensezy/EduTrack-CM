@@ -12,7 +12,8 @@
       "Bash(done)",
       "Bash(npm run build:*)",
       "Bash(node generate-icons-from-logo.js:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(ls:*)"
     ]
   }
 }
