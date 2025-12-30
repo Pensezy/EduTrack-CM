@@ -13,7 +13,9 @@
       "Bash(npm run build:*)",
       "Bash(node generate-icons-from-logo.js:*)",
       "Bash(cat:*)",
-      "Bash(ls:*)"
+      "Bash(ls:*)",
+      "Bash(del nul)",
+      "Bash(git push)"
     ]
   }
 }
