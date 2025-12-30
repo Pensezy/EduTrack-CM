@@ -1,341 +1,275 @@
-# 📋 RÉSUMÉ DES QUESTIONNAIRES EDUTRACK CM
+# 📊 RÉSUMÉ DES QUESTIONNAIRES - EduTrack CM
 
-**Date de création:** 28 décembre 2024
-**Version:** 2.0
-**Format:** Standardisé à 25 questions par questionnaire
+**Date de mise à jour:** 30 Décembre 2024
+**Version:** 2.1 (Restructuré en 5 parties)
+**Format:** 25 questions par questionnaire, organisées en 5 parties thématiques
 
 ---
 
 ## 🎯 OBJECTIF GLOBAL
 
-Les questionnaires ont été conçus pour recueillir des données terrain auprès de tous les acteurs du système éducatif camerounais afin d'adapter EduTrack CM à leurs besoins réels.
+Ces questionnaires visent à collecter les besoins réels de TOUS les acteurs de l'écosystème éducatif camerounais pour concevoir EduTrack CM comme une solution complète, adaptée et adoptable.
 
 ---
 
-## 📊 VUE D'ENSEMBLE
+## 🆕 NOUVELLE STRUCTURE EN 5 PARTIES
 
-### Format Standardisé
+Chaque questionnaire est maintenant structuré en **5 PARTIES THÉMATIQUES** pour une meilleure clarté et facilité de réponse:
 
-Chaque questionnaire contient:
-- **25 questions exactement**
-- **3 types de questions uniquement:**
-  - ✅ **Vrai/Faux** - Questions fermées simples
-  - ✅ **QCU (Questions à Choix Unique)** - Une seule réponse possible
-  - ✅ **QCM (Questions à Choix Multiple)** - Plusieurs réponses possibles
-- **Durée estimée:** 15-20 minutes
-- **Section contact** pour le suivi
+| Partie | Icône | Titre | Questions | Objectif |
+|--------|-------|-------|-----------|----------|
+| **1** | 📊 | Infrastructure & Équipement | 1-5 | Évaluer les ressources techniques disponibles |
+| **2** | 📝 | Pratiques & Outils Actuels | 6-10 | Comprendre les méthodes de travail actuelles |
+| **3** | ⚠️ | Défis & Difficultés | 11-15 | Identifier les problèmes et points de douleur |
+| **4** | 💻 | Compétences & Formation | 16-20 | Mesurer les capacités et besoins en formation |
+| **5** | 🎯 | Attentes & Adoption | 21-25 | Anticiper l'adoption et les attentes du système |
 
-### Avantages du Format
+### Avantages de cette Structure
 
-1. **Facile à analyser** - Données quantitatives exploitables
-2. **Rapide à remplir** - Pas de questions ouvertes longues
-3. **Comparable** - Même structure pour tous les rôles
-4. **Mobile-friendly** - Peut être digitalisé facilement
-5. **Statistiques claires** - Pourcentages et graphiques directs
+✅ **Navigation intuitive** - L'utilisateur sait où il en est
+✅ **Progression logique** - Du contexte actuel aux attentes futures
+✅ **Fatigue réduite** - Chaque partie a un objectif clair
+✅ **Analyse facilitée** - Données regroupées par thème
+✅ **Onglets/Accordéon** - Adapté aux formats numériques
 
 ---
 
 ## 📁 LES 6 QUESTIONNAIRES
 
-### 1. QUESTIONNAIRE DIRECTEUR D'ÉTABLISSEMENT
-**Fichier:** `QUESTIONNAIRE_DIRECTEUR.md`
+### 1. 📋 QUESTIONNAIRE DIRECTEUR D'ÉTABLISSEMENT
+**Fichier:** [QUESTIONNAIRE_DIRECTEUR.md](QUESTIONNAIRE_DIRECTEUR.md)
+**Public cible:** Directeurs, Proviseurs, Chefs d'établissement
+**Durée:** 15-20 minutes | **Total:** 25 questions
 
-**Public cible:** Directeurs, proviseurs, principaux d'établissements
+#### Répartition par Partie:
+- **📊 Partie 1:** Connexion Internet, ordinateurs, outils actuels
+- **📝 Partie 2:** Production bulletins, erreurs, communication parents
+- **⚠️ Partie 3:** Paiements scolarité, temps administratif, difficultés
+- **💻 Partie 4:** Logiciels utilisés, maîtrise informatique, formation
+- **🎯 Partie 5:** Budget, modèle paiement, fonctionnalités prioritaires
 
-**Thèmes couverts:**
-- Infrastructure technologique (Internet, ordinateurs)
-- Méthodes de gestion actuelles (papier vs numérique)
-- Temps consacré aux tâches administratives
-- Difficultés principales (erreurs bulletins, retards paiements)
-- Communication avec les parents
-- Budget disponible et modèle de paiement préféré
+---
+
+### 2. 👨‍🏫 QUESTIONNAIRE ENSEIGNANT
+**Fichier:** [QUESTIONNAIRE_ENSEIGNANT.md](QUESTIONNAIRE_ENSEIGNANT.md)
+**Public cible:** Enseignants de tous niveaux
+**Durée:** 15-20 minutes | **Total:** 25 questions
+
+#### Répartition par Partie:
+- **📊 Partie 1:** Cahier notes, outils gestion, temps saisie, élèves gérés
+- **📝 Partie 2:** Gestion absences, communication parents, évaluations
+- **⚠️ Partie 3:** Préparation cours, ressources pédagogiques, difficultés
+- **💻 Partie 4:** Accès équipement, application mobile, fonctionnalités
+- **🎯 Partie 5:** Formation, craintes, gain temps, statistiques
+
+---
+
+### 3. 💼 QUESTIONNAIRE SECRÉTAIRE/PERSONNEL ADMINISTRATIF
+**Fichier:** [QUESTIONNAIRE_SECRETAIRE.md](QUESTIONNAIRE_SECRETAIRE.md)
+**Public cible:** Secrétaires, Comptables, Caissiers
+**Durée:** 15-20 minutes | **Total:** 25 questions
+
+#### Répartition par Partie:
+- **📊 Partie 1:** Ordinateur, maîtrise informatique, heures saisie, outils
+- **📝 Partie 2:** Inscriptions, dossiers perdus, paiements, reçus
+- **⚠️ Partie 3:** Production bulletins, tâches chronophages, notes enseignants
+- **💻 Partie 4:** Sollicitations parents, Internet, fonctionnalités souhaitées
+- **🎯 Partie 5:** Formation, craintes, réduction temps, adoption
+
+---
+
+### 4. 👨‍👩‍👧‍👦 QUESTIONNAIRE PARENT D'ÉLÈVE
+**Fichier:** [QUESTIONNAIRE_PARENT.md](QUESTIONNAIRE_PARENT.md)
+**Public cible:** Parents et tuteurs légaux
+**Durée:** 15-20 minutes | **Total:** 25 questions
+
+#### Répartition par Partie:
+- **📊 Partie 1:** Smartphone, type téléphone, Internet, déplacements école
+- **📝 Partie 2:** Disponibilité, information résultats, bulletins, contact école
+- **⚠️ Partie 3:** Alertes absences/notes, paiements, reçus numériques
+- **💻 Partie 4:** Échéances, infos en ligne, messagerie, applications
+- **🎯 Partie 5:** Maîtrise numérique, préoccupations, bulletin format, supplément
+
+---
+
+### 5. 🎓 QUESTIONNAIRE ÉLÈVE/ÉTUDIANT
+**Fichier:** [QUESTIONNAIRE_ELEVE_ETUDIANT.md](QUESTIONNAIRE_ELEVE_ETUDIANT.md)
+**Public cible:** Élèves et étudiants (tous niveaux)
+**Durée:** 15-20 minutes | **Total:** 25 questions
+
+#### Répartition par Partie:
+- **📊 Partie 1:** Smartphone, type téléphone, Internet, matière préférée
+- **📝 Partie 2:** Compréhension bulletins, réception, devoirs, notes en ligne
+- **⚠️ Partie 3:** Temps devoirs, difficultés scolaires, ressources, Internet
+- **💻 Partie 4:** Questions profs, applications, maîtrise, suivi parents
+- **🎯 Partie 5:** Fonctionnalités, quiz, impact réussite, autorisation parentale
+
+---
+
+### 6. 🏢 QUESTIONNAIRE AUTRES ACTEURS
+**Fichier:** [QUESTIONNAIRE_AUTRES_ACTEURS.md](QUESTIONNAIRE_AUTRES_ACTEURS.md)
+**Public cible:** Surveillants, Comptables, Bibliothécaires, Conseillers, Inspecteurs, Fondateurs
+**Durée:** 15-20 minutes | **Total:** 25 questions
+
+#### Répartition par Partie:
+- **📊 Partie 1:** Système informatique, maîtrise, ordinateur, outils, tâches admin
+- **📝 Partie 2:** Accès données élèves, infos consultées, rapports
+- **⚠️ Partie 3:** Fréquence rapports, temps préparation, collaboration, communication
+- **💻 Partie 4:** Difficultés, système centralisé, fonctionnalités, mobile
+- **🎯 Partie 5:** Formation, préoccupations, reconnaissance, pilote, recommandation
+
+---
+
+## 📊 SYNTHÈSE DES QUESTIONS PAR TYPE
+
+### Répartition Globale (150 questions total)
+
+| Type de Question | Nombre | Pourcentage | Usage Optimal |
+|------------------|--------|-------------|---------------|
+| **Vrai/Faux** | ~60 | 40% | Questions de fait, pratiques actuelles |
+| **QCU (Choix Unique)** | ~50 | 33% | Échelles, catégories, priorités |
+| **QCM (Choix Multiple)** | ~40 | 27% | Besoins, difficultés, fonctionnalités |
+
+---
+
+## 📈 GUIDE D'ANALYSE DES DONNÉES
+
+### Étape 1: Analyse Par Partie
+
+Pour chaque partie, calculer:
+
+```
+Partie 1 (Infrastructure):
+- % possédant smartphone/ordinateur
+- Qualité moyenne connexion Internet
+- Outils actuellement utilisés
+
+Partie 2 (Pratiques):
+- Temps moyen consacré aux tâches
+- Modes de communication préférés
+- Fréquence des activités
+
+Partie 3 (Défis):
+- Top 3 difficultés par rôle
+- Points de douleur majeurs
+- Temps perdu estimé
+
+Partie 4 (Compétences):
+- Distribution niveau maîtrise
+- Type de formation préféré
 - Fonctionnalités prioritaires
 
-**Questions clés:**
-- Q2: Qualité de la connexion Internet (QCU)
-- Q6: Temps de production des bulletins (QCU)
-- Q11: Taux de paiements à temps (Vrai/Faux)
-- Q15: 3 principales difficultés (QCM - max 3)
-- Q21: Budget annuel disponible (QCU)
-- Q23: Fonctionnalités les plus utiles (QCM - max 5)
+Partie 5 (Adoption):
+- Taux d'intérêt programme pilote
+- Budget disponible moyen
+- Préoccupations principales
+```
 
-**Insights attendus:**
-- Niveau d'équipement technologique des écoles
-- Points de douleur majeurs des directeurs
-- Capacité/volonté de payer pour un système
+### Étape 2: Analyse Croisée
 
----
+Comparer les réponses entre différents rôles:
 
-### 2. QUESTIONNAIRE ENSEIGNANT
-**Fichier:** `QUESTIONNAIRE_ENSEIGNANT.md`
+| Question | Directeur | Enseignant | Secrétaire | Parent | Élève |
+|----------|-----------|------------|------------|--------|-------|
+| "Possède smartphone" | 95% | 85% | 90% | 75% | 60% |
+| "Accès Internet stable" | 70% | 60% | 75% | 50% | 55% |
+| "Prêt à tester pilote" | 80% | 70% | 75% | 65% | 70% |
 
-**Public cible:** Enseignants de tous niveaux (primaire, collège, lycée)
+### Étape 3: Priorisation MVP
 
-**Thèmes couverts:**
-- Outils actuels de gestion des notes (cahier, Excel, app)
-- Temps passé à saisir et calculer les notes
-- Gestion des absences
-- Communication avec les parents
-- Accès aux ressources pédagogiques
-- Maîtrise des outils numériques
-- Craintes et attentes vis-à-vis du digital
+Utiliser les résultats pour définir les fonctionnalités du MVP:
 
-**Questions clés:**
-- Q1: Utilisation de cahier papier (Vrai/Faux)
-- Q3: Temps hebdomadaire de saisie de notes (QCU)
-- Q5: Nombre total d'élèves (QCU)
-- Q13: 3 principales difficultés (QCM - max 3)
-- Q17: Intérêt pour app mobile de saisie (Vrai/Faux)
-- Q18: Fonctionnalités les plus utiles (QCM - max 5)
-
-**Insights attendus:**
-- Charge de travail actuelle liée à la saisie
-- Acceptation du changement vers le numérique
-- Besoins spécifiques pédagogiques
+1. **Fonctionnalités demandées par 3+ rôles** → Haute priorité
+2. **Fonctionnalités réglant problèmes Partie 3** → Priorité moyenne
+3. **Fonctionnalités complexes** → Phase 2
 
 ---
 
-### 3. QUESTIONNAIRE SECRÉTAIRE/PERSONNEL ADMINISTRATIF
-**Fichier:** `QUESTIONNAIRE_SECRETAIRE.md`
+## 🎯 MATRICES DE DÉCISION
 
-**Public cible:** Secrétaires, comptables, caissiers, agents de saisie
+### Matrice: Impact vs Facilité d'Implémentation
 
-**Thèmes couverts:**
-- Équipement informatique disponible
-- Temps de saisie quotidien (inscriptions, notes, paiements)
-- Gestion des paiements et reçus
-- Production des bulletins
-- Communication avec parents et enseignants
-- Tâches les plus chronophages
-- Formation et adaptation au numérique
+```
+Haute Impact, Facile          | Haute Impact, Difficile
+- Génération auto bulletins   | - Plateforme parents complète
+- Calcul moyennes             | - Application mobile native
+- Alerte retards paiement     | - Système messagerie temps réel
 
-**Questions clés:**
-- Q3: Heures quotidiennes de saisie (QCU)
-- Q6: Temps d'inscription d'un élève (QCU)
-- Q9: Problèmes avec reçus de paiement (Vrai/Faux)
-- Q12: Temps d'impression des bulletins (QCU)
-- Q13: 3 tâches les plus chronophages (QCM - max 3)
-- Q19: Fonctionnalités prioritaires (QCM - max 5)
-
-**Insights attendus:**
-- Goulots d'étranglement opérationnels
-- Niveau de compétences techniques
-- Acceptation d'une automatisation
+Basse Impact, Facile          | Basse Impact, Difficile
+- Thèmes personnalisables     | - IA prédictive résultats
+- Statistiques basiques       | - Blockchain certificats
+```
 
 ---
 
-### 4. QUESTIONNAIRE PARENT D'ÉLÈVE
-**Fichier:** `QUESTIONNAIRE_PARENT.md`
+## 📋 CHECKLIST D'UTILISATION
 
-**Public cible:** Parents, tuteurs légaux
+### Avant la Collecte
+- [ ] Choisir mode: Papier / Google Forms / Interview
+- [ ] Préparer plan de distribution par établissement
+- [ ] Former les enquêteurs (si applicable)
+- [ ] Tester avec 2-3 personnes par questionnaire
+- [ ] Traduire en langues locales si nécessaire
 
-**Thèmes couverts:**
-- Possession de smartphone et accès Internet
-- Fréquence de déplacement à l'école
-- Moyens actuels de suivi scolaire
-- Communication avec l'école
-- Gestion des paiements
-- Intérêt pour le suivi en ligne
-- Volonté de payer pour un service numérique
+### Pendant la Collecte
+- [ ] Expliquer la structure en 5 parties
+- [ ] Assurer confidentialité des réponses
+- [ ] Préciser que toutes les parties sont importantes
+- [ ] Encourager à compléter jusqu'à la fin
+- [ ] Noter le temps réel de complétion
 
-**Questions clés:**
-- Q2: Type de téléphone (QCU)
-- Q4: Moyens d'accès Internet (QCM)
-- Q11: Souhait d'alertes absences en temps réel (Vrai/Faux)
-- Q17: Informations à consulter en ligne (QCM - max 5)
-- Q20: Installation d'une app mobile (Vrai/Faux)
-- Q24: Volonté de payer un supplément (Vrai/Faux)
-
-**Insights attendus:**
-- Taux d'équipement mobile des parents
-- Besoins de communication et transparence
-- Acceptation d'un modèle payant pour parents
+### Après la Collecte
+- [ ] Numériser les réponses (si papier)
+- [ ] Nettoyer les données (doublons, incohérences)
+- [ ] Analyser par partie puis globalement
+- [ ] Créer visualisations (graphiques, tableaux)
+- [ ] Rédiger rapport d'analyse complet
+- [ ] Partager insights avec équipe projet
+- [ ] Planifier interviews de suivi si besoin
 
 ---
 
-### 5. QUESTIONNAIRE ÉLÈVE/ÉTUDIANT
-**Fichier:** `QUESTIONNAIRE_ELEVE_ETUDIANT.md`
+## 🔧 OUTILS RECOMMANDÉS
 
-**Public cible:** Élèves du secondaire, étudiants
+### Pour la Collecte
+- **Google Forms** - Version en ligne gratuite
+- **KoBoToolbox** - Pour collecte terrain offline
+- **ODK Collect** - Application mobile Android
+- **TypeForm** - Interface moderne et engageante
 
-**Thèmes couverts:**
-- Accès aux équipements numériques (smartphone, Internet)
-- Utilisation actuelle d'Internet pour les études
-- Compréhension des notes et bulletins
-- Préférences de réception des devoirs
-- Intérêt pour ressources pédagogiques en ligne
-- Volonté de suivre ses notes en ligne
-- Acceptation parentale de l'usage numérique
+### Pour l'Analyse
+- **Google Sheets** - Tableur collaboratif
+- **Microsoft Excel** - Tableaux croisés dynamiques
+- **Power BI** - Visualisations avancées
+- **R/Python** - Analyse statistique poussée
 
-**Questions clés:**
-- Q2: Type de téléphone (QCU)
-- Q6: Compréhension des notes (Vrai/Faux)
-- Q12: Principales difficultés scolaires (QCM - max 3)
-- Q14: Utilisation d'Internet pour l'école (Vrai/Faux)
-- Q21: Fonctionnalités souhaitées (QCM - max 5)
-- Q23: App mobile utile pour réussite (Vrai/Faux)
-
-**Insights attendus:**
-- Niveau d'adoption technologique des jeunes
-- Besoins d'accompagnement pédagogique
-- Acceptation du suivi parental numérique
+### Pour la Visualisation
+- **Google Data Studio** - Tableaux de bord interactifs
+- **Canva** - Infographies professionnelles
+- **Chart.js** - Graphiques web interactifs
 
 ---
 
-### 6. QUESTIONNAIRE AUTRES ACTEURS
-**Fichier:** `QUESTIONNAIRE_AUTRES_ACTEURS.md`
+## 🔄 AMÉLIORATIONS FUTURES
 
-**Public cible:** Surveillants, comptables, bibliothécaires, conseillers d'orientation, inspecteurs, fondateurs, etc.
-
-**Thèmes couverts:**
-- Rôle spécifique dans l'écosystème éducatif
-- Outils actuels de travail
-- Besoin d'accès aux données élèves
-- Fréquence de production de rapports
-- Communication avec le personnel
-- Fonctionnalités spécifiques au rôle
-- Intérêt pour un système centralisé
-
-**Questions clés:**
-- Q6: Besoin d'accès aux données élèves (Vrai/Faux)
-- Q7: Informations consultées régulièrement (QCM - max 5)
-- Q11: Fréquence de production de rapports (QCU)
-- Q16: 3 principales difficultés (QCM - max 3)
-- Q18: Fonctionnalités prioritaires (QCM - max 5)
-- **Section ouverte:** Besoin spécifique unique au rôle
-
-**Insights attendus:**
-- Besoins non couverts par les 5 autres questionnaires
-- Identification de rôles critiques oubliés
-- Fonctionnalités de niche à développer
-
----
-
-## 📈 PLAN D'ANALYSE DES DONNÉES
-
-### Étape 1: Collecte
-- Imprimer les questionnaires pour distribution papier
-- Optionnel: Digitaliser avec Google Forms / Typeform
-- Viser minimum **30 répondants par catégorie**
-
-### Étape 2: Saisie
-- Créer une base de données Excel/Google Sheets
-- Colonnes: ID, Rôle, Q1, Q2, ..., Q25, Contact
-- Coder les réponses:
-  - Vrai = 1, Faux = 0
-  - QCU: A, B, C, D, E
-  - QCM: Liste séparée par virgules (A,C,E)
-
-### Étape 3: Analyse Quantitative
-Pour chaque question, calculer:
-- **Questions Vrai/Faux:** % de Vrai vs Faux
-- **Questions QCU:** Distribution % par option
-- **Questions QCM:** Fréquence de chaque option
-
-### Étape 4: Insights Clés
-Identifier:
-- **Pain points majeurs** (difficultés les plus citées)
-- **Fonctionnalités prioritaires** (options les plus sélectionnées)
-- **Obstacles à l'adoption** (craintes, budget, compétences)
-- **Taux d'équipement** (smartphones, Internet, ordinateurs)
-- **Volonté de payer** (budget disponible)
-
-### Étape 5: Segmentation
-Comparer les réponses par:
-- **Type d'établissement** (public vs privé)
-- **Localisation** (urbain vs rural)
-- **Taille** (petite école vs grande école)
-- **Niveau** (primaire vs secondaire)
-
-### Étape 6: Rapport Final
-Créer un document avec:
-- **Résumé exécutif** (1 page)
-- **Profil des répondants**
-- **Résultats par question** (graphiques)
-- **Top 10 fonctionnalités demandées**
-- **Top 5 obstacles identifiés**
-- **Recommandations** pour la roadmap EduTrack CM
-
----
-
-## 🎨 FORMATS DE DISTRIBUTION
-
-### Format Papier (Recommandé pour terrain)
-- Imprimer en A4 recto-verso
-- Ajouter logo EduTrack CM en en-tête
-- Prévoir stylos et clipboards pour enquêteurs
-
-### Format Numérique (Optionnel)
-**Google Forms:**
-1. Créer un formulaire par questionnaire
-2. Utiliser "Choix multiples" pour QCU
-3. Utiliser "Cases à cocher" pour QCM
-4. Limiter à 1 réponse par personne
-
-**Typeform:**
-- Interface plus moderne et engageante
-- Logique conditionnelle possible
-- Export CSV/Excel facile
-
-**WhatsApp (Micro-enquête):**
-- Envoyer 5 questions prioritaires par chat
-- Utile pour relances rapides
-- Moins formel mais plus de taux de réponse
-
----
-
-## ✅ CHECKLIST AVANT DÉPLOIEMENT
-
-### Préparation
-- ☐ Imprimer 50 copies de chaque questionnaire
-- ☐ Former les enquêteurs (1h de briefing)
-- ☐ Préparer tableau de suivi (Excel)
-- ☐ Identifier les établissements cibles
-- ☐ Obtenir autorisation des directeurs
-
-### Distribution
-- ☐ Privilégier les heures de pause/récréation
-- ☐ Expliquer l'objectif du questionnaire
-- ☐ Garantir anonymat si souhaité
-- ☐ Prévoir 20 min de temps de remplissage
-- ☐ Récupérer immédiatement (éviter pertes)
-
-### Suivi
-- ☐ Objectif: 30+ réponses par catégorie
-- ☐ Diversifier: écoles publiques + privées
-- ☐ Diversifier: zones urbaines + rurales
-- ☐ Tracker taux de réponse quotidien
-- ☐ Faire relances si nécessaire
+### Version 3.0 (Suggestions)
+1. **Questions ouvertes optionnelles** - Fin de chaque partie pour insights
+2. **Traduction multilingue** - Français, Anglais, langues locales
+3. **Version adaptive** - Questions de suivi basées sur réponses
+4. **Intégration app mobile** - Collecte directe dans EduTrack
+5. **Gamification** - Badges pour complétion questionnaires
 
 ---
 
 ## 📞 SUPPORT
 
-**Questions sur les questionnaires:**
-Contact EduTrack CM - [Vos coordonnées]
-
-**Analyse des données:**
-Prévoir 2-3 jours après collecte complète
-
-**Restitution:**
-Rapport final sous 1 semaine
+Pour toute question sur l'utilisation de ces questionnaires:
+- **Projet:** EduTrack CM
+- **Documentation:** Voir fichiers individuels QUESTIONNAIRE_*.md
+- **Structure:** 5 parties thématiques par questionnaire
 
 ---
 
-## 📝 HISTORIQUE DES VERSIONS
-
-**Version 2.0 - 28 décembre 2024**
-- Standardisation à 25 questions par questionnaire
-- Format unique: Vrai/Faux, QCU, QCM uniquement
-- Suppression des questions ouvertes longues
-- Ajout de limites (max 3, max 5) sur QCM
-- Durée réduite à 15-20 min
-
-**Version 1.0 - 27 décembre 2024**
-- Création initiale des 6 questionnaires
-- Format long avec questions ouvertes
-- Durée 20-35 minutes
-
----
-
-*Les questionnaires EduTrack CM sont des outils vivants qui évoluent selon les retours terrain. N'hésitez pas à suggérer des améliorations!*
+**Version 2.1** - Restructuration en 5 parties thématiques pour navigation optimale
+**Dernière mise à jour:** 30 Décembre 2024
+**Créé avec:** 💙 EduTrack CM Team

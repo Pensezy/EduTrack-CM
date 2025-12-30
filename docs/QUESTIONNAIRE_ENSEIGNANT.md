@@ -1,7 +1,7 @@
 # 📋 QUESTIONNAIRE ENSEIGNANT - EduTrack CM
 
 **Objectif:** Comprendre les besoins et pratiques pédagogiques des enseignants
-**Format:** 25 questions (Vrai/Faux, QCM, QCU)
+**Format:** 25 questions réparties en 5 parties (Vrai/Faux, QCM, QCU)
 **Durée estimée:** 15-20 minutes
 
 ---
@@ -16,7 +16,7 @@
 
 ---
 
-## QUESTIONS
+## 📊 PARTIE 1: INFRASTRUCTURE & ÉQUIPEMENT (Questions 1-5)
 
 ### 1. Vous utilisez actuellement un cahier de notes papier pour enregistrer les résultats de vos élèves
 - ☐ Vrai
@@ -44,6 +44,10 @@
 - ☐ 50 à 100 élèves
 - ☐ 100 à 200 élèves
 - ☐ Plus de 200 élèves
+
+---
+
+## 📝 PARTIE 2: PRATIQUES & OUTILS ACTUELS (Questions 6-10)
 
 ### 6. Comment gérez-vous actuellement les absences de vos élèves? (QCM - Choix multiple)
 - ☐ Cahier d'appel papier
@@ -74,6 +78,10 @@
 ### 10. Vous recevez toujours vos emplois du temps à temps avant le début de la semaine
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## ⚠️ PARTIE 3: DÉFIS & DIFFICULTÉS (Questions 11-15)
 
 ### 11. Combien de temps passez-vous en moyenne à préparer vos cours chaque semaine? (QCU - Choix unique)
 - ☐ Moins de 5 heures
@@ -106,6 +114,10 @@
 - ☐ Débutant (j'ai besoin d'aide)
 - ☐ Aucune compétence
 
+---
+
+## 💻 PARTIE 4: COMPÉTENCES & FORMATION (Questions 16-20)
+
 ### 16. Avez-vous accès à un ordinateur ou une tablette pour votre travail?
 - ☐ Vrai
 - ☐ Faux
@@ -134,6 +146,10 @@
 ### 20. Vous seriez prêt(e) à remplacer vos cahiers papier par un système numérique si c'est simple à utiliser
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## 🎯 PARTIE 5: ATTENTES & ADOPTION (Questions 21-25)
 
 ### 21. Quel type de formation préféreriez-vous? (QCU - Choix unique)
 - ☐ Formation en présentiel à l'école

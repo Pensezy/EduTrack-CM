@@ -1,7 +1,7 @@
 # 📋 QUESTIONNAIRE ÉLÈVE/ÉTUDIANT - EduTrack CM
 
 **Objectif:** Comprendre les besoins et attentes des apprenants
-**Format:** 25 questions (Vrai/Faux, QCM, QCU)
+**Format:** 25 questions réparties en 5 parties (Vrai/Faux, QCM, QCU)
 **Durée estimée:** 15-20 minutes
 
 ---
@@ -16,7 +16,7 @@
 
 ---
 
-## QUESTIONS
+## 📊 PARTIE 1: INFRASTRUCTURE & ÉQUIPEMENT (Questions 1-5)
 
 ### 1. Tu possèdes un smartphone personnel
 - ☐ Vrai
@@ -50,6 +50,10 @@
 - ☐ Arts/Musique
 - ☐ Autre
 
+---
+
+## 📝 PARTIE 2: PRATIQUES & OUTILS ACTUELS (Questions 6-10)
+
 ### 6. Tu comprends toujours bien tes notes et moyennes sur ton bulletin
 - ☐ Vrai
 - ☐ Faux
@@ -73,6 +77,10 @@
 ### 10. Aimerais-tu recevoir des notifications sur ton emploi du temps et tes examens à venir?
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## ⚠️ PARTIE 3: DÉFIS & DIFFICULTÉS (Questions 11-15)
 
 ### 11. Combien de temps passes-tu en moyenne à faire tes devoirs chaque soir? (QCU - Choix unique)
 - ☐ Moins de 1 heure
@@ -107,6 +115,10 @@
 - ☐ Réseaux sociaux (Facebook, TikTok)
 - ☐ Je n'utilise pas Internet pour l'école
 
+---
+
+## 💻 PARTIE 4: COMPÉTENCES & FORMATION (Questions 16-20)
+
 ### 16. Aimerais-tu pouvoir poser des questions à tes enseignants en ligne (messagerie)?
 - ☐ Vrai
 - ☐ Faux
@@ -131,6 +143,10 @@
 - ☐ Numérique uniquement
 - ☐ Les deux
 - ☐ Peu importe
+
+---
+
+## 🎯 PARTIE 5: ATTENTES & ADOPTION (Questions 21-25)
 
 ### 21. Quelles fonctionnalités t'intéresseraient le plus? (QCM - Choix multiple, max 5)
 - ☐ Consulter mes notes en ligne

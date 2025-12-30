@@ -1,7 +1,7 @@
 # 📋 QUESTIONNAIRE AUTRES ACTEURS - EduTrack CM
 
 **Objectif:** Identifier les besoins des autres acteurs du système éducatif
-**Format:** 25 questions (Vrai/Faux, QCM, QCU)
+**Format:** 25 questions réparties en 5 parties (Vrai/Faux, QCM, QCU)
 **Durée estimée:** 15-20 minutes
 
 ---
@@ -25,7 +25,7 @@
 
 ---
 
-## QUESTIONS
+## 📊 PARTIE 1: INFRASTRUCTURE & ÉQUIPEMENT (Questions 1-5)
 
 ### 1. Vous utilisez actuellement un système informatique pour votre travail
 - ☐ Vrai
@@ -54,6 +54,10 @@
 - ☐ 5 à 10 heures
 - ☐ 10 à 20 heures
 - ☐ Plus de 20 heures
+
+---
+
+## 📝 PARTIE 2: PRATIQUES & OUTILS ACTUELS (Questions 6-10)
 
 ### 6. Vous avez besoin d'accéder régulièrement aux données des élèves (notes, absences, dossiers)
 - ☐ Vrai
@@ -84,6 +88,10 @@
 - ☐ Vrai
 - ☐ Faux
 
+---
+
+## ⚠️ PARTIE 3: DÉFIS & DIFFICULTÉS (Questions 11-15)
+
 ### 11. À quelle fréquence produisez-vous des rapports? (QCU - Choix unique)
 - ☐ Jamais
 - ☐ Hebdomadaire
@@ -112,6 +120,10 @@
 ### 15. Vous avez besoin de communiquer avec les parents d'élèves
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## 💻 PARTIE 4: COMPÉTENCES & FORMATION (Questions 16-20)
 
 ### 16. Quelles sont vos 3 principales difficultés dans votre travail? (QCM - Choix multiple, max 3)
 - ☐ Manque d'informations centralisées
@@ -144,6 +156,10 @@
 ### 20. Seriez-vous intéressé par une application mobile pour votre travail?
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## 🎯 PARTIE 5: ATTENTES & ADOPTION (Questions 21-25)
 
 ### 21. Quel type de formation préféreriez-vous pour un nouveau système? (QCU - Choix unique)
 - ☐ Formation en présentiel

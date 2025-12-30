@@ -1,7 +1,7 @@
 # 📋 QUESTIONNAIRE SECRÉTAIRE/PERSONNEL ADMINISTRATIF - EduTrack CM
 
 **Objectif:** Comprendre les besoins du personnel administratif
-**Format:** 25 questions (Vrai/Faux, QCM, QCU)
+**Format:** 25 questions réparties en 5 parties (Vrai/Faux, QCM, QCU)
 **Durée estimée:** 15-20 minutes
 
 ---
@@ -15,7 +15,7 @@
 
 ---
 
-## QUESTIONS
+## 📊 PARTIE 1: INFRASTRUCTURE & ÉQUIPEMENT (Questions 1-5)
 
 ### 1. Vous disposez d'un ordinateur personnel pour votre travail
 - ☐ Vrai
@@ -45,6 +45,10 @@
 - ☐ Applications mobiles
 - ☐ Aucun système formel
 
+---
+
+## 📝 PARTIE 2: PRATIQUES & OUTILS ACTUELS (Questions 6-10)
+
 ### 6. Combien de temps prend l'inscription complète d'un nouvel élève? (QCU - Choix unique)
 - ☐ Moins de 15 minutes
 - ☐ 15 à 30 minutes
@@ -72,6 +76,10 @@
 - ☐ 2 à 5 heures
 - ☐ 5 à 10 heures
 - ☐ Plus de 10 heures
+
+---
+
+## ⚠️ PARTIE 3: DÉFIS & DIFFICULTÉS (Questions 11-15)
 
 ### 11. La production des bulletins vous prend beaucoup de temps
 - ☐ Vrai
@@ -105,6 +113,10 @@
 - ☐ WhatsApp/SMS
 - ☐ Autre
 
+---
+
+## 💻 PARTIE 4: COMPÉTENCES & FORMATION (Questions 16-20)
+
 ### 16. Combien de temps passez-vous par jour à répondre aux sollicitations des parents? (QCU - Choix unique)
 - ☐ Moins de 30 minutes
 - ☐ 30 minutes à 1 heure
@@ -132,6 +144,10 @@
 ### 20. Seriez-vous prêt(e) à suivre une formation de 1-2 jours pour utiliser un nouveau système?
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## 🎯 PARTIE 5: ATTENTES & ADOPTION (Questions 21-25)
 
 ### 21. Quel type de formation préféreriez-vous? (QCU - Choix unique)
 - ☐ Formation en présentiel au bureau

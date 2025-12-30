@@ -1,7 +1,7 @@
 # 📋 QUESTIONNAIRE DIRECTEUR D'ÉTABLISSEMENT - EduTrack CM
 
 **Objectif:** Évaluer les besoins et contraintes des directeurs d'établissement
-**Format:** 25 questions (Vrai/Faux, QCM, QCU)
+**Format:** 25 questions réparties en 5 parties (Vrai/Faux, QCM, QCU)
 **Durée estimée:** 15-20 minutes
 
 ---
@@ -15,7 +15,7 @@
 
 ---
 
-## QUESTIONS
+## 📊 PARTIE 1: INFRASTRUCTURE & ÉQUIPEMENT (Questions 1-5)
 
 ### 1. L'établissement dispose d'une connexion Internet stable
 - ☐ Vrai
@@ -46,6 +46,10 @@
 - ☐ Application mobile
 - ☐ Aucun système formel
 
+---
+
+## 📝 PARTIE 2: PRATIQUES & OUTILS ACTUELS (Questions 6-10)
+
 ### 6. Combien de temps prend la production de tous les bulletins d'une période? (QCU - Choix unique)
 - ☐ Moins de 2 jours
 - ☐ 2 à 5 jours
@@ -75,6 +79,10 @@
 - ☐ 10% à 25%
 - ☐ 25% à 50%
 - ☐ Plus de 50%
+
+---
+
+## ⚠️ PARTIE 3: DÉFIS & DIFFICULTÉS (Questions 11-15)
 
 ### 11. Plus de 70% des élèves paient leurs frais de scolarité à temps
 - ☐ Vrai
@@ -108,6 +116,10 @@
 - ☐ Gestion chaotique des emplois du temps
 - ☐ Archivage et recherche de documents
 
+---
+
+## 💻 PARTIE 4: COMPÉTENCES & FORMATION (Questions 16-20)
+
 ### 16. Vous utilisez actuellement un logiciel de gestion scolaire
 - ☐ Vrai
 - ☐ Faux
@@ -139,6 +151,10 @@
 - ☐ Dépendance à Internet
 - ☐ Confidentialité des données
 - ☐ Résistance du personnel
+
+---
+
+## 🎯 PARTIE 5: ATTENTES & ADOPTION (Questions 21-25)
 
 ### 21. Quel budget annuel pourriez-vous allouer pour un système complet? (QCU - Choix unique)
 - ☐ Moins de 100 000 FCFA

@@ -1,7 +1,7 @@
 # 📋 QUESTIONNAIRE PARENT D'ÉLÈVE - EduTrack CM
 
 **Objectif:** Comprendre les besoins et attentes des parents
-**Format:** 25 questions (Vrai/Faux, QCM, QCU)
+**Format:** 25 questions réparties en 5 parties (Vrai/Faux, QCM, QCU)
 **Durée estimée:** 15-20 minutes
 
 ---
@@ -15,7 +15,7 @@
 
 ---
 
-## QUESTIONS
+## 📊 PARTIE 1: INFRASTRUCTURE & ÉQUIPEMENT (Questions 1-5)
 
 ### 1. Vous possédez un smartphone
 - ☐ Vrai
@@ -45,6 +45,10 @@
 - ☐ 2-3 fois par mois
 - ☐ 1 fois par trimestre (remise bulletins)
 - ☐ Rarement ou jamais
+
+---
+
+## 📝 PARTIE 2: PRATIQUES & OUTILS ACTUELS (Questions 6-10)
 
 ### 6. Vous avez du mal à vous libérer pour venir à l'école en semaine
 - ☐ Vrai
@@ -76,6 +80,10 @@
 - ☐ 2-3 fois
 - ☐ Plus de 3 fois
 
+---
+
+## ⚠️ PARTIE 3: DÉFIS & DIFFICULTÉS (Questions 11-15)
+
 ### 11. Vous aimeriez être informé en temps réel des absences de votre enfant
 - ☐ Vrai
 - ☐ Faux
@@ -98,6 +106,10 @@
 ### 15. Un reçu de paiement numérique (SMS ou email) vous conviendrait mieux qu'un reçu papier
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## 💻 PARTIE 4: COMPÉTENCES & FORMATION (Questions 16-20)
 
 ### 16. Vous oubliez parfois les échéances de paiement des frais de scolarité
 - ☐ Vrai
@@ -124,6 +136,10 @@
 ### 20. Seriez-vous prêt(e) à installer une application mobile pour suivre la scolarité de votre enfant?
 - ☐ Vrai
 - ☐ Faux
+
+---
+
+## 🎯 PARTIE 5: ATTENTES & ADOPTION (Questions 21-25)
 
 ### 21. Quel est votre niveau de maîtrise des outils numériques? (QCU - Choix unique)
 - ☐ Très à l'aise (j'utilise quotidiennement)
