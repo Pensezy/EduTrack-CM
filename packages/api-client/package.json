@@ -1,0 +1,34 @@
+{
+  "name": "@edutrack/api",
+  "version": "1.0.0",
+  "description": "API Client for EduTrack CM",
+  "main": "./src/index.js",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.js",
+    "./supabase": "./src/supabase/client.js",
+    "./gateway": "./src/gateway/ApiGateway.js",
+    "./events": "./src/events/EventBus.js",
+    "./services": "./src/services/index.js",
+    "./contexts": "./src/contexts/AuthContext.jsx"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "edutrack",
+    "api",
+    "client"
+  ],
+  "author": "EduTrack Team",
+  "license": "MIT",
+  "dependencies": {
+    "@supabase/supabase-js": "^2.38.0",
+    "bcryptjs": "^2.4.3"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0"
+  },
+  "devDependencies": {}
+}

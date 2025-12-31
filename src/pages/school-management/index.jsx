@@ -176,13 +176,6 @@ const SchoolManagement = () => {
               <Icon name="Users" size={16} />
               Personnel
             </Link>
-            <Link 
-              to="/demo"
-              className="bg-secondary/10 hover:bg-secondary/20 text-secondary px-4 py-2 rounded-full font-body font-body-semibold inline-flex items-center gap-2 transition-colors"
-            >
-              <Icon name="Laptop" size={16} />
-              Démo
-            </Link>
           </div>
         </div>
       </div>

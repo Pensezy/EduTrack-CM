@@ -1,0 +1,9 @@
+# pnpm Workspace Configuration
+# Définit les packages et applications du monorepo EduTrack
+
+packages:
+  # Applications
+  - 'apps/*'
+
+  # Packages partagés
+  - 'packages/*'

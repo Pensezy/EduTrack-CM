@@ -20,7 +20,10 @@
       "Bash(for dir in */)",
       "Bash(grep:*)",
       "Bash(node -c:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(pnpm --version:*)",
+      "Bash(pnpm install:*)",
+      "Bash(pnpm approve-builds:*)"
     ]
   }
 }

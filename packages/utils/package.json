@@ -1,0 +1,23 @@
+{
+  "name": "@edutrack/utils",
+  "version": "1.0.0",
+  "description": "Utilitaires partagés pour EduTrack",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js",
+    "./formatters": "./src/formatters/index.js",
+    "./validators": "./src/validators/index.js"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "edutrack",
+    "utils"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "date-fns": "^3.3.1"
+  }
+}
