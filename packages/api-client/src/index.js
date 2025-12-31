@@ -3,6 +3,15 @@
  * Exporte tous les services de base pour l'API EduTrack
  */
 
+// Imports pour l'export default
+import {
+  initializeSupabase,
+  getSupabaseClient,
+  resetSupabaseClient,
+} from './supabase/client.js';
+import { ApiGateway } from './gateway/ApiGateway.js';
+import { EventBus } from './events/EventBus.js';
+
 // Supabase
 export {
   initializeSupabase,
@@ -32,13 +41,11 @@ export {
 
 // Factory pour créer une instance d'ApiGateway
 export const createApiGateway = (options = {}) => {
-  const { ApiGateway } = require('./gateway/ApiGateway.js');
   return new ApiGateway(options);
 };
 
 // Factory pour créer une instance d'EventBus
 export const createEventBus = () => {
-  const { EventBus } = require('./events/EventBus.js');
   return new EventBus();
 };
 
