@@ -27,7 +27,8 @@
       "Bash(pnpm --filter admin install)",
       "Bash(pnpm --filter admin dev:*)",
       "Bash(pnpm --filter admin build:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(pnpm build:*)"
     ]
   }
 }
