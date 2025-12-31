@@ -3,6 +3,10 @@
  * Point d'entrée pour tous les services de l'API
  */
 
+// Import des services
+import { dashboardService } from './dashboardService.js';
+import { authService } from './authService.js';
+
 // Services de données
 export { dashboardService } from './dashboardService.js';
 export { default as dashboardServiceDefault } from './dashboardService.js';
