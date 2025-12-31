@@ -27,6 +27,17 @@ export { EventBus } from './events/EventBus.js';
 
 // Contexts
 export { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
+export { AppsProvider, useApps } from './contexts/AppsContext.jsx';
+
+// Hooks
+export { useAppAccess } from './hooks/useAppAccess.js';
+export { useFeatureAccess } from './hooks/useFeatureAccess.js';
+export { useActiveApps } from './hooks/useActiveApps.js';
+export { useSchoolSubscriptions } from './hooks/useSchoolSubscriptions.js';
+
+// Components
+export { ProtectedRoute } from './components/ProtectedRoute.jsx';
+export { FeatureGate } from './components/FeatureGate.jsx';
 
 // Services
 export {
