@@ -36,15 +36,15 @@ export default function EnrollmentPage() {
 
       const supabase = getSupabaseClient();
       let query = supabase
-        .from('enrollments')
+        .from('enrollment_requests')
         .select(`
           *,
-          schools (
+          schools!school_id (
             id,
             name,
             code
           ),
-          classes (
+          classes!class_id (
             id,
             name,
             level
@@ -131,7 +131,7 @@ export default function EnrollmentPage() {
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase
-        .from('enrollments')
+        .from('enrollment_requests')
         .update({ status: 'approved' })
         .eq('id', enrollmentId);
 
@@ -148,7 +148,7 @@ export default function EnrollmentPage() {
     try {
       const supabase = getSupabaseClient();
       const { error } = await supabase
-        .from('enrollments')
+        .from('enrollment_requests')
         .update({ status: 'rejected' })
         .eq('id', enrollmentId);
 

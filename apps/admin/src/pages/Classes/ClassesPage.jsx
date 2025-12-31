@@ -38,7 +38,7 @@ export default function ClassesPage() {
         .from('classes')
         .select(`
           *,
-          schools (
+          schools!school_id (
             id,
             name,
             code

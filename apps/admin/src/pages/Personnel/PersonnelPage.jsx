@@ -42,7 +42,7 @@ export default function PersonnelPage() {
         .from('users')
         .select(`
           *,
-          schools (
+          schools!school_id (
             id,
             name,
             code

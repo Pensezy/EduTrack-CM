@@ -42,7 +42,7 @@ export default function UsersPage() {
         .from('users')
         .select(`
           *,
-          schools (
+          schools!school_id (
             id,
             name,
             code
