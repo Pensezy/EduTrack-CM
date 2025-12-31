@@ -4,7 +4,6 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { useToast, ToastContainer } from '../../../components/ui/Toast';
-import { useDataMode } from '../../../hooks/useEduTrackData';
 import paymentService from '../../../services/paymentService';
 import PaymentRegistrationModal from './PaymentRegistrationModal';
 import ReceiptModal from './ReceiptModal';
@@ -14,8 +13,7 @@ import PaymentAnalyticsModal from './PaymentAnalyticsModal';
 
 const PaymentTab = () => {
   const { toasts, showSuccess, showError, showInfo, removeToast } = useToast();
-  const { isProductionMode } = useDataMode(); // Détecter le mode production
-  
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -53,41 +51,9 @@ const PaymentTab = () => {
     setLoading(true);
     setError('');
     try {
-      console.log('🔄 Chargement paiements - Mode production (hook):', isProductionMode);
-      
-      // Debug détaillé du mode et du hook useDataMode
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const edutrackUser = localStorage.getItem('edutrack-user');
-      const edutrackMode = localStorage.getItem('edutrack-mode');
-      console.log('🔍 userData.demoAccount:', userData.demoAccount);
-      console.log('🔍 edutrack-user exists:', !!edutrackUser);
-      console.log('🔍 edutrack-mode:', edutrackMode);
-      console.log('🔍 URL pathname:', window.location.pathname);
-      console.log('🔍 URL search:', window.location.search);
-      console.log('🔍 Hook isProductionMode:', isProductionMode);
-      
-      // Forcer le mode production si on détecte un utilisateur réel
-      let mode;
-      if (edutrackUser && edutrackUser !== 'null' && !userData.demoAccount && edutrackMode !== 'demo') {
-        mode = 'production';
-        console.log('🔧 Mode forcé vers production car utilisateur réel connecté');
-      } else {
-        mode = isProductionMode ? 'production' : 'demo';
-        console.log('🔍 Mode selon hook:', mode);
-      }
-      
-      const data = await paymentService.getAllPayments(mode);
+      const data = await paymentService.getAllPayments('production');
       setPayments(data.payments || []);
       setStats(data.statistics || stats);
-      console.log('✅ Paiements chargés:', data.payments?.length || 0);
-      
-      // Debug des premiers paiements pour voir les noms
-      if (data.payments && data.payments.length > 0) {
-        console.log('👥 Premiers étudiants chargés:');
-        data.payments.slice(0, 3).forEach(payment => {
-          console.log(`- ${payment.student?.firstName} ${payment.student?.lastName}`);
-        });
-      }
     } catch (err) {
       setError('Erreur lors du chargement des paiements');
       showError('Erreur lors du chargement des paiements');

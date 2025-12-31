@@ -48,17 +48,13 @@ const PrincipalDashboard = () => {
   // NOUVEAU : Charger la session spécifique au directeur
   const { user: principalUser, loading: sessionLoading, error: sessionError } = useRoleSession('principal');
   
-  // Hook pour les données avec switch automatique démo/production
-  const { 
-    data, 
-    loading, 
-    errors, 
-    dataMode, 
-    isDemo, 
-    isProduction, 
-    modeLoading,
+  // Hook pour les données
+  const {
+    data,
+    loading,
+    errors,
     refresh,
-    user  // Récupérer aussi l'utilisateur depuis useDataMode
+    user
   } = useDashboardData();
 
   // Utiliser prioritairement la session du directeur
@@ -74,19 +70,14 @@ const PrincipalDashboard = () => {
     console.log('🏛️ PrincipalDashboard - État actuel:');
     console.log('  - Session Principal:', principalUser?.email || 'Non trouvée');
     console.log('  - Utilisateur actif:', currentUser?.email);
-    console.log('  - Mode de données:', dataMode);
-    console.log('  - Est en mode démo:', isDemo);
-    console.log('  - Est en mode production:', isProduction);
-    console.log('  - Chargement mode:', modeLoading);
     console.log('  - Utilisateur:', user);
-    
+
     // Détails d'authentification
     if (user) {
       console.log('  📋 Détails utilisateur:');
       console.log('    • Email:', user.email);
       console.log('    • ID:', user.id);
       console.log('    • Role:', user.role || 'Non défini');
-      console.log('    • Compte démo:', user.demoAccount ? '⚠️ OUI' : '✅ NON');
       console.log('    • Données école:', user.schoolData ? '✅ Présentes' : '❌ Absentes');
       if (user.schoolData) {
         console.log('      - Nom:', user.schoolData.name);
@@ -99,17 +90,17 @@ const PrincipalDashboard = () => {
     } else {
       console.log('  ⚠️ Aucun utilisateur détecté');
     }
-    
+
     if (schoolDataFromDatabase) {
       console.log('✅ Données école depuis SUPABASE (PRIORITÉ):', schoolDataFromDatabase);
     } else if (schoolDataFromUser) {
-      console.log('✅ Données école depuis useDataMode (FALLBACK 1):', schoolDataFromUser);
+      console.log('✅ Données école depuis hook (FALLBACK 1):', schoolDataFromUser);
     } else if (schoolDataFromState) {
       console.log('✅ Données école depuis location.state (FALLBACK 2):', schoolDataFromState);
     } else {
       console.log('❌ Aucune donnée école disponible');
     }
-    
+
     if (schoolData) {
       console.log('🏫 École active:', schoolData.name);
       console.log('🎓 Type:', schoolData.type);
@@ -117,7 +108,7 @@ const PrincipalDashboard = () => {
       console.log('📊 Statut:', schoolData.status);
       console.log('👤 Directeur User ID:', schoolData.director_user_id);
     }
-  }, [schoolData, dataMode, isDemo, isProduction, modeLoading, user]);
+  }, [schoolData, user]);
 
   // Gérer les paramètres URL pour la navigation directe vers un onglet
   useEffect(() => {
@@ -1035,16 +1026,10 @@ const PrincipalDashboard = () => {
       case 'debug':
         return (
           <div className="space-y-6">
-            {/* Debug du mode de données */}
+            {/* Debug utilisateur */}
             <div className="bg-white rounded-xl border border-gray-200 p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-6">🔍 Debug Mode de Données</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-6">🔍 Debug Utilisateur</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div className="space-y-2">
-                  <div><strong>Mode actuel:</strong> <span className={`px-2 py-1 rounded ${dataMode === 'production' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'}`}>{dataMode}</span></div>
-                  <div><strong>Est démo:</strong> {isDemo ? '✅ Oui' : '❌ Non'}</div>
-                  <div><strong>Est production:</strong> {isProduction ? '✅ Oui' : '❌ Non'}</div>
-                  <div><strong>Chargement mode:</strong> {modeLoading ? '⏳ En cours' : '✅ Terminé'}</div>
-                </div>
                 <div className="space-y-2">
                   <div><strong>Utilisateur connecté:</strong> {user ? '✅ Oui' : '❌ Non'}</div>
                   <div><strong>Email:</strong> {user?.email || 'N/A'}</div>
@@ -1052,10 +1037,10 @@ const PrincipalDashboard = () => {
                   <div><strong>École détectée:</strong> {user?.schoolData ? '✅ Oui' : '❌ Non'}</div>
                 </div>
               </div>
-              
+
               {user?.schoolData && (
                 <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
-                  <h4 className="font-medium text-green-900 mb-2">📊 Données École (useDataMode)</h4>
+                  <h4 className="font-medium text-green-900 mb-2">📊 Données École</h4>
                   <div className="text-sm text-green-800 space-y-1">
                     <div><strong>Nom:</strong> {user.schoolData.name}</div>
                     <div><strong>ID:</strong> {user.schoolData.id}</div>
@@ -1173,31 +1158,6 @@ const PrincipalDashboard = () => {
                       Année scolaire 2025-2026
                     </p>
                   </div>
-                  {/* Mode Indicator Badge */}
-                  {modeLoading ? (
-                    <span className="inline-flex items-center px-3 py-2 rounded-full text-xs font-bold bg-white/20 backdrop-blur-sm border border-white/30 text-white">
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-white mr-1.5"></div>
-                      Chargement...
-                    </span>
-                  ) : (
-                    <span className={`inline-flex items-center px-4 py-2 rounded-full text-xs font-bold shadow-md ${
-                      isProduction 
-                        ? 'bg-green-500 text-white border-2 border-green-300' 
-                        : 'bg-amber-500 text-white border-2 border-amber-300'
-                    }`}>
-                      {isProduction ? (
-                        <>
-                          <Icon name="CheckCircle2" size={14} className="mr-1" />
-                          🚀 PRODUCTION
-                        </>
-                      ) : (
-                        <>
-                          <Icon name="AlertCircle" size={14} className="mr-1" />
-                          🎭 DÉMO
-                        </>
-                      )}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -1353,43 +1313,6 @@ const PrincipalDashboard = () => {
               </div>
             )}
 
-            {/* Notification mode démo - Modernisée */}
-            {isDemo && (
-              <div className="mb-6 bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-300 p-5 rounded-2xl shadow-md animate-fadeIn">
-                <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md flex-shrink-0">
-                    <Icon name="AlertTriangle" size={24} className="text-white" />
-                  </div>
-                  <div className="flex-1">
-                    <p className="text-sm font-semibold text-amber-900 mb-1">
-                      🎭 Mode Démonstration Actif
-                    </p>
-                    <p className="text-xs text-amber-700">
-                      Données fictives pour test.
-                      <button
-                        onClick={() => navigate('/school-management')}
-                        className="ml-2 px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium transition-colors inline-flex items-center"
-                      >
-                        <Icon name="LogIn" size={14} className="mr-1" />
-                        Se connecter
-                      </button>
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Indicateur de chargement - Modernisé */}
-            {modeLoading && (
-              <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-2 border-blue-200 p-5 rounded-2xl shadow-md">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center shadow-md">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                  </div>
-                  <span className="text-sm font-semibold text-blue-700">Chargement des données...</span>
-                </div>
-              </div>
-            )}
 
             {/* Tab Content */}
             <div className="transition-all duration-state">

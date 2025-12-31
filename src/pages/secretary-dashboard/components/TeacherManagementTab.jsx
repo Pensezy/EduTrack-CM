@@ -7,9 +7,9 @@ import Select from '../../../components/ui/Select';
 import Image from '../../../components/AppImage';
 import TeacherSearchSelector from './TeacherSearchSelector';
 import TeacherAssignmentManager from './TeacherAssignmentManager';
-import teacherMultiSchoolServiceDemo from '../../../services/teacherMultiSchoolServiceDemo';
+import { teacherMultiSchoolService } from '../../../services/teacherMultiSchoolService';
 
-const TeacherManagementTab = ({ isDemo = false }) => {
+const TeacherManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterSubject, setFilterSubject] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -102,35 +102,9 @@ const TeacherManagementTab = ({ isDemo = false }) => {
   useEffect(() => {
     loadSchoolData();
     loadTeachers();
-  }, [isDemo]);
+  }, []);
 
   const loadSchoolData = async () => {
-    if (isDemo) {
-      // Mode démo : données statiques
-      setCurrentSchool({
-        id: 'school-1',
-        name: 'École Primaire Centrale',
-        type: 'Primaire'
-      });
-      setSchoolClasses([
-        { id: 'class-1', name: 'CP', level: 'CP' },
-        { id: 'class-2', name: 'CE1', level: 'CE1' },
-        { id: 'class-3', name: 'CE2', level: 'CE2' },
-        { id: 'class-4', name: 'CM1', level: 'CM1' },
-        { id: 'class-5', name: 'CM2', level: 'CM2' }
-      ]);
-      setSchoolSubjects([
-        { id: 'sub-1', name: 'Français' },
-        { id: 'sub-2', name: 'Mathématiques' },
-        { id: 'sub-3', name: 'Sciences' },
-        { id: 'sub-4', name: 'Histoire-Géographie' },
-        { id: 'sub-5', name: 'Anglais' },
-        { id: 'sub-6', name: 'EPS' },
-        { id: 'sub-7', name: 'Arts' }
-      ]);
-      return;
-    }
-
     try {
       const savedUser = localStorage.getItem('edutrack-user');
       const userData = savedUser ? JSON.parse(savedUser) : null;
@@ -351,13 +325,6 @@ const TeacherManagementTab = ({ isDemo = false }) => {
   };
 
   const loadTeachers = async () => {
-    if (isDemo) {
-      // Mode démo : utiliser les données statiques
-      setTeachers(initialTeachers);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       const savedUser = localStorage.getItem('edutrack-user');
@@ -858,17 +825,17 @@ const TeacherManagementTab = ({ isDemo = false }) => {
         </div>
       )}
 
-      {/* Mode indicator */}
-      {!isDemo && teachers.length === 0 && (
+      {/* No teacher message */}
+      {teachers.length === 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
             <div>
               <h4 className="font-body font-body-semibold text-blue-900 mb-1">
-                Mode Production - Aucun enseignant
+                Aucun enseignant
               </h4>
               <p className="text-sm text-blue-700">
-                Vous êtes en mode production mais aucun enseignant n'a encore été créé. 
+                Aucun enseignant n'a encore été créé.
                 Cliquez sur "Assigner Enseignant" pour commencer.
               </p>
             </div>
@@ -880,7 +847,7 @@ const TeacherManagementTab = ({ isDemo = false }) => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-xl text-text-primary">
-            Gestion des Enseignants {!isDemo && <span className="text-sm text-success">(Production)</span>}
+            Gestion des Enseignants
           </h2>
           <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
             Gérez les comptes et affectations des enseignants

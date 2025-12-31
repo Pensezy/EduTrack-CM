@@ -45,71 +45,19 @@ const TeacherAccountManagement = () => {
         return;
       }
 
-      // Vérifier si c'est un compte de démo
-      if (user?.email?.includes('@demo.com') || user?.id?.includes('demo-')) {
-        // Données de démo pour les enseignants
-        const demoTeachers = [
-          {
-            id: 'demo-teacher-1',
-            full_name: 'Mme. Nkomo Marie',
-            email: 'marie.nkomo@ecole.cm',
-            phone: '+237 670 123 456',
-            pin_code: '1234',
-            created_at: '2024-09-01T08:00:00Z',
-            teacher_assignments: [
-              { id: 1, class_name: '6e A', subject: 'Mathématiques', is_active: true },
-              { id: 2, class_name: '6e B', subject: 'Mathématiques', is_active: true }
-            ]
-          },
-          {
-            id: 'demo-teacher-2',
-            full_name: 'M. Kamdem Paul',
-            email: 'paul.kamdem@ecole.cm',
-            phone: '+237 680 234 567',
-            pin_code: '5678',
-            created_at: '2024-09-02T09:00:00Z',
-            teacher_assignments: [
-              { id: 3, class_name: '5e A', subject: 'Français', is_active: true },
-              { id: 4, class_name: '4e A', subject: 'Français', is_active: true }
-            ]
-          },
-          {
-            id: 'demo-teacher-3',
-            full_name: 'Mme. Fotso Jeanne',
-            email: 'jeanne.fotso@ecole.cm',
-            phone: '+237 690 345 678',
-            pin_code: '9012',
-            created_at: '2024-09-03T10:00:00Z',
-            teacher_assignments: [
-              { id: 5, class_name: '3e A', subject: 'Sciences Physiques', is_active: true }
-            ]
-          },
-          {
-            id: 'demo-teacher-4',
-            full_name: 'M. Biya Emmanuel',
-            email: 'emmanuel.biya@ecole.cm',
-            phone: '+237 650 456 789',
-            pin_code: '3456',
-            created_at: '2024-09-04T11:00:00Z',
-            teacher_assignments: []
-          }
-        ];
-        setTeachers(demoTeachers);
-      } else {
-        // Données réelles via Supabase
-        try {
-          // Import dynamique du service seulement pour les comptes non-démo
-          const { teacherService } = await import('../../services/teacherService');
-          const result = await teacherService?.getSchoolTeachers(user?.current_school_id);
-          if (result?.success) {
-            setTeachers(result?.data || []);
-          } else {
-            setError('Erreur lors du chargement des enseignants');
-          }
-        } catch (supabaseError) {
-          console.error('Erreur Supabase:', supabaseError);
-          setError('Erreur de connexion à la base de données');
+      // Données réelles via Supabase
+      try {
+        // Import dynamique du service
+        const { teacherService } = await import('../../services/teacherService');
+        const result = await teacherService?.getSchoolTeachers(user?.current_school_id);
+        if (result?.success) {
+          setTeachers(result?.data || []);
+        } else {
+          setError('Erreur lors du chargement des enseignants');
         }
+      } catch (supabaseError) {
+        console.error('Erreur Supabase:', supabaseError);
+        setError('Erreur de connexion à la base de données');
       }
     } catch (error) {
       setError('Erreur de connexion');
@@ -124,48 +72,28 @@ const TeacherAccountManagement = () => {
     setSuccess('');
 
     try {
-      // Vérifier si c'est un compte de démo
-      if (user?.email?.includes('@demo.com')) {
-        // Simulation de création pour la démo
-        const newTeacher = {
-          id: `demo-teacher-${Date.now()}`,
-          full_name: formData?.full_name,
-          email: formData?.email,
-          phone: formData?.phone,
-          pin_code: formData?.pin_code || Math.floor(1000 + Math.random() * 9000)?.toString(),
-          created_at: new Date().toISOString(),
-          teacher_assignments: []
+      // Création réelle via Supabase
+      try {
+        const { teacherService } = await import('../../services/teacherService');
+        const teacherData = {
+          ...formData,
+          school_id: user?.current_school_id,
+          pin_code: formData?.pin_code || Math.floor(1000 + Math.random() * 9000)?.toString()
         };
-        
-        // Ajouter à la liste locale (pour la démo)
-        setTeachers(prev => [...prev, newTeacher]);
-        setSuccess('Compte enseignant créé avec succès (Mode Démo)');
-        setShowCreateModal(false);
-        resetForm();
-      } else {
-        // Création réelle via Supabase
-        try {
-          const { teacherService } = await import('../../services/teacherService');
-          const teacherData = {
-            ...formData,
-            school_id: user?.current_school_id,
-            pin_code: formData?.pin_code || Math.floor(1000 + Math.random() * 9000)?.toString()
-          };
 
-          const result = await teacherService?.createTeacherAccount(teacherData);
-          
-          if (result?.success) {
-            setSuccess('Compte enseignant créé avec succès');
-            setShowCreateModal(false);
-            resetForm();
-            loadTeachers();
-          } else {
-            setError(result?.error || 'Erreur lors de la création du compte');
-          }
-        } catch (supabaseError) {
-          console.error('Erreur Supabase:', supabaseError);
-          setError('Erreur de création du compte');
+        const result = await teacherService?.createTeacherAccount(teacherData);
+
+        if (result?.success) {
+          setSuccess('Compte enseignant créé avec succès');
+          setShowCreateModal(false);
+          resetForm();
+          loadTeachers();
+        } else {
+          setError(result?.error || 'Erreur lors de la création du compte');
         }
+      } catch (supabaseError) {
+        console.error('Erreur Supabase:', supabaseError);
+        setError('Erreur de création du compte');
       }
     } catch (error) {
       setError('Erreur de création du compte');
@@ -178,46 +106,27 @@ const TeacherAccountManagement = () => {
     setSuccess('');
 
     try {
-      // Vérifier si c'est un compte de démo
-      if (user?.email?.includes('@demo.com')) {
-        // Simulation de modification pour la démo
-        setTeachers(prev => prev.map(teacher => 
-          teacher.id === selectedTeacher?.id 
-            ? { 
-                ...teacher, 
-                full_name: formData?.full_name,
-                email: formData?.email,
-                phone: formData?.phone
-              }
-            : teacher
-        ));
-        setSuccess('Profil enseignant mis à jour avec succès (Mode Démo)');
-        setShowEditModal(false);
-        setSelectedTeacher(null);
-        resetForm();
-      } else {
-        // Modification réelle via Supabase
-        try {
-          const { teacherService } = await import('../../services/teacherService');
-          const result = await teacherService?.updateTeacherProfile(selectedTeacher?.id, {
-            full_name: formData?.full_name,
-            email: formData?.email,
-            phone: formData?.phone
-          });
-          
-          if (result?.success) {
-            setSuccess('Profil enseignant mis à jour avec succès');
-            setShowEditModal(false);
-            setSelectedTeacher(null);
-            resetForm();
-            loadTeachers();
-          } else {
-            setError(result?.error || 'Erreur lors de la mise à jour');
-          }
-        } catch (supabaseError) {
-          console.error('Erreur Supabase:', supabaseError);
-          setError('Erreur de mise à jour du profil');
+      // Modification réelle via Supabase
+      try {
+        const { teacherService } = await import('../../services/teacherService');
+        const result = await teacherService?.updateTeacherProfile(selectedTeacher?.id, {
+          full_name: formData?.full_name,
+          email: formData?.email,
+          phone: formData?.phone
+        });
+
+        if (result?.success) {
+          setSuccess('Profil enseignant mis à jour avec succès');
+          setShowEditModal(false);
+          setSelectedTeacher(null);
+          resetForm();
+          loadTeachers();
+        } else {
+          setError(result?.error || 'Erreur lors de la mise à jour');
         }
+      } catch (supabaseError) {
+        console.error('Erreur Supabase:', supabaseError);
+        setError('Erreur de mise à jour du profil');
       }
     } catch (error) {
       setError('Erreur de mise à jour du profil');

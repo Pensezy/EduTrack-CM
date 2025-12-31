@@ -4,7 +4,7 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useDataMode } from '../../hooks/useDataMode';
+import { useAuth } from '../../contexts/AuthContext';
 import { getCurrentAcademicYear } from '../../utils/academicYear';
 
 const SchoolCalendar = () => {
@@ -12,12 +12,8 @@ const SchoolCalendar = () => {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [viewMode, setViewMode] = useState('month');
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
-  // Utiliser useDataMode qui gère correctement l'utilisateur avec son rôle
-  const { user, isLoading } = useDataMode();
-  
-  // Debug : Vérifier quel utilisateur est chargé
-  console.log('📅 SchoolCalendar - Utilisateur:', user?.email, 'Rôle:', user?.role);
+
+  const { user } = useAuth();
   
   // Récupérer l'année académique actuelle
   const currentAcademicYear = getCurrentAcademicYear();

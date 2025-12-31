@@ -3,7 +3,6 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
-import { useDataMode } from '../../../hooks/useDataMode';
 import { documentService } from '../../../services/documentService';
 import { supabase } from '../../../lib/supabase';
 
@@ -14,7 +13,6 @@ const DocumentsTab = () => {
   const [documents, setDocuments] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { isDemo, isProduction, dataMode, user } = useDataMode();
   
   // Tab pour le type de document à générer
   const [documentTypeTab, setDocumentTypeTab] = useState('student');
@@ -28,16 +26,6 @@ const DocumentsTab = () => {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [selectedClass, setSelectedClass] = useState(null);
 
-  // Debug : afficher le mode détecté
-  useEffect(() => {
-    console.log('🔍 DocumentsTab - Mode actuel:', {
-      dataMode,
-      isDemo,
-      isProduction,
-      userEmail: user?.email,
-      schoolId: user?.school_id
-    });
-  }, [dataMode, isDemo, isProduction, user]);
 
   const documentCategories = [
     { value: '', label: 'Toutes les catégories' },
@@ -52,75 +40,19 @@ const DocumentsTab = () => {
   const loadDocuments = async () => {
     setLoading(true);
     try {
-      if (isDemo) {
-        // Mode démo : données fictives
-        setDocuments([
-          {
-            id: 1,
-            name: "Certificat de scolarité - Marie Dubois",
-            type: "certificats",
-            dateCreated: "15/11/2024",
-            status: "generated",
-            studentName: "Marie Dubois",
-            class: "CM2",
-            format: "PDF"
-          },
-          {
-            id: 2,
-            name: "Attestation d'assurance - Pierre Martin",
-            type: "attestations",
-            dateCreated: "14/11/2024",
-            status: "pending",
-            studentName: "Pierre Martin",
-            class: "CM1",
-            format: "PDF"
-          },
-          {
-            id: 3,
-            name: "Bulletin 1er trimestre - Lucas Bernard",
-            type: "bulletins",
-            dateCreated: "12/11/2024",
-            status: "printed",
-            studentName: "Lucas Bernard",
-            class: "CE2",
-            format: "PDF"
-          },
-          {
-            id: 4,
-            name: "Dossier inscription - Emma Rousseau",
-            type: "inscriptions",
-            dateCreated: "10/11/2024",
-            status: "incomplete",
-            studentName: "Emma Rousseau",
-            class: "CP",
-            format: "DOSSIER"
-          },
-          {
-            id: 5,
-            name: "Règlement intérieur 2024-2025",
-            type: "administratif",
-            dateCreated: "01/09/2024",
-            status: "generated",
-            studentName: "Document général",
-            class: "Toutes classes",
-            format: "PDF"
-          }
-        ]);
+      // Charger depuis Supabase
+      const result = await documentService.getAllSchoolDocuments();
+
+      if (result.error === 'TABLE_NOT_EXISTS') {
+        // Table n'existe pas : afficher un message
+        setError('⚠️ La table documents n\'existe pas encore. Fonctionnalité en développement.');
+        setDocuments([]);
+      } else if (result.success) {
+        setDocuments(result.documents || []);
       } else {
-        // Mode production : charger depuis Supabase
-        const result = await documentService.getAllSchoolDocuments();
-        
-        if (result.error === 'TABLE_NOT_EXISTS') {
-          // Table n'existe pas : afficher un message
-          setError('⚠️ La table documents n\'existe pas encore. Fonctionnalité en développement.');
-          setDocuments([]);
-        } else if (result.success) {
-          setDocuments(result.documents || []);
-        } else {
-          console.error('Erreur chargement documents:', result.error);
-          setError('Erreur lors du chargement des documents');
-          setDocuments([]);
-        }
+        console.error('Erreur chargement documents:', result.error);
+        setError('Erreur lors du chargement des documents');
+        setDocuments([]);
       }
     } catch (error) {
       console.error('Erreur chargement documents:', error);
@@ -134,36 +66,19 @@ const DocumentsTab = () => {
   // Charger les documents au montage du composant
   useEffect(() => {
     loadDocuments();
-  }, [isDemo]);
+  }, []);
   
   // Charger les élèves et classes pour le modal
   useEffect(() => {
     const loadStudentsAndClasses = async () => {
-      // Debug: afficher les valeurs
-      console.log('🔍 loadStudentsAndClasses - État actuel:', {
-        isDemo,
-        isProduction,
-        user_school_id: user?.school_id,
-        user_current_school_id: user?.current_school_id,
-        user_dbUser: user?.dbUser,
-        user: user
-      });
-      
-      // Récupérer le school_id de différentes sources possibles
-      const schoolId = user?.school_id || user?.current_school_id || user?.dbUser?.current_school_id;
-      
-      if (isDemo) {
-        console.log('🎭 Mode démo - pas de chargement des élèves');
-        return;
-      }
-      
+      // Récupérer le school_id depuis les sources disponibles
+      const schoolId = localStorage.getItem('school_id');
+
       if (!schoolId) {
         console.warn('⚠️ Pas de school_id trouvé, impossible de charger les élèves');
         return;
       }
-      
-      console.log('📚 Chargement des élèves et classes pour school_id:', schoolId);
-      
+
       try {
         // Charger les élèves de l'école
         const { data: studentsData, error: studentsError } = await supabase
@@ -171,44 +86,32 @@ const DocumentsTab = () => {
           .select('id, first_name, last_name, class_name')
           .eq('school_id', schoolId)
           .order('last_name');
-        
-        console.log('📋 Élèves récupérés:', {
-          count: studentsData?.length || 0,
-          error: studentsError?.message || 'Aucune',
-          data: studentsData
-        });
-        
+
         if (!studentsError && studentsData) {
           setStudents(studentsData);
         } else if (studentsError) {
-          console.error('❌ Erreur chargement élèves:', studentsError);
+          console.error('Erreur chargement élèves:', studentsError);
         }
-        
+
         // Charger les classes de l'école
         const { data: classesData, error: classesError } = await supabase
           .from('classes')
           .select('id, name, level')
           .eq('school_id', schoolId)
           .order('level');
-        
-        console.log('🏫 Classes récupérées:', {
-          count: classesData?.length || 0,
-          error: classesError?.message || 'Aucune',
-          data: classesData
-        });
-        
+
         if (!classesError && classesData) {
           setClasses(classesData);
         } else if (classesError) {
-          console.error('❌ Erreur chargement classes:', classesError);
+          console.error('Erreur chargement classes:', classesError);
         }
       } catch (error) {
-        console.error('❌ Exception chargement élèves/classes:', error);
+        console.error('Exception chargement élèves/classes:', error);
       }
     };
-    
+
     loadStudentsAndClasses();
-  }, [isDemo, isProduction, user]);
+  }, []);
 
   const getStatusColor = (status) => {
     switch (status) {
@@ -245,12 +148,7 @@ const DocumentsTab = () => {
       alert('⚠️ Veuillez sélectionner au moins un document à imprimer');
       return;
     }
-    
-    if (isDemo) {
-      alert('🎭 Mode démo : Impression de ' + selectedDocuments.length + ' document(s) sélectionné(s)');
-      return;
-    }
-    
+
     // Ouvrir chaque document sélectionné dans un nouvel onglet pour impression
     selectedDocuments.forEach(docId => {
       const doc = documents.find(d => d.id === docId);
@@ -258,7 +156,7 @@ const DocumentsTab = () => {
         handlePrintDocument(docId);
       }
     });
-    
+
     alert(`✅ Ouverture de ${selectedDocuments.length} document(s) pour impression`);
   };
 
@@ -270,13 +168,8 @@ const DocumentsTab = () => {
   });
 
   const handleGenerateDocument = async (type, targetType = 'student') => {
-    console.log('🔘 Bouton cliqué - Génération document:', type, targetType);
-    
-    if (isDemo) {
-      alert('🎭 Mode démo : La génération de documents n\'est pas disponible en mode démonstration.');
-      return;
-    }
-    
+    console.log('Document generation initiated:', type, targetType);
+
     // Ouvrir le modal de sélection
     setDocumentType(type);
     setModalType(targetType);
@@ -331,18 +224,13 @@ const DocumentsTab = () => {
   const handlePrintDocument = async (documentId) => {
     const doc = documents.find(d => d.id === documentId);
     if (!doc) return;
-    
-    if (isDemo) {
-      alert(`🎭 Mode démo : Impression simulée du document "${doc.name}"`);
-      return;
-    }
-    
-    // En production : vérifier si le fichier existe
+
+    // Vérifier si le fichier existe
     if (!doc.file_path) {
       alert(`⚠️ Ce document n'a pas encore de fichier associé. Il s'agit d'un enregistrement dans la base de données.`);
       return;
     }
-    
+
     // Télécharger et ouvrir pour impression
     handleDownloadDocument(documentId, true);
   };
@@ -351,21 +239,16 @@ const DocumentsTab = () => {
   const handleViewDocument = async (documentId) => {
     const doc = documents.find(d => d.id === documentId);
     if (!doc) return;
-    
-    if (isDemo) {
-      alert(`🎭 Mode démo : Prévisualisation simulée du document "${doc.name}"`);
-      return;
-    }
-    
+
     // Vérifier si le fichier existe
     if (!doc.file_path) {
       alert(`⚠️ Ce document n'a pas encore de fichier associé. Il s'agit d'un enregistrement dans la base de données uniquement.`);
       return;
     }
-    
+
     try {
       const result = await documentService.downloadDocument(documentId, 'view');
-      
+
       if (result.data?.url) {
         // Ouvrir dans un nouvel onglet pour visualisation
         window.open(result.data.url, '_blank');
@@ -381,21 +264,16 @@ const DocumentsTab = () => {
   const handleDownloadDocument = async (documentId, forPrint = false) => {
     const doc = documents.find(d => d.id === documentId);
     if (!doc) return;
-    
-    if (isDemo) {
-      alert(`🎭 Mode démo : Téléchargement simulé du document "${doc.name}"`);
-      return;
-    }
-    
+
     // Vérifier si le fichier existe
     if (!doc.file_path) {
       alert(`⚠️ Ce document n'a pas encore de fichier associé. Il s'agit d'un enregistrement dans la base de données uniquement.`);
       return;
     }
-    
+
     try {
       const result = await documentService.downloadDocument(documentId, forPrint ? 'print' : 'download');
-      
+
       if (result.data?.url) {
         if (forPrint) {
           // Ouvrir dans une nouvelle fenêtre pour impression
@@ -416,7 +294,7 @@ const DocumentsTab = () => {
           document.body.appendChild(link);
           link.click();
           document.body.removeChild(link);
-          
+
           alert('✅ Téléchargement lancé !');
         }
       } else {
@@ -431,19 +309,14 @@ const DocumentsTab = () => {
   const handleDeleteDocument = async (documentId) => {
     const doc = documents.find(d => d.id === documentId);
     if (!doc) return;
-    
-    if (isDemo) {
-      alert(`🎭 Mode démo : Suppression non disponible en mode démonstration`);
-      return;
-    }
-    
+
     const confirmDelete = window.confirm(`Êtes-vous sûr de vouloir supprimer le document "${doc.name}" ?`);
     if (!confirmDelete) return;
-    
+
     try {
       setLoading(true);
       const result = await documentService.deleteDocument(documentId);
-      
+
       if (result.data) {
         alert('✅ Document supprimé avec succès');
         await loadDocuments();
@@ -460,7 +333,7 @@ const DocumentsTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header avec indicateur de mode */}
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
@@ -469,13 +342,6 @@ const DocumentsTab = () => {
           <p className="font-body font-body-normal text-text-secondary mt-1">
             Génération, impression et gestion des documents administratifs
           </p>
-          <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold mt-2 ${
-            isProduction 
-              ? 'bg-green-100 text-green-700' 
-              : 'bg-orange-100 text-orange-700'
-          }`}>
-            {isProduction ? '✅ Mode Production' : '🎭 Mode Démo'}
-          </div>
         </div>
         <div className="flex items-center space-x-3">
           <Button

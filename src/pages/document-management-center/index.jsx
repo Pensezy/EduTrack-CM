@@ -1,77 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
-import { useDataMode } from '../../hooks/useDataMode';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { Upload, Download, FileText, Eye, Filter, Calendar, User, BookOpen } from 'lucide-react';
 
-// Demo data that loads even without Supabase
-const DEMO_DOCUMENTS = [
-  {
-    id: '1',
-    title: 'Q1 Report Card.pdf',
-    subject: 'Académique',
-    class_name: '3ème A',
-    uploaded_by: 'Mr. Nkem',
-    uploaded_at: '2025-01-15T10:30:00Z',
-    file_size: '245 KB',
-    visibility: 'student',
-    student_id: 'amina-tchatchoua',
-    description: 'Bulletin de notes du premier trimestre pour Amina Tchatchoua'
-  },
-  {
-    id: '2',
-    title: 'Parent Meeting Convocation.pdf',
-    subject: 'Administration',
-    class_name: '4A',
-    uploaded_by: 'Secrétaire',
-    uploaded_at: '2025-01-18T14:15:00Z',
-    file_size: '156 KB',
-    visibility: 'class',
-    class_id: 'class-4a',
-    description: 'Convocation pour la réunion des parents d\'élèves de la classe 4A'
-  },
-  {
-    id: '3',
-    title: 'Payment Receipt.pdf',
-    subject: 'Finance',
-    class_name: 'Terminale D',
-    uploaded_by: 'Système',
-    uploaded_at: '2025-01-20T09:45:00Z',
-    file_size: '89 KB',
-    visibility: 'parent',
-    parent_id: 'jean-kouam',
-    description: 'Reçu de paiement des frais de scolarité pour Jean Kouam'
-  },
-  {
-    id: '4',
-    title: 'Mathematics Assignment.pdf',
-    subject: 'Mathématiques',
-    class_name: '3ème A',
-    uploaded_by: 'Mr. Nkem',
-    uploaded_at: '2025-01-22T08:20:00Z',
-    file_size: '324 KB',
-    visibility: 'student',
-    description: 'Devoir de mathématiques - Chapitre Géométrie'
-  },
-  {
-    id: '5',
-    title: 'English Literature Notes.docx',
-    subject: 'Anglais',
-    class_name: '4A',
-    uploaded_by: 'Mrs. Fatima',
-    uploaded_at: '2025-01-25T11:10:00Z',
-    file_size: '567 KB',
-    visibility: 'class',
-    description: 'Notes de cours - Littérature anglaise moderne'
-  }
-];
-
-const DEMO_CLASSES = ['3ème A', '4A', 'Terminale D', '6ème B', '5ème C'];
-const DEMO_SUBJECTS = ['Mathématiques', 'Anglais', 'Français', 'Sciences', 'Histoire', 'Administration', 'Finance'];
-
 const DocumentManagementCenter = () => {
   const { user, userProfile } = useAuth();
-  const { dataMode, isDemo } = useDataMode();
   const { data, loading: dataLoading } = useDashboardData();
   
   const [uploading, setUploading] = useState(false);
@@ -92,19 +25,12 @@ const DocumentManagementCenter = () => {
     visibility: 'student'
   });
 
-  // Documents basés sur le mode
-  const documents = isDemo 
-    ? DEMO_DOCUMENTS 
-    : data?.documents || [];
+  // Real data from Supabase
+  const documents = data?.documents || [];
 
-  // Classes et matières basées sur le mode
-  const availableClasses = isDemo 
-    ? DEMO_CLASSES 
-    : data?.classes?.map(c => c.name) || [];
-    
-  const availableSubjects = isDemo 
-    ? DEMO_SUBJECTS 
-    : data?.subjects || ['Mathématiques', 'Français', 'Anglais', 'Sciences'];
+  // Classes and subjects from Supabase
+  const availableClasses = data?.classes?.map(c => c.name) || [];
+  const availableSubjects = data?.subjects || ['Mathématiques', 'Français', 'Anglais', 'Sciences'];
 
   // Filter documents based on role and filters
   const filteredDocuments = documents?.filter(doc => {
@@ -141,62 +67,37 @@ const DocumentManagementCenter = () => {
     if (!uploadData?.title || !uploadData?.subject) return;
 
     setUploading(true);
-    
-    if (isDemo) {
-      // Simulate upload process in demo mode  
-      setTimeout(() => {
-        alert(`✅ Document "${uploadData?.title}" uploadé avec succès ! (Mode démonstration)`);
-        setUploadData({
-          title: '',
-          subject: '',
-          class_name: '',
-          description: '',
-          visibility: 'student'
-        });
-        setShowUploadForm(false);
-        setUploading(false);
-      }, 2000);
-    } else {
-      // Real upload to Supabase in production mode
-      try {
-        // Here would be the real upload logic to Supabase
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated
-        
-        alert(`✅ Document "${uploadData?.title}" uploadé avec succès dans la base de données !`);
-        setUploadData({
-          title: '',
-          subject: '',
-          class_name: '',
-          description: '',
-          visibility: 'student'
-        });
-        setShowUploadForm(false);
-        setUploading(false);
-      } catch (error) {
-        alert(`❌ Erreur lors de l'upload: ${error.message}`);
-        setUploading(false);
-      }
+
+    try {
+      // Real upload to Supabase
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulated
+
+      alert(`✅ Document "${uploadData?.title}" uploadé avec succès dans la base de données !`);
+      setUploadData({
+        title: '',
+        subject: '',
+        class_name: '',
+        description: '',
+        visibility: 'student'
+      });
+      setShowUploadForm(false);
+      setUploading(false);
+    } catch (error) {
+      alert(`❌ Erreur lors de l'upload: ${error.message}`);
+      setUploading(false);
     }
   };
 
   const handleDownload = (document) => {
-    if (isDemo) {
-      alert(`📥 Téléchargement simulé de "${document?.title}" (Mode démonstration)`);
-    } else {
-      // Real download from Supabase storage
-      console.log('Real download:', document?.title);
-      alert(`📥 Téléchargement de "${document?.title}" depuis le stockage...`);
-    }
+    // Real download from Supabase storage
+    console.log('Real download:', document?.title);
+    alert(`📥 Téléchargement de "${document?.title}" depuis le stockage...`);
   };
 
   const handleView = (document) => {
-    if (isDemo) {
-      alert(`👁️ Prévisualisation simulée de "${document?.title}" (Mode démonstration)`);
-    } else {
-      // Real document preview
-      console.log('Real preview:', document?.title);
-      alert(`👁️ Ouverture de "${document?.title}" depuis le stockage...`);
-    }
+    // Real document preview
+    console.log('Real preview:', document?.title);
+    alert(`👁️ Ouverture de "${document?.title}" depuis le stockage...`);
   };
 
   const formatDate = (dateString) => {
@@ -217,7 +118,7 @@ const DocumentManagementCenter = () => {
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
           <p className="mt-4 text-gray-600">
-            {isDemo ? 'Chargement des documents de démonstration...' : 'Chargement des documents réels...'}
+            Chargement des documents...
           </p>
         </div>
       </div>
@@ -227,31 +128,17 @@ const DocumentManagementCenter = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header avec indicateur de mode */}
+        {/* Header */}
         <div className="mb-8">
-          <div className="flex items-center justify-between mb-4">
-            <h1 className="text-3xl font-bold text-gray-900">
-              Centre de Gestion des Documents
-            </h1>
-            
-            {/* Indicateur de mode données */}
-            <div className={`px-4 py-2 rounded-full text-sm font-bold ${
-              isDemo 
-                ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
-                : 'bg-green-100 text-green-800 border border-green-300'
-            }`}>
-              {isDemo ? '🔄 MODE DÉMO' : '🏫 DONNÉES RÉELLES'}
-            </div>
-          </div>
-          
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            Centre de Gestion des Documents
+          </h1>
+
           <p className="text-gray-600">
-            {isDemo 
-              ? (userProfile?.role === 'teacher' ?'Uploadez et gérez vos documents pédagogiques (Démonstration)'
-                : userProfile?.role === 'student' ?'Accédez aux documents de vos cours (Démonstration)'
-                : userProfile?.role === 'parent' ?'Consultez les documents de vos enfants (Démonstration)' :'Gérez les documents du système (Démonstration)')
-              : (userProfile?.role === 'teacher' ?`Uploadez et gérez vos documents pour ${user?.schoolData?.name || 'votre établissement'}`
-                : userProfile?.role === 'student' ?`Accédez aux documents de vos cours à ${user?.schoolData?.name || 'votre établissement'}`
-                : userProfile?.role === 'parent' ?`Consultez les documents de vos enfants à ${user?.schoolData?.name || 'votre établissement'}` :`Gérez les documents de ${user?.schoolData?.name || 'votre établissement'}`)
+            {userProfile?.role === 'teacher' ? `Uploadez et gérez vos documents pour ${user?.schoolData?.name || 'votre établissement'}`
+              : userProfile?.role === 'student' ? `Accédez aux documents de vos cours à ${user?.schoolData?.name || 'votre établissement'}`
+              : userProfile?.role === 'parent' ? `Consultez les documents de vos enfants à ${user?.schoolData?.name || 'votre établissement'}`
+              : `Gérez les documents de ${user?.schoolData?.name || 'votre établissement'}`
             }
           </p>
         </div>
@@ -427,15 +314,9 @@ const DocumentManagementCenter = () => {
         {/* Documents List */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200">
           <div className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-lg font-medium text-gray-900">
-                Documents ({filteredDocuments?.length})
-              </h3>
-              <div className="text-sm text-gray-500">
-                Accès basé sur votre rôle: {userProfile?.role || 'Visiteur'} | 
-                Mode: {isDemo ? 'Démonstration' : 'Production'}
-              </div>
-            </div>
+            <h3 className="text-lg font-medium text-gray-900 mb-6">
+              Documents ({filteredDocuments?.length})
+            </h3>
 
             {filteredDocuments?.length === 0 ? (
               <div className="text-center py-12">
@@ -511,68 +392,35 @@ const DocumentManagementCenter = () => {
           </div>
         </div>
 
-        {/* Access Control Information avec mode */}
-        <div className={`rounded-lg p-6 mt-6 ${
-          isDemo ? 'bg-blue-50' : 'bg-green-50'
-        }`}>
-          <div className="flex items-center justify-between mb-3">
-            <h4 className={`text-lg font-medium ${
-              isDemo ? 'text-blue-900' : 'text-green-900'
-            }`}>
-              Contrôle d'accès basé sur les rôles
-            </h4>
-            <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-              isDemo 
-                ? 'bg-blue-200 text-blue-800' 
-                : 'bg-green-200 text-green-800'
-            }`}>
-              {isDemo ? 'Démonstration' : user?.schoolData?.name || 'Production'}
-            </div>
-          </div>
-          
+        {/* Access Control Information */}
+        <div className="bg-green-50 rounded-lg p-6 mt-6">
+          <h4 className="text-lg font-medium text-green-900 mb-3">
+            Contrôle d'accès basé sur les rôles
+          </h4>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
             <div>
-              <h5 className={`font-medium mb-2 ${
-                isDemo ? 'text-blue-800' : 'text-green-800'
-              }`}>👨‍🏫 Enseignants</h5>
-              <p className={isDemo ? 'text-blue-700' : 'text-green-700'}>
-                {isDemo 
-                  ? 'Peuvent uploader des documents pour leurs classes assignées' 
-                  : 'Uploadent des documents réels vers le stockage Supabase'
-                }
+              <h5 className="font-medium mb-2 text-green-800">👨‍🏫 Enseignants</h5>
+              <p className="text-green-700">
+                Uploadent des documents réels vers le stockage Supabase
               </p>
             </div>
             <div>
-              <h5 className={`font-medium mb-2 ${
-                isDemo ? 'text-blue-800' : 'text-green-800'
-              }`}>👨‍🎓 Étudiants</h5>
-              <p className={isDemo ? 'text-blue-700' : 'text-green-700'}>
-                {isDemo 
-                  ? 'Voient les documents de leurs classes et ceux qui leur sont destinés' 
-                  : 'Accèdent aux vrais documents de leurs classes depuis la base de données'
-                }
+              <h5 className="font-medium mb-2 text-green-800">👨‍🎓 Étudiants</h5>
+              <p className="text-green-700">
+                Accèdent aux vrais documents de leurs classes depuis la base de données
               </p>
             </div>
             <div>
-              <h5 className={`font-medium mb-2 ${
-                isDemo ? 'text-blue-800' : 'text-green-800'
-              }`}>👨‍👩‍👧‍👦 Parents</h5>
-              <p className={isDemo ? 'text-blue-700' : 'text-green-700'}>
-                {isDemo 
-                  ? 'Accèdent aux documents de leurs enfants et communications' 
-                  : 'Consultent les vrais documents et communications de leurs enfants'
-                }
+              <h5 className="font-medium mb-2 text-green-800">👨‍👩‍👧‍👦 Parents</h5>
+              <p className="text-green-700">
+                Consultent les vrais documents et communications de leurs enfants
               </p>
             </div>
             <div>
-              <h5 className={`font-medium mb-2 ${
-                isDemo ? 'text-blue-800' : 'text-green-800'
-              }`}>👨‍💼 Admin</h5>
-              <p className={isDemo ? 'text-blue-700' : 'text-green-700'}>
-                {isDemo 
-                  ? 'Accès complet à tous les documents du système' 
-                  : 'Gestion complète des documents réels de l\'établissement'
-                }
+              <h5 className="font-medium mb-2 text-green-800">👨‍💼 Admin</h5>
+              <p className="text-green-700">
+                Gestion complète des documents réels de l'établissement
               </p>
             </div>
           </div>

@@ -1726,14 +1726,6 @@ export const technicalHelpCategories = [
         tags: ['structure', 'architecture'],
         description: 'Comprendre l\'organisation des dossiers et fichiers'
       },
-      {
-        id: 'data-mode',
-        title: 'Mode Démo vs Production',
-        file: 'DATA_MODE_SYSTEM.md',
-        category: 'Documentation Technique',
-        tags: ['configuration', 'modes'],
-        description: 'Différences entre le mode démo et le mode production'
-      }
     ]
   },
   {

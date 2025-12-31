@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
-import { useDataMode } from './useDataMode';
-import demoDataService from '../services/demoDataService';
+import { supabase } from '../lib/supabase';
 import productionDataService from '../services/productionDataService';
 
 /**
- * Hook unifié pour récupérer les données selon le mode (démo/production)
+ * Hook unifié pour récupérer les données depuis Supabase uniquement
  */
 export const useDashboardData = (schoolContext = null) => {
-  const { dataMode, isLoading: modeLoading, user } = useDataMode();
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     metrics: [],
     classAverages: [],
@@ -19,7 +19,7 @@ export const useDashboardData = (schoolContext = null) => {
     schoolDetails: null,
     classes: []
   });
-  const [loading, setLoading] = useState({
+  const [dataLoading, setDataLoading] = useState({
     metrics: false,
     classAverages: false,
     attendance: false,
@@ -32,64 +32,67 @@ export const useDashboardData = (schoolContext = null) => {
   });
   const [errors, setErrors] = useState({});
 
-  // Choisir le bon service selon le mode
-  const getService = () => {
-    return dataMode === 'production' ? productionDataService : demoDataService;
-  };
+  // Récupérer l'utilisateur connecté au montage
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user: authUser }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setUser(authUser);
+      } catch (error) {
+        console.error('Erreur récupération utilisateur:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    getUser();
+  }, []);
 
   // Fonction générique pour charger des données
   const loadData = async (key, serviceMethod, ...args) => {
-    if (modeLoading) return; // Attendre que le mode soit déterminé
+    if (loading) return; // Attendre que l'utilisateur soit chargé
 
-    setLoading(prev => ({ ...prev, [key]: true }));
+    setDataLoading(prev => ({ ...prev, [key]: true }));
     setErrors(prev => ({ ...prev, [key]: null }));
 
     try {
-      const service = getService();
-      
-      // Si on est en mode production, initialiser le contexte de sécurité
-      if (dataMode === 'production' && service.setUserContext) {
+      // Initialiser le contexte de sécurité
+      if (productionDataService.setUserContext) {
         let userId, schoolId;
-        
+
         // Priorité 1: Données de l'école depuis le contexte passé en paramètre
         if (schoolContext?.director_user_id && schoolContext?.id) {
           userId = schoolContext.director_user_id;
           schoolId = schoolContext.id;
         }
-        // Priorité 2: Données de l'utilisateur depuis useDataMode
-        else if (user?.schoolData?.director_user_id && user?.schoolData?.id) {
-          userId = user.schoolData.director_user_id;
-          schoolId = user.schoolData.id;
-        }
-        // Priorité 3: Données utilisateur de base
-        else if (user?.dbUser?.id && user?.dbUser?.school_id) {
-          userId = user.dbUser.id;
-          schoolId = user.dbUser.school_id;
-        }
-        // Priorité 4: Utiliser directement l'ID de l'utilisateur Supabase et l'école
-        else if (user?.id && user?.schoolData?.id) {
+        // Priorité 2: Données de l'utilisateur
+        else if (user?.id) {
           userId = user.id;
-          schoolId = user.schoolData.id;
+          // Récupérer school_id depuis la table users
+          const { data: dbUser } = await supabase
+            .from('users')
+            .select('school_id')
+            .eq('id', user.id)
+            .single();
+          schoolId = dbUser?.school_id;
         }
-        
+
         if (userId && schoolId) {
           console.log(`🔐 Initialisation contexte sécurisé: User=${userId}, School=${schoolId}`);
-          service.setUserContext(userId, schoolId);
+          productionDataService.setUserContext(userId, schoolId);
         } else {
           console.warn('⚠️ Impossible d\'initialiser le contexte sécurisé');
           console.warn('  - userId:', userId);
           console.warn('  - schoolId:', schoolId);
-          console.warn('  - user:', user);
-          console.warn('  - schoolContext:', schoolContext);
         }
       }
-      
+
       // Passer l'ID de l'école comme premier argument si disponible
-      const schoolId = (dataMode === 'production' && schoolContext?.id) ? schoolContext.id : null;
+      const schoolId = schoolContext?.id || null;
       const finalArgs = schoolId ? [schoolId, ...args] : args;
-      
-      const result = await service[serviceMethod](...finalArgs);
-      
+
+      const result = await productionDataService[serviceMethod](...finalArgs);
+
       if (result.error) {
         throw result.error;
       }
@@ -99,37 +102,36 @@ export const useDashboardData = (schoolContext = null) => {
       console.error(`Erreur lors du chargement de ${key}:`, error);
       setErrors(prev => ({ ...prev, [key]: error }));
     } finally {
-      setLoading(prev => ({ ...prev, [key]: false }));
+      setDataLoading(prev => ({ ...prev, [key]: false }));
     }
   };
 
   // Méthodes publiques pour charger différents types de données
   const loadMetrics = () => loadData('metrics', 'getDashboardMetrics');
-  
-  const loadClassAverages = (filters = {}) => 
+
+  const loadClassAverages = (filters = {}) =>
     loadData('classAverages', 'getClassAverages', filters);
-  
-  const loadAttendance = (period = 'week') => 
+
+  const loadAttendance = (period = 'week') =>
     loadData('attendance', 'getAttendanceData', period);
-  
+
   const loadPayments = () => loadData('payments', 'getPaymentData');
-  
+
   const loadPersonnel = () => loadData('personnel', 'getPersonnel');
-  
-  const loadStudents = (filters = {}) => 
+
+  const loadStudents = (filters = {}) =>
     loadData('students', 'getStudents', filters);
-  
+
   const loadSchoolStats = () => loadData('schoolStats', 'getSchoolStats');
-  
+
   const loadSchoolDetails = () => {
-    // Passer l'ID utilisateur pour pouvoir chercher l'école même sans contexte défini
     const userId = user?.id;
     return loadData('schoolDetails', 'getSchoolDetails', null, userId);
   };
-  
+
   const loadClasses = () => loadData('classes', 'getClasses');
 
-  // Charger toutes les données de base au montage du composant
+  // Charger toutes les données de base
   const loadAllData = () => {
     loadMetrics();
     loadClassAverages();
@@ -141,53 +143,39 @@ export const useDashboardData = (schoolContext = null) => {
     loadClasses();
   };
 
-  // Recharger les données quand le mode change (optimisé)
+  // Charger les données au montage une fois l'utilisateur chargé
   useEffect(() => {
-    if (!modeLoading && dataMode) {
-      console.log(`🚀 Chargement optimisé des données en mode: ${dataMode}`);
-      if (dataMode === 'demo') {
-        // Mode démo : Chargement immédiat de toutes les données (elles sont locales)
-        loadMetrics();
-        loadSchoolDetails();
-        loadSchoolStats();
-        loadClasses();
-        loadPersonnel();
-        loadClassAverages();
-        loadAttendance();
-        loadPayments();
-      } else {
-        // Mode production : Données critiques en priorité
+    if (!loading && user) {
+      console.log(`🚀 Chargement des données depuis Supabase`);
+
+      // Données critiques en priorité
+      Promise.all([
+        loadSchoolDetails(),
+        loadMetrics()
+      ]).then(() => {
+        // Charger le reste en parallèle
         Promise.all([
-          loadSchoolDetails(),
-          loadMetrics()
-        ]).then(() => {
-          // Dès que les données critiques sont là, charger le reste en parallèle
-          Promise.all([
-            loadSchoolStats(),
-            loadClasses(),
-            loadPersonnel(),
-            loadClassAverages(),
-            loadAttendance(),
-            loadPayments()
-          ]);
-        });
-      }
+          loadSchoolStats(),
+          loadClasses(),
+          loadPersonnel(),
+          loadClassAverages(),
+          loadAttendance(),
+          loadPayments()
+        ]);
+      });
     }
-  }, [dataMode, modeLoading]);
+  }, [loading, user]);
 
   return {
     // État des données
     data,
-    loading,
+    loading: dataLoading,
     errors,
-    
-    // Informations sur le mode
-    dataMode,
-    isDemo: dataMode === 'demo',
-    isProduction: dataMode === 'production',
-    modeLoading,
-    user, // Exposer l'utilisateur
-    
+
+    // Utilisateur
+    user,
+    userLoading: loading,
+
     // Méthodes de chargement
     loadMetrics,
     loadClassAverages,
@@ -199,16 +187,16 @@ export const useDashboardData = (schoolContext = null) => {
     loadSchoolDetails,
     loadClasses,
     loadAllData,
-    
+
     // Fonction utilitaire pour rafraîchir toutes les données
     refresh: loadAllData,
-    
+
     // Vérifier si des données sont en cours de chargement
-    isAnyLoading: Object.values(loading).some(Boolean),
-    
+    isAnyLoading: Object.values(dataLoading).some(Boolean),
+
     // Vérifier s'il y a des erreurs
     hasErrors: Object.values(errors).some(Boolean),
-    
+
     // Obtenir toutes les erreurs
     allErrors: Object.entries(errors)
       .filter(([_, error]) => error)

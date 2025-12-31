@@ -5,7 +5,6 @@ import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import { useAuth } from '../../contexts/AuthContext';
-import { useDataMode } from '../../hooks/useDataMode';
 import { useDashboardData } from '../../hooks/useDashboardData';
 
 const DataBackup = () => {
@@ -13,9 +12,7 @@ const DataBackup = () => {
   const [backupInProgress, setBackupInProgress] = useState(false);
   const [backupProgress, setBackupProgress] = useState(0);
 
-  // 🔄 Détection du mode données avec cache optimisé
   const { user } = useAuth();
-  const { dataMode, isDemo } = useDataMode();
   const { data, loading } = useDashboardData();
 
   const toggleSidebar = () => {
@@ -52,56 +49,12 @@ const DataBackup = () => {
       return emailName.charAt(0).toUpperCase() + emailName.slice(1);
     }
     
-    // Fallback par mode
-    return isDemo ? "M. Directeur (Démo)" : "Utilisateur";
+    // Fallback
+    return "Utilisateur";
   };
 
-  // Données de démonstration
-  const demoBackupHistory = [
-    {
-      id: 1,
-      date: '2024-09-25 03:00:00',
-      type: 'automatic',
-      size: '2.4 GB',
-      status: 'completed',
-      duration: '12 min'
-    },
-    {
-      id: 2,
-      date: '2024-09-24 03:00:00',
-      type: 'automatic',
-      size: '2.3 GB',
-      status: 'completed',
-      duration: '11 min'
-    },
-    {
-      id: 3,
-      date: '2024-09-23 15:30:00',
-      type: 'manual',
-      size: '2.3 GB',
-      status: 'completed',
-      duration: '10 min'
-    },
-    {
-      id: 4,
-      date: '2024-09-23 03:00:00',
-      type: 'automatic',
-      size: '2.2 GB',
-      status: 'failed',
-      duration: '-'
-    },
-    {
-      id: 5,
-      date: '2024-09-22 03:00:00',
-      type: 'automatic',
-      size: '2.2 GB',
-      status: 'completed',
-      duration: '9 min'
-    }
-  ];
-
-  // Historique basé sur le mode
-  const backupHistory = isDemo ? demoBackupHistory : (data?.backupHistory || [
+  // Historique des sauvegardes depuis Supabase
+  const backupHistory = data?.backupHistory || [
     {
       id: 1,
       date: new Date().toISOString(),
@@ -110,38 +63,10 @@ const DataBackup = () => {
       status: 'completed',
       duration: '5 min'
     }
-  ]);
-
-  // Statistiques de démonstration
-  const demoBackupStats = [
-    {
-      title: 'Dernière sauvegarde',
-      value: 'Il y a 2h',
-      status: 'success',
-      icon: 'CheckCircle'
-    },
-    {
-      title: 'Taille totale',
-      value: '24.8 GB',
-      status: 'info',
-      icon: 'HardDrive'
-    },
-    {
-      title: 'Sauvegardes réussies',
-      value: '98.5%',
-      status: 'success',
-      icon: 'TrendingUp'
-    },
-    {
-      title: 'Rétention',
-      value: '30 jours',
-      status: 'info',
-      icon: 'Calendar'
-    }
   ];
 
-  // Statistiques basées sur le mode
-  const backupStats = isDemo ? demoBackupStats : [
+  // Statistiques depuis Supabase
+  const backupStats = [
     {
       title: 'Dernière sauvegarde',
       value: data?.lastBackup || 'Jamais',
@@ -171,82 +96,42 @@ const DataBackup = () => {
   const handleManualBackup = () => {
     setBackupInProgress(true);
     setBackupProgress(0);
-    
-    if (isDemo) {
-      // Simulation du processus de sauvegarde en mode démo
-      const incrementProgress = () => {
-        setBackupProgress(prev => {
-          if (prev >= 100) {
-            setBackupInProgress(false);
-            alert('✅ Sauvegarde simulée terminée avec succès ! (Mode démonstration)');
-            return 100;
-          }
-          return prev + 10;
-        });
-      };
-      
-      const interval = setInterval(incrementProgress, 500);
-      
-      setTimeout(() => {
-        clearInterval(interval);
-        setBackupInProgress(false);
-        setBackupProgress(0);
-      }, 6000);
-    } else {
-      // Vraie sauvegarde en mode production
-      const incrementProgress = () => {
-        setBackupProgress(prev => {
-          if (prev >= 100) {
-            setBackupInProgress(false);
-            alert(`✅ Sauvegarde réelle terminée avec succès pour ${user?.schoolData?.name || 'votre établissement'} !`);
-            return 100;
-          }
-          return prev + 10;
-        });
-      };
-      
-      const interval = setInterval(incrementProgress, 800);
-      
-      setTimeout(() => {
-        clearInterval(interval);
-        setBackupInProgress(false);
-        setBackupProgress(0);
-      }, 8000);
-    }
+
+    const incrementProgress = () => {
+      setBackupProgress(prev => {
+        if (prev >= 100) {
+          setBackupInProgress(false);
+          alert(`✅ Sauvegarde terminée avec succès pour ${user?.schoolData?.name || 'votre établissement'} !`);
+          return 100;
+        }
+        return prev + 10;
+      });
+    };
+
+    const interval = setInterval(incrementProgress, 800);
+
+    setTimeout(() => {
+      clearInterval(interval);
+      setBackupInProgress(false);
+      setBackupProgress(0);
+    }, 8000);
   };
 
   const handleExportData = (format) => {
-    if (isDemo) {
-      console.log(`Demo export in ${format} format`);
-      alert(`📊 Export simulé au format ${format.toUpperCase()} (Mode démonstration)`);
-    } else {
-      console.log(`Real export for ${user?.schoolData?.name} in ${format} format`);
-      alert(`📊 Export réel des données de ${user?.schoolData?.name || 'votre établissement'} au format ${format.toUpperCase()}...`);
-    }
+    console.log(`Export des données de ${user?.schoolData?.name} au format ${format.toUpperCase()}`);
+    alert(`📊 Export des données de ${user?.schoolData?.name || 'votre établissement'} au format ${format.toUpperCase()}...`);
   };
 
   const handleAutoBackupConfig = () => {
-    if (isDemo) {
-      alert(`⚙️ Configuration de l'auto-sauvegarde (Mode démonstration)\n\nFonctionnalités disponibles :\n• Fréquence : Quotidienne, Hebdomadaire\n• Heure : Personnalisable\n• Rétention : 7-90 jours\n• Notifications : Email/SMS`);
-    } else {
-      alert(`⚙️ Configuration de l'auto-sauvegarde pour ${user?.schoolData?.name || 'votre établissement'}\n\nAccès aux paramètres :\n• Planification automatique\n• Configuration des notifications\n• Gestion de la rétention\n• Surveillance des sauvegardes`);
-    }
+    alert(`⚙️ Configuration de l'auto-sauvegarde pour ${user?.schoolData?.name || 'votre établissement'}\n\nAccès aux paramètres :\n• Planification automatique\n• Configuration des notifications\n• Gestion de la rétention\n• Surveillance des sauvegardes`);
   };
 
   const handleRefreshHistory = () => {
-    if (isDemo) {
-      alert(`🔄 Actualisation de l'historique (Mode démonstration)\n\nHistorique des sauvegardes mis à jour !`);
-    } else {
-      alert(`🔄 Actualisation de l'historique des sauvegardes\n\nRécupération des dernières sauvegardes depuis Supabase...`);
-    }
+    alert(`🔄 Actualisation de l'historique des sauvegardes\n\nRécupération des dernières sauvegardes depuis Supabase...`);
   };
 
   const handleViewFullHistory = () => {
-    if (isDemo) {
-      alert(`📜 Historique complet des sauvegardes (Mode démonstration)\n\nAffichage de toutes les sauvegardes de démonstration depuis le début.\n\nFonctionnalités disponibles :\n• Filtrage par date\n• Recherche par type\n• Export de l'historique`);
-    } else {
-      alert(`📜 Historique complet des sauvegardes\n\nAccès à l'historique complet de ${user?.schoolData?.name || 'votre établissement'} depuis Supabase.\n\nOptions disponibles :\n• Filtres avancés\n• Recherche par période\n• Détails des sauvegardes\n• Export des rapports`);
-    }
+    alert(`📜 Historique complet des sauvegardes\n\nAccès à l'historique complet de ${user?.schoolData?.name || 'votre établissement'} depuis Supabase.\n\nOptions disponibles :\n• Filtres avancés\n• Recherche par période\n• Détails des sauvegardes\n• Export des rapports`);
   };
 
   const getStatusIcon = (status) => {
@@ -324,7 +209,7 @@ const DataBackup = () => {
             isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
           } p-6`}>
             
-            {/* Page Header avec indicateur de mode */}
+            {/* Page Header */}
             <div className="mb-8">
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-3">
@@ -335,28 +220,16 @@ const DataBackup = () => {
                     Sauvegarde et Données
                   </h1>
                 </div>
-                
-                {/* Indicateur de mode données */}
-                <div className={`px-4 py-2 rounded-full text-sm font-bold ${
-                  isDemo 
-                    ? 'bg-yellow-100 text-yellow-800 border border-yellow-300' 
-                    : 'bg-green-100 text-green-800 border border-green-300'
-                }`}>
-                  {isDemo ? '🔄 MODE DÉMO' : '🏫 DONNÉES RÉELLES'}
-                </div>
               </div>
-              
+
               <p className="text-muted-foreground">
-                {isDemo 
-                  ? 'Gérer les sauvegardes et l\'exportation des données de l\'école (Démonstration)'
-                  : `Gérer les sauvegardes et l'exportation des données de ${user?.schoolData?.name || 'votre établissement'}`
-                }
+                Gérer les sauvegardes et l'exportation des données de {user?.schoolData?.name || 'votre établissement'}
               </p>
               
               {loading && (
                 <div className="mt-4 flex items-center text-sm text-muted-foreground">
                   <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
-                  {isDemo ? 'Chargement des données de démonstration...' : 'Chargement des données réelles...'}
+                  Chargement des données...
                 </div>
               )}
               
@@ -451,13 +324,10 @@ const DataBackup = () => {
                       <Icon name="Info" size={16} className="text-blue-600 mt-0.5" />
                       <div>
                         <h4 className="font-medium text-foreground text-sm mb-1">
-                          {isDemo ? 'Information sur la sauvegarde (Démo)' : 'Information sur la sauvegarde'}
+                          Information sur la sauvegarde
                         </h4>
                         <p className="text-sm text-muted-foreground">
-                          {isDemo 
-                            ? 'La sauvegarde inclut toutes les données de démonstration : élèves, enseignants, notes, documents et paramètres. Cette fonctionnalité est simulée.'
-                            : `La sauvegarde inclut toutes les données de ${user?.schoolData?.name || 'votre établissement'} : élèves, enseignants, notes, documents et paramètres. Les sauvegardes sont cryptées et stockées de manière sécurisée dans Supabase.`
-                          }
+                          La sauvegarde inclut toutes les données de {user?.schoolData?.name || 'votre établissement'} : élèves, enseignants, notes, documents et paramètres. Les sauvegardes sont cryptées et stockées de manière sécurisée dans Supabase.
                         </p>
                       </div>
                     </div>
@@ -501,24 +371,20 @@ const DataBackup = () => {
                   </div>
 
                   <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className={`p-3 border rounded-lg ${
-                      isDemo ? 'border-yellow-200 bg-yellow-50' : 'border-green-200 bg-green-50'
-                    }`}>
+                    <div className="p-3 border border-green-200 bg-green-50 rounded-lg">
                       <h4 className="font-medium text-foreground text-sm mb-2">
-                        Données académiques {isDemo ? '(Démo)' : ''}
+                        Données académiques
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {isDemo ? 'Notes, présences, bulletins de démonstration' : 'Notes, présences, bulletins réels'}
+                        Notes, présences, bulletins
                       </p>
                     </div>
-                    <div className={`p-3 border rounded-lg ${
-                      isDemo ? 'border-yellow-200 bg-yellow-50' : 'border-green-200 bg-green-50'
-                    }`}>
+                    <div className="p-3 border border-green-200 bg-green-50 rounded-lg">
                       <h4 className="font-medium text-foreground text-sm mb-2">
-                        Données administratives {isDemo ? '(Démo)' : ''}
+                        Données administratives
                       </h4>
                       <p className="text-xs text-muted-foreground">
-                        {isDemo ? 'Personnel, finances, rapports de démonstration' : 'Personnel, finances, rapports réels'}
+                        Personnel, finances, rapports
                       </p>
                     </div>
                   </div>
@@ -587,37 +453,24 @@ const DataBackup = () => {
               </div>
             </div>
 
-            {/* Information sur le mode actuel */}
-            <div className={`mt-8 rounded-lg p-6 ${
-              isDemo ? 'bg-yellow-50 border border-yellow-200' : 'bg-green-50 border border-green-200'
-            }`}>
+            {/* Information de sécurité */}
+            <div className="mt-8 rounded-lg p-6 bg-green-50 border border-green-200">
               <div className="flex items-start space-x-3">
-                <Icon name={isDemo ? "TestTube" : "Database"} size={20} className={
-                  isDemo ? 'text-yellow-600' : 'text-green-600'
-                } />
+                <Icon name="Database" size={20} className="text-green-600" />
                 <div>
-                  <h4 className={`font-medium mb-2 ${
-                    isDemo ? 'text-yellow-800' : 'text-green-800'
-                  }`}>
-                    {isDemo ? '🔄 Mode Démonstration Actif' : '🏫 Mode Production Actif'}
+                  <h4 className="font-medium mb-2 text-green-800">
+                    Mode Production Actif
                   </h4>
-                  <p className={`text-sm ${
-                    isDemo ? 'text-yellow-700' : 'text-green-700'
-                  }`}>
-                    {isDemo 
-                      ? 'Vous naviguez en mode démonstration. Toutes les sauvegardes et exports sont simulés. Les données affichées sont fictives et servent uniquement à la présentation des fonctionnalités.'
-                      : `Vous utilisez les vraies données de ${user?.schoolData?.name || 'votre établissement'}. Les sauvegardes et exports concernent vos données réelles stockées dans Supabase. Toutes les opérations sont authentiques et sécurisées.`
-                    }
+                  <p className="text-sm text-green-700 mb-3">
+                    Vous utilisez les vraies données de {user?.schoolData?.name || 'votre établissement'}. Les sauvegardes et exports concernent vos données réelles stockées dans Supabase. Toutes les opérations sont authentiques et sécurisées.
                   </p>
-                  
-                  {!isDemo && (
-                    <div className="mt-3 p-3 bg-green-100 rounded-lg">
-                      <p className="text-xs text-green-800">
-                        <Icon name="Shield" size={14} className="inline mr-1" />
-                        Sécurité : Toutes les sauvegardes sont cryptées et les exports respectent la confidentialité des données.
-                      </p>
-                    </div>
-                  )}
+
+                  <div className="p-3 bg-green-100 rounded-lg">
+                    <p className="text-xs text-green-800">
+                      <Icon name="Shield" size={14} className="inline mr-1" />
+                      Sécurité : Toutes les sauvegardes sont cryptées et les exports respectent la confidentialité des données.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>

@@ -11,7 +11,7 @@ const ClassAverageChart = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('current');
   
   // Hook pour les données avec switch automatique démo/production
-  const { data, loading, isDemo, loadClassAverages } = useDashboardData();
+  const { data, loading, loadClassAverages } = useDashboardData();
 
   // Récupérer les classes dynamiquement
   const availableClasses = data.classes || [];

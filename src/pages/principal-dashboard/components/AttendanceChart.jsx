@@ -8,9 +8,9 @@ import useDashboardData from '../../../hooks/useDashboardData';
 const AttendanceChart = () => {
   const [selectedClass, setSelectedClass] = useState('all');
   const [selectedPeriod, setSelectedPeriod] = useState('week');
-  
-  // Hook pour les données avec switch automatique démo/production
-  const { data, loading, isDemo, loadAttendance } = useDashboardData();
+
+  // Hook pour charger les données
+  const { data, loading, loadAttendance } = useDashboardData();
 
   // Récupérer les classes dynamiquement
   const availableClasses = data.classes || [];
@@ -20,34 +20,22 @@ const AttendanceChart = () => {
     loadAttendance(selectedPeriod);
   }, [selectedPeriod]);
 
-  // Utiliser les données du hook - format converti pour le graphique
+  // Convertir les données du hook au format graphique
   const convertAttendanceData = (rawData) => {
     if (!rawData || rawData.length === 0) return [];
-    
-    if (isDemo) {
-      // Mode démo : utiliser les données mock avec classes hardcodées
-      return rawData.map((item, index) => ({
-        period: item.day,
-        overall: Math.round((item.present / (item.present + item.absent + item.late + item.excused)) * 100),
-        '6ème': Math.round(Math.random() * 10 + 90),
-        '5ème': Math.round(Math.random() * 10 + 90),
-        '4ème': Math.round(Math.random() * 10 + 90),
-        '3ème': Math.round(Math.random() * 10 + 90)
-      }));
-    } else {
-      // Mode production : données réelles avec classes dynamiques
-      const dataPoint = {
-        period: rawData[0]?.day || `Jour 1`,
-        overall: 0
-      };
-      
-      // Ajouter dynamiquement les classes réelles de l'école
-      availableClasses.forEach(classe => {
-        dataPoint[classe.name || classe.level] = 0; // Taux de présence à 0 par défaut
-      });
-      
-      return [dataPoint];
-    }
+
+    // Données réelles avec classes dynamiques
+    const dataPoint = {
+      period: rawData[0]?.day || `Jour 1`,
+      overall: 0
+    };
+
+    // Ajouter dynamiquement les classes réelles de l'école
+    availableClasses.forEach(classe => {
+      dataPoint[classe.name || classe.level] = 0; // Taux de présence à 0 par défaut
+    });
+
+    return [dataPoint];
   };
 
   const chartData = convertAttendanceData(data.attendance || []);
@@ -73,12 +61,12 @@ const AttendanceChart = () => {
 
   const getDisplayLines = () => {
     const colors = ['var(--color-success)', 'var(--color-warning)', 'var(--color-accent)', 'var(--color-secondary)', 'var(--color-info)'];
-    
+
     if (selectedClass === 'all') {
       const lines = [
         { key: 'overall', color: 'var(--color-primary)', name: 'Moyenne générale' }
       ];
-      
+
       // Ajouter dynamiquement les lignes pour chaque classe réelle
       availableClasses.forEach((classe, index) => {
         const classKey = classe.name || classe.level;
@@ -89,7 +77,7 @@ const AttendanceChart = () => {
           name: className
         });
       });
-      
+
       return lines;
     } else {
       return [
@@ -162,22 +150,22 @@ const AttendanceChart = () => {
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={getData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" />
-            <XAxis 
-              dataKey="period" 
+            <XAxis
+              dataKey="period"
               stroke="var(--color-text-secondary)"
               fontSize={12}
               fontFamily="Inter, sans-serif"
             />
-            <YAxis 
+            <YAxis
               stroke="var(--color-text-secondary)"
               fontSize={12}
               fontFamily="Inter, sans-serif"
               domain={[80, 100]}
             />
             <Tooltip content={<CustomTooltip />} />
-            <Legend 
-              wrapperStyle={{ 
-                fontSize: '12px', 
+            <Legend
+              wrapperStyle={{
+                fontSize: '12px',
                 fontFamily: 'Inter, sans-serif',
                 color: 'var(--color-text-secondary)'
               }}
@@ -198,30 +186,11 @@ const AttendanceChart = () => {
         </ResponsiveContainer>
       </div>
       <div className="flex items-center justify-between mt-4 pt-4 border-t border-border">
-        <div className="flex items-center space-x-6">
-          {isDemo ? (
-            <>
-              <div className="flex items-center space-x-2">
-                <Icon name="TrendingUp" size={14} className="text-success" />
-                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-                  Tendance positive cette semaine
-                </span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Icon name="AlertCircle" size={14} className="text-warning" />
-                <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-                  3 alertes d'absentéisme
-                </span>
-              </div>
-            </>
-          ) : (
-            <div className="flex items-center space-x-2">
-              <Icon name="Info" size={14} className="text-muted-foreground" />
-              <span className="font-caption font-caption-normal text-xs text-muted-foreground">
-                Aucune donnée d'assiduité disponible
-              </span>
-            </div>
-          )}
+        <div className="flex items-center space-x-2">
+          <Icon name="Info" size={14} className="text-muted-foreground" />
+          <span className="font-caption font-caption-normal text-xs text-muted-foreground">
+            Aucune donnée d'assiduité disponible
+          </span>
         </div>
         <p className="font-caption font-caption-normal text-xs text-muted-foreground">
           Dernière mise à jour: {new Date().toLocaleDateString('fr-FR')} {new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}

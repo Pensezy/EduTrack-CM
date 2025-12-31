@@ -16,12 +16,11 @@ const ReportGeneration = () => {
     format: 'pdf'
   });
 
-  // Hook pour récupérer les données selon le mode (démo/production)
-  const { 
-    data, 
-    isDemo, 
-    isProduction, 
-    user 
+  // Hook pour récupérer les données selon le mode (production)
+  const {
+    data,
+    isProduction,
+    user
   } = useDashboardData();
 
   const toggleSidebar = () => {
@@ -79,44 +78,15 @@ const ReportGeneration = () => {
     }
   ];
 
-  // Rapports récents basés sur le mode de données
-  const recentReports = isDemo ? [
-    {
-      id: 1,
-      title: 'Rapport Académique - Septembre 2024 (DÉMO)',
-      type: 'academic',
-      date: '2024-09-25',
-      status: 'ready',
-      size: '2.4 MB',
-      isDemo: true
-    },
-    {
-      id: 2,
-      title: 'Rapport Présence - Semaine 38 (DÉMO)',
-      type: 'attendance',
-      date: '2024-09-20',
-      status: 'ready',
-      size: '1.8 MB',
-      isDemo: true
-    },
-    {
-      id: 3,
-      title: 'Rapport Financier - Trimestre 1 (DÉMO)',
-      type: 'financial',
-      date: '2024-09-15',
-      status: 'generating',
-      size: '-',
-      isDemo: true
-    }
-  ] : [
+  // Rapports récents
+  const recentReports = [
     {
       id: 1,
       title: `Configuration ${user?.schoolData?.name || 'École'} - ${new Date().toLocaleDateString('fr-FR')}`,
       type: 'overall',
       date: new Date().toISOString().split('T')[0],
       status: 'ready',
-      size: '1.2 MB',
-      isDemo: false
+      size: '1.2 MB'
     },
     {
       id: 2,
@@ -124,8 +94,7 @@ const ReportGeneration = () => {
       type: 'academic',
       date: new Date().toISOString().split('T')[0],
       status: 'ready',
-      size: '0.8 MB',
-      isDemo: false
+      size: '0.8 MB'
     },
     {
       id: 3,
@@ -133,74 +102,55 @@ const ReportGeneration = () => {
       type: 'teacher',
       date: new Date().toISOString().split('T')[0],
       status: 'ready',
-      size: '0.5 MB',
-      isDemo: false
+      size: '0.5 MB'
     }
   ];
 
   const handleGenerateReport = (reportType) => {
-    if (isDemo) {
-      // Mode démo : simulation simple
-      setSelectedReport(reportType);
-      console.log('🔄 Génération rapport démo:', reportType.title);
-      
-      setTimeout(() => {
-        alert(`📄 Rapport démo "${reportType.title}" simulé avec succès !\n\nℹ️ En mode réel, un fichier ${reportFilters.format.toUpperCase()} serait téléchargé.`);
-        setSelectedReport(null);
-      }, 1500);
-      
-    } else {
-      // Mode production : génération réelle
-      setSelectedReport(reportType);
-      console.log('🏫 Génération rapport réel:', reportType.title, 'pour', user?.schoolData?.name);
-      console.log('📊 Filtres appliqués:', reportFilters);
-      
-      // Simulation d'une génération réelle avec les vraies données
-      setTimeout(() => {
-        // Créer les données du rapport basées sur l'école de l'utilisateur
-        const reportData = {
-          schoolName: user?.schoolData?.name || 'École',
-          schoolType: user?.schoolData?.type || 'Établissement',
-          classes: user?.schoolData?.available_classes || [],
-          reportType: reportType.title,
-          filters: reportFilters,
-          generatedAt: new Date().toLocaleString('fr-FR'),
-          format: reportFilters.format.toUpperCase()
-        };
-        
-        // Simuler la création d'un fichier
-        const blob = new Blob([
-          `RAPPORT: ${reportData.reportType}\n`,
-          `ÉCOLE: ${reportData.schoolName}\n`,
-          `TYPE: ${reportData.schoolType}\n`,
-          `CLASSES: ${reportData.classes.join(', ')}\n`,
-          `PÉRIODE: ${reportFilters.period}\n`,
-          `CLASSE SÉLECTIONNÉE: ${reportFilters.class}\n`,
-          `GÉNÉRÉ LE: ${reportData.generatedAt}\n`,
-          `\n--- DONNÉES DU RAPPORT ---\n`,
-          `Ce fichier contiendrait les vraies données de votre école.\n`,
-          `En version complète, il inclurait:\n`,
-          `- Statistiques détaillées par classe\n`,
-          `- Graphiques et analyses\n`,
-          `- Données de performance\n`,
-          `- Recommandations personnalisées\n`
-        ], { type: 'text/plain' });
-        
-        // Créer le lien de téléchargement
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = `${reportType.title.replace(/\s+/g, '_')}_${reportData.schoolName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-        
-        alert(`✅ Rapport "${reportType.title}" généré avec succès !\n\n📁 Fichier téléchargé: ${link.download}\n🏫 École: ${reportData.schoolName}\n📊 Format: ${reportData.format}`);
-        setSelectedReport(null);
-        
-      }, 2500); // Un peu plus long pour le mode réel
-    }
+    setSelectedReport(reportType);
+    console.log('Génération rapport:', reportType.title, 'pour', user?.schoolData?.name);
+    console.log('Filtres appliqués:', reportFilters);
+
+    setTimeout(() => {
+      const reportData = {
+        schoolName: user?.schoolData?.name || 'École',
+        schoolType: user?.schoolData?.type || 'Établissement',
+        classes: user?.schoolData?.available_classes || [],
+        reportType: reportType.title,
+        filters: reportFilters,
+        generatedAt: new Date().toLocaleString('fr-FR'),
+        format: reportFilters.format.toUpperCase()
+      };
+
+      const blob = new Blob([
+        `RAPPORT: ${reportData.reportType}\n`,
+        `ÉCOLE: ${reportData.schoolName}\n`,
+        `TYPE: ${reportData.schoolType}\n`,
+        `CLASSES: ${reportData.classes.join(', ')}\n`,
+        `PÉRIODE: ${reportFilters.period}\n`,
+        `CLASSE SÉLECTIONNÉE: ${reportFilters.class}\n`,
+        `GÉNÉRÉ LE: ${reportData.generatedAt}\n`,
+        `\n--- DONNÉES DU RAPPORT ---\n`,
+        `Ce fichier contiendrait les vraies données de votre école.\n`,
+        `En version complète, il inclurait:\n`,
+        `- Statistiques détaillées par classe\n`,
+        `- Graphiques et analyses\n`,
+        `- Données de performance\n`,
+        `- Recommandations personnalisées\n`
+      ], { type: 'text/plain' });
+
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `${reportType.title.replace(/\s+/g, '_')}_${reportData.schoolName.replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.txt`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      alert(`Rapport "${reportType.title}" généré avec succès !\n\nFichier téléchargé: ${link.download}\nÉcole: ${reportData.schoolName}\nFormat: ${reportData.format}`);
+      setSelectedReport(null);
+    }, 2500);
   };
 
   const handleFilterChange = (field, value) => {
@@ -268,20 +218,6 @@ const ReportGeneration = () => {
             isSidebarCollapsed ? 'lg:ml-20' : 'lg:ml-64'
           } p-6`}>
             
-            {/* Indicateur de mode */}
-            {isDemo && (
-              <div className="bg-orange-50 border border-orange-200 rounded-lg p-4 mb-6">
-                <div className="flex items-center space-x-3">
-                  <Icon name="AlertTriangle" size={20} className="text-orange-600" />
-                  <div>
-                    <h3 className="font-semibold text-orange-800">Mode Démonstration</h3>
-                    <p className="text-sm text-orange-700">
-                      Les rapports affichés sont fictifs. Connectez-vous avec un compte réel pour générer vos vrais rapports.
-                    </p>
-                  </div>
-                </div>
-              </div>
-            )}
 
             {/* Page Header */}
             <div className="mb-8">
@@ -302,7 +238,7 @@ const ReportGeneration = () => {
                 )}
               </div>
               <p className="text-muted-foreground">
-                Créer des rapports personnalisés pour {isProduction ? user?.schoolData?.name || 'votre école' : 'l\'école (mode démo)'}
+                Créer des rapports personnalisés pour {user?.schoolData?.name || 'votre école'}
               </p>
             </div>
 
@@ -338,25 +274,19 @@ const ReportGeneration = () => {
                           onClick={() => handleGenerateReport(report)}
                           className="w-full"
                           disabled={selectedReport?.id === report.id}
-                          variant={isDemo ? "outline" : "default"}
                         >
                           {selectedReport?.id === report.id ? (
                             <>
                               <Icon name="Loader2" size={16} className="mr-2 animate-spin" />
-                              {isDemo ? 'Simulation...' : 'Génération...'}
+                              Génération...
                             </>
                           ) : (
                             <>
-                              <Icon name={isDemo ? "TestTube" : "Download"} size={16} className="mr-2" />
-                              {isDemo ? 'Simuler' : 'Générer'}
+                              <Icon name="Download" size={16} className="mr-2" />
+                              Générer
                             </>
                           )}
                         </Button>
-                        {isDemo && (
-                          <div className="text-xs text-orange-600 mt-2 text-center">
-                            Mode démonstration - Simulation uniquement
-                          </div>
-                        )}
                       </div>
                     ))}
                   </div>
@@ -397,25 +327,12 @@ const ReportGeneration = () => {
                         onChange={(e) => handleFilterChange('class', e.target.value)}
                         className="w-full p-2 border border-input bg-background rounded-md"
                       >
-                        <option value="all">
-                          {isDemo ? 'Toutes les classes (démo)' : 'Toutes les classes'}
-                        </option>
-                        {isDemo ? (
-                          // Options démo
-                          <>
-                            <option value="6eme">6ème (démo)</option>
-                            <option value="5eme">5ème (démo)</option>
-                            <option value="4eme">4ème (démo)</option>
-                            <option value="3eme">3ème (démo)</option>
-                          </>
-                        ) : (
-                          // Vraies classes de l'utilisateur
-                          user?.schoolData?.available_classes?.map((className, index) => (
-                            <option key={index} value={className}>
-                              {className}
-                            </option>
-                          )) || <option value="none">Aucune classe configurée</option>
-                        )}
+                        <option value="all">Toutes les classes</option>
+                        {user?.schoolData?.available_classes?.map((className, index) => (
+                          <option key={index} value={className}>
+                            {className}
+                          </option>
+                        )) || <option value="none">Aucune classe configurée</option>}
                       </select>
                     </div>
 
@@ -451,22 +368,13 @@ const ReportGeneration = () => {
                     {recentReports.map((report) => (
                       <div
                         key={report.id}
-                        className={`p-3 border rounded-lg hover:bg-muted/50 transition-colors ${
-                          report.isDemo 
-                            ? 'border-orange-200 bg-orange-50/30' 
-                            : 'border-border'
-                        }`}
+                        className="p-3 border border-border rounded-lg hover:bg-muted/50 transition-colors"
                       >
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center space-x-2">
                             <h4 className="text-sm font-medium text-foreground">
                               {report.title}
                             </h4>
-                            {report.isDemo && (
-                              <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                                DÉMO
-                              </span>
-                            )}
                           </div>
                           <span className={`${getStatusColor(report.status)}`}>
                             <Icon name={getStatusIcon(report.status)} size={16} />
@@ -475,14 +383,12 @@ const ReportGeneration = () => {
                         <div className="flex items-center justify-between text-xs text-muted-foreground">
                           <span>{report.date}</span>
                           {report.status === 'ready' && (
-                            <Button 
-                              variant="ghost" 
+                            <Button
+                              variant="ghost"
                               size="sm"
-                              disabled={report.isDemo}
-                              className={report.isDemo ? 'opacity-50' : ''}
                             >
                               <Icon name="Download" size={12} className="mr-1" />
-                              {report.isDemo ? 'Fictif' : report.size}
+                              {report.size}
                             </Button>
                           )}
                         </div>

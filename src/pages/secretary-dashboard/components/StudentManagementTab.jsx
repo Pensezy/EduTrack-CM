@@ -7,7 +7,7 @@ import Select from '../../../components/ui/Select';
 import Image from '../../../components/AppImage';
 import ParentSearchSelector from './ParentSearchSelector';
 
-const StudentManagementTab = ({ isDemo = false }) => {
+const StudentManagementTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -127,29 +127,13 @@ const StudentManagementTab = ({ isDemo = false }) => {
 
   const [students, setStudents] = useState([]);
 
-  // Charger les données au montage
+  // Load data on mount
   useEffect(() => {
     loadSchoolData();
     loadStudents();
-  }, [isDemo]);
+  }, []);
 
   const loadSchoolData = async () => {
-    if (isDemo) {
-      // Mode démo : données statiques
-      setCurrentSchool({
-        id: 'school-1',
-        name: 'École Primaire Centrale',
-        type: 'Primaire'
-      });
-      setSchoolClasses([
-        { id: 'class-1', name: 'CE1', level: 'CE1' },
-        { id: 'class-2', name: 'CE2', level: 'CE2' },
-        { id: 'class-3', name: 'CM1', level: 'CM1' },
-        { id: 'class-4', name: 'CM2', level: 'CM2' }
-      ]);
-      return;
-    }
-
     try {
       const savedUser = localStorage.getItem('edutrack-user');
       const userData = savedUser ? JSON.parse(savedUser) : null;
@@ -235,13 +219,6 @@ const StudentManagementTab = ({ isDemo = false }) => {
   };
 
   const loadStudents = async () => {
-    if (isDemo) {
-      // Mode démo : utiliser les données statiques
-      setStudents(initialStudents);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       const savedUser = localStorage.getItem('edutrack-user');
@@ -764,18 +741,17 @@ const StudentManagementTab = ({ isDemo = false }) => {
 
   return (
     <div className="space-y-6">
-      {/* Mode indicator */}
-      {!isDemo && students.length === 0 && (
+      {/* No students indicator */}
+      {students.length === 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
             <div>
               <h4 className="font-body font-body-semibold text-blue-900 mb-1">
-                Mode Production - Aucun élève
+                Aucun élève enregistré
               </h4>
               <p className="text-sm text-blue-700">
-                Vous êtes en mode production mais aucun élève n'a encore été inscrit. 
-                Cliquez sur "Nouvel Élève" pour commencer les inscriptions.
+                Aucun élève n'a encore été inscrit. Cliquez sur "Nouvel Élève" pour commencer les inscriptions.
               </p>
             </div>
           </div>
@@ -786,7 +762,7 @@ const StudentManagementTab = ({ isDemo = false }) => {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-xl text-text-primary">
-            Gestion des Élèves {!isDemo && <span className="text-sm text-success">(Production)</span>}
+            Gestion des Élèves
           </h2>
           <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
             Gérez les inscriptions et profils des élèves
@@ -1337,7 +1313,6 @@ const StudentManagementTab = ({ isDemo = false }) => {
 
                         <div className="bg-white rounded-xl border-2 border-gray-200 p-6">
                           <ParentSearchSelector
-                            isDemo={isDemo}
                             onParentSelect={(parent) => {
                               setSelectedExistingParent(parent);
                               if (parent) {

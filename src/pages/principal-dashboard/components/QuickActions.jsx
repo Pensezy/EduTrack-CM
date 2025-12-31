@@ -7,13 +7,10 @@ import useDashboardData from '../../../hooks/useDashboardData';
 const QuickActions = () => {
   const [activeAction, setActiveAction] = useState(null);
   const navigate = useNavigate();
-  
-  // Hook pour récupérer les données selon le mode (démo/production)
-  const { 
-    data, 
-    isDemo, 
-    isProduction, 
-    user 
+
+  const {
+    data,
+    user
   } = useDashboardData();
 
   const quickActions = [
@@ -59,41 +56,7 @@ const QuickActions = () => {
     }
   ];
 
-  // Activités récentes basées sur le mode de données
-  const recentActivities = isDemo ? [
-    {
-      id: 1,
-      title: 'Données de démonstration',
-      description: 'Vous êtes en mode démonstration',
-      time: 'maintenant',
-      icon: 'TestTube',
-      type: 'info'
-    },
-    {
-      id: 2,
-      title: 'Rapport mensuel généré (démo)',
-      description: 'Rapport de performance de septembre (données fictives)',
-      time: '2 heures',
-      icon: 'FileText',
-      type: 'success'
-    },
-    {
-      id: 3,
-      title: 'Notification envoyée (démo)',
-      description: 'Rappel réunion parents d\'élèves (fictif)',
-      time: '4 heures',
-      icon: 'Bell',
-      type: 'info'
-    },
-    {
-      id: 4,
-      title: 'Personnel ajouté (démo)',
-      description: 'Mme Dubois - Professeur de français (fictif)',
-      time: '1 jour',
-      icon: 'UserPlus',
-      type: 'success'
-    }
-  ] : [
+  const recentActivities = [
     {
       id: 1,
       title: 'École configurée',
@@ -120,8 +83,8 @@ const QuickActions = () => {
     },
     {
       id: 4,
-      title: 'Mode production activé',
-      description: 'Données réelles synchronisées',
+      title: 'Système actif',
+      description: 'Données synchronisées',
       time: 'maintenant',
       icon: 'Shield',
       type: 'info'
@@ -156,23 +119,6 @@ const QuickActions = () => {
 
   return (
     <div className="space-y-6">
-      {/* Indicateur de mode - Modernisé */}
-      {isDemo && (
-        <div className="bg-gradient-to-r from-amber-50 via-orange-50 to-red-50 border-2 border-amber-300 rounded-2xl p-5 shadow-md animate-fadeIn">
-          <div className="flex items-center space-x-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center shadow-md">
-              <Icon name="AlertTriangle" size={24} className="text-white" />
-            </div>
-            <div>
-              <h3 className="font-semibold text-amber-900 mb-1">Mode Démonstration</h3>
-              <p className="text-sm text-amber-700">
-                Les activités affichées sont fictives. Connectez-vous avec un compte réel pour voir vos vraies données.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Quick Actions Grid - Modernisé */}
       <div className="bg-white border-2 border-gray-200 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-shadow">
         <div className="flex items-center justify-between mb-6">
@@ -185,16 +131,10 @@ const QuickActions = () => {
                 Actions Rapides
               </h2>
               <p className="text-xs text-gray-500">
-                Accès direct aux fonctions principales {isProduction && `pour ${user?.schoolData?.name}`}
+                Accès direct aux fonctions principales pour {user?.schoolData?.name || 'votre école'}
               </p>
             </div>
           </div>
-          {isProduction && (
-            <div className="flex items-center space-x-2 bg-gradient-to-r from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg px-3 py-2 shadow-sm">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-sm font-semibold text-green-700">Données réelles</span>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">

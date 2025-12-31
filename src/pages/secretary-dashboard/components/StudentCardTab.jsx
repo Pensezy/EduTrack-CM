@@ -8,7 +8,7 @@ import Image from '../../../components/AppImage';
 import CardGenerationModal from './CardGenerationModal';
 import cardService from '../../../services/cardService';
 
-const StudentCardTab = ({ isDemo = false }) => {
+const StudentCardTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterClass, setFilterClass] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
@@ -21,7 +21,7 @@ const StudentCardTab = ({ isDemo = false }) => {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
 
-  // Chargement des données depuis le service
+  // Load cards on component mount
   useEffect(() => {
     loadCards();
   }, []);
@@ -238,18 +238,17 @@ const StudentCardTab = ({ isDemo = false }) => {
 
   return (
     <div className="space-y-6">
-      {/* Production mode info - No cards */}
-      {!isDemo && studentCards.length === 0 && (
+      {/* Production mode - No cards info */}
+      {studentCards.length === 0 && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
           <div className="flex items-start space-x-3">
             <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
             <div>
               <h4 className="font-body font-body-semibold text-blue-900 mb-1">
-                Mode Production - Aucune carte scolaire
+                Aucune carte scolaire
               </h4>
               <p className="text-sm text-blue-700">
-                Vous êtes en mode production mais aucune carte n'a encore été générée. 
-                Utilisez le bouton "Générer Carte" pour créer des cartes scolaires pour vos élèves.
+                Aucune carte n'a encore été générée. Utilisez le bouton "Nouvelle Carte" pour créer des cartes scolaires pour vos élèves.
               </p>
             </div>
           </div>
@@ -300,11 +299,6 @@ const StudentCardTab = ({ isDemo = false }) => {
         <div>
           <h2 className="font-heading font-heading-bold text-xl text-text-primary">
             Cartes Scolaires
-            {!isDemo && (
-              <span className="ml-2 text-sm font-body font-body-semibold text-success">
-                (Production)
-              </span>
-            )}
           </h2>
           <p className="font-body font-body-normal text-sm text-text-secondary mt-1">
             Gérez la génération et validation des cartes d'identité étudiante

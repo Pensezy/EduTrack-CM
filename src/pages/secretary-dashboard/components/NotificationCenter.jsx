@@ -5,7 +5,6 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 import { communicationService } from '../../../services/communicationService';
-import { useDataMode } from '../../../hooks/useDataMode';
 
 const NotificationCenter = () => {
   const [selectedTab, setSelectedTab] = useState('send');
@@ -21,7 +20,6 @@ const NotificationCenter = () => {
   const [sentMessages, setSentMessages] = useState([]);
   const [templates, setTemplates] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { dataMode } = useDataMode();
 
   // Load data on component mount
   useEffect(() => {

@@ -7,7 +7,6 @@ const MultiSchoolChildrenOverview = ({
   children = [], 
   schools = [], 
   isLoading = false,
-  isDemo = false 
 }) => {
   const [selectedChild, setSelectedChild] = useState(null);
 

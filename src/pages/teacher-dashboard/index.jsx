@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
-import { useDataMode } from '../../hooks/useDataMode';
 import { supabase } from '../../lib/supabase';
+import { useAuth } from '../../contexts/AuthContext';
 import { RESPONSIVE_CLASSES } from '../../utils/responsive';
 import ResponsiveGrid, { MetricCard } from '../../components/ui/ResponsiveGrid';
 
@@ -30,10 +30,10 @@ const TeacherDashboard = () => {
   const [showReportCard, setShowReportCard] = useState(null); // student object or null
   const [currentTime, setCurrentTime] = useState(new Date());
   const [viewMode, setViewMode] = useState('single'); // 'single' ou 'multi-school'
-  
-  // Mode démo/production
-  const { isDemo, isProduction, dataMode, user } = useDataMode();
-  
+
+  // Récupérer l'utilisateur connecté
+  const { user } = useAuth();
+
   // États pour les données réelles
   const [teacherData, setTeacherData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -42,203 +42,12 @@ const TeacherDashboard = () => {
   const [upcomingSchedule, setUpcomingSchedule] = useState([]);
   
   console.log('🏫 TeacherDashboard RENDER:', {
-    isDemo,
-    isProduction,
-    dataMode,
     hasUser: !!user,
     userId: user?.id,
     userEmail: user?.email,
     teacherDataName: teacherData?.name,
     classesInTeacherData: teacherData?.assignedClasses?.map(c => c.name)
   });
-
-  // Mock teacher data (utilisé uniquement en mode démo)
-  const mockTeacherData = {
-    id: "teacher-001",
-    name: "Mme Tchoukoua Rose",
-    email: "rose.tchoukoua@demo.cm",
-    specialty: "Mathématiques",
-    employeeId: "ENS-2024-001",
-    assignedClasses: [
-      {
-        id: "class-001",
-        name: "3ème A",
-        level: "3ème",
-        school: "Lycée Bilingue Biyem-Assi",
-        subject: "Mathématiques",
-        students: 28,
-        schedule: [
-          { day: "Lundi", time: "08:00-09:30", room: "Salle 12" },
-          { day: "Mercredi", time: "10:00-11:30", room: "Salle 12" },
-          { day: "Vendredi", time: "14:00-15:30", room: "Salle 15" }
-        ]
-      },
-      {
-        id: "class-002", 
-        name: "Terminale D",
-        level: "Terminale",
-        school: "Lycée Bilingue Biyem-Assi",
-        subject: "Mathématiques",
-        students: 32,
-        schedule: [
-          { day: "Mardi", time: "08:00-09:30", room: "Salle 18" },
-          { day: "Jeudi", time: "10:00-11:30", room: "Salle 18" },
-          { day: "Samedi", time: "08:00-09:30", room: "Salle 20" }
-        ]
-      },
-      {
-        id: "class-003",
-        name: "2nde C", 
-        level: "2nde",
-        school: "Lycée Bilingue Biyem-Assi",
-        subject: "Mathématiques",
-        students: 25,
-        schedule: [
-          { day: "Lundi", time: "10:00-11:30", room: "Salle 10" },
-          { day: "Mercredi", time: "14:00-15:30", room: "Salle 10" },
-          { day: "Vendredi", time: "08:00-09:30", room: "Salle 12" }
-        ]
-      }
-    ]
-  };
-
-  // Mock students data by class
-  const mockStudentsData = {
-    "class-001": [
-      { 
-        id: "student-001", 
-        name: "Ngatcha Etienne", 
-        matricule: "CM-E-2025-0001", 
-        photo: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&h=150&fit=crop&crop=face",
-        recentGrades: [
-          { subject: "Mathématiques", grade: 16, date: "2024-11-10", type: "Contrôle" },
-          { subject: "Mathématiques", grade: 14, date: "2024-11-05", type: "DM" }
-        ],
-        attendance: { present: 22, absent: 2, late: 1 }
-      },
-      { 
-        id: "student-002", 
-        name: "Mballa Sarah", 
-        matricule: "CM-E-2025-0002", 
-        photo: "https://images.unsplash.com/photo-1494790108755-2616b612b786?w=150&h=150&fit=crop&crop=face",
-        recentGrades: [
-          { subject: "Mathématiques", grade: 18, date: "2024-11-10", type: "Contrôle" },
-          { subject: "Mathématiques", grade: 17, date: "2024-11-05", type: "DM" }
-        ],
-        attendance: { present: 24, absent: 1, late: 0 }
-      }
-    ],
-    "class-002": [
-      { 
-        id: "student-003", 
-        name: "Fotso Paul", 
-        matricule: "CM-E-2025-0003", 
-        photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face",
-        recentGrades: [
-          { subject: "Mathématiques", grade: 15, date: "2024-11-12", type: "Contrôle" },
-          { subject: "Mathématiques", grade: 16, date: "2024-11-08", type: "DM" }
-        ],
-        attendance: { present: 23, absent: 1, late: 1 }
-      }
-    ],
-    "class-003": [
-      { 
-        id: "student-004", 
-        name: "Onana Marie", 
-        matricule: "CM-E-2025-0004", 
-        photo: "https://images.unsplash.com/photo-1544725176-7c40e5a71c5e?w=150&h=150&fit=crop&crop=face",
-        recentGrades: [
-          { subject: "Mathématiques", grade: 17, date: "2024-11-11", type: "Contrôle" },
-          { subject: "Mathématiques", grade: 15, date: "2024-11-07", type: "DM" }
-        ],
-        attendance: { present: 25, absent: 0, late: 0 }
-      }
-    ]
-  };
-
-  // Mock documents data by class
-  const mockDocumentsData = {
-    "class-001": [
-      {
-        id: "doc-001",
-        title: "Chapitre 5 - Fonctions Dérivées",
-        subject: "Mathématiques",
-        type: "Course",
-        uploadDate: "2024-11-08",
-        fileSize: "2.3 MB",
-        downloads: 24,
-        visibility: "students_parents"
-      },
-      {
-        id: "doc-002", 
-        title: "Contrôle N°2 - Corrigé",
-        subject: "Mathématiques",
-        type: "Correction",
-        uploadDate: "2024-11-12",
-        fileSize: "1.8 MB",
-        downloads: 18,
-        visibility: "students"
-      }
-    ],
-    "class-002": [
-      {
-        id: "doc-003",
-        title: "Préparation BAC - Intégrales",
-        subject: "Mathématiques", 
-        type: "Exercise",
-        uploadDate: "2024-11-10",
-        fileSize: "3.1 MB",
-        downloads: 28,
-        visibility: "students"
-      }
-    ],
-    "class-003": [
-      {
-        id: "doc-004",
-        title: "Trigonométrie - Exercices",
-        subject: "Mathématiques",
-        type: "Exercise", 
-        uploadDate: "2024-11-09",
-        fileSize: "1.5 MB",
-        downloads: 22,
-        visibility: "students_parents"
-      }
-    ]
-  };
-
-  // Mock upcoming schedule (utilisé uniquement en mode démo)
-  const mockUpcomingSchedule = [
-    {
-      id: "schedule-001",
-      className: "3ème A",
-      subject: "Mathématiques",
-      date: "2024-11-19",
-      time: "08:00-09:30",
-      room: "Salle 12",
-      topic: "Fonctions Linéaires",
-      type: "course"
-    },
-    {
-      id: "schedule-002",
-      className: "Terminale D", 
-      subject: "Mathématiques",
-      date: "2024-11-19",
-      time: "10:00-11:30",
-      room: "Salle 18", 
-      topic: "Contrôle Intégrales",
-      type: "evaluation"
-    },
-    {
-      id: "schedule-003",
-      className: "2nde C",
-      subject: "Mathématiques",
-      date: "2024-11-19", 
-      time: "14:00-15:30",
-      room: "Salle 10",
-      topic: "Géométrie dans l\'espace",
-      type: "course"
-    }
-  ];
 
   // Helper function pour obtenir la date du prochain jour de la semaine
   const getCurrentDateForDay = (dayName) => {
@@ -259,24 +68,11 @@ const TeacherDashboard = () => {
     return targetDate.toISOString().split('T')[0]; // Format YYYY-MM-DD
   };
 
-  // Charger les données réelles depuis Supabase en mode production
+  // Charger les données réelles depuis Supabase
   useEffect(() => {
     const loadTeacherData = async () => {
       console.log('🔍 TeacherDashboard - Chargement des données...');
-      console.log('  - isDemo:', isDemo);
-      console.log('  - dataMode:', dataMode);
       console.log('  - user:', user);
-      
-      if (isDemo) {
-        // En mode démo, utiliser les données mock
-        console.log('🎭 Mode DÉMO - Utilisation des données fictives');
-        setTeacherData(mockTeacherData);
-        setStudentsData(mockStudentsData);
-        setDocumentsData(mockDocumentsData);
-        setUpcomingSchedule(mockUpcomingSchedule);
-        setLoading(false);
-        return;
-      }
 
       if (!user || !user.id) {
         console.log('⚠️ Pas d\'utilisateur connecté');
@@ -285,7 +81,7 @@ const TeacherDashboard = () => {
       }
 
       try {
-        console.log('✅ Mode PRODUCTION - Chargement des données réelles...');
+        console.log('✅ Chargement des données réelles...');
         console.log('  - User ID:', user.id);
         console.log('  - School ID:', user.current_school_id);
         
@@ -686,19 +482,13 @@ const TeacherDashboard = () => {
 
       } catch (error) {
         console.error('❌ Erreur chargement données enseignant:', error);
-        // En cas d'erreur, fallback sur les données mock
-        console.log('⚠️ Utilisation des données de démonstration (fallback)');
-        setTeacherData(mockTeacherData);
-        setStudentsData(mockStudentsData);
-        setDocumentsData(mockDocumentsData);
-        setUpcomingSchedule(mockUpcomingSchedule);
       } finally {
         setLoading(false);
       }
     };
 
     loadTeacherData();
-  }, [isDemo, user]);
+  }, [user]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -1340,19 +1130,6 @@ const TeacherDashboard = () => {
             <div className="bg-blue-50 rounded-lg p-4 text-center">
               <div className="animate-spin rounded-full h-8 w-8 border-2 border-blue-200 border-t-blue-600 mx-auto mb-2"></div>
               <p className="text-blue-900 text-sm font-semibold">Chargement...</p>
-            </div>
-          )}
-
-          {/* Indicateur de mode */}
-          {!loading && (
-            <div className={`rounded-md p-2 text-xs ${
-              isProduction
-                ? 'bg-green-100 text-green-800'
-                : 'bg-orange-100 text-orange-800'
-            }`}>
-              <span className="font-semibold">
-                {isProduction ? '✅ PRODUCTION' : '🎭 DÉMO'}
-              </span>
             </div>
           )}
 

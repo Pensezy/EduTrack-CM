@@ -26,8 +26,7 @@ const SecretaryDashboard = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   
   // Récupérer les informations de l'utilisateur connecté
-  const { user, authMode } = useAuth();
-  const [isDemo, setIsDemo] = useState(false);
+  const { user } = useAuth();
   const [secretaryName, setSecretaryName] = useState('');
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -111,9 +110,7 @@ const SecretaryDashboard = () => {
             
           console.log('📋 Tous les utilisateurs:', allUsers);
           if (usersError) console.error('❌ Erreur liste utilisateurs:', usersError);
-          
-          setIsDemo(false);
-          
+
           // 4. Charger le nom complet depuis la table secretaries
           if (userData.id) {
             console.log('🔍 Recherche secrétaire avec user_id:', userData.id);
@@ -152,16 +149,8 @@ const SecretaryDashboard = () => {
       if (savedUser) {
         try {
           const userData = JSON.parse(savedUser);
-          const isDemoAccount = userData.demoAccount === true || authMode === 'demo';
-          setIsDemo(isDemoAccount);
-          
-          if (isDemoAccount) {
-            console.log('🎭 Mode DÉMO (localStorage)');
-            setSecretaryName('Secrétaire Démo');
-          } else {
-            console.log('✅ Mode PRODUCTION (localStorage):', userData.school_name || 'École', '- Rôle:', userData.role);
-            setSecretaryName(userData.full_name || userData.email || 'Secrétaire');
-          }
+          console.log('✅ Mode PRODUCTION (localStorage):', userData.school_name || 'École', '- Rôle:', userData.role);
+          setSecretaryName(userData.full_name || userData.email || 'Secrétaire');
         } catch (e) {
           console.error('Erreur lecture session:', e);
           setSecretaryName('Secrétaire');
@@ -170,23 +159,11 @@ const SecretaryDashboard = () => {
     };
 
     loadUserData();
-  }, [authMode, user]);
+  }, [user]);
 
   // Charger les statistiques réelles depuis Supabase
   useEffect(() => {
     const loadStats = async () => {
-      if (isDemo) {
-        // Données démo
-        setStats({
-          totalStudents: 127,
-          pendingJustifications: 5,
-          latePayments: 12,
-          urgentCalls: 3
-        });
-        setLoadingStats(false);
-        return;
-      }
-
       try {
         setLoadingStats(true);
         const savedUser = localStorage.getItem('edutrack-user');
@@ -225,7 +202,7 @@ const SecretaryDashboard = () => {
     };
 
     loadStats();
-  }, [isDemo]);
+  }, []);
 
   // Gérer la navigation via les paramètres URL
   useEffect(() => {
@@ -585,7 +562,7 @@ const SecretaryDashboard = () => {
 
             {/* Tab Content */}
             <div className="p-6 animate-fadeIn">
-              {ActiveComponent && <ActiveComponent isDemo={isDemo} />}
+              {ActiveComponent && <ActiveComponent />}
             </div>
           </div>
 

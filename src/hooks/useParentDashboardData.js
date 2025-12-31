@@ -1,14 +1,14 @@
 import { useState, useEffect } from 'react';
-import { useDataMode } from './useDataMode';
-import parentDemoDataService from '../services/parentDemoDataService';
+import { supabase } from '../lib/supabase';
 import parentProductionDataService from '../services/parentProductionDataService';
 
 /**
- * Hook unifié pour récupérer les données parent selon le mode (démo/production)
+ * Hook unifié pour récupérer les données parent depuis Supabase uniquement
  */
 export const useParentDashboardData = () => {
-  const { dataMode, isLoading: modeLoading, user } = useDataMode();
-  
+  const [user, setUser] = useState(null);
+  const [userLoading, setUserLoading] = useState(true);
+
   const [parentProfile, setParentProfile] = useState(null);
   const [children, setChildren] = useState([]);
   const [selectedChild, setSelectedChild] = useState(null);
@@ -19,7 +19,7 @@ export const useParentDashboardData = () => {
   const [notificationsData, setNotificationsData] = useState({});
   const [upcomingEvents, setUpcomingEvents] = useState([]);
   const [schools, setSchools] = useState([]);
-  
+
   const [loading, setLoading] = useState({
     profile: false,
     children: false,
@@ -30,34 +30,39 @@ export const useParentDashboardData = () => {
     events: false,
     schools: false
   });
-  
+
   const [errors, setErrors] = useState({});
 
-  // Choisir le bon service selon le mode
-  const getService = () => {
-    return dataMode === 'production' ? parentProductionDataService : parentDemoDataService;
-  };
+  // Récupérer l'utilisateur connecté au montage
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user: authUser }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setUser(authUser);
+      } catch (error) {
+        console.error('Erreur récupération utilisateur:', error);
+      } finally {
+        setUserLoading(false);
+      }
+    };
+    getUser();
+  }, []);
 
   // Fonction pour charger le profil parent
   const loadParentProfile = async () => {
-    if (modeLoading) return;
+    if (userLoading) return;
 
     setLoading(prev => ({ ...prev, profile: true }));
     setErrors(prev => ({ ...prev, profile: null }));
 
     try {
-      const service = getService();
-      
-      // En mode production, initialiser le contexte
-      if (dataMode === 'production' && service.setUserContext) {
-        const parentId = user?.id || user?.dbUser?.id;
-        if (parentId) {
-          service.setUserContext(parentId);
-        }
+      // Initialiser le contexte
+      if (parentProductionDataService.setUserContext && user?.id) {
+        parentProductionDataService.setUserContext(user.id);
       }
 
-      const parentId = dataMode === 'production' ? user?.id : null;
-      const result = await service.getParentProfile(parentId);
+      const result = await parentProductionDataService.getParentProfile(user?.id);
 
       if (result.error) {
         throw result.error;
@@ -74,10 +79,10 @@ export const useParentDashboardData = () => {
 
   // Fonction pour charger les enfants
   const loadChildren = async () => {
-    console.log('🎯 loadChildren appelé - modeLoading:', modeLoading, 'dataMode:', dataMode, 'user:', user?.id);
-    
-    if (modeLoading) {
-      console.log('⏸️ loadChildren bloqué - mode en cours de chargement');
+    console.log('🎯 loadChildren appelé - user:', user?.id);
+
+    if (userLoading) {
+      console.log('⏸️ loadChildren bloqué - utilisateur en cours de chargement');
       return;
     }
 
@@ -85,132 +90,152 @@ export const useParentDashboardData = () => {
     setErrors(prev => ({ ...prev, children: null }));
 
     try {
-      const service = getService();
-      console.log('🔧 Service sélectionné:', dataMode === 'production' ? 'PRODUCTION' : 'DEMO');
-      
-      // En mode production, initialiser le contexte
-      if (dataMode === 'production' && service.setUserContext) {
-        const parentId = user?.id || user?.dbUser?.id;
-        console.log('🔑 Initialisation contexte avec parentId:', parentId);
-        if (parentId) {
-          service.setUserContext(parentId);
-        } else {
-          console.error('❌ Pas de parentId disponible !');
-        }
+      console.log('🔧 Service: PRODUCTION (Supabase)');
+
+      // Initialiser le contexte
+      if (parentProductionDataService.setUserContext && user?.id) {
+        console.log('🔑 Initialisation contexte avec parentId:', user.id);
+        parentProductionDataService.setUserContext(user.id);
+      } else {
+        console.error('❌ Pas de parentId disponible !');
       }
 
-      const parentId = dataMode === 'production' ? user?.id : null;
+      const parentId = user?.id;
       console.log('📞 Appel getChildren avec parentId:', parentId);
-      const result = await service.getChildren(parentId);
-
+      const result = await parentProductionDataService.getChildren(parentId);
       console.log('📦 Résultat getChildren:', result);
 
       if (result.error) {
         throw result.error;
       }
 
-      const childrenList = result.data || [];
-      console.log('👨‍👩‍👧‍👦 Children list à définir:', childrenList);
-      setChildren(childrenList);
+      const childrenData = result.data || [];
+      console.log('👶 Enfants chargés:', childrenData.length);
+      setChildren(childrenData);
 
-      // Sélectionner le premier enfant par défaut
-      if (childrenList.length > 0 && !selectedChild) {
-        setSelectedChild(childrenList[0]);
-        setSelectedSchool(childrenList[0]?.school?.id || childrenList[0]?.schoolId);
+      // Sélectionner automatiquement le premier enfant si disponible
+      if (childrenData.length > 0 && !selectedChild) {
+        console.log('✅ Sélection automatique du premier enfant');
+        setSelectedChild(childrenData[0]);
+
+        // Charger aussi l'école associée
+        if (childrenData[0].school_id) {
+          setSelectedSchool({ id: childrenData[0].school_id });
+        }
       }
     } catch (error) {
-      console.error('Erreur chargement enfants:', error);
+      console.error('❌ Erreur chargement enfants:', error);
       setErrors(prev => ({ ...prev, children: error }));
     } finally {
       setLoading(prev => ({ ...prev, children: false }));
     }
   };
 
-  // Fonction pour charger les données d'un enfant spécifique
-  const loadChildData = async (childId, forceReload = false) => {
-    if (!childId || modeLoading) return;
+  // Fonction pour charger les notes d'un enfant
+  const loadChildGrades = async (childId, schoolId = null) => {
+    if (userLoading || !childId) return;
 
-    // ✨ Optimisation : vérifier si les données existent déjà en cache
-    const hasCache = !forceReload && (
-      gradesData[childId] && 
-      attendanceData[childId] && 
-      paymentData[childId] && 
-      notificationsData[childId]
-    );
-
-    if (hasCache) {
-      console.log('⚡ Données en cache pour enfant:', childId);
-      return; // Pas besoin de recharger
-    }
-
-    console.log('🔄 Chargement données enfant:', childId);
-    const service = getService();
-
-    // ✨ Optimisation : charger TOUTES les données en PARALLÈLE
-    setLoading(prev => ({ 
-      ...prev, 
-      grades: true, 
-      attendance: true, 
-      payments: true, 
-      notifications: true 
-    }));
+    const key = `${childId}_${schoolId || 'all'}`;
+    setLoading(prev => ({ ...prev, grades: true }));
+    setErrors(prev => ({ ...prev, grades: null }));
 
     try {
-      const [gradesResult, attendanceResult, paymentsResult, notificationsResult] = await Promise.all([
-        service.getChildGrades(childId),
-        service.getChildAttendance(childId),
-        service.getChildPayments(childId),
-        service.getChildNotifications(childId)
-      ]);
+      const result = await parentProductionDataService.getChildGrades(childId, schoolId);
 
-      // Mettre à jour les données seulement si pas d'erreur
-      if (!gradesResult.error) {
-        setGradesData(prev => ({ ...prev, [childId]: gradesResult.data }));
-      }
-      if (!attendanceResult.error) {
-        setAttendanceData(prev => ({ ...prev, [childId]: attendanceResult.data }));
-      }
-      if (!paymentsResult.error) {
-        setPaymentData(prev => ({ ...prev, [childId]: paymentsResult.data }));
-      }
-      if (!notificationsResult.error) {
-        setNotificationsData(prev => ({ ...prev, [childId]: notificationsResult.data }));
+      if (result.error) {
+        throw result.error;
       }
 
-      console.log('✅ Données enfant chargées avec succès');
+      setGradesData(prev => ({ ...prev, [key]: result.data }));
     } catch (error) {
-      console.error('❌ Erreur chargement données enfant:', error);
+      console.error('Erreur chargement notes:', error);
+      setErrors(prev => ({ ...prev, grades: error }));
     } finally {
-      setLoading(prev => ({ 
-        ...prev, 
-        grades: false, 
-        attendance: false, 
-        payments: false, 
-        notifications: false 
-      }));
+      setLoading(prev => ({ ...prev, grades: false }));
     }
   };
 
-  // Fonction pour charger les événements
-  const loadEvents = async () => {
-    if (modeLoading) return;
+  // Fonction pour charger l'assiduité d'un enfant
+  const loadChildAttendance = async (childId, schoolId = null) => {
+    if (userLoading || !childId) return;
+
+    const key = `${childId}_${schoolId || 'all'}`;
+    setLoading(prev => ({ ...prev, attendance: true }));
+    setErrors(prev => ({ ...prev, attendance: null }));
+
+    try {
+      const result = await parentProductionDataService.getChildAttendance(childId, schoolId);
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      setAttendanceData(prev => ({ ...prev, [key]: result.data }));
+    } catch (error) {
+      console.error('Erreur chargement assiduité:', error);
+      setErrors(prev => ({ ...prev, attendance: error }));
+    } finally {
+      setLoading(prev => ({ ...prev, attendance: false }));
+    }
+  };
+
+  // Fonction pour charger les paiements
+  const loadChildPayments = async (childId, schoolId = null) => {
+    if (userLoading || !childId) return;
+
+    const key = `${childId}_${schoolId || 'all'}`;
+    setLoading(prev => ({ ...prev, payments: true }));
+    setErrors(prev => ({ ...prev, payments: null }));
+
+    try {
+      const result = await parentProductionDataService.getChildPayments(childId, schoolId);
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      setPaymentData(prev => ({ ...prev, [key]: result.data }));
+    } catch (error) {
+      console.error('Erreur chargement paiements:', error);
+      setErrors(prev => ({ ...prev, payments: error }));
+    } finally {
+      setLoading(prev => ({ ...prev, payments: false }));
+    }
+  };
+
+  // Fonction pour charger les notifications
+  const loadChildNotifications = async (childId, schoolId = null) => {
+    if (userLoading || !childId) return;
+
+    const key = `${childId}_${schoolId || 'all'}`;
+    setLoading(prev => ({ ...prev, notifications: true }));
+    setErrors(prev => ({ ...prev, notifications: null }));
+
+    try {
+      const result = await parentProductionDataService.getChildNotifications(childId, schoolId);
+
+      if (result.error) {
+        throw result.error;
+      }
+
+      setNotificationsData(prev => ({ ...prev, [key]: result.data }));
+    } catch (error) {
+      console.error('Erreur chargement notifications:', error);
+      setErrors(prev => ({ ...prev, notifications: error }));
+    } finally {
+      setLoading(prev => ({ ...prev, notifications: false }));
+    }
+  };
+
+  // Fonction pour charger les événements à venir
+  const loadUpcomingEvents = async () => {
+    if (userLoading) return;
 
     setLoading(prev => ({ ...prev, events: true }));
     setErrors(prev => ({ ...prev, events: null }));
 
     try {
-      const service = getService();
-      
-      // En mode production, initialiser le contexte
-      if (dataMode === 'production' && service.setUserContext) {
-        const parentId = user?.id || user?.dbUser?.id;
-        if (parentId) {
-          service.setUserContext(parentId);
-        }
-      }
-
-      const parentId = dataMode === 'production' ? user?.id : null;
-      const result = await service.getUpcomingEvents(parentId);
+      const result = await parentProductionDataService.getUpcomingEvents();
 
       if (result.error) {
         throw result.error;
@@ -227,24 +252,14 @@ export const useParentDashboardData = () => {
 
   // Fonction pour charger les écoles
   const loadSchools = async () => {
-    if (modeLoading) return;
+    if (userLoading) return;
 
     setLoading(prev => ({ ...prev, schools: true }));
     setErrors(prev => ({ ...prev, schools: null }));
 
     try {
-      const service = getService();
-      
-      // En mode production, initialiser le contexte
-      if (dataMode === 'production' && service.setUserContext) {
-        const parentId = user?.id || user?.dbUser?.id;
-        if (parentId) {
-          service.setUserContext(parentId);
-        }
-      }
-
-      const parentId = dataMode === 'production' ? user?.id : null;
-      const result = await service.getSchools(parentId);
+      const parentId = user?.id;
+      const result = await parentProductionDataService.getSchools(parentId);
 
       if (result.error) {
         throw result.error;
@@ -259,72 +274,20 @@ export const useParentDashboardData = () => {
     }
   };
 
-  // Charger les données initiales
-  useEffect(() => {
-    if (!modeLoading) {
-      console.log('🔄 Chargement données parent en mode:', dataMode);
-      loadParentProfile();
-      loadChildren();
-      loadEvents();
-      loadSchools();
-    }
-  }, [dataMode, modeLoading]);
-
-  // ✨ OPTIMISATION : Précharger les données de tous les enfants au démarrage
-  useEffect(() => {
-    if (children.length > 0 && !modeLoading) {
-      console.log('🚀 Préchargement des données de tous les enfants...');
-      children.forEach(child => {
-        // Charger en parallèle pour tous les enfants (sans attendre)
-        loadChildData(child.id);
-      });
-    }
-  }, [children.length, dataMode]);
-
-  // Charger les données de l'enfant sélectionné (si pas déjà en cache)
-  useEffect(() => {
-    if (selectedChild?.id) {
-      console.log('👶 Vérification données pour enfant:', selectedChild.full_name || selectedChild.name);
-      loadChildData(selectedChild.id); // Le cache évitera le rechargement
-    }
-  }, [selectedChild?.id]);
-
-  // Fonction pour changer d'enfant - ✨ OPTIMISÉE
-  const handleChildSelect = (child) => {
-    console.log('⚡ Changement enfant rapide:', child?.full_name || child?.name);
-    
-    // Changement IMMÉDIAT de l'enfant sélectionné (pas d'attente)
-    setSelectedChild(child);
-    setSelectedSchool(child?.school?.id || child?.schoolId);
-    
-    // Les données seront chargées par useEffect de manière optimisée (cache)
-  };
-
-  // Fonction pour changer d'école
-  const handleSchoolChange = (schoolId) => {
-    setSelectedSchool(schoolId);
-    // Sélectionner le premier enfant de cette école
-    const childrenFromSchool = children.filter(
-      child => (child?.school?.id || child?.schoolId) === schoolId
-    );
-    if (childrenFromSchool.length > 0 && selectedChild?.school?.id !== schoolId && selectedChild?.schoolId !== schoolId) {
-      setSelectedChild(childrenFromSchool[0]);
-    }
-  };
-
   // Fonction pour marquer une notification comme lue
   const markNotificationAsRead = async (notificationId) => {
     try {
-      const service = getService();
-      await service.markNotificationAsRead(notificationId);
-      
-      // Mettre à jour localement
+      await parentProductionDataService.markNotificationAsRead(notificationId);
+
+      // Mettre à jour l'état local
       setNotificationsData(prev => {
         const updated = { ...prev };
-        Object.keys(updated).forEach(childId => {
-          updated[childId] = updated[childId].map(notif => 
-            notif.id === notificationId ? { ...notif, read: true } : notif
-          );
+        Object.keys(updated).forEach(key => {
+          if (Array.isArray(updated[key])) {
+            updated[key] = updated[key].map(notif =>
+              notif.id === notificationId ? { ...notif, read: true } : notif
+            );
+          }
         });
         return updated;
       });
@@ -333,30 +296,29 @@ export const useParentDashboardData = () => {
     }
   };
 
-  // Fonctions utilitaires
-  const getAllNotifications = () => {
-    return Object.values(notificationsData)
-      .flat()
-      .sort((a, b) => new Date(b.created_at || b.date) - new Date(a.created_at || a.date));
-  };
+  // Charger les données initiales
+  useEffect(() => {
+    if (!userLoading && user) {
+      console.log('🚀 Chargement données parent depuis Supabase');
+      loadParentProfile();
+      loadChildren();
+      loadSchools();
+      loadUpcomingEvents();
+    }
+  }, [userLoading, user]);
 
-  const getUnreadCount = () => {
-    return getAllNotifications().filter(n => !n.read).length;
-  };
-
-  const getChildrenBySchool = (schoolId) => {
-    return children.filter(
-      child => (child?.school?.id || child?.schoolId) === schoolId
-    );
-  };
+  // Charger les données de l'enfant sélectionné
+  useEffect(() => {
+    if (selectedChild && !userLoading) {
+      console.log('👶 Chargement données enfant sélectionné:', selectedChild.id);
+      loadChildGrades(selectedChild.id, selectedSchool?.id);
+      loadChildAttendance(selectedChild.id, selectedSchool?.id);
+      loadChildPayments(selectedChild.id, selectedSchool?.id);
+      loadChildNotifications(selectedChild.id, selectedSchool?.id);
+    }
+  }, [selectedChild, selectedSchool, userLoading]);
 
   return {
-    // État
-    dataMode,
-    isDemo: dataMode === 'demo',
-    isProduction: dataMode === 'production',
-    user,
-    
     // Données
     parentProfile,
     children,
@@ -368,30 +330,29 @@ export const useParentDashboardData = () => {
     notificationsData,
     upcomingEvents,
     schools,
-    
-    // Chargement et erreurs
+    user,
+
+    // États de chargement
     loading,
+    userLoading,
     errors,
-    isLoading: Object.values(loading).some(l => l) || modeLoading,
-    
+
     // Actions
-    handleChildSelect,
-    handleSchoolChange,
+    setSelectedChild,
+    setSelectedSchool,
+    loadParentProfile,
+    loadChildren,
+    loadChildGrades,
+    loadChildAttendance,
+    loadChildPayments,
+    loadChildNotifications,
+    loadUpcomingEvents,
+    loadSchools,
     markNotificationAsRead,
-    refreshData: (forceReload = false) => {
-      loadParentProfile();
-      loadChildren();
-      loadEvents();
-      loadSchools();
-      if (selectedChild?.id) {
-        loadChildData(selectedChild.id, forceReload);
-      }
-    },
-    
+
     // Utilitaires
-    getAllNotifications,
-    getUnreadCount,
-    getChildrenBySchool
+    isAnyLoading: Object.values(loading).some(Boolean) || userLoading,
+    hasErrors: Object.values(errors).some(Boolean)
   };
 };
 

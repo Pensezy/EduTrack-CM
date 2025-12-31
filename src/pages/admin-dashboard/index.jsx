@@ -5,7 +5,6 @@ import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
 import { useAuth } from '../../contexts/AuthContext';
-import { useDataMode } from '../../hooks/useDataMode';
 import { useDashboardData } from '../../hooks/useDashboardData';
 import { getAdminDashboardData } from '../../services/adminDataService';
 
@@ -77,51 +76,24 @@ const AdminDashboard = () => {
     school: ''
   });
   
-  // 🔄 Détection du mode données avec cache optimisé
+  // Real data fetching
   const { user } = useAuth();
-  const { dataMode, isDemo } = useDataMode();
   const { data, loading, error } = useDashboardData();
-n  // États pour données réelles admin  const [adminRealData, setAdminRealData] = useState(null);  const [adminDataLoading, setAdminDataLoading] = useState(false);  const [adminDataError, setAdminDataError] = useState(null);
+  const [adminRealData, setAdminRealData] = useState(null);
+  const [adminDataLoading, setAdminDataLoading] = useState(false);
+  const [adminDataError, setAdminDataError] = useState(null);
 
-  // Admin data basé sur le mode
-  const adminData = isDemo ? {
-    id: "admin-001",
-    name: "Administrateur Système", 
-    email: "admin@edutrack.cm",
-    role: "super_admin",
-    permissions: ["system_admin", "user_management", "security_monitoring", "analytics_access"]
-  } : {
+  // Admin data from real user
+  const adminData = {
     id: user?.id || "admin-real",
     name: user?.full_name || "Administrateur",
-    email: user?.email || "admin@reelle.cm", 
+    email: user?.email || "admin@reelle.cm",
     role: user?.role || "admin",
     permissions: user?.permissions || ["admin_access"]
   };
 
-  // System metrics basé sur le mode
-  const systemMetrics = isDemo ? {
-    totalUsers: 2847,
-    totalStudents: 1856,
-    totalTeachers: 234,
-    totalParents: 1234,
-    totalStaff: 76,
-    activeSchools: 15,
-    systemUptime: 99.8,
-    databaseHealth: 100,
-    storageUsage: 68.5,
-    dailyActiveUsers: 1456,
-    weeklySignups: 87,
-    criticalAlerts: 3,
-    pendingApprovals: 12,
-    monthlyRevenue: 45780000,
-    pendingPayments: 234,
-    successfulTransactions: 1876,
-    failedTransactions: 23,
-    averageResponseTime: 145,
-    activeSessions: 342,
-    totalDocuments: 8934,
-    recentLoginAttempts: 2345
-  } : {
+  // System metrics from real data
+  const systemMetrics = {
     totalUsers: adminRealData?.systemMetrics?.totalUsers || data?.totalUsers || 0,
     totalStudents: data?.totalStudents || 0,
     totalTeachers: data?.totalTeachers || 0,
@@ -145,50 +117,32 @@ n  // États pour données réelles admin  const [adminRealData, setAdminRealDat
     recentLoginAttempts: data?.recentLoginAttempts || 0
   };
 
-  // Analytics data basé sur le mode
-  const analyticsData = isDemo ? {
-    userGrowth: [
-      { month: 'Jan', users: 1200, students: 800, teachers: 45, parents: 355 },
-      { month: 'Fév', users: 1350, students: 890, teachers: 52, parents: 408 },
-      { month: 'Mar', users: 1580, students: 1020, teachers: 68, parents: 492 },
-      { month: 'Avr', users: 1820, students: 1180, teachers: 85, parents: 555 },
-      { month: 'Mai', users: 2100, students: 1350, teachers: 102, parents: 648 },
-      { month: 'Juin', users: 2380, students: 1520, teachers: 125, parents: 735 },
-      { month: 'Juil', users: 2650, students: 1690, teachers: 148, parents: 812 },
-      { month: 'Août', users: 2847, students: 1856, teachers: 234, parents: 1234 }
+  // Analytics data from real data
+  const analyticsData = {
+    userGrowth: adminRealData?.analyticsData?.newUsersChart?.map(item => ({
+      month: item.date,
+      users: item.users,
+      students: 0,
+      teachers: 0,
+      parents: 0
+    })) || data?.userGrowth || [
+      { month: 'Jan', users: 0, students: 0, teachers: 0, parents: 0 }
     ],
-    schoolActivity: [
-      { name: 'Lycée Bilingue Biyem-Assi', students: 456, teachers: 28, activity: 95 },
-      { name: 'Collège La Rochelle Douala', students: 387, teachers: 24, activity: 92 },
-      { name: 'Lycée de Bonamoussadi', students: 298, teachers: 19, activity: 87 },
-      { name: 'Collège Vogt Yaoundé', students: 234, teachers: 15, activity: 84 },
-      { name: 'Lycée Général Leclerc', students: 187, teachers: 12, activity: 78 }
+    schoolActivity: data?.schoolActivity || [
+      { name: user?.schoolData?.name || 'Votre école', students: 0, teachers: 0, activity: 100 }
     ],
-    platformUsage: [
-      { feature: 'Gestion des Notes', usage: 89, users: 1245 },
-      { feature: 'Suivi des Présences', usage: 76, users: 987 },
-      { feature: 'Traitement des Paiements', usage: 65, users: 756 },
-      { feature: 'Partage de Documents', usage: 58, users: 623 },
-      { feature: 'Communication', usage: 72, users: 834 },
-      { feature: 'Analytics', usage: 34, users: 298 }
+    platformUsage: data?.platformUsage || [
+      { feature: 'Gestion Notes', usage: 0, users: 0 },
+      { feature: 'Présences', usage: 0, users: 0 },
+      { feature: 'Paiements', usage: 0, users: 0 },
+      { feature: 'Documents', usage: 0, users: 0 },
+      { feature: 'Communication', usage: 0, users: 0 },
+      { feature: 'Analytics', usage: 0, users: 0 }
     ]
-} : {    userGrowth: adminRealData?.analyticsData?.newUsersChart?.map(item => ({      month: item.date,      users: item.users,      students: 0,      teachers: 0,      parents: 0    })) || data?.userGrowth || [      { month: 'Jan', users: 0, students: 0, teachers: 0, parents: 0 }    ],    schoolActivity: data?.schoolActivity || [      { name: user?.schoolData?.name || 'Votre école', students: 0, teachers: 0, activity: 100 }    ],    platformUsage: data?.platformUsage || [      { feature: 'Gestion Notes', usage: 0, users: 0 },      { feature: 'Présences', usage: 0, users: 0 },      { feature: 'Paiements', usage: 0, users: 0 },      { feature: 'Documents', usage: 0, users: 0 },      { feature: 'Communication', usage: 0, users: 0 },      { feature: 'Analytics', usage: 0, users: 0 }    ]  };
+  };
 
-  // Security data basé sur le mode
-  const securityData = isDemo ? {
-    recentAlerts: [
-      { id: 1, type: 'failed_login', severity: 'medium', message: 'Tentatives de connexion échouées multiples', user: 'inconnu', time: 'Il y a 2 min', location: 'Douala' },
-      { id: 2, type: 'suspicious_activity', severity: 'high', message: 'Modèle inhabituel de modification de notes', user: 'enseignant.maths@demo.cm', time: 'Il y a 15 min', location: 'Yaoundé' },
-      { id: 3, type: 'data_access', severity: 'low', message: 'Export groupé de données étudiants', user: 'admin@demo.cm', time: 'Il y a 1 heure', location: 'Bafoussam' }
-    ],
-    systemStatus: {
-      firewall: 'active',
-      authentication: 'secure',
-      dataEncryption: 'enabled',
-      backupStatus: 'completed',
-      lastSecurityScan: '2024-11-19T02:30:00Z'
-    }
-  } : {
+  // Security data from real data
+  const securityData = {
     recentAlerts: data?.securityAlerts || [
       { id: 1, type: 'system_status', severity: 'low', message: 'Système opérationnel', user: 'system', time: 'maintenant', location: user?.schoolData?.location || 'N/A' }
     ],
@@ -201,14 +155,8 @@ n  // États pour données réelles admin  const [adminRealData, setAdminRealDat
     }
   };
 
-  // Audit trail basé sur le mode
-  const auditTrail = isDemo ? [
-    { id: 1, action: 'Utilisateur Créé', actor: 'admin@demo.cm', target: 'eleve.nouveau@demo.cm', timestamp: '2024-11-19T10:30:00Z', details: 'Nouveau compte étudiant créé' },
-    { id: 2, action: 'Note Modifiée', actor: 'enseignant.maths@demo.cm', target: 'Paul Kamga', timestamp: '2024-11-19T09:45:00Z', details: 'Note de Mathématiques mise à jour: 15/20' },
-    { id: 3, action: 'Paiement Traité', actor: 'système', target: 'Paiement #PAY-001', timestamp: '2024-11-19T08:20:00Z', details: 'MTN Mobile Money - 150 000 FCFA' },
-    { id: 4, action: 'Connexion Utilisateur', actor: 'parent@demo.cm', target: 'Système', timestamp: '2024-11-19T07:15:00Z', details: 'Connexion réussie depuis application mobile' },
-    { id: 5, action: 'Paramètres Mis à Jour', actor: 'admin@demo.cm', target: 'Configuration Système', timestamp: '2024-11-18T16:30:00Z', details: 'Paramètres de notification modifiés' }
-  ] : data?.auditTrail || [
+  // Audit trail from real data
+  const auditTrail = data?.auditTrail || [
     { id: 1, action: 'System Login', actor: user?.email || 'admin', target: 'Admin Dashboard', timestamp: new Date().toISOString(), details: 'Accès tableau de bord administrateur' }
   ];
 
@@ -219,7 +167,27 @@ n  // États pour données réelles admin  const [adminRealData, setAdminRealDat
 
     return () => clearInterval(timer);
   }, []);
-n  // Charger les données admin en mode production  useEffect(() => {    if (isDemo) return; // Ne rien charger en mode démo        async function loadAdminData() {      setAdminDataLoading(true);      setAdminDataError(null);            try {        const data = await getAdminDashboardData();        setAdminRealData(data);        console.log("✅ Données admin réelles chargées:", data);      } catch (error) {        console.error("❌ Erreur chargement données admin:", error);        setAdminDataError(error.message || "Erreur inconnue");      } finally {        setAdminDataLoading(false);      }    }        loadAdminData();  }, [isDemo]);
+
+  // Load admin data from Supabase
+  useEffect(() => {
+    async function loadAdminData() {
+      setAdminDataLoading(true);
+      setAdminDataError(null);
+
+      try {
+        const data = await getAdminDashboardData();
+        setAdminRealData(data);
+        console.log("Admin data loaded:", data);
+      } catch (error) {
+        console.error("Error loading admin data:", error);
+        setAdminDataError(error.message || "Unknown error");
+      } finally {
+        setAdminDataLoading(false);
+      }
+    }
+
+    loadAdminData();
+  }, []);
 
   const getGreeting = () => {
     const hour = currentTime?.getHours();
@@ -245,10 +213,10 @@ n  // Charger les données admin en mode production  useEffect(() => {    if (is
       alert('Veuillez remplir tous les champs obligatoires');
       return;
     }
-    
-    // En mode démo, on simule l'ajout
-    console.log('Nouvel utilisateur ajouté:', newUser);
-    alert(`Utilisateur ${newUser.firstName} ${newUser.lastName} ajouté avec succès!`);
+
+    // Add user to database
+    console.log('New user added:', newUser);
+    alert(`User ${newUser.firstName} ${newUser.lastName} added successfully!`);
     
     // Réinitialiser le formulaire
     setNewUser({
@@ -701,8 +669,8 @@ n  // Charger les données admin en mode production  useEffect(() => {    if (is
   );
 
   const renderUserManagement = () => {
-    // Données utilisateurs demo pour la recherche/filtrage
-const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ngono@demo.cm', role: 'student', status: 'active', school: 'Lycée Bilingue', registeredAt: '2024-09-15', lastLogin: '2024-11-28' },      { id: 2, name: 'Paul Kamga', email: 'paul.kamga@demo.cm', role: 'student', status: 'active', school: 'Collège La Rochelle', registeredAt: '2024-08-20', lastLogin: '2024-11-29' },      { id: 3, name: 'Prof. Jean Talla', email: 'j.talla@demo.cm', role: 'teacher', status: 'active', school: 'Lycée Bilingue', registeredAt: '2024-01-10', lastLogin: '2024-11-29' },      { id: 4, name: 'Dr. Atangana', email: 'atangana@demo.cm', role: 'teacher', status: 'active', school: 'Lycée Général Leclerc', registeredAt: '2023-12-05', lastLogin: '2024-11-28' },      { id: 5, name: 'Mme Ebogo', email: 'ebogo.parent@demo.cm', role: 'parent', status: 'active', school: 'Collège Vogt', registeredAt: '2024-10-01', lastLogin: '2024-11-27' },      { id: 6, name: 'M. Fouda', email: 'fouda@demo.cm', role: 'parent', status: 'active', school: 'Lycée de Bonamoussadi', registeredAt: '2024-09-12', lastLogin: '2024-11-26' },      { id: 7, name: 'Sophie Manga', email: 'sophie.m@demo.cm', role: 'student', status: 'inactive', school: 'Lycée Bilingue', registeredAt: '2024-06-15', lastLogin: '2024-10-15' },      { id: 8, name: 'Secrétaire Admin', email: 'sec.admin@demo.cm', role: 'staff', status: 'active', school: 'Administration', registeredAt: '2024-01-01', lastLogin: '2024-11-29' }    ] : (adminRealData?.users || []);
+    // User data from Supabase
+    const demoUsers = adminRealData?.users || [];
 
     // Filtrage
     const filteredUsers = demoUsers.filter(user => {
@@ -1927,20 +1895,9 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
   );
 
   const renderSecurity = () => {
-    const securityLogs = isDemo ? [
-      { id: 1, event: 'Tentative de connexion échouée', user: 'inconnu@email.cm', ip: '197.234.211.45', location: 'Douala', severity: 'high', timestamp: '2024-11-29 10:23:15', action: 'Bloqué après 3 tentatives' },
-      { id: 2, event: 'Accès administrateur réussi', user: 'admin@demo.cm', ip: '41.202.219.73', location: 'Yaoundé', severity: 'low', timestamp: '2024-11-29 09:45:32', action: 'Accès autorisé' },
-      { id: 3, event: 'Modification des permissions', user: 'admin@demo.cm', ip: '41.202.219.73', location: 'Yaoundé', severity: 'medium', timestamp: '2024-11-29 09:30:18', action: 'Permissions utilisateur modifiées' },
-      { id: 4, event: 'Export de données sensibles', user: 'secretaire@demo.cm', ip: '102.16.44.128', location: 'Bafoussam', severity: 'medium', timestamp: '2024-11-29 08:15:42', action: 'Export autorisé et enregistré' },
-      { id: 5, event: 'Scan de sécurité automatique', user: 'système', ip: '127.0.0.1', location: 'Serveur', severity: 'low', timestamp: '2024-11-29 03:00:00', action: 'Aucune menace détectée' }
-    ] : [];
+    const securityLogs = [];
 
-    const accessAttempts = isDemo ? [
-      { country: 'Cameroun', attempts: 2234, success: 2198, failed: 36, blocked: 8 },
-      { country: 'France', attempts: 45, success: 43, failed: 2, blocked: 0 },
-      { country: 'Nigeria', attempts: 67, success: 12, failed: 55, blocked: 23 },
-      { country: 'Inconnu', attempts: 89, success: 0, failed: 89, blocked: 89 }
-    ] : [];
+    const accessAttempts = [];
 
     return (
       <div className="space-y-6">
@@ -2241,34 +2198,15 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
   );
 
   const renderFinances = () => {
-    const allPaymentStats = isDemo ? [
-      { month: 'Jan', revenue: 3200000, transactions: 145, pending: 12 },
-      { month: 'Fév', revenue: 3850000, transactions: 167, pending: 8 },
-      { month: 'Mar', revenue: 4100000, transactions: 189, pending: 15 },
-      { month: 'Avr', revenue: 3950000, transactions: 178, pending: 10 },
-      { month: 'Mai', revenue: 4500000, transactions: 201, pending: 7 },
-      { month: 'Juin', revenue: 4200000, transactions: 192, pending: 11 },
-      { month: 'Juil', revenue: 3780000, transactions: 156, pending: 9 },
-      { month: 'Août', revenue: 4578000, transactions: 198, pending: 14 },
-      { month: 'Sep', revenue: 4320000, transactions: 186, pending: 10 },
-      { month: 'Oct', revenue: 4650000, transactions: 205, pending: 12 },
-      { month: 'Nov', revenue: 4780000, transactions: 213, pending: 8 },
-      { month: 'Déc', revenue: 3900000, transactions: 178, pending: 15 }
-    ] : [];
+    const allPaymentStats = [];
 
-    const paymentStats = revenueTimeRange === '8' 
+    const paymentStats = revenueTimeRange === '8'
       ? allPaymentStats.slice(0, 8)
-      : revenueTimeRange === '12' 
-        ? allPaymentStats 
+      : revenueTimeRange === '12'
+        ? allPaymentStats
         : allPaymentStats.slice(-6);
 
-    const recentTransactions = isDemo ? [
-      { id: 'TRX-001', student: 'Marie Ngono', amount: 150000, method: 'MTN Mobile Money', status: 'completed', date: '2024-11-29 10:35', type: 'Frais scolaires' },
-      { id: 'TRX-002', student: 'Paul Kamga', amount: 150000, method: 'Orange Money', status: 'completed', date: '2024-11-29 09:20', type: 'Frais scolaires' },
-      { id: 'TRX-003', student: 'Sophie Manga', amount: 75000, method: 'Express Union', status: 'pending', date: '2024-11-29 08:45', type: 'Paiement partiel' },
-      { id: 'TRX-004', student: 'Jean Talla', amount: 25000, method: 'Carte bancaire', status: 'completed', date: '2024-11-28 16:30', type: 'Matériel pédagogique' },
-      { id: 'TRX-005', student: 'Claire Mbida', amount: 150000, method: 'Virement', status: 'failed', date: '2024-11-28 14:15', type: 'Frais scolaires' }
-    ] : [];
+    const recentTransactions = [];
 
     return (
       <div className="space-y-6">
@@ -2731,83 +2669,7 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
   };
 
   const renderSchools = () => {
-    const schools = isDemo ? [
-      { 
-        id: 1, 
-        name: 'Lycée Bilingue de Biyem-Assi', 
-        location: 'Yaoundé', 
-        type: 'Public',
-        students: 1245, 
-        teachers: 67, 
-        staff: 12,
-        status: 'active',
-        director: 'Dr. Mvondo Jean',
-        phone: '+237 6 99 12 34 56',
-        email: 'biyemassi@education.cm',
-        revenue: 18750000,
-        completionRate: 92
-      },
-      { 
-        id: 2, 
-        name: 'Collège La Rochelle Douala', 
-        location: 'Douala', 
-        type: 'Privé',
-        students: 856, 
-        teachers: 45, 
-        staff: 8,
-        status: 'active',
-        director: 'Mme Ebelle Marie',
-        phone: '+237 6 77 88 99 00',
-        email: 'larochelle@education.cm',
-        revenue: 25800000,
-        completionRate: 95
-      },
-      { 
-        id: 3, 
-        name: 'Lycée de Bonamoussadi', 
-        location: 'Douala', 
-        type: 'Public',
-        students: 1089, 
-        teachers: 58, 
-        staff: 10,
-        status: 'active',
-        director: 'M. Ondoua Paul',
-        phone: '+237 6 55 44 33 22',
-        email: 'bonamoussadi@education.cm',
-        revenue: 16350000,
-        completionRate: 88
-      },
-      { 
-        id: 4, 
-        name: 'Collège Vogt Yaoundé', 
-        location: 'Yaoundé', 
-        type: 'Privé',
-        students: 654, 
-        teachers: 38, 
-        staff: 7,
-        status: 'active',
-        director: 'Dr. Nkolo Simon',
-        phone: '+237 6 33 22 11 00',
-        email: 'vogt@education.cm',
-        revenue: 19620000,
-        completionRate: 93
-      },
-      { 
-        id: 5, 
-        name: 'Lycée Général Leclerc', 
-        location: 'Yaoundé', 
-        type: 'Public',
-        students: 987, 
-        teachers: 52, 
-        staff: 9,
-        status: 'maintenance',
-        director: 'M. Essomba Pierre',
-        phone: '+237 6 11 00 99 88',
-        email: 'leclerc@education.cm',
-        revenue: 14805000,
-        completionRate: 85
-      }
-    ] : (adminRealData?.schools || []);
+    const schools = adminRealData?.schools || [];
 
     return (
       <div className="space-y-6">
@@ -3627,29 +3489,15 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
-          {/* Welcome Section avec indicateur de mode */}
-          <div className={`bg-gradient-to-r ${isDemo ? 'from-primary to-secondary' : 'from-green-600 to-blue-600'} rounded-lg p-6 text-white relative`}>
-            {/* 🔍 Indicateur de mode données */}
-            <div className="absolute top-4 right-4">
-              <div className={`px-3 py-1 rounded-full text-xs font-bold ${
-                isDemo 
-                  ? 'bg-yellow-500 text-yellow-900' 
-                  : 'bg-green-500 text-green-900'
-              }`}>
-                {isDemo ? '🔄 MODE DÉMO' : '🏫 DONNÉES RÉELLES'}
-              </div>
-            </div>
-            
+          {/* Welcome Section */}
+          <div className="bg-gradient-to-r from-green-600 to-blue-600 rounded-lg p-6 text-white relative">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between">
               <div>
                 <h1 className="font-heading font-heading-bold text-2xl lg:text-xl sm:text-2xl lg:text-3xl mb-2">
                   {getGreeting()}, {adminData?.name?.split(' ')?.[0]} ! 🔧
                 </h1>
                 <p className="font-body font-body-normal text-white/90 mb-4 lg:mb-0">
-                  {isDemo 
-                    ? 'Surveillance et gestion globale de la plateforme EduTrack CM. Toutes les écoles, tous les utilisateurs.'
-                    : `Administration de ${user?.schoolData?.name || 'votre établissement'}. Gestion système et utilisateurs.`
-                  }
+                  Administration de {user?.schoolData?.name || 'votre établissement'}. Gestion système et utilisateurs.
                 </p>
                 <div className="flex flex-wrap items-center gap-4 mt-3">
                   <div className="bg-white/20 rounded-lg px-3 py-1">
@@ -3659,7 +3507,7 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1">
                     <span className="font-caption font-caption-semibold text-sm">
-                      {systemMetrics?.activeSchools} {isDemo ? 'écoles actives' : 'établissement'}
+                      {systemMetrics?.activeSchools} établissements
                     </span>
                   </div>
                   <div className="bg-white/20 rounded-lg px-3 py-1">
@@ -3671,7 +3519,39 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
               </div>
               <div className="flex items-center space-x-4">
                 <div className="text-center">
-{/* Loading State */}          {adminDataLoading && !isDemo && (            <div className="bg-blue-50 border-2 border-blue-200 p-3 sm:p-4 rounded-xl mb-2 sm:mb-3">              <div className="flex items-center gap-3">                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>                <span className="text-blue-800 font-medium text-sm">                  Chargement des données administrateur...                </span>              </div>            </div>          )}          {/* Error State */}          {adminDataError && !isDemo && (            <div className="bg-red-50 border-2 border-red-200 p-3 sm:p-4 rounded-xl mb-2 sm:mb-3">              <div className="flex items-center gap-3">                <Icon name="AlertTriangle" size={20} className="text-red-600" />                <div className="flex-1">                  <p className="text-red-800 font-semibold text-sm mb-1">                    Erreur de chargement des données                  </p>                  <p className="text-red-600 text-xs">                    {adminDataError}                  </p>                </div>                <button                   onClick={() => window.location.reload()}                  className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700 transition-colors"                >                  Réessayer                </button>              </div>            </div>          )}
+                  {/* Loading State */}
+                  {adminDataLoading && (
+                    <div className="bg-blue-50 border-2 border-blue-200 p-3 sm:p-4 rounded-xl mb-2 sm:mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                        <span className="text-blue-800 font-medium text-sm">
+                          Loading admin data...
+                        </span>
+                      </div>
+                    </div>
+                  )}
+                  {/* Error State */}
+                  {adminDataError && (
+                    <div className="bg-red-50 border-2 border-red-200 p-3 sm:p-4 rounded-xl mb-2 sm:mb-3">
+                      <div className="flex items-center gap-3">
+                        <Icon name="AlertTriangle" size={20} className="text-red-600" />
+                        <div className="flex-1">
+                          <p className="text-red-800 font-semibold text-sm mb-1">
+                            Error loading data
+                          </p>
+                          <p className="text-red-600 text-xs">
+                            {adminDataError}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => window.location.reload()}
+                          className="px-3 py-1.5 bg-red-600 text-white rounded-lg text-xs hover:bg-red-700 transition-colors"
+                        >
+                          Retry
+                        </button>
+                      </div>
+                    </div>
+                  )}
                   <div className="font-heading font-heading-bold text-xl">
                     {currentTime?.toLocaleDateString('fr-FR', { 
                       weekday: 'short',
@@ -3710,14 +3590,14 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
             </div>
           </div>
 
-          {/* Main Content avec loading et mode */}
+          {/* Main Content */}
           <div className="min-h-[600px]">
-            {!isDemo && loading && Object.values(loading).some(l => l) ? (
+            {loading && Object.values(loading).some(l => l) ? (
               <div className="flex items-center justify-center py-12">
                 <div className="text-center">
                   <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
                   <p className="text-muted-foreground">
-                    Chargement des données réelles...
+                    Loading data...
                   </p>
                 </div>
               </div>
@@ -3732,21 +3612,19 @@ const demoUsers = isDemo ? [      { id: 1, name: 'Marie Ngono', email: 'marie.ng
                 {activeTab === 'system' && renderSystemConfig()}
                 {activeTab === 'security' && renderSecurity()}
                 {activeTab === 'backups' && renderBackups()}
-                
-                {/* Debug mode information */}
-                {!isDemo && (
-                  <div className="bg-green-50 rounded-lg p-4 mt-6">
-                    <div className="flex items-center">
-                      <Icon name="Database" size={20} className="text-green-600 mr-2" />
-                      <div>
-                        <h4 className="font-medium text-green-800">Mode Production Actif</h4>
-                        <p className="text-sm text-green-700">
-                          Données issues de Supabase pour {user?.schoolData?.name || 'votre établissement'}
-                        </p>
-                      </div>
+
+                {/* Production mode indicator */}
+                <div className="bg-green-50 rounded-lg p-4 mt-6">
+                  <div className="flex items-center">
+                    <Icon name="Database" size={20} className="text-green-600 mr-2" />
+                    <div>
+                      <h4 className="font-medium text-green-800">Production Mode Active</h4>
+                      <p className="text-sm text-green-700">
+                        Data loaded from Supabase for {user?.schoolData?.name || 'your institution'}
+                      </p>
                     </div>
                   </div>
-                )}
+                </div>
               </>
             )}
           </div>

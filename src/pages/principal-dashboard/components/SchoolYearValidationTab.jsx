@@ -29,78 +29,41 @@ const SchoolYearValidationTab = () => {
     requested_class: '',
     priority: 'normal'
   });
-  
-  // Hook pour récupérer les données selon le mode (démo/production)
-  const { isDemo, isProduction, dataMode, data, user, modeLoading } = useDashboardData();
 
-  // Debug: Afficher l'état du mode
-  useEffect(() => {
-    console.log('📊 SchoolYearValidationTab - État du mode:');
-    console.log('  - dataMode:', dataMode);
-    console.log('  - isDemo:', isDemo);
-    console.log('  - isProduction:', isProduction);
-    console.log('  - modeLoading:', modeLoading);
-    console.log('  - user:', user);
-  }, [dataMode, isDemo, isProduction, modeLoading, user]);
+  const { data, user } = useDashboardData();
 
-  // Charger les vraies données depuis Supabase
   useEffect(() => {
     const loadEnrollmentData = async () => {
-      // Attendre que le mode soit déterminé
-      if (modeLoading) {
-        console.log('⏳ Attente de la détermination du mode...');
-        return;
-      }
-
-      console.log('🔍 Chargement des demandes d\'inscription...');
-      console.log('  - Mode déterminé:', dataMode);
-      console.log('  - École utilisateur:', user?.schoolData?.id);
-
-      if (dataMode === 'production' && user?.schoolData?.id) {
-        console.log('🏫 Mode PRODUCTION détecté - Chargement depuis Supabase');
+      if (user?.schoolData?.id) {
         setLoading(true);
-        
-        // Initialiser le contexte
+
         if (user.id && user.schoolData.id) {
-          console.log('🔐 Initialisation du contexte:', user.id, user.schoolData.id);
           productionDataService.setUserContext(user.id, user.schoolData.id);
         }
 
         try {
-          // Charger les demandes en attente
-          console.log('📥 Récupération des demandes en attente...');
           const { data: requests, error: requestsError } = await productionDataService.getEnrollmentRequests(
             user.schoolData.id,
             { status: 'en_attente' }
           );
 
-          if (requestsError) {
-            console.error('❌ Erreur lors du chargement des demandes:', requestsError);
-          } else {
-            console.log('✅ Demandes récupérées:', requests?.length || 0);
+          if (!requestsError) {
+            setPendingRequests(requests || []);
           }
 
-          // Charger les statistiques
-          console.log('📊 Récupération des statistiques...');
           const { data: stats, error: statsError } = await productionDataService.getEnrollmentStats(user.schoolData.id);
 
-          if (statsError) {
-            console.error('❌ Erreur lors du chargement des stats:', statsError);
-          } else {
-            console.log('✅ Statistiques récupérées:', stats);
+          if (!statsError) {
+            setValidationStats(stats || {
+              totalDemandes: 0,
+              enAttente: 0,
+              approuvees: 0,
+              refusees: 0,
+              enRevision: 0
+            });
           }
-
-          setPendingRequests(requests || []);
-          setValidationStats(stats || {
-            totalDemandes: 0,
-            enAttente: 0,
-            approuvees: 0,
-            refusees: 0,
-            enRevision: 0
-          });
-
         } catch (error) {
-          console.error('❌ Erreur lors du chargement des données d\'inscription:', error);
+          console.error('Erreur lors du chargement des données d\'inscription:', error);
           setPendingRequests([]);
           setValidationStats({
             totalDemandes: 0,
@@ -112,67 +75,11 @@ const SchoolYearValidationTab = () => {
         }
 
         setLoading(false);
-      } else if (dataMode === 'demo') {
-        console.log('🎭 Mode DÉMO détecté - Chargement des données fictives');
-        // Mode démo - utiliser les données fictives
-        loadDemoData();
-      } else {
-        console.log('⚠️ Mode non déterminé ou données utilisateur manquantes');
-        console.log('  - dataMode:', dataMode);
-        console.log('  - user.schoolData:', user?.schoolData);
       }
     };
 
     loadEnrollmentData();
-  }, [dataMode, modeLoading, user]);
-
-  // Fonction pour charger les données démo
-  const loadDemoData = () => {
-    const demoPendingRequests = [
-      {
-        id: '1',
-        request_type: 'nouvelle_inscription',
-        student_first_name: 'Marie',
-        student_last_name: 'Talla',
-        parent_name: 'Joseph Talla',
-        requested_class: 'CE1',
-        submitted_by_user: { full_name: 'Secrétaire' },
-        submitted_date: '2024-09-15',
-        status: 'en_attente',
-        documents: [
-          { name: 'Certificat de naissance', uploaded: true },
-          { name: 'Carnet de vaccination', uploaded: true }
-        ],
-        priority: 'normal'
-      },
-      {
-        id: '2',
-        request_type: 'nouvelle_inscription',
-        student_first_name: 'Daniel',
-        student_last_name: 'Mbella',
-        parent_name: 'Agnes Mbella',
-        requested_class: 'CM1',
-        submitted_by_user: { full_name: 'Secrétaire' },
-        submitted_date: '2024-09-18',
-        status: 'en_attente',
-        documents: [
-          { name: 'Bulletins année précédente', uploaded: true },
-          { name: 'Certificat de transfert', uploaded: false }
-        ],
-        priority: 'urgent'
-      }
-    ];
-
-    setPendingRequests(demoPendingRequests);
-    setValidationStats({
-      totalDemandes: 15,
-      enAttente: 3,
-      approuvees: 8,
-      refusees: 1,
-      enRevision: 3
-    });
-    setLoading(false);
-  };
+  }, [user]);
 
   // Passages de classe à valider (données fictives pour démo)
   const [classTransitions] = useState({
@@ -290,7 +197,7 @@ const SchoolYearValidationTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header avec indicateur de mode - Modernisé */}
+      {/* Header */}
       <div className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 rounded-2xl shadow-xl p-6 text-white">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
@@ -302,23 +209,10 @@ const SchoolYearValidationTab = () => {
                 <h2 className="text-2xl font-bold">
                   Validation Année Scolaire
                 </h2>
-                {/* Indicateur de mode */}
-                <div className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-semibold mt-1 ${
-                  isDemo 
-                    ? 'bg-amber-500 text-white' 
-                    : 'bg-green-500 text-white'
-                }`}>
-                  {isDemo ? '🎭 Données Démo' : '🏫 Données Réelles'}
-                </div>
-              </div>
+                  </div>
             </div>
             <p className="text-blue-100 text-sm ml-14">
               Décisions et approbations pour {currentSchoolYear} → {nextSchoolYear}
-              {isDemo && (
-                <span className="block text-xs text-amber-200 mt-1">
-                  Mode démonstration - Données d'exemple uniquement
-                </span>
-              )}
             </p>
           </div>
           <div className="flex items-center space-x-3">
@@ -446,13 +340,10 @@ const SchoolYearValidationTab = () => {
                   </div>
                   <div>
                     <h3 className="font-heading font-heading-medium text-lg text-text-primary mb-2">
-                      {isDemo ? 'Toutes les demandes ont été traitées' : 'Aucune demande en attente'}
+                      Aucune demande en attente
                     </h3>
                     <p className="text-sm text-text-secondary max-w-md">
-                      {isDemo 
-                        ? 'Dans la version de démonstration, toutes les demandes d\'inscription et de redoublement ont été approuvées.'
-                        : 'Il n\'y a actuellement aucune demande de validation en attente. Les nouvelles demandes apparaîtront ici.'
-                      }
+                      Il n'y a actuellement aucune demande de validation en attente. Les nouvelles demandes apparaîtront ici.
                     </p>
                   </div>
                   {isProduction && (
@@ -594,15 +485,13 @@ const SchoolYearValidationTab = () => {
                     <li>• Notifications aux parents</li>
                   </ul>
                 </div>
-              </div>
-              {isProduction && (
                 <div className="mt-4 px-4 py-2 bg-blue-50 rounded-lg">
                   <p className="text-sm text-blue-700">
-                    💡 En attendant, utilisez l'onglet <strong>"Demandes en attente"</strong> pour gérer 
+                    💡 En attendant, utilisez l'onglet <strong>"Demandes en attente"</strong> pour gérer
                     les inscriptions et redoublements manuellement.
                   </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
@@ -621,18 +510,12 @@ const SchoolYearValidationTab = () => {
                   Demandes Validées
                 </h3>
                 <p className="text-sm text-text-secondary max-w-2xl">
-                  {isProduction ? (
-                    <>
-                      Vous avez <strong>{validationStats.approuvees || 0} demande(s) approuvée(s)</strong>.
-                      <br />
-                      L'historique complet des validations sera bientôt disponible ici.
-                    </>
-                  ) : (
-                    "L'historique des demandes approuvées s'affichera ici une fois que vous commencerez à valider des demandes."
-                  )}
+                  Vous avez <strong>{validationStats.approuvees || 0} demande(s) approuvée(s)</strong>.
+                  <br />
+                  L'historique complet des validations sera bientôt disponible ici.
                 </p>
               </div>
-              {isProduction && validationStats.approuvees > 0 && (
+              {validationStats.approuvees > 0 && (
                 <Button variant="outline">
                   <Icon name="Download" size={16} className="mr-2" />
                   Exporter la liste ({validationStats.approuvees})
@@ -656,7 +539,7 @@ const SchoolYearValidationTab = () => {
                   Configuration Année Scolaire - En Développement
                 </h3>
                 <p className="text-sm text-text-secondary max-w-2xl">
-                  Cette fonctionnalité permettra de configurer les paramètres de l'année scolaire 
+                  Cette fonctionnalité permettra de configurer les paramètres de l'année scolaire
                   et de gérer la transition entre les années académiques.
                 </p>
                 <div className="mt-4 text-xs text-gray-500">
@@ -669,15 +552,13 @@ const SchoolYearValidationTab = () => {
                     <li>• Migration des données élèves</li>
                   </ul>
                 </div>
-              </div>
-              {isProduction && (
                 <div className="mt-4 px-4 py-2 bg-purple-50 rounded-lg">
                   <p className="text-sm text-purple-700">
-                    💡 Pour l'instant, contactez l'administrateur système pour modifier 
+                    💡 Pour l'instant, contactez l'administrateur système pour modifier
                     les paramètres de l'année scolaire dans la base de données.
                   </p>
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>

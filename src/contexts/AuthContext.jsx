@@ -1,7 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import databaseService from '../services/databaseService';
-import { getCurrentAcademicYear } from '../utils/academicYear';
 
 const AuthContext = createContext({});
 
@@ -13,100 +12,11 @@ export const useAuth = () => {
   return context;
 };
 
-const demoAccounts = {
-  // Parents
-  'parent@demo.com': {
-    id: 'demo-parent-1',
-    email: 'parent@demo.com',
-    role: 'parent',
-    full_name: 'Parent Demo',
-    pin: '847362', // PIN aléatoire sécurisé (6 chiffres)
-    children: [
-      {
-        id: 'demo-student-1',
-        full_name: 'Student Demo',
-        class_name: '6e A',
-        school_id: 'demo-school-1'
-      },
-      {
-        id: 'demo-student-2',
-        full_name: 'Student Demo 2',
-        class_name: '4e B',
-        school_id: 'demo-school-1'
-      }
-    ]
-  },
-
-  // Élèves
-  'student@demo.com': {
-    id: 'demo-student-1',
-    email: 'student@demo.com',
-    role: 'student',
-    full_name: 'Student Demo',
-    pin: '592481', // PIN aléatoire sécurisé
-    current_school_id: 'demo-school-1',
-    class_name: '6e A',
-    photo: '/assets/images/no_image.png',
-    student_id: 'STU2024001',
-    current_year: getCurrentAcademicYear()
-  },
-
-  // Enseignants
-  'teacher@demo.com': {
-    id: 'demo-teacher-1',
-    email: 'teacher@demo.com',
-    role: 'teacher',
-    full_name: 'Teacher Demo',
-    pin: '736429', // PIN aléatoire sécurisé
-    current_school_id: 'demo-school-1',
-    specialty: 'Mathématiques',
-    subject: 'Mathématiques',
-    assigned_classes: ['6e A', '6e B', '5e A'],
-    teacher_id: 'TCH2024001',
-    photo: '/assets/images/no_image.png'
-  },
-
-  // Administration
-  'admin@demo.com': {
-    id: 'demo-admin-1',
-    email: 'admin@demo.com',
-    role: 'admin',
-    full_name: 'Admin Demo',
-    pin: '981547', // PIN aléatoire sécurisé
-    photo: '/assets/images/no_image.png',
-    admin_id: 'ADM2024001',
-    permissions: ['all']
-  },
-  'principal@demo.com': {
-    id: 'demo-principal-1',
-    email: 'principal@demo.com',
-    role: 'principal',
-    full_name: 'Principal Demo',
-    pin: '463789', // PIN aléatoire sécurisé
-    current_school_id: 'demo-school-1',
-    photo: '/assets/images/no_image.png',
-    principal_id: 'PRI2024001',
-    school_name: 'École Démo'
-  },
-  'secretary@demo.com': {
-    id: 'demo-secretary-1',
-    email: 'secretary@demo.com',
-    role: 'secretary',
-    full_name: 'Secretary Demo',
-    pin: '625183', // PIN aléatoire sécurisé
-    current_school_id: 'demo-school-1',
-    photo: '/assets/images/no_image.png',
-    secretary_id: 'SEC2024001',
-    school_name: 'École Démo'
-  }
-};
-
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [userProfile, setUserProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [authMode, setAuthMode] = useState('standard'); // 'standard' or 'demo'
 
   useEffect(() => {
     // PRIORITÉ : Toujours vérifier la session Supabase d'abord
@@ -122,30 +32,22 @@ export const AuthProvider = ({ children }) => {
           await ensureUserInDatabase(session.user);
           setUser(session.user);
           setUserProfile(session.user);
-          setAuthMode('standard');
           localStorage.setItem('edutrack-user', JSON.stringify(session.user));
           setLoading(false);
           return;
         }
-        
+
         console.log('ℹ️ Pas de session Supabase, vérification localStorage...');
-        
+
         // Pas de session Supabase, vérifier localStorage
         const savedUser = localStorage.getItem('edutrack-user');
         if (savedUser) {
           const userData = JSON.parse(savedUser);
           console.log('🔄 Utilisateur depuis localStorage:', userData.email);
-          
-          // Check if it's a demo account
-          if (demoAccounts[userData.email]) {
-            setAuthMode('demo');
-            setUser(userData);
-            setUserProfile(userData);
-            setLoading(false);
-          } else if (userData.demoAccount === false && userData.sessionId) {
+
+          if (userData.sessionId) {
             // Compte local (enseignant, étudiant, parent, secrétaire)
             console.log('✅ Compte local détecté, utilisation directe des données');
-            setAuthMode('standard');
             setUser(userData);
             setUserProfile(userData);
             setLoading(false);
@@ -301,8 +203,7 @@ export const AuthProvider = ({ children }) => {
         await ensureUserInDatabase(session.user);
         setUser(session.user);
         setUserProfile(session.user);
-        setAuthMode('standard');
-        
+
         // Save to localStorage
         localStorage.setItem('edutrack-user', JSON.stringify(session.user));
       } else if (localUser) {
@@ -349,19 +250,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error('Identifiant et code PIN requis');
       }
 
-      // 1. Vérifier si c'est un compte de démo
-      const demoUser = demoAccounts[identifier];
-      if (demoUser && demoUser.pin === pin) {
-        const userData = { ...demoUser };
-        // Sauvegarder en local pour la démo
-        localStorage.setItem('edutrack-user', JSON.stringify(userData));
-        setUser(userData);
-        setUserProfile(userData);
-        setAuthMode('demo');
-        return { user: userData, error: null };
-      }
-
-      // 2. Sinon, vérifier avec Supabase
+      // Vérifier avec Supabase
       const { data, error } = await supabase.rpc('verify_pin', {
         identifier,
         pin_input: pin
@@ -455,10 +344,9 @@ export const AuthProvider = ({ children }) => {
 
       // Sauvegarder les données complètes dans le localStorage
       localStorage.setItem('edutrack-user', JSON.stringify(authenticatedUser));
-      
+
       setUser(authenticatedUser);
       setUserProfile(authenticatedUser);
-      setAuthMode('standard');
       return { user: authenticatedUser, error: null };
 
     } catch (error) {
@@ -470,12 +358,11 @@ export const AuthProvider = ({ children }) => {
 
   const signOut = async () => {
     try {
-      // Supprimer la session locale (pour démo et prod)
+      // Supprimer la session locale
       localStorage.removeItem('edutrack-user');
       localStorage.removeItem('edutrack-session');
       setUser(null);
       setUserProfile(null);
-      setAuthMode('standard');
       setError(null);
       // Déconnexion Supabase uniquement si une session existe
       const { error } = await supabase.auth.signOut();
@@ -493,8 +380,7 @@ export const AuthProvider = ({ children }) => {
     signInWithPin,
     signOut,
     error,
-    setError,
-    authMode // Expose auth mode
+    setError
   };
 
   return (

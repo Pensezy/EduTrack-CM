@@ -7,7 +7,6 @@ import NotFound from "./pages/NotFound";
 
 // Critical pages - loaded immediately (auth & landing)
 import SchoolManagement from "./pages/school-management";
-import LoginAuthentication from "./pages/login-authentication";
 import StaffLogin from "./pages/staff-login";
 import AuthCallback from "./pages/AuthCallback";
 
@@ -48,8 +47,6 @@ const Routes = () => {
             {/* Critical routes - loaded immediately */}
             <Route path="/" element={<SchoolManagement />} />
             <Route path="/auth/callback" element={<AuthCallback />} />
-            <Route path="/demo" element={<LoginAuthentication />} />
-            <Route path="/login-authentication" element={<LoginAuthentication />} />
             <Route path="/staff-login" element={<StaffLogin />} />
             <Route path="/school-management" element={<SchoolManagement />} />
 

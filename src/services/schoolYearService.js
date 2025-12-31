@@ -3,15 +3,9 @@ import { getCurrentSchoolId } from './cardService';
 
 // Vérifier si on est en mode production
 const isProductionMode = () => {
-  // FORCER LE MODE PRODUCTION comme demandé par l'utilisateur
-  // L'utilisateur veut toujours voir les vraies données, jamais de données démo
-  console.log('SchoolYearService: Mode PRODUCTION forcé - utilisation exclusive des données Supabase');
+  // Mode PRODUCTION - utilisation exclusive des données Supabase
+  console.log('SchoolYearService: Mode PRODUCTION - utilisation exclusive des données Supabase');
   return true;
-  
-  // Code original commenté pour référence:
-  // const user = JSON.parse(localStorage.getItem('edutrack-user') || 'null');
-  // const demoAccount = JSON.parse(localStorage.getItem('demoAccount') || 'false');
-  // return user && !demoAccount;
 };
 
 class SchoolYearService {

@@ -26,9 +26,6 @@ const ParentDashboard = () => {
 
   // Utiliser le hook unifié pour les données
   const {
-    dataMode,
-    isDemo,
-    isProduction,
     parentProfile,
     children,
     selectedChild,
@@ -268,7 +265,6 @@ const ParentDashboard = () => {
                 children={parentData.children}
                 schools={schools}
                 isLoading={isLoading}
-                isDemo={isDemo}
               />
             )}
 
@@ -347,20 +343,6 @@ const ParentDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Indicateur de mode - Modernisé */}
-      {isDemo && (
-          <div className="fixed top-16 left-0 right-0 z-40 bg-gradient-to-r from-orange-500 to-amber-600 p-2.5 shadow-md">
-            <div className="container mx-auto flex items-center justify-center space-x-3">
-              <div className="p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
-                <Icon name="AlertTriangle" size={18} className="text-white" />
-              </div>
-              <span className="font-body-bold text-white">
-                Mode Démonstration - Les données affichées sont fictives
-              </span>
-            </div>
-          </div>
-        )}
-        
         <Header 
           userRole="parent" 
           userName={parentData?.name}
@@ -373,7 +355,7 @@ const ParentDashboard = () => {
         />
         <main className={`pt-20 sm:pt-16 transition-all duration-300 ${
           sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
-        } ${isDemo ? 'mt-10' : ''}`}>
+        }`}>
           <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
             {/* Loading State - Modernisé */}
             {isLoading && children.length === 0 && (
@@ -429,12 +411,6 @@ const ParentDashboard = () => {
                       <div className="text-2xl font-display font-bold">{getUnreadCount()}</div>
                       <div className="text-xs text-indigo-100 mt-1">Notification{getUnreadCount() > 1 ? 's' : ''}</div>
                     </div>
-                    {isDemo && (
-                      <div className="bg-orange-500/40 border-2 border-orange-300 backdrop-blur-sm rounded-xl px-4 py-3 shadow-md">
-                        <div className="text-sm font-body-bold text-white">MODE DÉMO</div>
-                        <div className="text-xs text-orange-100 mt-1">Données fictives</div>
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

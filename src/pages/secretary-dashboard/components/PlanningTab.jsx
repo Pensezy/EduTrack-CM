@@ -4,7 +4,6 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { useToast, ToastContainer } from '../../../components/ui/Toast';
-import { useDataMode } from '../../../hooks/useEduTrackData';
 import planningService from '../../../services/planningService';
 import EventModal from './EventModal';
 import PlanningCalendarModal from './PlanningCalendarModal';
@@ -12,8 +11,7 @@ import PlanningAnalyticsModal from './PlanningAnalyticsModal';
 
 const PlanningTab = () => {
   const { toasts, showSuccess, showError, showInfo, removeToast } = useToast();
-  const { isProductionMode } = useDataMode(); // Détecter le mode production
-  
+
   const [selectedDate, setSelectedDate] = useState(new Date()?.toISOString()?.split('T')?.[0]);
   const [viewMode, setViewMode] = useState('list');
   const [filterType, setFilterType] = useState('');
@@ -46,29 +44,9 @@ const PlanningTab = () => {
         search: searchTerm
       };
 
-      console.log('🔄 Chargement planning - Mode production (hook):', isProductionMode);
-      
-      // Debug du mode et forcer production si utilisateur réel connecté
-      const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-      const edutrackUser = localStorage.getItem('edutrack-user');
-      console.log('🔍 userData.demoAccount:', userData.demoAccount);
-      console.log('🔍 edutrack-user exists:', !!edutrackUser);
-      console.log('🔍 Hook isProductionMode:', isProductionMode);
-      
-      // Forcer le mode production si on détecte un utilisateur réel
-      let mode;
-      if (edutrackUser && edutrackUser !== 'null' && !userData.demoAccount) {
-        mode = 'production';
-        console.log('🔧 Mode forcé vers production car utilisateur réel connecté');
-      } else {
-        mode = isProductionMode ? 'production' : 'demo';
-        console.log('🔍 Mode selon hook:', mode);
-      }
-      
-      const data = await planningService.getAllEvents(filters, mode);
+      const data = await planningService.getAllEvents(filters, 'production');
       setEvents(data.events || []);
       setStatistics(data.statistics || {});
-      console.log('✅ Événements chargés:', data.events?.length || 0);
     } catch (error) {
       console.error('Erreur chargement événements:', error);
       showError('Erreur lors du chargement des événements');

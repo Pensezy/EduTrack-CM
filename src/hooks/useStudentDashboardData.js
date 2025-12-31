@@ -1,18 +1,13 @@
 /**
  * Hook unifié pour gérer les données du dashboard étudiant
- * Bascule automatiquement entre mode démo et production
+ * Récupère les données depuis Supabase uniquement
  */
 
 import { useState, useEffect } from 'react';
-import { useDataMode } from './useDataMode';
-import studentDemoDataService from '../services/studentDemoDataService';
 import studentProductionDataService from '../services/studentProductionDataService';
 import { computeSubjectAverage, computeOverallAverage } from '../utils/grading';
 
 export const useStudentDashboardData = (studentId) => {
-  const { dataMode } = useDataMode();
-  const isDemo = dataMode === 'demo';
-
   // États pour les données
   const [studentProfile, setStudentProfile] = useState(null);
   const [stats, setStats] = useState(null);
@@ -28,14 +23,11 @@ export const useStudentDashboardData = (studentId) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Sélectionner le service approprié
-  const service = isDemo ? studentDemoDataService : studentProductionDataService;
-
   /**
    * Charger toutes les données du dashboard
    */
   const loadDashboardData = async () => {
-    if (!studentId && !isDemo) {
+    if (!studentId) {
       setError('ID étudiant non fourni');
       setLoading(false);
       return;
@@ -56,13 +48,11 @@ export const useStudentDashboardData = (studentId) => {
       setBehavior(null);
       setSchedule(null);
 
-      console.log(`📚 Chargement données étudiant en mode ${isDemo ? 'DÉMO' : 'PRODUCTION'}...`);
+      console.log(`📚 Chargement données étudiant depuis Supabase...`);
       console.log(`👤 ID étudiant:`, studentId);
 
-      // Définir le contexte pour le mode production
-      if (!isDemo && studentId) {
-        studentProductionDataService.setUserContext(studentId);
-      }
+      // Définir le contexte utilisateur
+      studentProductionDataService.setUserContext(studentId);
 
       // Charger toutes les données en parallèle
       const [
@@ -76,15 +66,15 @@ export const useStudentDashboardData = (studentId) => {
         behaviorResult,
         scheduleResult
       ] = await Promise.all([
-        service.getStudentProfile(studentId),
-        service.getStudentStats(studentId),
-        service.getStudentGrades(studentId),
-        service.getStudentAttendance(studentId),
-        service.getStudentAssignments(studentId),
-        service.getStudentNotifications(studentId),
-        service.getStudentAchievements(studentId),
-        service.getStudentBehavior(studentId),
-        service.getStudentSchedule(studentId)
+        studentProductionDataService.getStudentProfile(studentId),
+        studentProductionDataService.getStudentStats(studentId),
+        studentProductionDataService.getStudentGrades(studentId),
+        studentProductionDataService.getStudentAttendance(studentId),
+        studentProductionDataService.getStudentAssignments(studentId),
+        studentProductionDataService.getStudentNotifications(studentId),
+        studentProductionDataService.getStudentAchievements(studentId),
+        studentProductionDataService.getStudentBehavior(studentId),
+        studentProductionDataService.getStudentSchedule(studentId)
       ]);
 
       console.log('📋 Profile Result:', profileResult);
@@ -154,133 +144,38 @@ export const useStudentDashboardData = (studentId) => {
   };
 
   /**
-   * Recharger toutes les données
-   */
-  const refreshData = () => {
-    loadDashboardData();
-  };
-
-  /**
    * Marquer une notification comme lue
    */
   const markNotificationAsRead = async (notificationId) => {
     try {
-      const result = await service.markNotificationAsRead(notificationId);
-      
-      if (!result.error) {
-        // Mettre à jour l'état local
-        setNotifications(prev =>
-          prev.map(notif =>
-            notif.id === notificationId
-              ? { ...notif, is_read: true }
-              : notif
-          )
-        );
-      }
+      await studentProductionDataService.markNotificationAsRead(notificationId);
 
-      return result;
+      // Mettre à jour l'état local
+      setNotifications(prev =>
+        prev.map(notif =>
+          notif.id === notificationId
+            ? { ...notif, read: true }
+            : notif
+        )
+      );
     } catch (err) {
       console.error('❌ Erreur marquage notification:', err);
-      return { data: null, error: err };
     }
   };
 
   /**
-   * Obtenir les notes par matière
+   * Rafraîchir toutes les données
    */
-  const getGradesBySubject = (options = {}) => {
-    if (!grades || grades.length === 0) return [];
-
-    const subjectMap = {};
-
-    grades.forEach(grade => {
-      const subjectName = grade.subject || 'Matière inconnue';
-      if (!subjectMap[subjectName]) {
-        subjectMap[subjectName] = {
-          subject: subjectName,
-          subject_code: grade.subject_code,
-          grades: [],
-          average: 0,
-          count: 0
-        };
-      }
-
-      subjectMap[subjectName].grades.push(grade);
-      subjectMap[subjectName].count += 1;
-    });
-
-    // Calculer les moyennes par matière en tenant compte des max_grade et coefficients
-    Object.values(subjectMap).forEach(subject => {
-      subject.average = computeSubjectAverage(subject.grades, { schoolType: options.schoolType });
-      // Déterminer coefficient matière moyen si fournit
-      const coefs = subject.grades.map(g => Number(g.coefficient) || 1);
-      subject.coefficient = coefs.length > 0 ? (coefs.reduce((a,b)=>a+b,0)/coefs.length) : 1;
-    });
-
-    return Object.values(subjectMap);
-  };
-
-  /**
-   * Obtenir les statistiques de présence
-   */
-  const getAttendanceStats = () => {
-    if (!attendance || attendance.length === 0) {
-      return {
-        totalAbsences: 0,
-        justified: 0,
-        unjustified: 0,
-        late: 0,
-        rate: 100
-      };
-    }
-
-    const totalAbsences = attendance.filter(a => a.status === 'absent').length;
-    const justified = attendance.filter(a => a.justified).length;
-    const unjustified = totalAbsences - justified;
-    const late = attendance.filter(a => a.status === 'late').length;
-    const totalDays = 30; // Jours du mois
-    const rate = ((totalDays - totalAbsences) / totalDays * 100).toFixed(1);
-
-    return {
-      totalAbsences,
-      justified,
-      unjustified,
-      late,
-      rate: parseFloat(rate)
-    };
-  };
-
-  /**
-   * Obtenir les devoirs par statut
-   */
-  const getAssignmentsByStatus = () => {
-    if (!assignments || assignments.length === 0) {
-      return {
-        pending: [],
-        in_progress: [],
-        completed: []
-      };
-    }
-
-    return {
-      pending: assignments.filter(a => a.status === 'pending'),
-      in_progress: assignments.filter(a => a.status === 'in_progress'),
-      completed: assignments.filter(a => a.status === 'completed')
-    };
-  };
-
-  /**
-   * Obtenir les notifications non lues
-   */
-  const getUnreadNotifications = () => {
-    if (!notifications || notifications.length === 0) return [];
-    return notifications.filter(n => !n.is_read);
-  };
-
-  // Charger les données au montage et lors du changement de mode
-  useEffect(() => {
+  const refresh = () => {
     loadDashboardData();
-  }, [studentId, dataMode]);
+  };
+
+  // Charger les données au montage et quand studentId change
+  useEffect(() => {
+    if (studentId) {
+      loadDashboardData();
+    }
+  }, [studentId]);
 
   return {
     // Données
@@ -294,20 +189,14 @@ export const useStudentDashboardData = (studentId) => {
     behavior,
     schedule,
 
-    // États
+    // État
     loading,
     error,
-    isDemo,
 
     // Actions
-    refreshData,
     markNotificationAsRead,
-
-    // Utilitaires
-    getGradesBySubject,
-    getAttendanceStats,
-    getAssignmentsByStatus,
-    getUnreadNotifications
+    refresh,
+    reload: refresh
   };
 };
 

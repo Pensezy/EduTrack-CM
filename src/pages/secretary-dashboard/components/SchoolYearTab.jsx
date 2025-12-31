@@ -3,7 +3,6 @@ import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
-import { useDataMode } from '../../../hooks/useEduTrackData';
 import schoolYearService from '../../../services/schoolYearService';
 
 const SchoolYearTab = () => {
@@ -26,16 +25,12 @@ const SchoolYearTab = () => {
     transfers: 0
   });
 
-  const { dataMode } = useDataMode();
-
   // Chargement des données au montage du composant
   useEffect(() => {
     const loadSchoolYearData = async () => {
       try {
         setLoading(true);
-        
-        console.log('SchoolYearTab: Chargement des données en mode production - UNIQUEMENT les vraies données');
-        
+
         const [studentsRes, reinscriptionsRes, newInscriptionsRes, statisticsRes] = await Promise.all([
           schoolYearService.getCurrentStudents(),
           schoolYearService.getReinscriptions(),
@@ -47,21 +42,8 @@ const SchoolYearTab = () => {
         setReinscriptions(reinscriptionsRes);
         setNewInscriptions(newInscriptionsRes);
         setStatistics(statisticsRes);
-
-        console.log('SchoolYearTab: Données chargées:', {
-          students: Object.keys(studentsRes).length,
-          reinscriptions: reinscriptionsRes.length,
-          newInscriptions: newInscriptionsRes.length,
-          statistics: statisticsRes
-        });
-
-        // Si aucune donnée trouvée, afficher un message informatif
-        if (reinscriptionsRes.length === 0 && newInscriptionsRes.length === 0 && Object.keys(studentsRes).length === 0) {
-          console.log('SchoolYearTab: Aucune donnée trouvée - affichage des états vides');
-        }
       } catch (error) {
-        console.error('SchoolYearTab: Erreur lors du chargement des données de l\'année scolaire:', error);
-        // En cas d'erreur, utiliser des données vides
+        console.error('Erreur lors du chargement des données de l\'année scolaire:', error);
         setStudentsData({});
         setReinscriptions([]);
         setNewInscriptions([]);
@@ -80,7 +62,7 @@ const SchoolYearTab = () => {
     };
 
     loadSchoolYearData();
-  }, [dataMode]);
+  }, []);
 
   // Gestionnaire de mise à jour de statut
   const handleStatusUpdate = async (requestId, newStatus, notes = null) => {
@@ -94,7 +76,6 @@ const SchoolYearTab = () => {
         ]);
         setReinscriptions(reinscriptionsRes);
         setNewInscriptions(newInscriptionsRes);
-        console.log('SchoolYearTab: Statut mis à jour avec succès');
       } else {
         console.error('Erreur lors de la mise à jour du statut:', result.error);
       }

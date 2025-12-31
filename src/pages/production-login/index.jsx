@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { useDataMode } from '../../hooks/useDataMode';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
@@ -9,7 +8,6 @@ import Input from '../../components/ui/Input';
 const ProductionLogin = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const { isDemo } = useDataMode();
   const [formData, setFormData] = useState({
     email: '',
     password: ''
@@ -205,19 +203,6 @@ const ProductionLogin = () => {
               Mot de passe oublié ?
             </Link>
           </div>
-
-          {/* Demo Mode Link */}
-          {!isDemo && (
-            <div className="mt-4 pt-4 border-t border-gray-200">
-              <Link
-                to="/demo"
-                className="text-sm text-gray-600 hover:text-gray-700 hover:underline flex items-center justify-center"
-              >
-                <Icon name="Play" size={16} className="mr-2" />
-                Découvrir la démonstration
-              </Link>
-            </div>
-          )}
         </div>
 
         {/* Test Accounts Info */}

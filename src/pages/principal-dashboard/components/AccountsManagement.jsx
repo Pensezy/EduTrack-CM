@@ -5,7 +5,6 @@ import Button from '../../../components/ui/Button';
 import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { useAuth } from '../../../contexts/AuthContext';
-import { useDataMode } from '../../../hooks/useDataMode';
 import useDashboardData from '../../../hooks/useDashboardData';
 import { supabase } from '../../../lib/supabase';
 import { sendCredentialsEmail, isEmailConfigured } from '../../../services/emailService';
@@ -21,7 +20,6 @@ const AccountsManagement = () => {
 
   // Hooks pour la gestion des données
   const { user: authUser } = useAuth();
-  const { isDemo } = useDataMode();
   const { data, loading } = useDashboardData();
 
   // État pour les données complètes de l'utilisateur
@@ -31,13 +29,6 @@ const AccountsManagement = () => {
   // Charger les données complètes du directeur depuis Supabase
   useEffect(() => {
     const loadUserData = async () => {
-      if (isDemo) {
-        // En mode démo, utiliser les données du compte démo
-        setUser(authUser);
-        setUserDataLoaded(true);
-        return;
-      }
-
       if (!authUser?.id) {
         setUser(authUser);
         setUserDataLoaded(true);
@@ -103,7 +94,7 @@ const AccountsManagement = () => {
     };
 
     loadUserData();
-  }, [authUser, isDemo]);
+  }, [authUser]);
 
   // Gérer la navigation directe vers un sous-onglet via l'URL
   useEffect(() => {
@@ -181,81 +172,6 @@ const AccountsManagement = () => {
     }
   }, [newUser.classId, newUser.role, availableClasses, user?.school_type]);
 
-  // Données de démonstration pour les comptes
-  const demoAccounts = [
-    {
-      id: 'demo-principal-1',
-      full_name: 'M. Directeur Demo',
-      email: 'principal@demo.com',
-      phone: '+237 695 123 456',
-      role: 'principal',
-      status: 'active',
-      last_login: '2025-10-08 09:30:00',
-      created_at: '2024-09-01',
-      login_attempts: 0,
-      is_locked: false
-    },
-    {
-      id: 'demo-teacher-1',
-      full_name: 'Mme Marie Enseignante',
-      email: 'teacher@demo.com',
-      phone: '+237 695 234 567',
-      role: 'teacher',
-      status: 'active',
-      last_login: '2025-10-08 08:15:00',
-      created_at: '2024-09-15',
-      login_attempts: 0,
-      is_locked: false
-    },
-    {
-      id: 'demo-secretary-1',
-      full_name: 'Mme Fatima Secrétaire',
-      email: 'secretary@demo.com',
-      phone: '+237 695 345 678',
-      role: 'secretary',
-      status: 'active',
-      last_login: '2025-10-07 16:45:00',
-      created_at: '2024-09-20',
-      login_attempts: 1,
-      is_locked: false
-    },
-    {
-      id: 'demo-student-1',
-      full_name: 'Jean Élève',
-      email: 'student@demo.com',
-      phone: '+237 695 456 789',
-      role: 'student',
-      status: 'active',
-      last_login: '2025-10-08 07:30:00',
-      created_at: '2024-10-01',
-      login_attempts: 0,
-      is_locked: false
-    },
-    {
-      id: 'demo-parent-1',
-      full_name: 'Mme Parent Demo',
-      email: 'parent@demo.com',
-      phone: '+237 695 567 890',
-      role: 'parent',
-      status: 'active',
-      last_login: '2025-10-07 20:15:00',
-      created_at: '2024-10-01',
-      login_attempts: 2,
-      is_locked: false
-    },
-    {
-      id: 'demo-inactive-1',
-      full_name: 'Compte Inactif',
-      email: 'inactive@demo.com',
-      phone: '+237 695 678 901',
-      role: 'teacher',
-      status: 'inactive',
-      last_login: '2025-09-15 14:20:00',
-      created_at: '2024-08-01',
-      login_attempts: 5,
-      is_locked: true
-    }
-  ];
 
   // Statistiques des comptes
   const accountStats = {
@@ -276,20 +192,17 @@ const AccountsManagement = () => {
   };
 
   // Filtrage des comptes
-  // Utiliser les comptes réels ou de démo selon le mode
-  const displayAccounts = isDemo ? demoAccounts : accounts;
-
-  const filteredAccounts = displayAccounts.filter(account => {
+  const filteredAccounts = accounts.filter(account => {
     const matchesSearch = account.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          account.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesRole = selectedRole === 'all' || account.role === selectedRole;
-    
-    // Gérer is_active (Supabase) ou status (démo)
-    const accountStatus = account.is_active !== undefined 
+
+    // Gérer is_active (Supabase)
+    const accountStatus = account.is_active !== undefined
       ? (account.is_active ? 'active' : 'inactive')
       : account.status;
     const matchesStatus = selectedStatus === 'all' || accountStatus === selectedStatus;
-    
+
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -350,29 +263,8 @@ const AccountsManagement = () => {
   useEffect(() => {
     const loadReferenceData = async () => {
       console.log('🔄 Chargement données référence...');
-      console.log('  - isDemo:', isDemo);
       console.log('  - user:', user);
       console.log('  - school_id:', user?.current_school_id);
-
-      if (isDemo) {
-        console.log('📦 Mode démo - Chargement données fictives');
-        // Données de démo
-        setAvailableClasses([
-          { value: 'demo-class-1', label: '6ème A' },
-          { value: 'demo-class-2', label: '6ème B' },
-          { value: 'demo-class-3', label: '5ème A' }
-        ]);
-        setAvailableSubjects([
-          { value: 'demo-subject-1', label: 'Mathématiques' },
-          { value: 'demo-subject-2', label: 'Français' },
-          { value: 'demo-subject-3', label: 'Anglais' }
-        ]);
-        setAvailableStudents([
-          { value: 'demo-student-1', label: 'Jean Élève - 6ème A' },
-          { value: 'demo-student-2', label: 'Marie Élève - 6ème B' }
-        ]);
-        return;
-      }
 
       if (!user?.current_school_id) {
         console.warn('⚠️ Pas de school_id - Impossible de charger les données');
@@ -502,7 +394,7 @@ const AccountsManagement = () => {
     if (activeTab === 'create' && userDataLoaded) {
       loadReferenceData();
     }
-  }, [activeTab, user?.current_school_id, isDemo, userDataLoaded]);
+  }, [activeTab, user?.current_school_id, userDataLoaded]);
 
   // Fonction pour ajouter une nouvelle matière
   const handleAddSubject = async () => {
@@ -520,50 +412,38 @@ const AccountsManagement = () => {
     setAddingSubject(true);
 
     try {
-      if (isDemo) {
-        // Mode démo : ajouter localement
-        const newSubject = {
-          value: `custom-${Date.now()}`,
-          label: newSubjectName.trim()
-        };
-        setAvailableSubjects(prev => [...prev, newSubject]);
-        setNewSubjectName('');
-        setShowAddSubject(false);
-        alert('Matière ajoutée (mode démo)');
-      } else {
-        // Mode production : sauvegarder dans Supabase
-        const { data: schoolData, error: fetchError } = await supabase
-          .from('schools')
-          .select('custom_subjects')
-          .eq('id', user.current_school_id)
-          .single();
+      // Sauvegarder dans Supabase
+      const { data: schoolData, error: fetchError } = await supabase
+        .from('schools')
+        .select('custom_subjects')
+        .eq('id', user.current_school_id)
+        .single();
 
-        if (fetchError) {
-          throw new Error('Erreur lors de la récupération des matières');
-        }
-
-        const currentCustomSubjects = schoolData.custom_subjects || [];
-        const updatedCustomSubjects = [...currentCustomSubjects, newSubjectName.trim()];
-
-        const { error: updateError } = await supabase
-          .from('schools')
-          .update({ custom_subjects: updatedCustomSubjects })
-          .eq('id', user.current_school_id);
-
-        if (updateError) {
-          throw new Error('Erreur lors de l\'ajout de la matière');
-        }
-
-        // Mettre à jour la liste locale
-        const newSubject = {
-          value: `custom-${Date.now()}`,
-          label: newSubjectName.trim()
-        };
-        setAvailableSubjects(prev => [...prev, newSubject]);
-        setNewSubjectName('');
-        setShowAddSubject(false);
-        alert('✅ Matière ajoutée avec succès !');
+      if (fetchError) {
+        throw new Error('Erreur lors de la récupération des matières');
       }
+
+      const currentCustomSubjects = schoolData.custom_subjects || [];
+      const updatedCustomSubjects = [...currentCustomSubjects, newSubjectName.trim()];
+
+      const { error: updateError } = await supabase
+        .from('schools')
+        .update({ custom_subjects: updatedCustomSubjects })
+        .eq('id', user.current_school_id);
+
+      if (updateError) {
+        throw new Error('Erreur lors de l\'ajout de la matière');
+      }
+
+      // Mettre à jour la liste locale
+      const newSubject = {
+        value: `custom-${Date.now()}`,
+        label: newSubjectName.trim()
+      };
+      setAvailableSubjects(prev => [...prev, newSubject]);
+      setNewSubjectName('');
+      setShowAddSubject(false);
+      alert('✅ Matière ajoutée avec succès !');
     } catch (error) {
       console.error('Erreur ajout matière:', error);
       alert(`❌ Erreur : ${error.message}`);
@@ -574,11 +454,6 @@ const AccountsManagement = () => {
 
   // Test de la configuration EmailJS
   const testEmailConfiguration = async () => {
-    if (isDemo) {
-      alert('⚠️ Le test d\'email n\'est disponible qu\'en mode production.');
-      return;
-    }
-
     const testEmail = prompt('Entrez votre adresse email pour recevoir un email de test :');
     
     if (!testEmail || !testEmail.includes('@')) {
@@ -635,15 +510,11 @@ const AccountsManagement = () => {
     );
     
     if (!confirmAction) return;
-    
-    if (isDemo) {
-      alert(`Mode démo : Mot de passe réinitialisé pour ${accountName}\n\nEmail envoyé à ${accountEmail} avec :\n- Nouveau mot de passe temporaire\n- Instructions de changement\n- Lien de première connexion`);
-    } else {
-      // Logique de réinitialisation réelle
-      console.log('Réinitialisation mot de passe pour:', accountId);
-      // Ici on enverrait l'email automatiquement
-      sendPasswordResetEmail(accountEmail, accountName, newPassword);
-    }
+
+    // Logique de réinitialisation réelle
+    console.log('Réinitialisation mot de passe pour:', accountId);
+    // Ici on enverrait l'email automatiquement
+    sendPasswordResetEmail(accountEmail, accountName, newPassword);
   };
 
   // Envoyer un email de réinitialisation
@@ -664,14 +535,10 @@ const AccountsManagement = () => {
     );
     
     if (!confirmSend) return;
-    
-    if (isDemo) {
-      alert(`Mode démo : Identifiants renvoyés à ${accountEmail} avec succès !`);
-    } else {
-      // Logique d'envoi réelle
-      console.log('Renvoi identifiants pour:', accountId);
-      sendCredentialsReminder(accountEmail, accountName);
-    }
+
+    // Logique d'envoi réelle
+    console.log('Renvoi identifiants pour:', accountId);
+    sendCredentialsReminder(accountEmail, accountName);
   };
 
   // Envoyer un rappel d'identifiants
@@ -682,13 +549,9 @@ const AccountsManagement = () => {
 
   const handleToggleStatus = (accountId, accountName, currentStatus) => {
     const newStatus = currentStatus === 'active' ? 'inactive' : 'active';
-    if (isDemo) {
-      alert(`Mode démo : Compte ${accountName} ${newStatus === 'active' ? 'activé' : 'désactivé'}`);
-    } else {
-      // Logique de changement de statut réelle
-      console.log('Changement statut pour:', accountId, 'vers:', newStatus);
-      alert(`Compte ${accountName} ${newStatus === 'active' ? 'activé' : 'désactivé'}`);
-    }
+    // Logique de changement de statut réelle
+    console.log('Changement statut pour:', accountId, 'vers:', newStatus);
+    alert(`Compte ${accountName} ${newStatus === 'active' ? 'activé' : 'désactivé'}`);
   };
 
   const handleUnlock = async (accountId, accountName) => {
@@ -704,11 +567,6 @@ const AccountsManagement = () => {
     setLoadingAccounts(true);
 
     try {
-      if (isDemo) {
-        alert('Mode démo : Compte débloqué');
-        return;
-      }
-
       const { data, error } = await supabase.rpc('unlock_user_account', {
         p_user_id: accountId,
         p_unlocked_by: user.id
@@ -814,131 +672,105 @@ const AccountsManagement = () => {
     setLoadingAccounts(true);
 
     try {
-      if (isDemo) {
-        // Mode démo - Simulation
-        const confirmSend = confirm(
-          `Mode démo : Compte créé pour ${newUser.fullName} (${newUser.role})\n\n` +
-          `Voulez-vous envoyer les identifiants par email à ${newUser.email} ?\n\n` +
-          `Email : ${newUser.email}\n` +
-          `Mot de passe temporaire : ${newUser.password}\n\n` +
-          `L'utilisateur devra changer son mot de passe lors de sa première connexion.`
+      // ✅ MODE PRODUCTION - Création réelle avec Supabase
+      console.log('Création compte avec Supabase...');
+
+      // Vérification de l'utilisateur connecté (mode production)
+      if (!user) {
+        alert('❌ Erreur : Utilisateur non connecté. Veuillez vous reconnecter.');
+        console.error('User is null');
+        setLoadingAccounts(false);
+        return;
+      }
+
+      if (!user.current_school_id) {
+        console.error('❌ current_school_id manquant. User data:', user);
+        alert(
+          `❌ Erreur : Votre compte n'est pas associé à une école.\n\n` +
+          `Email: ${user?.email || 'N/A'}\n` +
+          `Rôle: ${user?.role || 'N/A'}\n\n` +
+          `Veuillez contacter l'administrateur système.`
         );
-        
-        if (confirmSend) {
-          alert('Mode démo : Email d\'identifiants envoyé avec succès !');
+        setLoadingAccounts(false);
+        return;
+      }
+
+      // Séparer le nom complet en prénom et nom
+      const nameParts = newUser.fullName.trim().split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || firstName;
+
+      let userId = null;
+
+      // Pour le personnel (enseignants, secrétaires) ET les parents, créer directement dans la base sans auth
+      if (newUser.role === 'teacher' || newUser.role === 'secretary' || newUser.role === 'parent') {
+        console.log('Création compte personnel/parent...');
+
+        // Générer un UUID pour le nouvel utilisateur
+        const newUserId = crypto.randomUUID();
+
+        // 1. Créer l'utilisateur dans la table users
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .insert({
+            id: newUserId,
+            email: newUser.email,
+            full_name: newUser.fullName,
+            phone: newUser.phone,
+            role: newUser.role,
+            current_school_id: user.current_school_id,
+            is_active: true,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (userError) {
+          throw new Error(`Erreur création utilisateur: ${userError.message}`);
         }
 
-        // Reset du formulaire
-        setNewUser({
-          fullName: '',
-          email: '',
-          phone: '',
-          role: 'student',
-          password: '',
-          status: 'active'
-        });
-        setActiveTab('accounts');
-        
-      } else {
-        // ✅ MODE PRODUCTION - Création réelle avec Supabase
-        console.log('Création compte avec Supabase...');
-        
-        // Vérification de l'utilisateur connecté (mode production)
-        if (!user) {
-          alert('❌ Erreur : Utilisateur non connecté. Veuillez vous reconnecter.');
-          console.error('User is null');
-          setLoadingAccounts(false);
-          return;
-        }
+        userId = userData.id;
+        console.log('✅ Utilisateur créé:', userId);
 
-        if (!user.current_school_id) {
-          console.error('❌ current_school_id manquant. User data:', user);
-          alert(
-            `❌ Erreur : Votre compte n'est pas associé à une école.\n\n` +
-            `Email: ${user?.email || 'N/A'}\n` +
-            `Rôle: ${user?.role || 'N/A'}\n\n` +
-            `Veuillez contacter l'administrateur système.`
-          );
-          setLoadingAccounts(false);
-          return;
-        }
-        
-        // Séparer le nom complet en prénom et nom
-        const nameParts = newUser.fullName.trim().split(' ');
-        const firstName = nameParts[0] || '';
-        const lastName = nameParts.slice(1).join(' ') || firstName;
-
-        let userId = null;
-
-        // Pour le personnel (enseignants, secrétaires) ET les parents, créer directement dans la base sans auth
-        if (newUser.role === 'teacher' || newUser.role === 'secretary' || newUser.role === 'parent') {
-          console.log('Création compte personnel/parent...');
-          
-          // Générer un UUID pour le nouvel utilisateur
-          const newUserId = crypto.randomUUID();
-          
-          // 1. Créer l'utilisateur dans la table users
-          const { data: userData, error: userError } = await supabase
-            .from('users')
+        // 2. Créer l'entrée dans la table spécifique (teachers, secretaries ou parents)
+        if (newUser.role === 'teacher') {
+          const { data: teacherData, error: teacherError } = await supabase
+            .from('teachers')
             .insert({
-              id: newUserId,
-              email: newUser.email,
-              full_name: newUser.fullName,
-              phone: newUser.phone,
-              role: newUser.role,
-              current_school_id: user.current_school_id,
+              school_id: user.current_school_id,
+              user_id: userId,
+              first_name: firstName,
+              last_name: lastName,
+              specialty: newUser.specialty || '',
+              hire_date: newUser.hireDate || new Date().toISOString(),
               is_active: true,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString()
             })
-            .select()
+            .select('id')
             .single();
 
-          if (userError) {
-            throw new Error(`Erreur création utilisateur: ${userError.message}`);
+          if (teacherError) {
+            console.error('Erreur création enseignant:', teacherError);
+            throw new Error(`Erreur création enseignant: ${teacherError.message}`);
           }
 
-          userId = userData.id;
-          console.log('✅ Utilisateur créé:', userId);
+          // Créer les assignations de classes et matières
+          const teacherId = teacherData.id;
 
-          // 2. Créer l'entrée dans la table spécifique (teachers, secretaries ou parents)
-          if (newUser.role === 'teacher') {
-            const { data: teacherData, error: teacherError } = await supabase
-              .from('teachers')
-              .insert({
-                school_id: user.current_school_id,
-                user_id: userId,
-                first_name: firstName,
-                last_name: lastName,
-                specialty: newUser.specialty || '',
-                hire_date: newUser.hireDate || new Date().toISOString(),
-                is_active: true,
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
-              })
-              .select('id')
-              .single();
+          // Récupérer l'année académique courante
+          const { data: academicYearData } = await supabase
+            .from('academic_years')
+            .select('id')
+            .eq('school_id', user.current_school_id)
+            .eq('is_current', true)
+            .single();
 
-            if (teacherError) {
-              console.error('Erreur création enseignant:', teacherError);
-              throw new Error(`Erreur création enseignant: ${teacherError.message}`);
-            }
+          const academicYearId = academicYearData?.id;
 
-            // Créer les assignations de classes et matières
-            const teacherId = teacherData.id;
-            
-            // Récupérer l'année académique courante
-            const { data: academicYearData } = await supabase
-              .from('academic_years')
-              .select('id')
-              .eq('school_id', user.current_school_id)
-              .eq('is_current', true)
-              .single();
-
-            const academicYearId = academicYearData?.id;
-
-            if (academicYearId) {
-              // Créer les assignations pour chaque combinaison classe-matière
+          if (academicYearId) {
+            // Créer les assignations pour chaque combinaison classe-matière
               const assignments = [];
               
               // Si des classes et matières sont sélectionnées
@@ -1471,11 +1303,9 @@ const AccountsManagement = () => {
           profession: '',
           address: ''
         });
-        
+
         // Passer à l'onglet des comptes pour voir le nouveau compte
         setActiveTab('accounts');
-      }
-      
     } catch (error) {
       console.error('❌ Erreur création compte:', error);
       
@@ -1513,14 +1343,8 @@ const AccountsManagement = () => {
   // Fonction pour générer un matricule unique pour un élève
   const generateStudentMatricule = async (schoolId) => {
     const year = new Date().getFullYear();
-    
-    if (isDemo) {
-      // En mode démo, générer un numéro aléatoire
-      const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-      return `STD${year}${random}`;
-    }
-    
-    // En production, compter les élèves existants pour cette école cette année
+
+    // Compter les élèves existants pour cette école cette année
     const { data, error } = await supabase
       .from('students')
       .select('matricule', { count: 'exact' })
@@ -1597,7 +1421,7 @@ const AccountsManagement = () => {
 
   // Fonction pour charger les comptes depuis Supabase
   const loadAccountsFromSupabase = async () => {
-    if (isDemo || !user?.current_school_id) {
+    if (!user?.current_school_id) {
       return;
     }
 
@@ -1813,10 +1637,10 @@ const AccountsManagement = () => {
 
   // Charger les comptes au montage du composant
   useEffect(() => {
-    if (!isDemo && user?.current_school_id) {
+    if (user?.current_school_id) {
       loadAccountsFromSupabase();
     }
-  }, [isDemo, user?.current_school_id]);
+  }, [user?.current_school_id]);
 
   // Fonction pour désactiver un compte (pas supprimer)
   const handleDeactivateAccount = async (accountId, accountName) => {
@@ -1833,11 +1657,6 @@ const AccountsManagement = () => {
     setLoadingAccounts(true);
 
     try {
-      if (isDemo) {
-        alert('Mode démo : Compte désactivé');
-        return;
-      }
-
       // Appeler la fonction RPC Supabase pour désactiver
       const { data, error } = await supabase.rpc('deactivate_user_account', {
         p_user_id: accountId,
@@ -1879,11 +1698,6 @@ const AccountsManagement = () => {
     setLoadingAccounts(true);
 
     try {
-      if (isDemo) {
-        alert('Mode démo : Compte réactivé');
-        return;
-      }
-
       const { data, error } = await supabase.rpc('reactivate_user_account', {
         p_user_id: accountId,
         p_reactivated_by: user.id
@@ -2434,11 +2248,7 @@ const AccountsManagement = () => {
             variant="outline"
             className="flex items-center justify-center p-4 text-orange-600 border-orange-200 hover:bg-orange-50"
             onClick={() => {
-              if (isDemo) {
-                alert('Mode démo : Tous les comptes bloqués seraient débloqués');
-              } else {
-                alert('Fonction de déblocage global');
-              }
+              alert('Fonction de déblocage global');
             }}
           >
             <Icon name="Unlock" size={16} className="mr-2" />
@@ -2449,11 +2259,7 @@ const AccountsManagement = () => {
             variant="outline"
             className="flex items-center justify-center p-4 text-blue-600 border-blue-200 hover:bg-blue-50"
             onClick={() => {
-              if (isDemo) {
-                alert('Mode démo : Notification de changement de mot de passe envoyée');
-              } else {
-                alert('Fonction de notification globale');
-              }
+              alert('Fonction de notification globale');
             }}
           >
             <Icon name="Bell" size={16} className="mr-2" />
@@ -3160,21 +2966,6 @@ const AccountsManagement = () => {
 
   return (
     <div className="space-y-6">
-      {/* Indicateur de mode */}
-      {isDemo && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <div className="flex items-center space-x-3">
-            <Icon name="AlertTriangle" size={20} className="text-amber-600" />
-            <div>
-              <h3 className="font-semibold text-amber-800">Mode Démonstration - Gestion des Comptes</h3>
-              <p className="text-sm text-amber-700">
-                Vous consultez des comptes de démonstration. Les actions ne modifieront pas les vraies données.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Navigation par onglets - Style différent du menu principal */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="border-b border-gray-200">

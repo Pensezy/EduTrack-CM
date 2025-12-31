@@ -5,15 +5,14 @@ import Header from '../../components/ui/Header';
 import Sidebar from '../../components/ui/Sidebar';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
-import { useDataMode } from '../../hooks/useDataMode';
+import { useAuth } from '../../contexts/AuthContext';
 
 const SchoolSettings = () => {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [activeTab, setActiveTab] = useState('general');
   const navigate = useNavigate();
-  
-  // Utiliser useDataMode qui gère correctement l'utilisateur avec son rôle
-  const { user, isLoading } = useDataMode();
+
+  const { user, isLoading } = useAuth();
   
   // Protection : Seul le principal peut accéder à cette page
   useEffect(() => {

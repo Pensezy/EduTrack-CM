@@ -137,8 +137,7 @@ const StaffLogin = () => {
           school_name: authUserData.school?.name || 'École',
           is_active: authUserData.is_active,
           loginTime: new Date().toISOString(),
-          sessionId: Math.random().toString(36).substr(2, 9),
-          demoAccount: false
+          sessionId: Math.random().toString(36).substr(2, 9)
         };
 
         localStorage.setItem('edutrack-user', JSON.stringify(userSession));
@@ -180,8 +179,7 @@ const StaffLogin = () => {
         school_name: userData.school?.name || 'École',
         is_active: userData.is_active,
         loginTime: new Date().toISOString(),
-        sessionId: Math.random().toString(36).substr(2, 9),
-        demoAccount: false
+        sessionId: Math.random().toString(36).substr(2, 9)
       };
 
       // Stocker la session avec une clé spécifique au rôle

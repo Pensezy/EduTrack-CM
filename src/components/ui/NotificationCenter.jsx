@@ -1,117 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../AppIcon';
 import Button from './Button';
-import { useDataMode } from '../../hooks/useDataMode';
 
 const NotificationCenter = ({ userRole = 'student', className = '' }) => {
   const [notifications, setNotifications] = useState([]);
   const [isOpen, setIsOpen] = useState(false);
   const [unreadCount, setUnreadCount] = useState(0);
-  const { isDemo } = useDataMode();
-
-  // Mock notifications based on user role
-  const mockNotifications = {
-    student: [
-      {
-        id: 1,
-        title: 'New Grade Posted',
-        message: 'Your Mathematics Assignment 3 has been graded: A-',
-        time: '2 minutes ago',
-        type: 'success',
-        read: false,
-        category: 'grades'
-      },
-      {
-        id: 2,
-        title: 'Assignment Due Soon',
-        message: 'Physics Lab Report is due tomorrow at 11:59 PM',
-        time: '1 hour ago',
-        type: 'warning',
-        read: false,
-        category: 'assignments'
-      },
-      {
-        id: 3,
-        title: 'Parent Meeting Scheduled',
-        message: 'Meeting with your parents scheduled for Friday 2:00 PM',
-        time: '3 hours ago',
-        type: 'info',
-        read: true,
-        category: 'meetings'
-      }
-    ],
-    secretary: [
-      {
-        id: 1,
-        title: 'New Student Registration',
-        message: '3 new students registered today - review required',
-        time: '15 minutes ago',
-        type: 'info',
-        read: false,
-        category: 'registrations'
-      },
-      {
-        id: 2,
-        title: 'Grade Entry Deadline',
-        message: 'Teachers must submit Q2 grades by Friday 5:00 PM',
-        time: '2 hours ago',
-        type: 'warning',
-        read: false,
-        category: 'deadlines'
-      },
-      {
-        id: 3,
-        title: 'System Maintenance',
-        message: 'Scheduled maintenance tonight 11:00 PM - 2:00 AM',
-        time: '4 hours ago',
-        type: 'info',
-        read: true,
-        category: 'system'
-      }
-    ],
-    principal: [
-      {
-        id: 1,
-        title: 'Monthly Report Ready',
-        message: 'November academic performance report is available',
-        time: '30 minutes ago',
-        type: 'success',
-        read: false,
-        category: 'reports'
-      },
-      {
-        id: 2,
-        title: 'Budget Review Meeting',
-        message: 'Quarterly budget review scheduled for tomorrow 10:00 AM',
-        time: '2 hours ago',
-        type: 'warning',
-        read: false,
-        category: 'meetings'
-      },
-      {
-        id: 3,
-        title: 'Teacher Evaluation Due',
-        message: '5 teacher evaluations pending your review',
-        time: '1 day ago',
-        type: 'info',
-        read: true,
-        category: 'evaluations'
-      }
-    ]
-  };
 
   useEffect(() => {
-    if (isDemo) {
-      // Mode démo : utiliser les données mock
-      const roleNotifications = mockNotifications?.[userRole] || mockNotifications?.student;
-      setNotifications(roleNotifications);
-      setUnreadCount(roleNotifications?.filter(n => !n?.read)?.length);
-    } else {
-      // Mode production : pas de notifications jusqu'à implementation avec Supabase
-      setNotifications([]);
-      setUnreadCount(0);
-    }
-  }, [userRole, isDemo]);
+    // Fetch notifications from Supabase
+    // TODO: Implement Supabase integration to fetch real notifications
+    setNotifications([]);
+    setUnreadCount(0);
+  }, [userRole]);
 
   const handleNotificationClick = (notificationId) => {
     setNotifications(prev => 

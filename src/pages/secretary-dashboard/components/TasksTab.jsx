@@ -6,7 +6,7 @@ import Input from '../../../components/ui/Input';
 import Select from '../../../components/ui/Select';
 import { Checkbox } from '../../../components/ui/Checkbox';
 
-const TasksTab = ({ isDemo = false }) => {
+const TasksTab = () => {
   const [filterPriority, setFilterPriority] = useState('');
   const [filterStatus, setFilterStatus] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,109 +42,14 @@ const TasksTab = ({ isDemo = false }) => {
     { value: 'cancelled', label: 'Annulé' }
   ];
 
-  // Données démo
-  const demoTasks = [
-    {
-      id: 1,
-      title: "Appeler Mme Mbarga pour justificatif d'absence",
-      description: "Junior Mbarga absent hier sans justification",
-      priority: "urgent",
-      status: "pending",
-      dueDate: "2025-10-18",
-      dueTime: "09:00",
-      category: "appels",
-      assignedTo: "Secrétariat",
-      studentRelated: "Junior Mbarga - CM1",
-      contact: "+237 6 89 01 23 45",
-      estimatedDuration: "15 min"
-    },
-    {
-      id: 2,
-      title: "Préparer certificats de scolarité",
-      description: "3 certificats à imprimer pour les familles Nkomo, Biya et Atangana",
-      priority: "high",
-      status: "pending",
-      dueDate: "2025-10-18",
-      dueTime: "14:00",
-      category: "documents",
-      assignedTo: "Secrétariat",
-      studentRelated: "Amina Nkomo, Kevin Biya, Sarah Atangana",
-      contact: "",
-      estimatedDuration: "30 min"
-    },
-    {
-      id: 3,
-      title: "Relance paiement frais de cantine",
-      description: "Envoyer rappel pour les familles avec paiements en retard",
-      priority: "medium",
-      status: "in_progress",
-      dueDate: "2025-10-19",
-      dueTime: "10:00",
-      category: "paiements",
-      assignedTo: "Secrétariat",
-      studentRelated: "5 familles concernées",
-      contact: "",
-      estimatedDuration: "45 min"
-    },
-    {
-      id: 4,
-      title: "Mettre à jour planning rendez-vous",
-      description: "Confirmer RDV parents pour la semaine prochaine",
-      priority: "medium",
-      status: "pending",
-      dueDate: "2024-11-18",
-      dueTime: "16:00",
-      category: "planning",
-      assignedTo: "Secrétariat",
-      studentRelated: "",
-      contact: "",
-      estimatedDuration: "20 min"
-    },
-    {
-      id: 5,
-      title: "Vérifier dossiers d'inscription",
-      description: "Contrôler les pièces manquantes pour 3 nouveaux élèves",
-      priority: "high",
-      status: "pending",
-      dueDate: "2024-11-20",
-      dueTime: "11:00",
-      category: "inscriptions",
-      assignedTo: "Secrétariat",
-      studentRelated: "3 nouveaux élèves",
-      contact: "",
-      estimatedDuration: "1 heure"
-    },
-    {
-      id: 6,
-      title: "Impression bulletins 1er trimestre",
-      description: "Préparer et imprimer tous les bulletins scolaires",
-      priority: "low",
-      status: "completed",
-      dueDate: "2024-11-15",
-      dueTime: "15:00",
-      category: "documents",
-      assignedTo: "Secrétariat",
-      studentRelated: "Toutes les classes",
-      contact: "",
-      estimatedDuration: "2 heures"
-    }
-  ];
-
   const [tasks, setTasks] = useState([]);
 
   // Charger les tâches au montage
   useEffect(() => {
     loadTasks();
-  }, [isDemo]);
+  }, []);
 
   const loadTasks = async () => {
-    if (isDemo) {
-      // Mode démo : utiliser les données statiques
-      setTasks(demoTasks);
-      setLoading(false);
-      return;
-    }
-
     try {
       setLoading(true);
       const savedUser = localStorage.getItem('edutrack-user');
@@ -287,15 +192,6 @@ const TasksTab = ({ isDemo = false }) => {
   });
 
   const handleTaskStatusChange = async (taskId, newStatus) => {
-    if (isDemo) {
-      // Mode démo : modification locale uniquement
-      setTasks(tasks.map(task => 
-        task.id === taskId ? { ...task, status: newStatus } : task
-      ));
-      return;
-    }
-
-    // Mode production : mettre à jour dans Supabase
     try {
       const updateData = {
         status: newStatus,
@@ -340,38 +236,6 @@ const TasksTab = ({ isDemo = false }) => {
       return;
     }
 
-    if (isDemo) {
-      // Mode démo : ajouter localement uniquement
-      const task = {
-        id: tasks.length + 1,
-        title: newTask.title,
-        description: newTask.description,
-        priority: newTask.priority,
-        status: 'pending',
-        dueDate: newTask.dueDate,
-        dueTime: newTask.dueTime,
-        category: newTask.category,
-        assignedTo: 'Secrétariat',
-        studentRelated: newTask.studentRelated,
-        contact: newTask.contact,
-        estimatedDuration: '30 min'
-      };
-      setTasks([...tasks, task]);
-      setNewTask({
-        title: '',
-        description: '',
-        priority: 'medium',
-        dueDate: '',
-        dueTime: '',
-        category: 'general',
-        contact: '',
-        studentRelated: ''
-      });
-      setShowAddTaskModal(false);
-      return;
-    }
-
-    // Mode production : sauvegarder dans Supabase
     try {
       const savedUser = localStorage.getItem('edutrack-user');
       const userData = savedUser ? JSON.parse(savedUser) : null;
@@ -471,33 +335,6 @@ const TasksTab = ({ isDemo = false }) => {
       return;
     }
 
-    if (isDemo) {
-      // Mode démo : mise à jour locale uniquement
-      setTasks(tasks.map(task => 
-        task.id === editingTask.id 
-          ? {
-              ...task,
-              ...newTask,
-              lastModified: new Date().toISOString()
-            }
-          : task
-      ));
-      setShowEditTaskModal(false);
-      setEditingTask(null);
-      setNewTask({
-        title: '',
-        description: '',
-        priority: 'medium',
-        dueDate: '',
-        dueTime: '',
-        category: 'general',
-        contact: '',
-        studentRelated: ''
-      });
-      return;
-    }
-
-    // Mode production : mettre à jour dans Supabase
     try {
       const { data, error } = await supabase
         .from('tasks')
@@ -551,13 +388,6 @@ const TasksTab = ({ isDemo = false }) => {
       return;
     }
 
-    if (isDemo) {
-      // Mode démo : suppression locale uniquement
-      setTasks(tasks.filter(task => task.id !== taskId));
-      return;
-    }
-
-    // Mode production : supprimer de Supabase
     try {
       const { error } = await supabase
         .from('tasks')
@@ -605,29 +435,11 @@ const TasksTab = ({ isDemo = false }) => {
 
   return (
     <div className="space-y-6">
-      {/* Mode indicator */}
-      {!isDemo && tasks.length === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
-          <div className="flex items-start space-x-3">
-            <Icon name="Info" size={20} className="text-blue-600 mt-0.5" />
-            <div>
-              <h4 className="font-body font-body-semibold text-blue-900 mb-1">
-                Mode Production - Aucune tâche
-              </h4>
-              <p className="text-sm text-blue-700">
-                Vous êtes en mode production mais aucune tâche n'a encore été créée. 
-                Cliquez sur "Nouvelle tâche" pour commencer.
-              </p>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
           <h2 className="font-heading font-heading-bold text-2xl text-text-primary">
-            Tâches Quotidiennes {!isDemo && <span className="text-sm text-success">(Production)</span>}
+            Tâches Quotidiennes
           </h2>
           <p className="font-body font-body-normal text-text-secondary mt-1">
             Gestion des tâches administratives et suivi des actions prioritaires

@@ -36,11 +36,10 @@ const StudentDashboard = () => {
   console.log('🔑 AuthContext user:', authUser?.email);
   console.log('🔑 Utilisateur actif:', user?.email);
 
-  // Utiliser le nouveau hook unifié pour récupérer les données (mode démo ou production)
+  // Utiliser le nouveau hook unifié pour récupérer les données
   const {
     loading,
     error,
-    isDemo,
     studentProfile,
     stats,
     grades: fetchedGrades,
@@ -234,13 +233,6 @@ const StudentDashboard = () => {
                 <p className="text-gray-600 font-body-medium">
                   Votre emploi du temps sera disponible une fois que votre classe aura été configurée par l'administration.
                 </p>
-                {isDemo && (
-                  <div className="mt-6 p-4 bg-blue-50 border-2 border-blue-200 rounded-xl">
-                    <p className="text-sm text-blue-800 font-body-medium">
-                      💡 <strong>Mode Démo:</strong> L'emploi du temps nécessite une configuration de classe. Contactez l'administration.
-                    </p>
-                  </div>
-                )}
               </div>
             ) : (
               <>
@@ -1197,25 +1189,6 @@ const StudentDashboard = () => {
         sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'
       }`}>
         <div className="px-2 sm:px-4 lg:px-6 py-2 sm:py-3 space-y-2 sm:space-y-3 w-full overflow-x-hidden">
-          {/* Demo Mode Banner - Modernisé */}
-          {isDemo && (
-            <div className="bg-gradient-to-r from-amber-50 via-yellow-50 to-orange-50 border-2 border-amber-300 rounded-2xl p-5 shadow-lg">
-              <div className="flex items-start gap-4">
-                <div className="w-12 h-12 bg-gradient-to-br from-amber-500 to-orange-500 rounded-xl flex items-center justify-center flex-shrink-0 shadow-md">
-                  <Icon name="AlertTriangle" size={24} className="text-white" />
-                </div>
-                <div className="flex-1">
-                  <p className="font-heading font-heading-semibold text-amber-900 text-lg mb-1">
-                    Mode Démonstration
-                  </p>
-                  <p className="text-sm text-amber-800 leading-relaxed">
-                    Vous consultez actuellement des données de démonstration. Connectez-vous pour accéder à vos vraies données.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
-
           {/* Error Banner - Modernisé */}
           {error && (
             <div className="bg-gradient-to-r from-red-50 via-rose-50 to-pink-50 border-2 border-red-300 rounded-2xl p-5 shadow-lg">

@@ -254,16 +254,6 @@ const ProfileSettings = () => {
                 </div>
               </div>
             </div>
-            
-            {/* Indicateur du mode */}
-            <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-              userProfile.email?.includes('@demo.com') ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
-            }`}>
-              <Icon name={userProfile.email?.includes('@demo.com') ? 'TestTube' : 'Database'} size={16} />
-              <span className="text-sm font-medium">
-                {userProfile.email?.includes('@demo.com') ? 'Profil Démo' : 'Profil Réel'}
-              </span>
-            </div>
           </div>
         </div>
 

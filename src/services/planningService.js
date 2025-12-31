@@ -3,224 +3,25 @@
 import { supabase } from '../lib/supabase';
 import { getCurrentSchoolId } from './cardService';
 
-// Fonction pour détecter le mode de fonctionnement
-const isProductionMode = () => {
-  const userData = JSON.parse(localStorage.getItem('userData') || '{}');
-  if (userData.demoAccount === true) {
-    return false;
-  }
-  
-  const edutrackUser = localStorage.getItem('edutrack-user');
-  const hasValidSession = edutrackUser && edutrackUser !== 'null';
-  
-  return hasValidSession;
-};
-
 class PlanningService {
   constructor() {
-    this.events = this.loadMockEvents();
-    this.nextId = Math.max(...this.events.map(e => e.id)) + 1;
-  }
-
-  loadMockEvents() {
-    return [
-      {
-        id: 1,
-        title: "Rendez-vous - M. et Mme Dubois",
-        type: "parent_meeting",
-        date: "2025-10-15",
-        startTime: "14:30",
-        endTime: "15:00", 
-        duration: 30,
-        status: "confirmed",
-        description: "Entretien concernant Marie Dubois - Résultats scolaires du 1er trimestre",
-        attendees: ["Jean Dubois", "Marie Dubois (parent)", "Mme Lambert (enseignante)"],
-        location: "Bureau secrétariat",
-        priority: "medium",
-        studentId: "STU001",
-        studentName: "Marie Dubois",
-        studentClass: "CM2",
-        createdBy: "secretary",
-        reminders: [
-          { type: "email", time: "1 day before", sent: false },
-          { type: "sms", time: "2 hours before", sent: false }
-        ],
-        notes: "Prévoir les bulletins et les copies d'évaluation",
-        parentPhone: "06.12.34.56.78",
-        parentEmail: "dubois.marie@email.com"
-      },
-      {
-        id: 2,
-        title: "Réunion équipe pédagogique",
-        type: "meeting",
-        date: "2025-10-16",
-        startTime: "16:00",
-        endTime: "17:30",
-        duration: 90,
-        status: "scheduled",
-        description: "Préparation conseil de classe du 1er trimestre - Analyse des résultats",
-        attendees: ["Direction", "Mme Lambert (CM2)", "M. Durand (CM1)", "Mme Martin (CE2)", "Mlle Dupont (CE1)"],
-        location: "Salle des professeurs",
-        priority: "high",
-        createdBy: "principal",
-        reminders: [
-          { type: "email", time: "1 day before", sent: true }
-        ],
-        documents: ["Grilles d'évaluation", "Statistiques trimestrielles"],
-        recurring: { type: "monthly", interval: 1 }
-      },
-      {
-        id: 3,
-        title: "Sortie pédagogique - CM2",
-        type: "school_event",
-        date: "2025-10-18",
-        startTime: "09:00",
-        endTime: "16:30",
-        duration: 450,
-        status: "confirmed",
-        description: "Visite du musée d'histoire naturelle - Découverte des dinosaures",
-        attendees: ["Classe CM2 (24 élèves)", "Mme Lambert", "2 accompagnateurs parents"],
-        location: "Musée d'Histoire Naturelle - Paris",
-        priority: "medium",
-        studentClass: "CM2",
-        createdBy: "teacher",
-        cost: 15,
-        transport: "Bus scolaire",
-        authorizations: { required: 24, collected: 22 },
-        emergency_contact: "Mme Lambert - 06.78.90.12.34"
-      },
-      {
-        id: 4,
-        title: "Inscription - Nouvelle élève",
-        type: "inscription",
-        date: "2025-10-17",
-        startTime: "15:00",
-        endTime: "15:45",
-        duration: 45,
-        status: "pending",
-        description: "Inscription nouvelle élève Sophie Martin pour rentrée janvier 2026",
-        attendees: ["Sophie Martin (parent)", "Direction", "Secrétariat"],
-        location: "Bureau direction",
-        priority: "medium",
-        studentName: "Emma Martin",
-        studentBirthDate: "2016-03-15",
-        requestedClass: "CE2",
-        previousSchool: "École Sainte-Marie",
-        documents_required: ["Livret scolaire", "Certificat radiation", "Carnet santé"],
-        parentPhone: "06.98.76.54.32",
-        parentEmail: "martin.sophie@email.com"
-      },
-      {
-        id: 5,
-        title: "Conseil d'école",
-        type: "official_meeting",
-        date: "2025-10-22",
-        startTime: "18:00",
-        endTime: "20:00",
-        duration: 120,
-        status: "scheduled",
-        description: "Conseil d'école du 1er trimestre - Bilan et projets",
-        attendees: [
-          "Direction", 
-          "Équipe pédagogique (4 enseignants)", 
-          "Parents élus (6 membres)",
-          "Représentant mairie",
-          "DDEN"
-        ],
-        location: "Salle polyvalente",
-        priority: "high",
-        createdBy: "principal",
-        agenda: [
-          "Bilan pédagogique 1er trimestre",
-          "Projets sorties 2ème trimestre", 
-          "Budget cantine",
-          "Travaux à prévoir"
-        ],
-        documents: ["Bilan financier", "Rapport pédagogique", "Projets 2026"]
-      },
-      {
-        id: 6,
-        title: "Formation premiers secours",
-        type: "training",
-        date: "2025-10-14",
-        startTime: "13:30",
-        endTime: "16:30",
-        duration: 180,
-        status: "confirmed",
-        description: "Formation obligatoire aux gestes de premiers secours pour l'équipe",
-        attendees: ["Équipe pédagogique", "Personnel administratif", "Personnel cantine"],
-        location: "Salle de motricité",
-        priority: "high",
-        trainer: "Croix-Rouge locale",
-        certification: true,
-        mandatory: true
-      },
-      {
-        id: 7,
-        title: "Vacances de la Toussaint",
-        type: "holiday",
-        date: "2025-10-20",
-        startTime: "16:30",
-        endTime: "17:00",
-        duration: null,
-        status: "scheduled",
-        description: "Vacances scolaires de la Toussaint - Fermeture établissement",
-        attendees: ["Toute l'école"],
-        location: "École fermée",
-        priority: "info",
-        startDate: "2025-10-20",
-        endDate: "2025-11-03",
-        schoolClosed: true
-      },
-      {
-        id: 8,
-        title: "Entretien - Personnel cantine",
-        type: "interview",
-        date: "2025-10-16",
-        startTime: "10:30",
-        endTime: "11:15",
-        duration: 45,
-        status: "scheduled",
-        description: "Entretien embauche pour poste aide-cuisinier temps partiel",
-        attendees: ["Candidate", "Direction", "Secrétariat", "Responsable cantine"],
-        location: "Bureau direction",
-        priority: "medium",
-        candidateName: "Mme Lefebvre",
-        position: "Aide-cuisinier",
-        experience: "2 ans en restauration collective",
-        availability: "Temps partiel - 4h/jour"
-      }
-    ];
+    this.events = [];
+    this.nextId = 1;
   }
 
   // Obtenir tous les événements avec filtres
-  async getAllEvents(filters = {}, mode = 'auto') {
-    console.log('🔄 getAllEvents Planning appelé avec mode:', mode);
-    
-    // Déterminer le mode
-    const useProduction = mode === 'production' || (mode === 'auto' && isProductionMode());
-    
-    if (!useProduction) {
-      console.log('🎭 Mode DÉMO - Planning fictif');
-      return this.getAllEventsDemoMode(filters);
-    }
-
-    // Mode production : générer un planning basé sur les vraies données
+  async getAllEvents(filters = {}) {
     try {
-      console.log('✅ Mode PRODUCTION - Planning Supabase');
       const schoolId = await getCurrentSchoolId();
-      
+
       if (!schoolId) {
-        console.warn('❌ Pas d\'ID école - planning vide');
         return {
           events: [],
           statistics: { total: 0, upcoming: 0, today: 0, confirmed: 0, pending: 0, cancelled: 0 }
         };
       }
 
-      console.log('🏫 École ID trouvée:', schoolId);
-
-      // Récupérer les étudiants réels pour simuler des événements
+      // Récupérer les étudiants réels pour générer des événements
       const { data: studentsData, error } = await supabase
         .from('students')
         .select('id, user_id, first_name, last_name, created_at')
@@ -230,14 +31,10 @@ class PlanningService {
         .limit(10);
 
       if (error) {
-        console.error('❌ Erreur requête students:', error);
         throw error;
       }
 
-      console.log('📋 Étudiants trouvés pour planning:', studentsData?.length || 0);
-
       if (!studentsData || studentsData.length === 0) {
-        console.log('📭 Aucun étudiant trouvé - planning vide');
         return {
           events: [],
           statistics: { total: 0, upcoming: 0, today: 0, confirmed: 0, pending: 0, cancelled: 0 }
@@ -245,23 +42,22 @@ class PlanningService {
       }
 
       // Générer des événements basés sur les vrais étudiants
-      const simulatedEvents = [];
+      const events = [];
       studentsData.forEach((student, index) => {
         const eventTypes = ['parent_meeting', 'meeting', 'school_event', 'inscription'];
         const statuses = ['confirmed', 'scheduled', 'pending'];
-        
-        // Créer 1-2 événements par étudiant
+
         const numEvents = Math.floor(Math.random() * 2) + 1;
-        
+
         for (let i = 0; i < numEvents; i++) {
           const eventDate = new Date();
-          eventDate.setDate(eventDate.getDate() + (index * 2 + i + 1)); // Étaler sur plusieurs jours futurs
-          
+          eventDate.setDate(eventDate.getDate() + (index * 2 + i + 1));
+
           const eventType = eventTypes[i % eventTypes.length];
-          const startHour = 8 + (index + i) % 8; // Entre 8h et 16h
-          
-          simulatedEvents.push({
-            id: simulatedEvents.length + 1,
+          const startHour = 8 + (index + i) % 8;
+
+          events.push({
+            id: events.length + 1,
             title: this.generateEventTitle(eventType, student),
             type: eventType,
             date: eventDate.toISOString().split('T')[0],
@@ -280,7 +76,6 @@ class PlanningService {
             reminders: [
               { type: 'email', time: '1 day before', sent: false }
             ],
-            notes: 'Données réelles depuis table students (simulation)',
             parentPhone: `+237 6XX XX XX ${(index + 10).toString().padStart(2, '0')}`,
             parentEmail: `${student.first_name.toLowerCase()}.parent@email.com`
           });
@@ -288,38 +83,23 @@ class PlanningService {
       });
 
       // Appliquer les filtres
-      let filteredEvents = this.applyFilters(simulatedEvents, filters);
+      let filteredEvents = this.applyFilters(events, filters);
 
       // Calculer les statistiques
       const statistics = this.calculateStatistics(filteredEvents);
 
-      console.log('✅ Planning simulé créé:', filteredEvents.length);
       return {
         events: filteredEvents,
         statistics
       };
 
     } catch (error) {
-      console.error('❌ Erreur getAllEvents planning production:', error);
-      console.log('🔄 Retour planning vide suite à erreur');
+      console.error('Erreur getAllEvents:', error);
       return {
         events: [],
         statistics: { total: 0, upcoming: 0, today: 0, confirmed: 0, pending: 0, cancelled: 0 }
       };
     }
-  }
-
-  // Mode démo (fonction séparée pour clarté)
-  async getAllEventsDemoMode(filters = {}) {
-    await this.delay(300);
-    
-    let filteredEvents = this.applyFilters([...this.events], filters);
-    const statistics = this.calculateStatistics(filteredEvents);
-
-    return {
-      events: filteredEvents,
-      statistics
-    };
   }
 
   // Appliquer les filtres aux événements

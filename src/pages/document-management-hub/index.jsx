@@ -4,7 +4,6 @@ import { useAuth } from '../../contexts/AuthContext';
 import { documentService } from '../../services/documentService';
 import { supabase } from '../../lib/supabase';
 import useDashboardData from '../../hooks/useDashboardData';
-import { useDataMode } from '../../hooks/useDataMode';
 import Icon from '../../components/AppIcon';
 import Button from '../../components/ui/Button';
 
@@ -20,7 +19,6 @@ const DocumentManagementHub = () => {
   const location = useLocation();
   const { user, userProfile } = useAuth();
   const { data, loading: dataLoading } = useDashboardData();
-  const { isDemo } = useDataMode();
   
   // Détecter le mode principal depuis l'URL
   const urlParams = new URLSearchParams(location.search);
@@ -142,63 +140,22 @@ const DocumentManagementHub = () => {
     ];
   };
 
-  // Obtenir les données du personnel selon le mode (démo ou production)
+  // Obtenir les données du personnel
   const getPersonnelAccounts = () => {
-    if (isDemo) {
-      return [
-        {
-          id: 'demo-teacher-1',
-          full_name: 'Marie Dubois',
-          email: 'marie.dubois@edutrack.cm',
-          role: 'teacher',
-          subject: 'Mathématiques',
-          classes: ['6èmeA', '5èmeB'],
-          status: 'active',
-          document_count: 15,
-          last_upload: '2024-10-05',
-          created_at: '2024-09-01'
-        },
-        {
-          id: 'demo-teacher-2',
-          full_name: 'Jean Kamto',
-          email: 'jean.kamto@edutrack.cm',
-          role: 'teacher',
-          subject: 'Français',
-          classes: ['4èmeA', '3èmeB'],
-          status: 'active',
-          document_count: 8,
-          last_upload: '2024-10-03',
-          created_at: '2024-09-01'
-        },
-        {
-          id: 'demo-secretary-1',
-          full_name: 'Fatima Ngo',
-          email: 'fatima.ngo@edutrack.cm',
-          role: 'secretary',
-          permissions: ['student_management', 'document_management'],
-          status: 'active',
-          document_count: 3,
-          last_upload: '2024-10-01',
-          created_at: '2024-08-15'
-        }
-      ];
-    } else {
-      // Mode production - utiliser les vraies données du personnel
-      const teachers = data?.personnel?.filter(p => p.type === 'teacher') || [];
-      const secretaries = data?.personnel?.filter(p => p.type === 'secretary') || [];
-      return [...teachers, ...secretaries].map(person => ({
-        id: person.id,
-        full_name: person.name,
-        email: person.email,
-        role: person.type,
-        subject: person.subject,
-        classes: person.classes || [],
-        status: person.status,
-        document_count: 0, // À implémenter depuis la base de données
-        last_upload: null,
-        created_at: person.created_at
-      }));
-    }
+    const teachers = data?.personnel?.filter(p => p.type === 'teacher') || [];
+    const secretaries = data?.personnel?.filter(p => p.type === 'secretary') || [];
+    return [...teachers, ...secretaries].map(person => ({
+      id: person.id,
+      full_name: person.name,
+      email: person.email,
+      role: person.type,
+      subject: person.subject,
+      classes: person.classes || [],
+      status: person.status,
+      document_count: 0,
+      last_upload: null,
+      created_at: person.created_at
+    }));
   };
 
   const loadInitialData = async () => {
@@ -211,12 +168,8 @@ const DocumentManagementHub = () => {
         const docsResult = await documentService?.getAllSchoolDocuments();
         if (docsResult?.error) {
           console.error('Erreur chargement documents école:', docsResult?.error);
-          // Fallback avec données demo si erreur
-          if (isDemo) {
-            setDocuments(getDemoDocuments());
-          }
         } else {
-          setDocuments(docsResult?.data || (isDemo ? getDemoDocuments() : []));
+          setDocuments(docsResult?.data || []);
         }
       } else {
         // Mode normal selon le rôle utilisateur
@@ -428,16 +381,6 @@ const DocumentManagementHub = () => {
               </p>
             </div>
             
-            {isPrincipalMode && (
-              <div className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
-                isDemo ? 'bg-amber-100 text-amber-800' : 'bg-green-100 text-green-800'
-              }`}>
-                <Icon name={isDemo ? 'TestTube' : 'Database'} size={16} />
-                <span className="text-sm font-medium">
-                  {isDemo ? 'Mode Démo' : 'Données Réelles'}
-                </span>
-              </div>
-            )}
           </div>
           
           {/* Compte sélectionné en mode principal */}
@@ -790,9 +733,7 @@ const DocumentManagementHub = () => {
                     <Icon name="Users" size={64} className="text-gray-400 mx-auto mb-4" />
                     <h3 className="text-lg font-medium text-gray-900 mb-2">Aucun personnel trouvé</h3>
                     <p className="text-gray-500">
-                      {isDemo 
-                        ? 'Les comptes de démonstration ne sont pas disponibles en ce moment.' 
-                        : 'Aucun compte personnel n\'a encore été créé.'}
+                      Aucun compte personnel n'a encore été créé.
                     </p>
                   </div>
                 )}

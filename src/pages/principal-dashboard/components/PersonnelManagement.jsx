@@ -2,72 +2,15 @@
 import Icon from '../../../components/AppIcon';
 import Button from '../../../components/ui/Button';
 import useDashboardData from '../../../hooks/useDashboardData';
-import { useDataMode } from '../../../hooks/useDataMode';
 
 const PersonnelManagement = () => {
   const [activeSection, setActiveSection] = useState('overview');
   const { data, loading, loadPersonnel } = useDashboardData();
-  const { dataMode, isDemo, isProduction } = useDataMode();
 
-  const demoTeachers = [
-    {
-      id: 1,
-      name: 'Marie Dubois',
-      email: 'marie.dubois@edutrack.cm',
-      phone: '237 6XX XXX XXX',
-      subject: 'Mathématiques',
-      type: 'teacher',
-      status: 'active',
-      classes: ['6èmeA', '5èmeB'],
-      experience: '8 ans',
-      evaluation: 4.8
-    },
-    {
-      id: 2,
-      name: 'Jean Kamto',
-      email: 'jean.kamto@edutrack.cm',
-      phone: '237 6XX XXX XXX',
-      subject: 'Français',
-      type: 'teacher',
-      status: 'active',
-      classes: ['4èmeA', '3èmeB'],
-      experience: '12 ans',
-      evaluation: 4.6
-    }
-  ];
-
-  const demoSecretaries = [
-    {
-      id: 3,
-      name: 'Fatima Ngo',
-      email: 'fatima.ngo@edutrack.cm',
-      phone: '237 6XX XXX XXX',
-      role: 'Secrétaire Principale',
-      type: 'secretary',
-      status: 'active',
-      permissions: ['student_management', 'document_management', 'grade_access'],
-      experience: '6 ans'
-    }
-  ];
-
-  const getPersonnelData = () => {
-    if (isDemo) {
-      return {
-        teachers: demoTeachers,
-        secretaries: demoSecretaries,
-        allPersonnel: [...demoTeachers, ...demoSecretaries]
-      };
-    } else {
-      const personnelData = data.personnel || [];
-      return {
-        teachers: personnelData.filter(p => p.type === 'teacher'),
-        secretaries: personnelData.filter(p => p.type === 'secretary'),
-        allPersonnel: personnelData
-      };
-    }
-  };
-
-  const { teachers, secretaries, allPersonnel } = getPersonnelData();
+  const personnelData = data.personnel || [];
+  const teachers = personnelData.filter(p => p.type === 'teacher');
+  const secretaries = personnelData.filter(p => p.type === 'secretary');
+  const allPersonnel = personnelData;
 
   const sectionTabs = [
     { id: 'overview', label: 'Vue d\'ensemble', icon: 'BarChart3' },
@@ -356,20 +299,6 @@ const PersonnelManagement = () => {
 
   const renderOverview = () => (
     <div className="space-y-6">
-      <div className={`p-4 rounded-lg border-l-4 ${isDemo ? 'bg-amber-50 border-amber-400' : 'bg-green-50 border-green-400'}`}>
-        <div className="flex items-center space-x-3">
-          <Icon name={isDemo ? 'Play' : 'Database'} size={20} className={isDemo ? 'text-amber-600' : 'text-green-600'} />
-          <div>
-            <p className={`font-medium ${isDemo ? 'text-amber-800' : 'text-green-800'}`}>
-              Mode {isDemo ? 'Démonstration' : 'Production'} activé
-            </p>
-            <p className={`text-sm ${isDemo ? 'text-amber-700' : 'text-green-700'}`}>
-              {isDemo ? 'Utilisation des données de démonstration' : 'Connexion aux données réelles'}
-            </p>
-          </div>
-        </div>
-      </div>
-
       <div className="bg-card border border-border rounded-lg p-6 shadow-card">
         <h3 className="text-lg font-semibold text-card-foreground mb-4">Actions Rapides</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

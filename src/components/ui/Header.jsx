@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
-import useDataMode from '../../hooks/useDataMode';
 import AppIcon from '../AppIcon';
 import Button from './Button';
 import AccessibilityControls from './AccessibilityControls';
@@ -13,10 +12,8 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
   const [loadingNotifications, setLoadingNotifications] = useState(false);
+  const [user, setUser] = useState(null);
   const location = useLocation();
-  
-  // Hook pour détecter le mode de données
-  const { isDemo, isProduction, user } = useDataMode();
 
   // Détecter le vrai rôle basé sur l'URL si userRole n'est pas correct
   const detectRoleFromUrl = () => {
@@ -31,18 +28,33 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
 
   const actualUserRole = detectRoleFromUrl();
 
-  // Charger les notifications selon le mode
+  // Récupérer l'utilisateur connecté depuis Supabase
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+        const { data: { user: authUser }, error } = await supabase.auth.getUser();
+        if (error) throw error;
+        setUser(authUser);
+      } catch (error) {
+        console.error('Erreur récupération utilisateur:', error);
+        setUser(null);
+      }
+    };
+
+    getUser();
+  }, []);
+
+  // Charger les notifications
   useEffect(() => {
     const loadNotifications = async () => {
-      if (isProduction && user?.current_school_id) {
-        // Mode production : charger les vraies notifications depuis Supabase
+      if (user?.user_metadata?.current_school_id) {
         try {
           setLoadingNotifications(true);
-          
+
           const { data: notifs, error } = await supabase
             .from('notifications')
             .select('id, title, message, type, priority, sent_at')
-            .eq('school_id', user.current_school_id)
+            .eq('school_id', user.user_metadata.current_school_id)
             .order('sent_at', { ascending: false })
             .limit(5);
 
@@ -59,24 +71,16 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
 
           setNotifications(formattedNotifs);
         } catch (error) {
-          console.error('❌ Erreur chargement notifications:', error);
+          console.error('Erreur chargement notifications:', error);
           setNotifications([]);
         } finally {
           setLoadingNotifications(false);
         }
-      } else if (isDemo) {
-        // Mode démo : utiliser les données fictives avec traduction française
-        const demoNotifications = [
-          { id: 1, title: 'Note ajoutée', message: 'Mathématiques - Devoir 3', time: 'il y a 2 min', type: 'success' },
-          { id: 2, title: 'Réunion parent programmée', message: 'Demain à 14h00', time: 'il y a 1h', type: 'warning' },
-          { id: 3, title: 'Maintenance système', message: 'Programmée ce soir', time: 'il y a 3h', type: 'info' },
-        ];
-        setNotifications(demoNotifications);
       }
     };
 
     loadNotifications();
-  }, [isDemo, isProduction, user?.current_school_id]);
+  }, [user?.user_metadata?.current_school_id]);
 
   // Fonction pour formater le temps relatif
   const formatTimeAgo = (dateString) => {
@@ -194,15 +198,12 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
 
   const handleLogout = async () => {
     try {
-      // Déconnecter de Supabase si connecté
-      if (isProduction) {
-        await supabase.auth.signOut();
-      }
+      await supabase.auth.signOut();
     } catch (error) {
       console.log('Erreur lors de la déconnexion:', error.message);
     }
-    
-    // Rediriger vers school-management dans tous les cas
+
+    // Rediriger vers school-management
     window.location.href = '/school-management';
   };
 
@@ -304,14 +305,6 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                           Notifications
                         </h3>
                       </div>
-                      {/* Indicateur de mode */}
-                      <div className={`px-3 py-1 rounded-full text-xs font-bold shadow-sm ${
-                        isDemo 
-                          ? 'bg-amber-100 text-amber-800 border border-amber-300' 
-                          : 'bg-green-100 text-green-800 border border-green-300'
-                      }`}>
-                        {isDemo ? '🎭 Démo' : '✅ Prod'}
-                      </div>
                     </div>
                   </div>
                   <div className="max-h-64 overflow-y-auto">
@@ -351,10 +344,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                       <div className="p-6 text-center">
                         <AppIcon name="Bell" size={24} className="text-muted-foreground mx-auto mb-2" />
                         <p className="text-sm text-muted-foreground">
-                          {isProduction 
-                            ? 'Aucune notification' 
-                            : 'Pas de notifications'
-                          }
+                          Aucune notification
                         </p>
                       </div>
                     )}
@@ -453,7 +443,7 @@ const Header = ({ userRole = 'student', userName = 'User', isCollapsed = false, 
                       <div className="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center group-hover:bg-red-200 transition-colors">
                         <AppIcon name="LogOut" size={16} className="text-red-600" />
                       </div>
-                      <span className="font-body font-body-semibold">{isProduction ? 'Se déconnecter' : 'Quitter la démo'}</span>
+                      <span className="font-body font-body-semibold">Se déconnecter</span>
                     </button>
                   </div>
                 </div>
