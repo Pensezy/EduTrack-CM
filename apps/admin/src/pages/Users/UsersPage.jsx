@@ -40,14 +40,7 @@ export default function UsersPage() {
       const supabase = getSupabaseClient();
       let query = supabase
         .from('users')
-        .select(`
-          *,
-          schools!school_id (
-            id,
-            name,
-            code
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que les utilisateurs de leur école
@@ -97,8 +90,7 @@ export default function UsersPage() {
   const filteredUsers = users.filter(user => {
     const matchesSearch = searchQuery === '' ||
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.schools?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      user.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesSearch;
   });
@@ -318,18 +310,6 @@ export default function UsersPage() {
                   {getRoleBadge(user.role)}
                   {getStatusBadge(user.is_active)}
                 </div>
-
-                {/* School Info */}
-                {user.schools && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-sm">
-                      <School className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-600">École:</span>
-                      <span className="font-medium text-gray-900 truncate">{user.schools.name}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 ml-6 mt-1">Code: {user.schools.code}</p>
-                  </div>
-                )}
 
                 {/* Email */}
                 <div className="space-y-2">

@@ -40,14 +40,7 @@ export default function PersonnelPage() {
       const supabase = getSupabaseClient();
       let query = supabase
         .from('users')
-        .select(`
-          *,
-          schools!school_id (
-            id,
-            name,
-            code
-          )
-        `)
+        .select('*')
         .in('role', ['teacher', 'secretary'])
         .order('created_at', { ascending: false });
 
@@ -98,8 +91,7 @@ export default function PersonnelPage() {
   const filteredPersonnel = personnel.filter(person => {
     const matchesSearch = searchQuery === '' ||
       person.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      person.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      person.schools?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      person.email?.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesSearch;
   });
@@ -291,18 +283,6 @@ export default function PersonnelPage() {
                   {getRoleBadge(person.role)}
                   {getStatusBadge(person.is_active)}
                 </div>
-
-                {/* School Info */}
-                {person.schools && (
-                  <div className="pt-2 border-t border-gray-200">
-                    <div className="flex items-center gap-2 text-sm">
-                      <School className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                      <span className="text-gray-600">École:</span>
-                      <span className="font-medium text-gray-900 truncate">{person.schools.name}</span>
-                    </div>
-                    <p className="text-xs text-gray-500 ml-6 mt-1">Code: {person.schools.code}</p>
-                  </div>
-                )}
 
                 {/* Contact Info */}
                 <div className="space-y-2">

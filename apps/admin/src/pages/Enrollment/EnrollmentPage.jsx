@@ -37,19 +37,7 @@ export default function EnrollmentPage() {
       const supabase = getSupabaseClient();
       let query = supabase
         .from('enrollment_requests')
-        .select(`
-          *,
-          schools!school_id (
-            id,
-            name,
-            code
-          ),
-          classes!class_id (
-            id,
-            name,
-            level
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que les demandes de leur école
@@ -91,8 +79,7 @@ export default function EnrollmentPage() {
     const matchesSearch = searchQuery === '' ||
       enrollment.student_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       enrollment.parent_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enrollment.parent_email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      enrollment.schools?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      enrollment.parent_email?.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesSearch;
   });
@@ -256,24 +243,6 @@ export default function EnrollmentPage() {
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {/* School */}
-                      {enrollment.schools && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <School className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-gray-600">École:</span>
-                          <span className="font-medium text-gray-900 truncate">{enrollment.schools.name}</span>
-                        </div>
-                      )}
-
-                      {/* Class */}
-                      {enrollment.classes && (
-                        <div className="flex items-center gap-2 text-sm">
-                          <Calendar className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                          <span className="text-gray-600">Classe:</span>
-                          <span className="font-medium text-gray-900">{enrollment.classes.name}</span>
-                        </div>
-                      )}
-
                       {/* Parent Name */}
                       <div className="flex items-center gap-2 text-sm">
                         <User className="h-4 w-4 text-gray-400 flex-shrink-0" />

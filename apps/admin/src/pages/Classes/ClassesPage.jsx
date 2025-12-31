@@ -36,14 +36,7 @@ export default function ClassesPage() {
       const supabase = getSupabaseClient();
       let query = supabase
         .from('classes')
-        .select(`
-          *,
-          schools!school_id (
-            id,
-            name,
-            code
-          )
-        `)
+        .select('*')
         .order('level', { ascending: true })
         .order('name', { ascending: true });
 
@@ -84,8 +77,7 @@ export default function ClassesPage() {
 
   const filteredClasses = classes.filter(cls => {
     const matchesSearch = searchQuery === '' ||
-      cls.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      cls.schools?.name?.toLowerCase().includes(searchQuery.toLowerCase());
+      cls.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
     return matchesSearch;
   });
@@ -238,15 +230,6 @@ export default function ClassesPage() {
 
               {/* Class Info */}
               <div className="p-4 sm:p-6 space-y-4">
-                {/* School */}
-                {cls.schools && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <School className="h-4 w-4 text-gray-400 flex-shrink-0" />
-                    <span className="text-gray-600">École:</span>
-                    <span className="font-medium text-gray-900 truncate">{cls.schools.name}</span>
-                  </div>
-                )}
-
                 {/* Student Count */}
                 <div className="flex items-center gap-2 text-sm">
                   <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
