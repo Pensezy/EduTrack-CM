@@ -15,7 +15,9 @@
       "Bash(cat:*)",
       "Bash(ls:*)",
       "Bash(del nul)",
-      "Bash(git push)"
+      "Bash(git push)",
+      "Bash(dir:*)",
+      "Bash(for dir in */)"
     ]
   }
 }
