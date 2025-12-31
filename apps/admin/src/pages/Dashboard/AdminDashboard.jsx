@@ -129,10 +129,10 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
           Tableau de bord administratif
         </h1>
         <p className="mt-1 text-sm text-gray-500">
@@ -141,7 +141,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
         <StatCard
           title="Écoles"
           value={formatNumber(metrics.totalSchools)}
@@ -173,50 +173,50 @@ export default function AdminDashboard() {
       </div>
 
       {/* Secondary Stats */}
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center">
-            <GraduationCap className="h-8 w-8 text-primary-600" />
-            <div className="ml-4">
+            <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8 text-primary-600" />
+            <div className="ml-3 sm:ml-4">
               <p className="text-sm font-medium text-gray-600">Classes</p>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(metrics.totalClasses)}</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">{formatNumber(metrics.totalClasses)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
           <div className="flex items-center">
-            <FileText className="h-8 w-8 text-yellow-600" />
-            <div className="ml-4">
+            <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-yellow-600" />
+            <div className="ml-3 sm:ml-4">
               <p className="text-sm font-medium text-gray-600">Demandes en attente</p>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(metrics.pendingEnrollments)}</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">{formatNumber(metrics.pendingEnrollments)}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
           <div className="flex items-center">
-            <Users className="h-8 w-8 text-green-600" />
-            <div className="ml-4">
+            <Users className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
+            <div className="ml-3 sm:ml-4">
               <p className="text-sm font-medium text-gray-600">Utilisateurs actifs</p>
-              <p className="text-xl font-bold text-gray-900">{formatNumber(metrics.activeUsers)}</p>
+              <p className="text-lg sm:text-xl font-bold text-gray-900">{formatNumber(metrics.activeUsers)}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
         {/* Enrollment Trends */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Inscriptions mensuelles
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <LineChart data={metrics.enrollmentsByMonth}>
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" />
-              <YAxis />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Legend />
+              <Legend wrapperStyle={{ fontSize: 12 }} />
               <Line
                 type="monotone"
                 dataKey="count"
@@ -229,11 +229,11 @@ export default function AdminDashboard() {
         </div>
 
         {/* Schools by Type */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
             Répartition des écoles
           </h3>
-          <ResponsiveContainer width="100%" height={300}>
+          <ResponsiveContainer width="100%" height={250}>
             <PieChart>
               <Pie
                 data={metrics.schoolsByType}
@@ -241,7 +241,7 @@ export default function AdminDashboard() {
                 cy="50%"
                 labelLine={false}
                 label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={80}
+                outerRadius={70}
                 fill="#8884d8"
                 dataKey="value"
               >
@@ -256,21 +256,21 @@ export default function AdminDashboard() {
       </div>
 
       {/* Recent Activities */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
+        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
           Activités récentes
         </h3>
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {metrics.recentActivities.map((activity) => (
-            <div key={activity.id} className="flex items-start pb-4 border-b border-gray-100 last:border-0">
+            <div key={activity.id} className="flex items-start pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
               <div className="flex-shrink-0">
                 {activity.type === 'school' && <School className="h-5 w-5 text-primary-600" />}
                 {activity.type === 'enrollment' && <FileText className="h-5 w-5 text-yellow-600" />}
                 {activity.type === 'user' && <Users className="h-5 w-5 text-green-600" />}
                 {activity.type === 'payment' && <DollarSign className="h-5 w-5 text-purple-600" />}
               </div>
-              <div className="ml-3 flex-1">
-                <p className="text-sm text-gray-900">{activity.message}</p>
+              <div className="ml-3 flex-1 min-w-0">
+                <p className="text-sm text-gray-900 break-words">{activity.message}</p>
                 <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
               </div>
             </div>
