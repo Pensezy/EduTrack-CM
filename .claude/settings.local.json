@@ -26,7 +26,8 @@
       "Bash(pnpm approve-builds:*)",
       "Bash(pnpm --filter admin install)",
       "Bash(pnpm --filter admin dev:*)",
-      "Bash(pnpm --filter admin build:*)"
+      "Bash(pnpm --filter admin build:*)",
+      "Bash(git push:*)"
     ]
   }
 }
