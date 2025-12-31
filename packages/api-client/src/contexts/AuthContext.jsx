@@ -32,10 +32,15 @@ export const AuthProvider = ({ children }) => {
         if (session?.user) {
           // ✅ Session Supabase active (Principal) - PRIORITÉ ABSOLUE
           console.log('✅ Session Supabase trouvée:', session.user.email);
-          await ensureUserInDatabase(session.user);
-          setUser(session.user);
-          setUserProfile(session.user);
-          localStorage.setItem('edutrack-user', JSON.stringify(session.user));
+          const dbUser = await ensureUserInDatabase(session.user);
+
+          // Utiliser les données de la DB si disponibles (contient le rôle)
+          const userData = dbUser || session.user;
+          console.log('👤 Utilisateur avec rôle:', userData.email, '- Rôle:', userData.role);
+
+          setUser(userData);
+          setUserProfile(userData);
+          localStorage.setItem('edutrack-user', JSON.stringify(userData));
           setLoading(false);
           return;
         }
@@ -116,10 +121,15 @@ export const AuthProvider = ({ children }) => {
 
         isProcessingAuth = true;
         try {
-          await ensureUserInDatabase(session.user);
-          setUser(session.user);
-          setUserProfile(session.user);
-          localStorage.setItem('edutrack-user', JSON.stringify(session.user));
+          const dbUser = await ensureUserInDatabase(session.user);
+
+          // Utiliser les données de la DB si disponibles (contient le rôle)
+          const userData = dbUser || session.user;
+          console.log('👤 Utilisateur avec rôle:', userData.email, '- Rôle:', userData.role);
+
+          setUser(userData);
+          setUserProfile(userData);
+          localStorage.setItem('edutrack-user', JSON.stringify(userData));
           lastProcessedUserId = session.user.id;
           console.log('✅ Utilisateur configuré avec succès');
         } finally {
