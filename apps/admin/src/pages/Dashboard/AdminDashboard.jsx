@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useAuth, dashboardService } from '@edutrack/api';
+import { useAuth, adminDashboardService } from '@edutrack/api';
 import { formatCurrency, formatNumber } from '@edutrack/utils';
 import {
   School,
@@ -62,44 +62,13 @@ export default function AdminDashboard() {
       setLoading(true);
       setError('');
 
-      // For now, use mock data. This will be replaced with actual API calls
-      const mockMetrics = {
-        totalSchools: 15,
-        totalStudents: 3450,
-        totalTeachers: 285,
-        totalClasses: 142,
-        pendingEnrollments: 23,
-        activeUsers: 3820,
-        monthlyRevenue: 45000000,
-        schoolsGrowth: 12,
-        studentsGrowth: 8,
-        teachersGrowth: 5,
-        revenueGrowth: 15,
-        enrollmentsByMonth: [
-          { month: 'Jan', count: 45 },
-          { month: 'Fév', count: 52 },
-          { month: 'Mar', count: 48 },
-          { month: 'Avr', count: 65 },
-          { month: 'Mai', count: 58 },
-          { month: 'Juin', count: 72 }
-        ],
-        schoolsByType: [
-          { name: 'Primaire', value: 8 },
-          { name: 'Secondaire', value: 5 },
-          { name: 'Lycée', value: 2 }
-        ],
-        recentActivities: [
-          { id: 1, type: 'school', message: 'Nouvelle école ajoutée: École Primaire Les Bambins', time: 'Il y a 2 heures' },
-          { id: 2, type: 'enrollment', message: '15 nouvelles demandes d\'inscription', time: 'Il y a 4 heures' },
-          { id: 3, type: 'user', message: '5 nouveaux enseignants enregistrés', time: 'Il y a 1 jour' },
-          { id: 4, type: 'payment', message: 'Paiement de 2.5M FCFA reçu', time: 'Il y a 1 jour' }
-        ]
-      };
+      // Récupérer les vraies données depuis Supabase
+      const metrics = await adminDashboardService.getDashboardMetrics();
 
-      setMetrics(mockMetrics);
+      setMetrics(metrics);
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      setError('Erreur lors du chargement des données');
+      setError('Erreur lors du chargement des données. Vérifiez votre connexion Supabase.');
     } finally {
       setLoading(false);
     }

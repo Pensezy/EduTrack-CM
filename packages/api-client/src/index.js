@@ -32,6 +32,7 @@ export { AuthProvider, useAuth } from './contexts/AuthContext.jsx';
 export {
   dashboardService,
   authService,
+  adminDashboardService,
   hashPassword,
   verifyPassword,
   checkPasswordStrength,
