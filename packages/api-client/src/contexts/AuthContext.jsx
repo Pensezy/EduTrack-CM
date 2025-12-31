@@ -327,6 +327,94 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const signInWithPassword = async (email, password) => {
+    try {
+      const supabase = getSupabaseClient();
+      setError(null);
+
+      if (!email || !password) {
+        return {
+          success: false,
+          error: 'Email et mot de passe requis',
+          user: null
+        };
+      }
+
+      // Authentification avec Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: email.trim().toLowerCase(),
+        password: password
+      });
+
+      if (authError) {
+        console.error('Erreur d\'authentification:', authError);
+        return {
+          success: false,
+          error: authError.message === 'Invalid login credentials'
+            ? 'Email ou mot de passe invalide'
+            : authError.message,
+          user: null
+        };
+      }
+
+      if (!authData.user) {
+        return {
+          success: false,
+          error: 'Authentification échouée',
+          user: null
+        };
+      }
+
+      // Récupérer le profil utilisateur depuis la table users
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', authData.user.id)
+        .single();
+
+      if (userError || !userData) {
+        console.error('Erreur récupération profil:', userError);
+        return {
+          success: false,
+          error: 'Impossible de récupérer le profil utilisateur',
+          user: null
+        };
+      }
+
+      // Construire l'objet utilisateur
+      const authenticatedUser = {
+        id: userData.id,
+        email: userData.email,
+        full_name: userData.full_name,
+        role: userData.role,
+        phone: userData.phone,
+        school_id: userData.school_id,
+        is_active: userData.is_active
+      };
+
+      // Sauvegarder dans localStorage
+      localStorage.setItem('edutrack-user', JSON.stringify(authenticatedUser));
+
+      setUser(authenticatedUser);
+      setUserProfile(authenticatedUser);
+
+      return {
+        success: true,
+        user: authenticatedUser,
+        error: null
+      };
+
+    } catch (error) {
+      console.error('Erreur de connexion:', error);
+      setError(error?.message || 'Erreur de connexion');
+      return {
+        success: false,
+        error: error?.message || 'Erreur de connexion',
+        user: null
+      };
+    }
+  };
+
   const signOut = async () => {
     try {
       const supabase = getSupabaseClient();
@@ -352,6 +440,7 @@ export const AuthProvider = ({ children }) => {
     userProfile,
     loading,
     signInWithPin,
+    signInWithPassword,
     signOut,
     error,
     setError

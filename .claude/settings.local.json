@@ -23,7 +23,10 @@
       "Bash(find:*)",
       "Bash(pnpm --version:*)",
       "Bash(pnpm install:*)",
-      "Bash(pnpm approve-builds:*)"
+      "Bash(pnpm approve-builds:*)",
+      "Bash(pnpm --filter admin install)",
+      "Bash(pnpm --filter admin dev:*)",
+      "Bash(pnpm --filter admin build:*)"
     ]
   }
 }
