@@ -41,9 +41,11 @@ apps/admin
 
 #### Build & Development Settings
 
+⚠️ **IMPORTANT:** Cliquer sur **"Override"** pour personnaliser chaque commande.
+
 **Build Command:**
 ```bash
-cd ../.. && pnpm install && pnpm --filter admin build
+cd ../.. && pnpm install --no-frozen-lockfile && pnpm --filter admin build
 ```
 
 **Output Directory:**
@@ -53,12 +55,17 @@ dist
 
 **Install Command:**
 ```bash
-pnpm install
+cd ../.. && pnpm install --no-frozen-lockfile
 ```
 
 **Development Command:**
 ```bash
 pnpm dev
+```
+
+**Node.js Version:**
+```
+20.x
 ```
 
 ---
