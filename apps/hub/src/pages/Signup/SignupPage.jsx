@@ -66,19 +66,20 @@ export default function SignupPage() {
   };
 
   // Types d'établissements
+  // Valeurs compatibles avec l'enum Supabase: 'public', 'prive', 'maternelle', 'primaire', 'college', 'lycee', 'college_lycee', 'universite', 'formation_professionnelle'
   const schoolTypes = [
-    { value: 'primary', label: 'École Primaire', description: 'CP1 à CM2', icon: '🎒' },
+    { value: 'primaire', label: 'École Primaire', description: 'CP1 à CM2', icon: '🎒' },
     { value: 'college', label: 'Collège', description: '6ème à 3ème', icon: '📚' },
-    { value: 'high_school', label: 'Lycée', description: '2nd à Terminale', icon: '🎓' },
-    { value: 'secondary', label: 'Secondaire Complet', description: '6ème à Terminale', icon: '🏫' },
-    { value: 'institut', label: 'Institut', description: 'BTS, DUT', icon: '💼' },
-    { value: 'university', label: 'Université', description: 'Licence, Master, Doctorat', icon: '🎯' }
+    { value: 'lycee', label: 'Lycée', description: '2nd à Terminale', icon: '🎓' },
+    { value: 'college_lycee', label: 'Secondaire Complet', description: '6ème à Terminale', icon: '🏫' },
+    { value: 'formation_professionnelle', label: 'Institut', description: 'BTS, DUT', icon: '💼' },
+    { value: 'universite', label: 'Université', description: 'Licence, Master, Doctorat', icon: '🎯' }
   ];
 
   // Classes disponibles selon le type
   const getAvailableClassesByType = (schoolType) => {
     switch (schoolType) {
-      case 'primary':
+      case 'primaire':
         return [
           { value: 'CP1', label: 'CP1 (Cours Préparatoire 1)', category: 'primaire' },
           { value: 'CP2', label: 'CP2 (Cours Préparatoire 2)', category: 'primaire' },
@@ -94,13 +95,13 @@ export default function SignupPage() {
           { value: '4ème', label: '4ème', category: 'collège' },
           { value: '3ème', label: '3ème', category: 'collège' }
         ];
-      case 'high_school':
+      case 'lycee':
         return [
           { value: '2nd', label: '2nd (Seconde)', category: 'lycée' },
           { value: '1ère', label: '1ère (Première)', category: 'lycée' },
           { value: 'Terminale', label: 'Terminale', category: 'lycée' }
         ];
-      case 'secondary':
+      case 'college_lycee':
         return [
           { value: '6ème', label: '6ème', category: 'collège' },
           { value: '5ème', label: '5ème', category: 'collège' },
@@ -110,14 +111,14 @@ export default function SignupPage() {
           { value: '1ère', label: '1ère (Première)', category: 'lycée' },
           { value: 'Terminale', label: 'Terminale', category: 'lycée' }
         ];
-      case 'institut':
+      case 'formation_professionnelle':
         return [
           { value: 'BTS1', label: 'BTS 1ère année', category: 'supérieur' },
           { value: 'BTS2', label: 'BTS 2ème année', category: 'supérieur' },
           { value: 'DUT1', label: 'DUT 1ère année', category: 'supérieur' },
           { value: 'DUT2', label: 'DUT 2ème année', category: 'supérieur' }
         ];
-      case 'university':
+      case 'universite':
         return [
           { value: 'L1', label: 'Licence 1', category: 'université' },
           { value: 'L2', label: 'Licence 2', category: 'université' },
