@@ -49,8 +49,10 @@ export function useActiveApps(options = {}) {
     console.log('  - user.school_id:', user?.school_id);
     console.log('  - includeCatalog:', includeCatalog);
 
-    if (!user?.school_id) {
-      console.warn('⚠️ [useActiveApps] Pas de school_id, apps = []');
+    // Si includeCatalog=true, on peut charger le catalogue même sans school_id
+    // Utile pour les admins ou la page App Store
+    if (!user?.school_id && !includeCatalog) {
+      console.warn('⚠️ [useActiveApps] Pas de school_id et pas de catalog, apps = []');
       setState({
         apps: [],
         activeApps: [],
@@ -78,18 +80,22 @@ export function useActiveApps(options = {}) {
         catalogApps = catalog || [];
       }
 
-      // 2. Récupérer les apps actives de l'école
-      const { data: subscriptions, error: subsError } = await supabase
-        .from('school_subscriptions')
-        .select(`
-          *,
-          app:apps(*)
-        `)
-        .eq('school_id', user.school_id)
-        .in('status', ['trial', 'active']);
+      // 2. Récupérer les apps actives de l'école (seulement si school_id existe)
+      let subscriptions = [];
+      if (user?.school_id) {
+        const { data: subsData, error: subsError } = await supabase
+          .from('school_subscriptions')
+          .select(`
+            *,
+            app:apps(*)
+          `)
+          .eq('school_id', user.school_id)
+          .in('status', ['trial', 'active']);
 
-      if (subsError && subsError.code !== 'PGRST116') {
-        throw subsError;
+        if (subsError && subsError.code !== 'PGRST116') {
+          throw subsError;
+        }
+        subscriptions = subsData || [];
       }
 
       // 3. Récupérer les apps core (toujours actives)
