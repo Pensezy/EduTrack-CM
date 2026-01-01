@@ -1,12 +1,11 @@
 /**
  * Landing Page - Point d'entrée public de EduTrack
- * Design professionnel pour convaincre les directeurs d'établissement
+ * Version dynamique et animée pour convaincre les directeurs
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  GraduationCap,
   School,
   Users,
   BookOpen,
@@ -22,12 +21,18 @@ import {
   Package,
   Shield,
   Zap,
-  Globe
+  Globe,
+  Star,
+  ChevronRight
 } from 'lucide-react';
 
 export default function LandingPage() {
   const navigate = useNavigate();
-  const [selectedBundle, setSelectedBundle] = useState('standard');
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    setIsVisible(true);
+  }, []);
 
   // Les 8 applications modulaires
   const apps = [
@@ -140,89 +145,127 @@ export default function LandingPage() {
     }
   ];
 
-  const selectedBundleData = bundles.find(b => b.id === selectedBundle);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      {/* Hero Section */}
+    <div className="min-h-screen bg-white">
+      {/* Hero Section - Version Dynamique */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white">
-        <div className="absolute inset-0 bg-grid-white/[0.05] bg-[size:20px_20px]"></div>
+        {/* Animated Background Pattern */}
+        <div className="absolute inset-0 opacity-10">
+          <div className="absolute inset-0" style={{
+            backgroundImage: `radial-gradient(circle at 25px 25px, white 2%, transparent 0%),
+                             radial-gradient(circle at 75px 75px, white 2%, transparent 0%)`,
+            backgroundSize: '100px 100px',
+            animation: 'float 20s linear infinite'
+          }}></div>
+        </div>
 
-        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-24">
-          <div className="text-center">
-            {/* Logo & Badge */}
-            <div className="flex items-center justify-center gap-3 mb-6">
-              <div className="bg-white/10 backdrop-blur-sm p-4 rounded-2xl">
-                <GraduationCap className="h-12 w-12 text-white" />
+        {/* Floating Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-20 left-10 w-72 h-72 bg-white/5 rounded-full blur-3xl animate-pulse"></div>
+          <div className="absolute bottom-20 right-10 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl" style={{ animation: 'pulse 8s ease-in-out infinite' }}></div>
+        </div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28">
+          {/* Logo et Badge avec animation */}
+          <div className={`text-center transition-all duration-1000 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+            <div className="flex items-center justify-center gap-4 mb-6">
+              <div className="relative group">
+                <div className="absolute inset-0 bg-white/20 blur-xl rounded-full group-hover:bg-white/30 transition-all"></div>
+                <img
+                  src="/assets/images/mon_logo.png"
+                  alt="EduTrack Logo"
+                  className="relative h-20 w-20 md:h-24 md:w-24 object-contain drop-shadow-2xl transform group-hover:scale-110 transition-transform duration-300"
+                />
               </div>
-              <h1 className="text-5xl font-bold">EduTrack</h1>
+              <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">
+                Edu<span className="text-yellow-300">Track</span>
+              </h1>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium mb-8">
-              <Sparkles className="h-4 w-4" />
+            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-full text-sm font-medium mb-8 border border-white/20 hover:bg-white/20 transition-all">
+              <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
               <span>Solution Modulaire de Gestion Scolaire</span>
+              <Star className="h-4 w-4 text-yellow-300" />
             </div>
 
-            {/* Titre principal */}
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
-              Gérez Votre Établissement<br />
-              <span className="text-yellow-300">À Votre Rythme, À Votre Budget</span>
+            {/* Titre principal avec effet */}
+            <h2 className={`text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight transition-all duration-1000 delay-300 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              <span className="inline-block hover:scale-105 transition-transform">Gérez Votre Établissement</span>
+              <br />
+              <span className="text-yellow-300 inline-block hover:scale-105 transition-transform">À Votre Rythme, À Votre Budget</span>
             </h2>
 
-            <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto">
-              Démarrez gratuitement avec les fonctions essentielles.<br />
+            <p className={`text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto leading-relaxed transition-all duration-1000 delay-500 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              Démarrez <strong className="text-yellow-300">gratuitement</strong> avec les fonctions essentielles.<br />
               Ajoutez uniquement les modules dont vous avez besoin.
             </p>
 
-            {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
+            {/* CTA Buttons avec hover effects */}
+            <div className={`flex flex-col sm:flex-row items-center justify-center gap-4 mb-16 transition-all duration-1000 delay-700 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
               <button
                 onClick={() => navigate('/signup')}
-                className="group px-8 py-4 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-yellow-300 hover:text-primary-900 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 inline-flex items-center gap-2"
+                className="group relative px-8 py-4 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-yellow-300 hover:text-primary-900 transition-all duration-300 shadow-xl hover:shadow-2xl transform hover:scale-105 inline-flex items-center gap-2 overflow-hidden"
               >
-                <Zap className="h-5 w-5" />
-                Créer Mon Compte Gratuit
-                <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+                <div className="absolute inset-0 bg-gradient-to-r from-yellow-300 to-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <Zap className="h-5 w-5 relative z-10 group-hover:animate-bounce" />
+                <span className="relative z-10">Créer Mon Compte Gratuit</span>
+                <ArrowRight className="h-5 w-5 relative z-10 group-hover:translate-x-1 transition-transform" />
               </button>
 
               <button
                 onClick={() => document.getElementById('pricing').scrollIntoView({ behavior: 'smooth' })}
-                className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold text-lg hover:bg-white/20 transition-all duration-200 border-2 border-white/30"
+                className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold text-lg hover:bg-white/20 transition-all duration-300 border-2 border-white/30 hover:border-white/50 inline-flex items-center gap-2 hover:scale-105 transform"
               >
-                Voir les Prix
+                <Package className="h-5 w-5" />
+                Découvrir les Packs
               </button>
             </div>
 
-            {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto">
-              <div>
-                <div className="text-4xl font-bold text-yellow-300">100%</div>
-                <div className="text-sm text-gray-300 mt-1">Gratuit pour démarrer</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-yellow-300">30j</div>
-                <div className="text-sm text-gray-300 mt-1">Essai gratuit par app</div>
-              </div>
-              <div>
-                <div className="text-4xl font-bold text-yellow-300">8</div>
-                <div className="text-sm text-gray-300 mt-1">Applications modulaires</div>
-              </div>
+            {/* Stats avec animation counter */}
+            <div className={`grid grid-cols-3 gap-8 mt-16 max-w-3xl mx-auto transition-all duration-1000 delay-900 ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+              {[
+                { value: '100%', label: 'Gratuit pour démarrer', icon: <Zap className="h-5 w-5" /> },
+                { value: '30j', label: 'Essai gratuit par app', icon: <Shield className="h-5 w-5" /> },
+                { value: '8', label: 'Applications modulaires', icon: <Package className="h-5 w-5" /> }
+              ].map((stat, idx) => (
+                <div key={idx} className="group relative bg-white/5 backdrop-blur-sm rounded-xl p-4 hover:bg-white/10 transition-all border border-white/10 hover:border-white/30">
+                  <div className="flex items-center justify-center gap-2 mb-2 text-yellow-300">
+                    {stat.icon}
+                  </div>
+                  <div className="text-4xl font-bold text-yellow-300 group-hover:scale-110 transition-transform">{stat.value}</div>
+                  <div className="text-sm text-gray-300 mt-1">{stat.label}</div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
 
-        {/* Wave separator */}
+        {/* Wave separator avec animation */}
         <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="rgb(249 250 251)"/>
+          <svg className="w-full h-auto" viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none">
+            <path d="M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z" fill="white">
+              <animate attributeName="d"
+                dur="10s"
+                repeatCount="indefinite"
+                values="
+                  M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z;
+                  M0 0L60 15C120 30 240 30 360 36.7C480 43 600 57 720 53.3C840 50 960 30 1080 36.7C1200 43 1320 77 1380 83.3L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z;
+                  M0 0L60 10C120 20 240 40 360 46.7C480 53 600 47 720 43.3C840 40 960 40 1080 46.7C1200 53 1320 67 1380 73.3L1440 80V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0V0Z
+                "
+              />
+            </path>
           </svg>
         </div>
       </section>
 
-      {/* Features - Pourquoi EduTrack */}
-      <section className="py-20 bg-white">
+      {/* Features Section - Version Dynamique */}
+      <section className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-primary-50 text-primary-700 rounded-full text-sm font-semibold mb-4">
+              <Star className="h-4 w-4" />
+              Avantages
+            </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Pourquoi Choisir EduTrack ?
             </h2>
@@ -231,51 +274,69 @@ export default function LandingPage() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {[
               {
                 icon: <Zap className="h-8 w-8" />,
                 title: 'Gratuit pour Démarrer',
                 description: 'App Core gratuite à vie avec gestion élèves, classes et enseignants',
-                color: 'from-green-500 to-green-600'
+                color: 'from-green-500 to-green-600',
+                delay: '0'
               },
               {
                 icon: <Package className="h-8 w-8" />,
                 title: 'Modulaire',
                 description: "N'achetez que ce dont vous avez besoin. Ajoutez des apps quand vous voulez",
-                color: 'from-blue-500 to-blue-600'
+                color: 'from-blue-500 to-blue-600',
+                delay: '100'
               },
               {
                 icon: <Shield className="h-8 w-8" />,
                 title: '30 Jours d\'Essai',
                 description: 'Testez chaque application gratuitement pendant 30 jours',
-                color: 'from-purple-500 to-purple-600'
+                color: 'from-purple-500 to-purple-600',
+                delay: '200'
               },
               {
                 icon: <Globe className="h-8 w-8" />,
                 title: 'Multi-Pays',
                 description: 'Adapté au Cameroun, Sénégal, France avec devises locales',
-                color: 'from-orange-500 to-orange-600'
+                color: 'from-orange-500 to-orange-600',
+                delay: '300'
               }
             ].map((feature, idx) => (
-              <div key={idx} className="bg-gray-50 rounded-2xl p-6 hover:shadow-lg transition-shadow">
-                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} text-white mb-4`}>
+              <div
+                key={idx}
+                className="group bg-gradient-to-br from-gray-50 to-white rounded-2xl p-6 hover:shadow-2xl transition-all duration-300 border border-gray-100 hover:border-primary-200 hover:-translate-y-2"
+                style={{ animationDelay: `${feature.delay}ms` }}
+              >
+                <div className={`inline-flex p-3 rounded-xl bg-gradient-to-br ${feature.color} text-white mb-4 group-hover:scale-110 transition-transform duration-300 shadow-lg`}>
                   {feature.icon}
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{feature.title}</h3>
-                <p className="text-gray-600">{feature.description}</p>
+                <h3 className="text-lg font-bold text-gray-900 mb-2 group-hover:text-primary-600 transition-colors">{feature.title}</h3>
+                <p className="text-gray-600 leading-relaxed">{feature.description}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Applications Modulaires */}
-      <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Applications Section - Version Dynamique */}
+      <section className="py-20 bg-gradient-to-br from-gray-50 to-gray-100 relative overflow-hidden">
+        {/* Background decoration */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-primary-100 rounded-full blur-3xl opacity-30 -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-100 rounded-full blur-3xl opacity-30 translate-y-1/2 -translate-x-1/2"></div>
+
+        <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-semibold mb-4 shadow-md">
+              <Package className="h-4 w-4 text-primary-600" />
+              <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
+                8 Applications Modulaires
+              </span>
+            </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              8 Applications, 1 Seule Plateforme
+              Une Plateforme, Multiples Possibilités
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Commencez avec l'App Core gratuite, puis ajoutez les modules selon vos besoins
@@ -283,16 +344,20 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {apps.map((app) => (
+            {apps.map((app, idx) => (
               <div
                 key={app.id}
-                className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden hover:shadow-xl transition-all duration-200 transform hover:-translate-y-1"
+                className="group bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
+                style={{ animationDelay: `${idx * 50}ms` }}
               >
-                <div className={`bg-gradient-to-br ${app.color} text-white p-6`}>
-                  <div className="flex items-center justify-between mb-4">
-                    {app.icon}
+                <div className={`relative bg-gradient-to-br ${app.color} p-6 text-white`}>
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -translate-y-1/2 translate-x-1/2"></div>
+                  <div className="relative flex items-center justify-between mb-4">
+                    <div className="transform group-hover:scale-110 group-hover:rotate-6 transition-transform duration-300">
+                      {app.icon}
+                    </div>
                     {app.isFree && (
-                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold">
+                      <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs font-bold animate-pulse">
                         GRATUIT
                       </span>
                     )}
@@ -312,12 +377,15 @@ export default function LandingPage() {
                   </ul>
 
                   {app.isFree ? (
-                    <div className="text-center">
-                      <div className="text-2xl font-bold text-green-600">GRATUIT</div>
+                    <div className="text-center pt-4 border-t border-gray-200">
+                      <div className="text-2xl font-bold text-green-600 flex items-center justify-center gap-2">
+                        <Sparkles className="h-5 w-5 animate-pulse" />
+                        GRATUIT
+                      </div>
                       <div className="text-xs text-gray-500 mt-1">À vie</div>
                     </div>
                   ) : (
-                    <div className="text-center">
+                    <div className="text-center pt-4 border-t border-gray-200">
                       <div className="text-2xl font-bold text-gray-900">
                         {app.price?.toLocaleString()} <span className="text-sm text-gray-600">FCFA/an</span>
                       </div>
@@ -331,12 +399,16 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* Pricing - Bundles */}
-      <section id="pricing" className="py-20 bg-white">
+      {/* Pricing Section - Version Dynamique */}
+      <section id="pricing" className="py-20 bg-white relative">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-semibold mb-4">
+              <TrendingDown className="h-4 w-4" />
+              Économisez jusqu'à 20 000 FCFA
+            </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Packs Tout Inclus - Économisez jusqu'à 20k FCFA
+              Packs Tout Inclus
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Ou achetez chaque application séparément selon vos besoins
@@ -344,56 +416,48 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-            {bundles.map((bundle) => (
+            {bundles.map((bundle, idx) => (
               <div
                 key={bundle.id}
-                className={`rounded-2xl overflow-hidden transition-all duration-200 ${
+                className={`relative rounded-2xl overflow-hidden transition-all duration-300 ${
                   bundle.popular
                     ? 'border-2 border-primary-500 ring-4 ring-primary-100 transform scale-105 shadow-2xl'
-                    : 'border border-gray-200 shadow-lg hover:shadow-xl'
+                    : 'border border-gray-200 shadow-lg hover:shadow-2xl hover:-translate-y-2'
                 }`}
+                style={{ animationDelay: `${idx * 100}ms` }}
               >
                 {bundle.popular && (
-                  <div className="bg-gradient-to-r from-primary-600 to-primary-700 text-white text-center py-3 px-4">
-                    <div className="flex items-center justify-center gap-2 font-bold">
-                      <Sparkles className="h-5 w-5" />
-                      <span>LE PLUS POPULAIRE</span>
-                    </div>
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-primary-600 to-primary-700 text-white px-4 py-1 text-xs font-bold rounded-bl-lg flex items-center gap-1">
+                    <Sparkles className="h-3 w-3 animate-pulse" />
+                    RECOMMANDÉ
                   </div>
                 )}
 
-                <div className={`p-8 ${bundle.popular ? 'bg-gradient-to-br from-primary-50 to-primary-100' : 'bg-gray-50'}`}>
+                <div className={`p-8 text-center ${bundle.popular ? 'bg-gradient-to-br from-primary-50 to-primary-100' : 'bg-gray-50'}`}>
+                  <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-white shadow-md mb-4">
+                    <Package className={`h-8 w-8 ${bundle.popular ? 'text-primary-600' : 'text-gray-600'}`} />
+                  </div>
+
                   <h3 className="text-2xl font-bold text-gray-900 mb-2">{bundle.name}</h3>
                   <p className="text-gray-600 mb-6">{bundle.description}</p>
 
-                  <div className="mb-6">
-                    <div className="flex items-baseline gap-2 mb-2">
-                      <span className="text-4xl font-bold text-gray-900">
-                        {bundle.price.toLocaleString()}
-                      </span>
-                      <span className="text-gray-600">FCFA/an</span>
-                    </div>
-                    <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-green-50 text-green-700 rounded-full text-sm font-medium">
-                      <TrendingDown className="h-4 w-4" />
-                      <span>Économisez {bundle.savings.toLocaleString()} FCFA</span>
-                    </div>
+                  <div className="flex items-baseline gap-2 justify-center mb-3">
+                    <span className="text-4xl font-bold text-gray-900">
+                      {bundle.price.toLocaleString()}
+                    </span>
+                    <span className="text-gray-600">FCFA/an</span>
                   </div>
 
-                  <button
-                    onClick={() => navigate('/signup')}
-                    className={`w-full py-3 rounded-lg font-bold transition-all duration-200 transform hover:scale-105 ${
-                      bundle.popular
-                        ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg hover:shadow-xl'
-                        : 'bg-gray-900 text-white hover:bg-gray-800'
-                    }`}
-                  >
-                    Commencer Gratuitement
-                  </button>
+                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-medium">
+                    <TrendingDown className="h-4 w-4" />
+                    <span>Économie {bundle.savings.toLocaleString()} FCFA</span>
+                  </div>
                 </div>
 
                 <div className="p-8 bg-white">
-                  <h4 className="text-sm font-bold text-gray-700 uppercase mb-4">
-                    Applications Incluses
+                  <h4 className="text-sm font-bold text-gray-700 uppercase mb-4 flex items-center gap-2">
+                    <Check className="h-4 w-4 text-primary-600" />
+                    Inclus
                   </h4>
                   <ul className="space-y-3 mb-6">
                     {bundle.apps.map((appId) => {
@@ -417,10 +481,8 @@ export default function LandingPage() {
                     })}
                   </ul>
 
-                  <div className="pt-6 border-t border-gray-200">
-                    <h4 className="text-sm font-bold text-gray-700 uppercase mb-3">
-                      Avantages
-                    </h4>
+                  <div className="pt-6 border-t border-gray-200 mb-6">
+                    <h4 className="text-sm font-bold text-gray-700 uppercase mb-3">Avantages</h4>
                     <ul className="space-y-2">
                       {bundle.features.map((feature, idx) => (
                         <li key={idx} className="flex items-start gap-2 text-sm text-gray-600">
@@ -430,6 +492,18 @@ export default function LandingPage() {
                       ))}
                     </ul>
                   </div>
+
+                  <button
+                    onClick={() => navigate('/signup')}
+                    className={`w-full py-3 rounded-lg font-bold transition-all duration-300 transform hover:scale-105 flex items-center justify-center gap-2 ${
+                      bundle.popular
+                        ? 'bg-gradient-to-r from-primary-600 to-primary-700 text-white shadow-lg hover:shadow-xl'
+                        : 'bg-gray-900 text-white hover:bg-gray-800'
+                    }`}
+                  >
+                    <span>Commencer Maintenant</span>
+                    <ChevronRight className="h-5 w-5" />
+                  </button>
                 </div>
               </div>
             ))}
@@ -438,42 +512,61 @@ export default function LandingPage() {
       </section>
 
       {/* CTA Final */}
-      <section className="py-20 bg-gradient-to-br from-primary-600 to-primary-900 text-white">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+      <section className="relative py-20 bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white overflow-hidden">
+        <div className="absolute inset-0">
+          <div className="absolute top-10 left-10 w-64 h-64 bg-white/5 rounded-full blur-3xl"></div>
+          <div className="absolute bottom-10 right-10 w-96 h-96 bg-primary-400/10 rounded-full blur-3xl"></div>
+        </div>
+
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl md:text-4xl font-bold mb-6">
             Prêt à Moderniser Votre Établissement ?
           </h2>
-          <p className="text-xl text-gray-200 mb-8">
+          <p className="text-xl text-gray-200 mb-8 leading-relaxed">
             Créez votre compte gratuitement en 2 minutes.<br />
-            Aucune carte bancaire requise.
+            <span className="text-yellow-300 font-semibold">Aucune carte bancaire requise.</span>
           </p>
           <button
             onClick={() => navigate('/signup')}
-            className="group px-8 py-4 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-yellow-300 hover:text-primary-900 transition-all duration-200 shadow-xl hover:shadow-2xl transform hover:scale-105 inline-flex items-center gap-2"
+            className="group px-10 py-5 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-yellow-300 hover:text-primary-900 transition-all duration-300 shadow-2xl hover:shadow-3xl transform hover:scale-105 inline-flex items-center gap-3"
           >
-            <Zap className="h-5 w-5" />
-            Créer Mon Compte Gratuit
-            <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            <Zap className="h-6 w-6 group-hover:animate-bounce" />
+            <span>Créer Mon Compte Gratuit</span>
+            <ArrowRight className="h-6 w-6 group-hover:translate-x-2 transition-transform" />
           </button>
 
           <p className="text-sm text-gray-300 mt-6">
-            Déjà un compte ? <button onClick={() => navigate('/login')} className="underline hover:text-white">Se connecter</button>
+            Déjà un compte ? <button onClick={() => navigate('/login')} className="underline hover:text-white font-semibold">Se connecter</button>
           </p>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-4">
-            <GraduationCap className="h-6 w-6 text-primary-400" />
-            <span className="text-lg font-bold text-white">EduTrack</span>
+      <footer className="bg-gray-900 text-gray-400 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row items-center justify-between">
+            <div className="flex items-center gap-3 mb-4 md:mb-0">
+              <img
+                src="/assets/images/mon_logo.png"
+                alt="EduTrack Logo"
+                className="h-10 w-10 object-contain"
+              />
+              <span className="text-xl font-bold text-white">EduTrack</span>
+            </div>
+            <p className="text-sm text-center md:text-left">
+              © 2025 EduTrack. Solution modulaire de gestion scolaire pour le Cameroun.
+            </p>
           </div>
-          <p className="text-sm">
-            © 2025 EduTrack. Solution modulaire de gestion scolaire pour le Cameroun.
-          </p>
         </div>
       </footer>
+
+      {/* CSS Animations */}
+      <style jsx>{`
+        @keyframes float {
+          0%, 100% { transform: translate(0, 0); }
+          50% { transform: translate(10px, 10px); }
+        }
+      `}</style>
     </div>
   );
 }
