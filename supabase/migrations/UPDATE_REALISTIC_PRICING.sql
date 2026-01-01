@@ -145,8 +145,8 @@ BEGIN
   RAISE NOTICE '═══════════════════════════════════════════════════════';
   RAISE NOTICE 'Total toutes apps (à la carte): % FCFA/an', total_apps_revenue;
   RAISE NOTICE 'Prix moyen par app: % FCFA/an', avg_app_price;
-  RAISE NOTICE 'Bundle Premium (toutes apps): 200 000 FCFA/an';
-  RAISE NOTICE 'Économie bundle premium: 35 000 FCFA (15%)';
+  RAISE NOTICE 'Bundle Premium (toutes apps): 200000 FCFA/an';
+  RAISE NOTICE 'Économie bundle premium: 35000 FCFA (15%%)';
   RAISE NOTICE '';
   RAISE NOTICE '✅ Migration terminée avec succès';
   RAISE NOTICE '═══════════════════════════════════════════════════════';
