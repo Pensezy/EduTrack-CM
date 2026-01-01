@@ -274,7 +274,27 @@ export default function SignupPage() {
 
       console.log('✅ User créé:', authData.user.id);
 
-      // ✅ NOUVEAU : Créer l'école immédiatement (pas besoin d'attendre confirmation email)
+      // ✅ ÉTAPE 1 : Créer le user dans public.users (le trigger auto ne fonctionne pas toujours)
+      console.log('👤 Création du user dans public.users...');
+
+      const { error: userInsertError } = await supabase
+        .from('users')
+        .insert({
+          id: authData.user.id,
+          email: authData.user.email,
+          role: 'principal',
+          full_name: formData.directorName,
+          phone: formData.phone
+        });
+
+      if (userInsertError) {
+        console.error('❌ Erreur création user public:', userInsertError);
+        throw new Error(`Erreur création user: ${userInsertError.message}`);
+      }
+
+      console.log('✅ User créé dans public.users');
+
+      // ✅ ÉTAPE 2 : Créer l'école immédiatement (pas besoin d'attendre confirmation email)
       console.log('🏫 Création de l\'école dans la base...');
 
       const { data: schoolRecord, error: schoolError } = await supabase
@@ -289,7 +309,7 @@ export default function SignupPage() {
           email: formData.email,
           address: formData.address,
           city: formData.city,
-          country: formData.country,
+          country: countryData[formData.country]?.label || formData.country,
           available_classes: selectedClasses
         })
         .select()
