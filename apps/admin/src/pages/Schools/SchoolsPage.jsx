@@ -13,11 +13,12 @@ import {
   Edit,
   Trash2,
   Eye,
+  Settings,
   AlertCircle,
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { SchoolFormModal, SchoolViewModal, SchoolDeleteModal } from './components';
+import { SchoolFormModal, SchoolViewModal, SchoolDeleteModal, SchoolAdminModal } from './components';
 
 export default function SchoolsPage() {
   const { user } = useAuth();

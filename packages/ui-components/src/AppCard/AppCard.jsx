@@ -109,18 +109,23 @@ export function AppCard({
 
     return (
       <div className="space-y-2">
+        {app.development_status === 'beta' && (
+          <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 mb-2">
+            <p className="text-xs text-purple-700 font-medium text-center">
+              ⚠️ Version Beta - Fonctionnalités en cours de finalisation
+            </p>
+          </div>
+        )}
         <button
           onClick={() => onStartTrial?.(app)}
           className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
-          disabled={app.development_status === 'beta'}
         >
           <Sparkles className="h-4 w-4" />
-          {app.development_status === 'beta' ? 'Beta - Essai Limité' : 'Essai Gratuit 30j'}
+          {app.development_status === 'beta' ? 'Essai Beta 30j' : 'Essai Gratuit 30j'}
         </button>
         <button
           onClick={() => onSubscribe?.(app)}
           className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
-          disabled={app.development_status === 'beta'}
         >
           Souscrire
         </button>

@@ -50,7 +50,7 @@ export default function UsersPage() {
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que les utilisateurs de leur école
       if (user?.role === 'principal' && user?.current_school_id) {
-        query = query.eq('school_id', user.current_school_id);
+        query = query.eq('current_school_id', user.current_school_id);
       }
       // Les admins voient tous les utilisateurs (pas de filtre)
 

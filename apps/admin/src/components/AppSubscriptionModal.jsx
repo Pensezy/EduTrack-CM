@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Modal } from '../Modal/Modal.jsx';
+import { Modal } from '@edutrack/ui';
 import { X, AlertTriangle, CheckCircle, Info, DollarSign, Calendar, Zap } from 'lucide-react';
 import { getSupabaseClient } from '@edutrack/api';
 

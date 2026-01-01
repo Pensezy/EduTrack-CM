@@ -30,7 +30,8 @@
       "Bash(git push:*)",
       "Bash(pnpm build:*)",
       "Bash(pnpm dev:*)",
-      "Bash(node scripts/check-env-vars.js:*)"
+      "Bash(node scripts/check-env-vars.js:*)",
+      "Bash(pnpm --filter hub build:*)"
     ]
   }
 }

@@ -10,7 +10,6 @@ UPDATE apps
 SET
   name = 'App Core',
   description = 'Le socle indispensable de votre digitalisation. Centralise vos données et structure votre établissement.',
-  short_description = 'Gestion complète de base avec générateur de cartes scolaires',
   features = jsonb_build_array(
     'Gestion des profils (élèves, enseignants, personnel)',
     'Architecture pédagogique (classes/filières)',
@@ -21,17 +20,17 @@ SET
   category = 'core',
   price_monthly = 0,
   price_yearly = 0,
-  is_free = true,
+  is_core = true,
+  status = 'active',
   development_status = 'ready',
   sort_order = 1
-WHERE slug = 'core';
+WHERE id = 'core';
 
--- App Académique (ex: Notes & Évaluations)
+-- App Academic → App Académique
 UPDATE apps
 SET
   name = 'App Académique',
   description = 'Moteur de calcul adaptatif pour système Trimestriel (Scolaire) et LMD (Universitaire).',
-  short_description = 'Notes, résultats et bulletins - Double compatibilité Scolaire/LMD',
   features = jsonb_build_array(
     'Mode Scolaire: Séquences, Trimestres, Coefficients',
     'Mode LMD: Semestres, UV, Crédits, GPA',
@@ -43,17 +42,17 @@ SET
   category = 'pedagogy',
   price_monthly = 7500,
   price_yearly = 75000,
-  is_free = false,
-  development_status = 'beta',
+  is_core = false,
+  status = 'active',
+  development_status = 'ready',
   sort_order = 2
-WHERE slug = 'notes-evaluations';
+WHERE id = 'academic';
 
--- App Trésorerie & Comptabilité (ex: Comptabilité)
+-- App Financial → App Trésorerie & Comptabilité
 UPDATE apps
 SET
   name = 'App Trésorerie & Comptabilité',
   description = 'Gestion financière stricte adaptée aux réalités locales (paiements échelonnés, espèces, Mobile Money).',
-  short_description = 'Sécurisez vos revenus avec une gestion financière complète',
   features = jsonb_build_array(
     'Suivi des scolarités (tranches, délais, échéanciers)',
     'Caisse & dépenses avec traçabilité',
@@ -64,17 +63,17 @@ SET
   category = 'administration',
   price_monthly = 12000,
   price_yearly = 120000,
-  is_free = false,
-  development_status = 'beta',
+  is_core = false,
+  status = 'active',
+  development_status = 'ready',
   sort_order = 3
-WHERE slug = 'comptabilite';
+WHERE id = 'financial';
 
--- App Communication & Alertes (ex: Communication)
+-- App Communication → App Communication & Alertes
 UPDATE apps
 SET
   name = 'App Communication & Alertes',
   description = 'Lien direct avec les familles et étudiants. Notifications, SMS, emails.',
-  short_description = 'Communication fluide avec familles et étudiants (SMS + Notifications)',
   features = jsonb_build_array(
     'Campagnes SMS (rappels, convocations, absences)',
     'Notifications app gratuites',
@@ -85,17 +84,17 @@ SET
   category = 'communication',
   price_monthly = 4500,
   price_yearly = 45000,
-  is_free = false,
+  is_core = false,
+  status = 'active',
   development_status = 'beta',
   sort_order = 4
-WHERE slug = 'communication';
+WHERE id = 'communication';
 
--- App Planning & Temps (ex: Emplois du Temps)
+-- App Schedule → App Planning & Temps
 UPDATE apps
 SET
   name = 'App Planning & Temps',
   description = 'Gestion intelligente des ressources temporelles et matérielles.',
-  short_description = 'Emplois du temps, salles et pointage enseignants',
   features = jsonb_build_array(
     'Emplois du temps par classe/amphi et enseignant',
     'Gestion des salles (éviter conflits)',
@@ -105,17 +104,17 @@ SET
   category = 'pedagogy',
   price_monthly = 6000,
   price_yearly = 60000,
-  is_free = false,
+  is_core = false,
+  status = 'active',
   development_status = 'beta',
   sort_order = 5
-WHERE slug = 'emplois-du-temps';
+WHERE id = 'schedule';
 
--- App Discipline & Assiduité (ex: Absences & Discipline)
+-- App Discipline → App Discipline & Assiduité
 UPDATE apps
 SET
   name = 'App Discipline & Assiduité',
   description = 'Digitalisation de la vie scolaire et de la discipline.',
-  short_description = 'Pointage, discipline et suivi comportemental',
   features = jsonb_build_array(
     'Appel numérique (par cours ou journée)',
     'Suivi disciplinaire (blâmes, avertissements, exclusions)',
@@ -125,37 +124,17 @@ SET
   category = 'administration',
   price_monthly = 5000,
   price_yearly = 50000,
-  is_free = false,
+  is_core = false,
+  status = 'active',
   development_status = 'beta',
   sort_order = 6
-WHERE slug = 'absences-discipline';
+WHERE id = 'discipline';
 
--- App Bibliothèque 2.0 (ex: Bibliothèque)
-UPDATE apps
-SET
-  name = 'App Bibliothèque 2.0',
-  description = 'Gestion simplifiée du fonds documentaire physique.',
-  short_description = 'Catalogage, prêts et statistiques de bibliothèque',
-  features = jsonb_build_array(
-    'Catalogue digital complet',
-    'Prêts & retours (recherche ou scan code-barres)',
-    'Statistiques (livres populaires, rotation)',
-    'Pénalités et amendes de retard'
-  ),
-  category = 'pedagogy',
-  price_monthly = 4000,
-  price_yearly = 40000,
-  is_free = false,
-  development_status = 'beta',
-  sort_order = 7
-WHERE slug = 'bibliotheque';
-
--- App Décisionnel (ex: Statistiques & Rapports)
+-- App Reporting → App Décisionnel
 UPDATE apps
 SET
   name = 'App Décisionnel',
   description = 'Tableaux de bord avancés pour analyser la performance pédagogique, effectifs et santé financière.',
-  short_description = 'Statistiques et analytics pour le pilotage',
   features = jsonb_build_array(
     'Dashboards direction en temps réel',
     'Analyses pédagogiques',
@@ -166,10 +145,33 @@ SET
   category = 'analytics',
   price_monthly = 5500,
   price_yearly = 55000,
-  is_free = false,
+  is_core = false,
+  status = 'active',
+  development_status = 'beta',
+  sort_order = 7
+WHERE id = 'reporting';
+
+-- App HR → App Bibliothèque 2.0 (REMPLACEMENT)
+-- Note: On remplace l'app HR par Bibliothèque selon le nouveau catalogue
+UPDATE apps
+SET
+  name = 'App Bibliothèque 2.0',
+  description = 'Gestion simplifiée du fonds documentaire physique.',
+  features = jsonb_build_array(
+    'Catalogue digital complet',
+    'Prêts & retours (recherche ou scan code-barres)',
+    'Statistiques (livres populaires, rotation)',
+    'Pénalités et amendes de retard'
+  ),
+  category = 'pedagogy',
+  icon = '📚',
+  price_monthly = 4000,
+  price_yearly = 40000,
+  is_core = false,
+  status = 'active',
   development_status = 'beta',
   sort_order = 8
-WHERE slug = 'statistiques-rapports';
+WHERE id = 'hr';
 
 -- 2. Ajout de la nouvelle app E-Learning
 -- ============================================================================
@@ -177,31 +179,25 @@ WHERE slug = 'statistiques-rapports';
 INSERT INTO apps (
   id,
   name,
-  slug,
   description,
-  short_description,
-  icon,
   category,
-  price_monthly,
+  icon,
   price_yearly,
-  is_free,
-  trial_days,
+  price_monthly,
+  is_core,
   features,
-  development_status,
-  is_active,
-  sort_order
+  status,
+  sort_order,
+  development_status
 ) VALUES (
-  gen_random_uuid(),
+  'elearning',
   'App E-Learning & Ressources',
-  'e-learning',
   'Étendez l''apprentissage au-delà de la salle de classe. Plateforme moderne pour le partage de savoir.',
-  'Banque d''épreuves, dépôt de cours et cahier de texte numérique',
-  '📚',
   'pedagogy',
-  8500,
+  '🎓',
   85000,
+  8500,
   false,
-  30,
   jsonb_build_array(
     'Banque d''épreuves (archivage sujets)',
     'Dépôt de cours (PDF, Word, Audio)',
@@ -209,197 +205,153 @@ INSERT INTO apps (
     'Travaux dirigés en ligne',
     'Suivi avancement du programme'
   ),
-  'beta',
-  true,
-  9
-) ON CONFLICT (slug) DO UPDATE SET
+  'active',
+  9,
+  'beta'
+) ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
-  short_description = EXCLUDED.short_description,
   features = EXCLUDED.features,
   price_monthly = EXCLUDED.price_monthly,
   price_yearly = EXCLUDED.price_yearly,
+  status = EXCLUDED.status,
+  sort_order = EXCLUDED.sort_order,
   development_status = EXCLUDED.development_status;
 
 -- 3. Mise à jour des bundles/packs
 -- ============================================================================
 
 -- Supprimer les anciens packs
-DELETE FROM bundles WHERE slug IN ('essentiel', 'standard', 'premium');
+DELETE FROM bundles WHERE id IN ('starter', 'standard', 'premium');
 
 -- Pack Start (Primaire / Petite École)
 INSERT INTO bundles (
   id,
   name,
-  slug,
   description,
-  target_audience,
+  recommended_for,
+  app_ids,
   price_yearly,
-  discount_amount,
-  discount_percentage,
+  savings,
   is_active,
-  sort_order
+  sort_order,
+  features_extra
 ) VALUES (
-  gen_random_uuid(),
-  'Pack Start',
   'start',
+  'Pack Start',
   'Pour écoles souhaitant débuter la digitalisation à moindre coût',
   'Primaire, Petites Écoles',
+  ARRAY['core', 'academic', 'discipline'],
   100000,
   25000,
-  20,
   true,
-  1
-) ON CONFLICT (slug) DO UPDATE SET
+  1,
+  '{"support": "email", "training": "video", "features": ["Notes et bulletins", "Gestion discipline"]}'::jsonb
+) ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
+  app_ids = EXCLUDED.app_ids,
   price_yearly = EXCLUDED.price_yearly,
-  discount_amount = EXCLUDED.discount_amount;
+  savings = EXCLUDED.savings,
+  features_extra = EXCLUDED.features_extra;
 
--- Pack Gestion (Collège / Lycée)
+-- Pack Gestion (Collège / Lycée) - RECOMMANDÉ
 INSERT INTO bundles (
   id,
   name,
-  slug,
   description,
-  target_audience,
+  recommended_for,
+  app_ids,
   price_yearly,
-  discount_amount,
-  discount_percentage,
+  savings,
   is_active,
   sort_order,
-  is_recommended
+  features_extra
 ) VALUES (
-  gen_random_uuid(),
-  'Pack Gestion',
   'gestion',
+  'Pack Gestion',
   'Établissements voulant sécuriser les finances et gérer les notes',
   'Collèges, Lycées',
+  ARRAY['core', 'academic', 'financial', 'communication'],
   200000,
   40000,
-  17,
   true,
   2,
-  true
-) ON CONFLICT (slug) DO UPDATE SET
+  '{"support": "priority_email", "training": "video", "recommended": true, "features": ["Notes", "Trésorerie", "Communication"]}'::jsonb
+) ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
+  app_ids = EXCLUDED.app_ids,
   price_yearly = EXCLUDED.price_yearly,
-  discount_amount = EXCLUDED.discount_amount,
-  is_recommended = EXCLUDED.is_recommended;
+  savings = EXCLUDED.savings,
+  features_extra = EXCLUDED.features_extra;
 
 -- Pack Excellence (Lycée Bilingue / Complexe)
 INSERT INTO bundles (
   id,
   name,
-  slug,
   description,
-  target_audience,
+  recommended_for,
+  app_ids,
   price_yearly,
-  discount_amount,
-  discount_percentage,
+  savings,
   is_active,
-  sort_order
+  sort_order,
+  features_extra
 ) VALUES (
-  gen_random_uuid(),
-  'Pack Excellence',
   'excellence',
+  'Pack Excellence',
   'Établissements visant une gestion à 360° sans compromis',
   'Lycées Bilingues, Complexes Scolaires',
+  ARRAY['core', 'academic', 'financial', 'communication', 'schedule', 'discipline', 'elearning'],
   350000,
   85000,
-  20,
   true,
-  3
-) ON CONFLICT (slug) DO UPDATE SET
+  3,
+  '{"support": "phone", "training": "onsite", "features": ["Gestion complète", "E-Learning", "Support prioritaire"]}'::jsonb
+) ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
+  app_ids = EXCLUDED.app_ids,
   price_yearly = EXCLUDED.price_yearly,
-  discount_amount = EXCLUDED.discount_amount;
+  savings = EXCLUDED.savings,
+  features_extra = EXCLUDED.features_extra;
 
 -- Pack Campus (Université / Grande École)
 INSERT INTO bundles (
   id,
   name,
-  slug,
   description,
-  target_audience,
+  recommended_for,
+  app_ids,
   price_yearly,
-  discount_amount,
-  discount_percentage,
+  savings,
   is_active,
   sort_order,
-  is_custom_pricing
+  features_extra
 ) VALUES (
-  gen_random_uuid(),
-  'Pack Campus',
   'campus',
+  'Pack Campus',
   'Gestion LMD complète pour l''enseignement supérieur',
   'Universités, Grandes Écoles',
+  ARRAY['core', 'academic', 'financial', 'communication', 'schedule', 'discipline', 'hr', 'reporting', 'elearning'],
   0, -- Sur devis
-  0,
   0,
   true,
   4,
-  true
-) ON CONFLICT (slug) DO UPDATE SET
+  '{"support": "dedicated", "training": "custom", "custom_pricing": true, "features": ["Toutes les apps", "Mode LMD complet", "Support dédié"]}'::jsonb
+) ON CONFLICT (id) DO UPDATE SET
   name = EXCLUDED.name,
   description = EXCLUDED.description,
-  is_custom_pricing = EXCLUDED.is_custom_pricing;
+  app_ids = EXCLUDED.app_ids,
+  features_extra = EXCLUDED.features_extra;
 
--- 4. Lier les apps aux bundles
--- ============================================================================
-
--- D'abord, supprimer les anciennes associations
-DELETE FROM bundle_apps;
-
--- Pack Start: Core + Académique + Discipline
-INSERT INTO bundle_apps (bundle_id, app_id)
-SELECT
-  b.id,
-  a.id
-FROM bundles b
-CROSS JOIN apps a
-WHERE b.slug = 'start'
-  AND a.slug IN ('core', 'notes-evaluations', 'absences-discipline');
-
--- Pack Gestion: Core + Académique + Trésorerie + Communication
-INSERT INTO bundle_apps (bundle_id, app_id)
-SELECT
-  b.id,
-  a.id
-FROM bundles b
-CROSS JOIN apps a
-WHERE b.slug = 'gestion'
-  AND a.slug IN ('core', 'notes-evaluations', 'comptabilite', 'communication');
-
--- Pack Excellence: Core + Académique + Trésorerie + Communication + Planning + Discipline + E-Learning
-INSERT INTO bundle_apps (bundle_id, app_id)
-SELECT
-  b.id,
-  a.id
-FROM bundles b
-CROSS JOIN apps a
-WHERE b.slug = 'excellence'
-  AND a.slug IN ('core', 'notes-evaluations', 'comptabilite', 'communication', 'emplois-du-temps', 'absences-discipline', 'e-learning');
-
--- Pack Campus: Toutes les apps (gestion complète)
-INSERT INTO bundle_apps (bundle_id, app_id)
-SELECT
-  b.id,
-  a.id
-FROM bundles b
-CROSS JOIN apps a
-WHERE b.slug = 'campus'
-  AND a.is_active = true;
-
--- 5. Vérification et rapport
+-- 4. Vérification et rapport
 -- ============================================================================
 
 DO $$
 BEGIN
   RAISE NOTICE '✅ Migration catalogue 2026 terminée';
-  RAISE NOTICE '📱 Apps actives: %', (SELECT COUNT(*) FROM apps WHERE is_active = true);
+  RAISE NOTICE '📱 Apps actives: %', (SELECT COUNT(*) FROM apps WHERE status = 'active');
   RAISE NOTICE '📦 Packs disponibles: %', (SELECT COUNT(*) FROM bundles WHERE is_active = true);
-  RAISE NOTICE '🔗 Associations bundle-apps: %', (SELECT COUNT(*) FROM bundle_apps);
 END $$;

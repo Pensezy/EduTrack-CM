@@ -51,7 +51,7 @@ export default function PersonnelPage() {
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que le personnel de leur école
       if (user?.role === 'principal' && user?.current_school_id) {
-        query = query.eq('school_id', user.current_school_id);
+        query = query.eq('current_school_id', user.current_school_id);
       }
       // Les admins voient tout le personnel (pas de filtre)
 

@@ -4,7 +4,7 @@
  * Carte d'affichage d'un bundle (pack d'applications)
  */
 
-import { Check, Package, Sparkles, TrendingDown } from 'lucide-react';
+import { Check, Package, Sparkles, TrendingDown, AlertTriangle, Construction } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export function BundleCard({
@@ -89,9 +89,23 @@ export function BundleCard({
                 {app.icon || '📦'}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900">
-                  {app.name}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-sm font-medium text-gray-900">
+                    {app.name}
+                  </p>
+                  {app.development_status === 'beta' && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-purple-100 text-purple-700 border border-purple-300">
+                      <AlertTriangle className="h-2.5 w-2.5" />
+                      Beta
+                    </span>
+                  )}
+                  {app.development_status === 'in_development' && (
+                    <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-xs font-medium bg-orange-100 text-orange-700 border border-orange-300">
+                      <Construction className="h-2.5 w-2.5" />
+                      En Dev
+                    </span>
+                  )}
+                </div>
                 <p className="text-xs text-gray-500 truncate">
                   {app.price_yearly?.toLocaleString()} FCFA/an
                 </p>
