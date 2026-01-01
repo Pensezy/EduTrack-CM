@@ -282,11 +282,13 @@ export default function SignupPage() {
           name: formData.schoolName,
           code: schoolCode,
           type: formData.schoolType,
+          director_name: formData.directorName,
+          director_user_id: authData.user.id,
           phone: formData.phone,
+          email: formData.email,
           address: formData.address,
           city: formData.city,
           country: formData.country,
-          principal_id: authData.user.id,
           available_classes: selectedClasses
         })
         .select()
