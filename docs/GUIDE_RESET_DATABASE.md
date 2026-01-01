@@ -66,7 +66,7 @@ BEGIN
           EXECUTE format('TRUNCATE TABLE public.%I CASCADE', table_record.tablename);
           total_tables := total_tables + 1;
           total_rows_deleted := total_rows_deleted + row_count;
-          RAISE NOTICE '✅ Table "%" vidée (% lignes)', table_record.tablename, row_count;
+          RAISE NOTICE '✅ Table "%" vidée (% lignes supprimées)', table_record.tablename, row_count;
         ELSE
           RAISE NOTICE '⚪ Table "%" déjà vide', table_record.tablename;
         END IF;
