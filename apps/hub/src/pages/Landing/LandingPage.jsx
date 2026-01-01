@@ -405,7 +405,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-semibold mb-4">
               <TrendingDown className="h-4 w-4" />
-              Économisez jusqu'à 20 000 FCFA
+              Économisez jusqu'à 35 000 FCFA
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Packs Tout Inclus
