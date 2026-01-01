@@ -29,6 +29,15 @@ export const AuthProvider = ({ children }) => {
         console.log('🔍 Vérification de la session Supabase...');
         const { data: { session }, error } = await supabase.auth.getSession();
 
+        // Si erreur de refresh token, nettoyer et ignorer
+        if (error && error.message?.includes('Invalid Refresh Token')) {
+          console.warn('⚠️ Token invalide détecté, nettoyage...');
+          await supabase.auth.signOut();
+          localStorage.removeItem('edutrack-user');
+          setLoading(false);
+          return;
+        }
+
         if (session?.user) {
           // ✅ Session Supabase active (Principal) - PRIORITÉ ABSOLUE
           console.log('✅ Session Supabase trouvée:', session.user.email);
