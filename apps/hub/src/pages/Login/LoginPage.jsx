@@ -56,7 +56,7 @@ export default function LoginPage() {
 
       // Déterminer l'URL de l'app Admin selon l'environnement
       const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const adminUrl = isDev ? 'http://localhost:5174' : 'https://admin.edutrack.cm';
+      const adminUrl = isDev ? 'http://localhost:5174' : 'https://edu-track-cm-admin.vercel.app';
 
       if (role === 'principal') {
         window.location.href = adminUrl; // Rediriger vers l'app admin

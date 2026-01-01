@@ -327,14 +327,14 @@ export default function OnboardingPage() {
     } else {
       // Dernière étape : rediriger vers le dashboard admin
       const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-      const adminUrl = isDev ? 'http://localhost:5174' : 'https://admin.edutrack.cm';
+      const adminUrl = isDev ? 'http://localhost:5174' : 'https://edu-track-cm-admin.vercel.app';
       window.location.href = adminUrl;
     }
   };
 
   const handleSkip = () => {
     const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
-    const adminUrl = isDev ? 'http://localhost:5174' : 'https://admin.edutrack.cm';
+    const adminUrl = isDev ? 'http://localhost:5174' : 'https://edu-track-cm-admin.vercel.app';
     window.location.href = adminUrl;
   };
 

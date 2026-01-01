@@ -35,9 +35,10 @@ Confirmez votre email : https://edutrack.cm/auth/confirm?token=...
    http://localhost:5173
    ```
 
-   **Redirect URLs** (ajouter les deux) :
+   **Redirect URLs** (ajouter tous) :
    ```
    https://edutrack.cm/**
+   https://edu-track-cm-admin.vercel.app/**
    http://localhost:5173/**
    http://localhost:5174/**
    ```
