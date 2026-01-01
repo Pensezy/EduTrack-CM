@@ -28,9 +28,9 @@ export default function AuthConfirm() {
 
         setStatus('success');
 
-        // Rediriger vers le login après 3 secondes
+        // Rediriger vers l'onboarding après 3 secondes
         setTimeout(() => {
-          navigate('/login');
+          navigate('/onboarding');
         }, 3000);
       } catch (error) {
         console.error('❌ Erreur de confirmation:', error);
@@ -65,7 +65,7 @@ export default function AuthConfirm() {
               Votre compte a été activé avec succès.
             </p>
             <p className="text-sm text-gray-500">
-              Redirection vers la page de connexion...
+              Redirection vers votre espace d'accueil...
             </p>
           </>
         )}

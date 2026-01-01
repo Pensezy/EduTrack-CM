@@ -9,6 +9,7 @@ import SignupPage from './pages/Signup/SignupPage';
 import LoginPage from './pages/Login/LoginPage';
 import OnboardingPage from './pages/Onboarding/OnboardingPage';
 import AuthConfirm from './pages/AuthConfirm/AuthConfirm';
+import EmailVerificationPage from './pages/EmailVerification/EmailVerificationPage';
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/email-verification" element={<EmailVerificationPage />} />
         <Route path="/auth/confirm" element={<AuthConfirm />} />
 
         {/* Routes protégées */}

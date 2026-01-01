@@ -274,8 +274,8 @@ export default function SignupPage() {
         throw new Error('Erreur lors de la création de l\'utilisateur');
       }
 
-      // Rediriger vers l'onboarding
-      navigate('/onboarding');
+      // Rediriger vers la page de vérification email
+      navigate('/email-verification', { state: { email: formData.email } });
 
     } catch (error) {
       console.error('❌ Erreur lors de l\'inscription:', error);
