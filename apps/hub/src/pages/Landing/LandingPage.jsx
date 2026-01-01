@@ -73,10 +73,10 @@ export default function LandingPage() {
       if (appsError) throw appsError;
 
       // Charger les bundles depuis la vue v_bundles_catalog
+      // La vue filtre déjà sur is_active = true
       const { data: bundlesData, error: bundlesError } = await supabase
         .from('v_bundles_catalog')
         .select('*')
-        .eq('is_active', true)
         .order('sort_order');
 
       if (bundlesError) throw bundlesError;

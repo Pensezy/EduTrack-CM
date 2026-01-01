@@ -44,10 +44,10 @@ export default function AppStorePage() {
       setBundlesLoading(true);
       const supabase = getSupabaseClient();
 
+      // La vue v_bundles_catalog filtre déjà sur is_active = true
       const { data, error: bundlesError } = await supabase
         .from('v_bundles_catalog')
         .select('*')
-        .eq('is_active', true)
         .order('sort_order');
 
       if (bundlesError) {
