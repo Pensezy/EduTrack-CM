@@ -34,11 +34,11 @@ export default function MyAppsPage() {
   console.log('  - subscriptions:', subscriptions.length, subscriptions);
   console.log('  - activeSubscriptions:', activeSubscriptions.length, activeSubscriptions);
 
-  // Filtrer les abonnements
-  const filteredSubscriptions = activeSubscriptions.filter(sub => {
+  // Filtrer les apps actives (incluant les apps core qui n'ont pas de subscription)
+  const filteredApps = activeApps.filter(app => {
     if (filterStatus === 'all') return true;
-    if (filterStatus === 'trial') return sub.status === 'trial';
-    if (filterStatus === 'active') return sub.status === 'active';
+    if (filterStatus === 'trial') return app.is_trial;
+    if (filterStatus === 'active') return !app.is_core && !app.is_trial; // Payantes actives
     return true;
   });
 
@@ -183,7 +183,7 @@ export default function MyAppsPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Toutes ({activeSubscriptions.length})
+            Toutes ({activeApps.length})
           </button>
           <button
             onClick={() => setFilterStatus('trial')}
@@ -193,7 +193,7 @@ export default function MyAppsPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Essais ({trialSubscriptions.length})
+            Essais ({activeApps.filter(a => a.is_trial).length})
           </button>
           <button
             onClick={() => setFilterStatus('active')}
@@ -203,21 +203,31 @@ export default function MyAppsPage() {
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Actives ({activeSubscriptions.filter(s => s.status === 'active').length})
+            Payantes ({activeApps.filter(a => !a.is_core && !a.is_trial).length})
           </button>
         </div>
       </div>
 
-      {/* Liste des abonnements */}
-      {filteredSubscriptions.length > 0 ? (
+      {/* Liste des applications actives */}
+      {filteredApps.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredSubscriptions.map(subscription => {
-            const app = activeApps.find(a => a.id === subscription.app_id);
-            if (!app) return null;
+          {filteredApps.map(app => {
+            // Pour les apps core, créer une subscription fictive
+            const subscription = app.subscription_id
+              ? subscriptions.find(s => s.id === app.subscription_id)
+              : {
+                  id: `core-${app.id}`,
+                  app_id: app.id,
+                  status: 'core',
+                  is_trial: false,
+                  activated_at: null,
+                  expires_at: null,
+                  amount_paid: 0,
+                };
 
             return (
               <SubscriptionCard
-                key={subscription.id}
+                key={app.id}
                 subscription={subscription}
                 app={app}
                 onRenew={handleRenew}
