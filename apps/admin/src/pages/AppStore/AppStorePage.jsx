@@ -5,6 +5,7 @@
 import { useState, useEffect } from 'react';
 import { useApps, getSupabaseClient } from '@edutrack/api';
 import { AppCard, BundleCard } from '@edutrack/ui';
+import AppSubscriptionModal from '@edutrack/ui/src/AppCard/AppSubscriptionModal.jsx';
 import {
   Store,
   Package,
@@ -24,7 +25,8 @@ export default function AppStorePage() {
     subscriptions,
     startTrial,
     loading: appsLoading,
-    error
+    error,
+    refetch
   } = useApps();
 
   // Debug logs
@@ -39,6 +41,7 @@ export default function AppStorePage() {
   const [filterCategory, setFilterCategory] = useState('all');
   const [bundles, setBundles] = useState([]);
   const [bundlesLoading, setBundlesLoading] = useState(true);
+  const [subscriptionModal, setSubscriptionModal] = useState({ isOpen: false, app: null });
 
   // Charger les bundles depuis Supabase
   useEffect(() => {
@@ -93,18 +96,19 @@ export default function AppStorePage() {
     !activeApps.some(active => active.id === app.id)
   );
 
-  const handleStartTrial = async (app) => {
-    try {
-      await startTrial(app.id);
-      alert(`Essai gratuit de 30 jours démarré pour ${app.name}!`);
-    } catch (err) {
-      alert(err.message || 'Erreur lors du démarrage de l\'essai');
-    }
+  const handleStartTrial = (app) => {
+    // Ouvrir la modal de confirmation avec type "trial" par défaut
+    setSubscriptionModal({ isOpen: true, app });
   };
 
   const handleSubscribe = (app) => {
-    // Ouvrir modal de paiement
-    alert(`Souscrire à ${app.name} - À implémenter`);
+    // Ouvrir la modal de confirmation avec type "active" par défaut
+    setSubscriptionModal({ isOpen: true, app });
+  };
+
+  const handleSubscriptionSuccess = () => {
+    // Rafraîchir la liste des apps après souscription
+    refetch();
   };
 
   const handleSubscribeBundle = (bundle) => {
@@ -338,6 +342,14 @@ export default function AppStorePage() {
           )}
         </div>
       )}
+
+      {/* Modal de confirmation de souscription */}
+      <AppSubscriptionModal
+        isOpen={subscriptionModal.isOpen}
+        onClose={() => setSubscriptionModal({ isOpen: false, app: null })}
+        app={subscriptionModal.app}
+        onSuccess={handleSubscriptionSuccess}
+      />
     </div>
   );
 }

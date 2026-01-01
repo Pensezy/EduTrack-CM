@@ -15,6 +15,7 @@ import {
   BookOpen,
   Calendar
 } from 'lucide-react';
+import { ClassFormModal, ClassViewModal } from './components';
 
 export default function ClassesPage() {
   const { user } = useAuth();
@@ -23,6 +24,10 @@ export default function ClassesPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterLevel, setFilterLevel] = useState('all');
+
+  // Modal states
+  const [formModal, setFormModal] = useState({ isOpen: false, classData: null });
+  const [viewModal, setViewModal] = useState({ isOpen: false, classData: null });
 
   useEffect(() => {
     fetchClasses();
@@ -120,6 +125,23 @@ export default function ClassesPage() {
     return colors[level] || 'from-gray-500 to-gray-600';
   };
 
+  // Modal handlers
+  const handleCreateClass = () => {
+    setFormModal({ isOpen: true, classData: null });
+  };
+
+  const handleEditClass = (classData) => {
+    setFormModal({ isOpen: true, classData });
+  };
+
+  const handleViewClass = (classData) => {
+    setViewModal({ isOpen: true, classData });
+  };
+
+  const handleModalSuccess = () => {
+    fetchClasses(); // Refresh the classes list
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -138,7 +160,10 @@ export default function ClassesPage() {
             {formatNumber(classes.length)} classe{classes.length > 1 ? 's' : ''} enregistrée{classes.length > 1 ? 's' : ''}
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
+        <button
+          onClick={handleCreateClass}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+        >
           <Plus className="h-5 w-5" />
           <span className="hidden sm:inline">Nouvelle Classe</span>
           <span className="sm:hidden">Nouvelle</span>
@@ -255,15 +280,24 @@ export default function ClassesPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-4">
-                  <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium">
+                  <button
+                    onClick={() => handleViewClass(cls)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium"
+                  >
                     <Eye className="h-4 w-4" />
                     <span className="hidden sm:inline">Voir</span>
                   </button>
-                  <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">
+                  <button
+                    onClick={() => handleEditClass(cls)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                  >
                     <Edit className="h-4 w-4" />
                     <span className="hidden sm:inline">Modifier</span>
                   </button>
-                  <button className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                  <button
+                    onClick={() => alert('Suppression à implémenter avec confirmation')}
+                    className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -272,6 +306,21 @@ export default function ClassesPage() {
           ))}
         </div>
       )}
+
+      {/* Modals */}
+      <ClassFormModal
+        isOpen={formModal.isOpen}
+        onClose={() => setFormModal({ isOpen: false, classData: null })}
+        classData={formModal.classData}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ClassViewModal
+        isOpen={viewModal.isOpen}
+        onClose={() => setViewModal({ isOpen: false, classData: null })}
+        classData={viewModal.classData}
+        onEdit={handleEditClass}
+      />
     </div>
   );
 }

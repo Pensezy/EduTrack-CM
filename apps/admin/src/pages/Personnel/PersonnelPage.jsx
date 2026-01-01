@@ -18,6 +18,7 @@ import {
   Briefcase,
   Calendar
 } from 'lucide-react';
+import { UserFormModal, UserViewModal } from '../Users/components';
 
 export default function PersonnelPage() {
   const { user } = useAuth();
@@ -27,6 +28,10 @@ export default function PersonnelPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+
+  // Modal states
+  const [formModal, setFormModal] = useState({ isOpen: false, user: null });
+  const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
 
   useEffect(() => {
     fetchPersonnel();
@@ -156,6 +161,23 @@ export default function PersonnelPage() {
     return colors[role] || 'from-gray-500 to-gray-600';
   };
 
+  // Modal handlers
+  const handleCreatePersonnel = () => {
+    setFormModal({ isOpen: true, user: null });
+  };
+
+  const handleEditPersonnel = (person) => {
+    setFormModal({ isOpen: true, user: person });
+  };
+
+  const handleViewPersonnel = (person) => {
+    setViewModal({ isOpen: true, user: person });
+  };
+
+  const handleModalSuccess = () => {
+    fetchPersonnel(); // Refresh the personnel list
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -174,7 +196,10 @@ export default function PersonnelPage() {
             {formatNumber(personnel.length)} membre{personnel.length > 1 ? 's' : ''} du personnel
           </p>
         </div>
-        <button className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm">
+        <button
+          onClick={handleCreatePersonnel}
+          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+        >
           <Plus className="h-5 w-5" />
           <span className="hidden sm:inline">Nouveau Personnel</span>
           <span className="sm:hidden">Nouveau</span>
@@ -311,15 +336,24 @@ export default function PersonnelPage() {
 
                 {/* Actions */}
                 <div className="flex items-center gap-2 pt-4">
-                  <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium">
+                  <button
+                    onClick={() => handleViewPersonnel(person)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium"
+                  >
                     <Eye className="h-4 w-4" />
                     <span className="hidden sm:inline">Voir</span>
                   </button>
-                  <button className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium">
+                  <button
+                    onClick={() => handleEditPersonnel(person)}
+                    className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors text-sm font-medium"
+                  >
                     <Edit className="h-4 w-4" />
                     <span className="hidden sm:inline">Modifier</span>
                   </button>
-                  <button className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors">
+                  <button
+                    onClick={() => alert('Suppression à implémenter avec confirmation')}
+                    className="px-3 py-2 bg-red-50 text-red-600 rounded-lg hover:bg-red-100 transition-colors"
+                  >
                     <Trash2 className="h-4 w-4" />
                   </button>
                 </div>
@@ -328,6 +362,21 @@ export default function PersonnelPage() {
           ))}
         </div>
       )}
+
+      {/* Modals */}
+      <UserFormModal
+        isOpen={formModal.isOpen}
+        onClose={() => setFormModal({ isOpen: false, user: null })}
+        user={formModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <UserViewModal
+        isOpen={viewModal.isOpen}
+        onClose={() => setViewModal({ isOpen: false, user: null })}
+        user={viewModal.user}
+        onEdit={handleEditPersonnel}
+      />
     </div>
   );
 }

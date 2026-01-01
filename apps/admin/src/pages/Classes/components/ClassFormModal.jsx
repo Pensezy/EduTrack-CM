@@ -1,0 +1,344 @@
+import { useState, useEffect } from 'react';
+import { Modal } from '@edutrack/ui';
+import { X, GraduationCap, School, Users, Hash, BookOpen } from 'lucide-react';
+import { getSupabaseClient, useAuth } from '@edutrack/api';
+
+/**
+ * Modal pour créer ou éditer une classe
+ */
+export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }) {
+  const { user } = useAuth();
+  const isEditing = !!classData;
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [schools, setSchools] = useState([]);
+
+  const [formData, setFormData] = useState({
+    name: '',
+    grade_level: '',
+    section: '',
+    school_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+    school_id: '',
+    max_students: 40,
+  });
+
+  // Charger les écoles pour le select
+  useEffect(() => {
+    if (isOpen) {
+      loadSchools();
+    }
+  }, [isOpen]);
+
+  const loadSchools = async () => {
+    try {
+      const supabase = getSupabaseClient();
+      let query = supabase
+        .from('schools')
+        .select('id, name, code')
+        .eq('status', 'active')
+        .order('name');
+
+      // Si directeur, filtrer par son école
+      if (user?.role === 'principal' && user?.current_school_id) {
+        query = query.eq('id', user.current_school_id);
+      }
+
+      const { data, error: schoolsError } = await query;
+
+      if (schoolsError) throw schoolsError;
+      setSchools(data || []);
+
+      // Si directeur, pré-sélectionner son école
+      if (user?.role === 'principal' && user?.current_school_id && !isEditing) {
+        setFormData(prev => ({ ...prev, school_id: user.current_school_id }));
+      }
+    } catch (err) {
+      console.error('Error loading schools:', err);
+    }
+  };
+
+  // Pré-remplir le formulaire en mode édition
+  useEffect(() => {
+    if (classData) {
+      setFormData({
+        name: classData.name || '',
+        grade_level: classData.grade_level || '',
+        section: classData.section || '',
+        school_year: classData.school_year || new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
+        school_id: classData.school_id || '',
+        max_students: classData.max_students || 40,
+      });
+    } else {
+      // Reset form pour création
+      const currentYear = new Date().getFullYear();
+      setFormData({
+        name: '',
+        grade_level: '',
+        section: '',
+        school_year: currentYear + '-' + (currentYear + 1),
+        school_id: user?.role === 'principal' && user?.current_school_id ? user.current_school_id : '',
+        max_students: 40,
+      });
+    }
+    setError('');
+  }, [classData, isOpen, user]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+
+    try {
+      const supabase = getSupabaseClient();
+
+      // Validation
+      if (!formData.name.trim()) {
+        throw new Error('Le nom de la classe est requis');
+      }
+      if (!formData.grade_level) {
+        throw new Error('Le niveau est requis');
+      }
+      if (!formData.school_id) {
+        throw new Error('L\'école est requise');
+      }
+
+      if (isEditing) {
+        // Mise à jour
+        const { error: updateError } = await supabase
+          .from('classes')
+          .update(formData)
+          .eq('id', classData.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Création
+        const { error: insertError } = await supabase
+          .from('classes')
+          .insert([formData]);
+
+        if (insertError) throw insertError;
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error('Error saving class:', err);
+      setError(err.message || 'Erreur lors de l\'enregistrement');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Modal isOpen={isOpen} onClose={onClose} size="lg">
+      <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-10 h-10 rounded-full bg-primary-100">
+            <GraduationCap className="h-5 w-5 text-primary-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {isEditing ? 'Modifier la classe' : 'Nouvelle classe'}
+            </h2>
+            <p className="text-sm text-gray-500">
+              {isEditing ? 'Mettre à jour les informations de la classe' : 'Enregistrer une nouvelle classe'}
+            </p>
+          </div>
+        </div>
+        <button
+          onClick={onClose}
+          className="text-gray-400 hover:text-gray-500 transition-colors"
+        >
+          <X className="h-6 w-6" />
+        </button>
+      </div>
+
+      <form onSubmit={handleSubmit}>
+        <div className="p-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
+          {error && (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-800">{error}</p>
+            </div>
+          )}
+
+          {/* Informations de base */}
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+              <GraduationCap className="h-4 w-4" />
+              Informations de base
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="md:col-span-2">
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nom de la classe *
+                </label>
+                <input
+                  type="text"
+                  id="name"
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Ex: 6ème A, CM2 B, Terminale S1"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="grade_level" className="block text-sm font-medium text-gray-700 mb-1">
+                  Niveau *
+                </label>
+                <select
+                  id="grade_level"
+                  name="grade_level"
+                  value={formData.grade_level}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                >
+                  <option value="">Sélectionner un niveau</option>
+
+                  {/* Maternelle */}
+                  <optgroup label="Maternelle">
+                    <option value="PS">Petite Section (PS)</option>
+                    <option value="MS">Moyenne Section (MS)</option>
+                    <option value="GS">Grande Section (GS)</option>
+                  </optgroup>
+
+                  {/* Primaire */}
+                  <optgroup label="Primaire">
+                    <option value="SIL">SIL</option>
+                    <option value="CP">CP</option>
+                    <option value="CE1">CE1</option>
+                    <option value="CE2">CE2</option>
+                    <option value="CM1">CM1</option>
+                    <option value="CM2">CM2</option>
+                  </optgroup>
+
+                  {/* Collège */}
+                  <optgroup label="Collège">
+                    <option value="6eme">6ème</option>
+                    <option value="5eme">5ème</option>
+                    <option value="4eme">4ème</option>
+                    <option value="3eme">3ème</option>
+                  </optgroup>
+
+                  {/* Lycée */}
+                  <optgroup label="Lycée">
+                    <option value="seconde">Seconde</option>
+                    <option value="premiere">Première</option>
+                    <option value="terminale">Terminale</option>
+                  </optgroup>
+                </select>
+              </div>
+
+              <div>
+                <label htmlFor="section" className="block text-sm font-medium text-gray-700 mb-1">
+                  Section / Série
+                </label>
+                <input
+                  type="text"
+                  id="section"
+                  name="section"
+                  value={formData.section}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="Ex: A, B, S, L, etc."
+                />
+              </div>
+
+              <div>
+                <label htmlFor="school_year" className="block text-sm font-medium text-gray-700 mb-1">
+                  Année scolaire *
+                </label>
+                <input
+                  type="text"
+                  id="school_year"
+                  name="school_year"
+                  value={formData.school_year}
+                  onChange={handleChange}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  placeholder="2024-2025"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="max_students" className="block text-sm font-medium text-gray-700 mb-1">
+                  Nombre maximum d'élèves
+                </label>
+                <div className="relative">
+                  <Users className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <input
+                    type="number"
+                    id="max_students"
+                    name="max_students"
+                    value={formData.max_students}
+                    onChange={handleChange}
+                    min="1"
+                    max="100"
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label htmlFor="school_id" className="block text-sm font-medium text-gray-700 mb-1">
+                  École *
+                </label>
+                <div className="relative">
+                  <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                  <select
+                    id="school_id"
+                    name="school_id"
+                    value={formData.school_id}
+                    onChange={handleChange}
+                    required
+                    disabled={user?.role === 'principal'}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-500"
+                  >
+                    <option value="">Sélectionner une école</option>
+                    {schools.map(school => (
+                      <option key={school.id} value={school.id}>
+                        {school.name} ({school.code})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                {user?.role === 'principal' && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    Votre école est automatiquement sélectionnée
+                  </p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={loading}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50"
+          >
+            Annuler
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {loading ? 'Enregistrement...' : isEditing ? 'Mettre à jour' : 'Créer la classe'}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}
