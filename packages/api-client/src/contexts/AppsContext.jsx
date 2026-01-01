@@ -42,13 +42,13 @@ export function AppsProvider({
 
   // Hooks pour les apps et abonnements
   const appsData = useActiveApps({
-    enabled: !!user?.school_id,
+    enabled: !!user?.current_school_id,
     includeCatalog,
     refetchInterval,
   });
 
   const subscriptionsData = useSchoolSubscriptions({
-    enabled: !!user?.school_id,
+    enabled: !!user?.current_school_id,
     includeExpired: false,
   });
 

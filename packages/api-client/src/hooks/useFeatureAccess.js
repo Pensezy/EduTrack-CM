@@ -123,7 +123,7 @@ export function useFeatureAccess(appId, featureId, options = {}) {
         const { data: subscription } = await supabase
           .from('school_subscriptions')
           .select('usage_stats')
-          .eq('school_id', user.school_id)
+          .eq('school_id', user.current_school_id)
           .eq('app_id', appId)
           .single();
 

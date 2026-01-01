@@ -40,7 +40,7 @@ export function useAppAccess(appId, options = {}) {
 
   const checkAccess = async () => {
     // Si pas d'utilisateur ou pas d'école, pas d'accès
-    if (!user?.school_id) {
+    if (!user?.current_school_id) {
       setState({
         hasAccess: false,
         loading: false,
@@ -82,7 +82,7 @@ export function useAppAccess(appId, options = {}) {
       const { data: subscription, error: subError } = await supabase
         .from('school_subscriptions')
         .select('*')
-        .eq('school_id', user.school_id)
+        .eq('school_id', user.current_school_id)
         .eq('app_id', appId)
         .in('status', ['trial', 'active'])
         .single();
@@ -146,7 +146,7 @@ export function useAppAccess(appId, options = {}) {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [appId, user?.school_id, enabled, refetchInterval]);
+  }, [appId, user?.current_school_id, enabled, refetchInterval]);
 
   return {
     hasAccess: state.hasAccess,

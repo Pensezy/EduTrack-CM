@@ -42,7 +42,7 @@ export function useSchoolSubscriptions(options = {}) {
   });
 
   const fetchSubscriptions = async () => {
-    if (!user?.school_id) {
+    if (!user?.current_school_id) {
       setState({
         subscriptions: [],
         loading: false,
@@ -62,7 +62,7 @@ export function useSchoolSubscriptions(options = {}) {
           app:apps(*),
           bundle:bundles(*)
         `)
-        .eq('school_id', user.school_id)
+        .eq('school_id', user.current_school_id)
         .order('created_at', { ascending: false });
 
       if (!includeExpired) {
@@ -100,13 +100,13 @@ export function useSchoolSubscriptions(options = {}) {
     }
 
     fetchSubscriptions();
-  }, [user?.school_id, enabled, includeExpired]);
+  }, [user?.current_school_id, enabled, includeExpired]);
 
   /**
    * Démarre un essai gratuit pour une application
    */
   const startTrial = async (appId, trialDays = 30) => {
-    if (!user?.school_id) {
+    if (!user?.current_school_id) {
       throw new Error('Utilisateur non connecté ou sans école');
     }
 
@@ -115,7 +115,7 @@ export function useSchoolSubscriptions(options = {}) {
 
       // Utiliser la fonction SQL start_trial
       const { data, error } = await supabase.rpc('start_trial', {
-        p_school_id: user.school_id,
+        p_school_id: user.current_school_id,
         p_app_id: appId,
         p_trial_days: trialDays,
       });
@@ -142,7 +142,7 @@ export function useSchoolSubscriptions(options = {}) {
     amountPaid,
     durationMonths = 12
   ) => {
-    if (!user?.school_id) {
+    if (!user?.current_school_id) {
       throw new Error('Utilisateur non connecté ou sans école');
     }
 
@@ -151,7 +151,7 @@ export function useSchoolSubscriptions(options = {}) {
 
       // Utiliser la fonction SQL activate_subscription
       const { data, error } = await supabase.rpc('activate_subscription', {
-        p_school_id: user.school_id,
+        p_school_id: user.current_school_id,
         p_app_id: appId,
         p_payment_method: paymentMethod,
         p_payment_reference: paymentReference,
@@ -175,7 +175,7 @@ export function useSchoolSubscriptions(options = {}) {
    * Annule un abonnement
    */
   const cancelSubscription = async (appId) => {
-    if (!user?.school_id) {
+    if (!user?.current_school_id) {
       throw new Error('Utilisateur non connecté ou sans école');
     }
 
@@ -190,7 +190,7 @@ export function useSchoolSubscriptions(options = {}) {
           auto_renew: false,
           updated_at: new Date().toISOString(),
         })
-        .eq('school_id', user.school_id)
+        .eq('school_id', user.current_school_id)
         .eq('app_id', appId);
 
       if (error) throw error;
@@ -208,7 +208,7 @@ export function useSchoolSubscriptions(options = {}) {
    * Met à jour les statistiques d'utilisation
    */
   const updateUsageStats = async (appId, featureId, incrementBy = 1) => {
-    if (!user?.school_id) {
+    if (!user?.current_school_id) {
       throw new Error('Utilisateur non connecté ou sans école');
     }
 
@@ -219,7 +219,7 @@ export function useSchoolSubscriptions(options = {}) {
       const { data: subscription } = await supabase
         .from('school_subscriptions')
         .select('usage_stats')
-        .eq('school_id', user.school_id)
+        .eq('school_id', user.current_school_id)
         .eq('app_id', appId)
         .single();
 
@@ -241,7 +241,7 @@ export function useSchoolSubscriptions(options = {}) {
           last_used_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         })
-        .eq('school_id', user.school_id)
+        .eq('school_id', user.current_school_id)
         .eq('app_id', appId);
 
       if (error) throw error;

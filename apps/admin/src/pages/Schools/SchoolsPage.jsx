@@ -42,8 +42,8 @@ export default function SchoolsPage() {
         .order('created_at', { ascending: false });
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que leur école
-      if (user?.role === 'principal' && user?.school_id) {
-        query = query.eq('id', user.school_id);
+      if (user?.role === 'principal' && user?.current_school_id) {
+        query = query.eq('id', user.current_school_id);
       }
       // Les admins voient toutes les écoles (pas de filtre)
 

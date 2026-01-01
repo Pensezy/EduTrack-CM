@@ -46,13 +46,13 @@ export function useActiveApps(options = {}) {
   const fetchApps = async () => {
     console.log('🔍 [useActiveApps] fetchApps appelé');
     console.log('  - user:', user);
-    console.log('  - user.school_id:', user?.school_id);
+    console.log('  - user.current_school_id:', user?.current_school_id);
     console.log('  - includeCatalog:', includeCatalog);
 
-    // Si includeCatalog=true, on peut charger le catalogue même sans school_id
+    // Si includeCatalog=true, on peut charger le catalogue même sans current_school_id
     // Utile pour les admins ou la page App Store
-    if (!user?.school_id && !includeCatalog) {
-      console.warn('⚠️ [useActiveApps] Pas de school_id et pas de catalog, apps = []');
+    if (!user?.current_school_id && !includeCatalog) {
+      console.warn('⚠️ [useActiveApps] Pas de current_school_id et pas de catalog, apps = []');
       setState({
         apps: [],
         activeApps: [],
@@ -80,16 +80,16 @@ export function useActiveApps(options = {}) {
         catalogApps = catalog || [];
       }
 
-      // 2. Récupérer les apps actives de l'école (seulement si school_id existe)
+      // 2. Récupérer les apps actives de l'école (seulement si current_school_id existe)
       let subscriptions = [];
-      if (user?.school_id) {
+      if (user?.current_school_id) {
         const { data: subsData, error: subsError } = await supabase
           .from('school_subscriptions')
           .select(`
             *,
             app:apps(*)
           `)
-          .eq('school_id', user.school_id)
+          .eq('school_id', user.current_school_id)
           .in('status', ['trial', 'active']);
 
         if (subsError && subsError.code !== 'PGRST116') {
@@ -216,7 +216,7 @@ export function useActiveApps(options = {}) {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [user?.school_id, enabled, includeCatalog, refetchInterval]);
+  }, [user?.current_school_id, enabled, includeCatalog, refetchInterval]);
 
   return {
     apps: state.apps,

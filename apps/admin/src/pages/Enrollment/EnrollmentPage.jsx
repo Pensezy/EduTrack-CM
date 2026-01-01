@@ -41,8 +41,8 @@ export default function EnrollmentPage() {
         .order('created_at', { ascending: false });
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que les demandes de leur école
-      if (user?.role === 'principal' && user?.school_id) {
-        query = query.eq('school_id', user.school_id);
+      if (user?.role === 'principal' && user?.current_school_id) {
+        query = query.eq('school_id', user.current_school_id);
       }
       // Les admins voient toutes les demandes (pas de filtre)
 

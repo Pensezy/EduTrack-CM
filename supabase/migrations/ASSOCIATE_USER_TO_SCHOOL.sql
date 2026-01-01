@@ -34,7 +34,7 @@ BEGIN
   RAISE NOTICE '  - ID: %', principal_user.id;
   RAISE NOTICE '  - Email: %', principal_user.email;
   RAISE NOTICE '  - Nom: %', principal_user.full_name;
-  RAISE NOTICE '  - current_school_id: %', COALESCE(principal_user.current_school_id::TEXT, 'NULL');
+  RAISE NOTICE '  - school_id: %', COALESCE(principal_user.school_id::TEXT, 'NULL');
 
   -- Vérifier si une école existe déjà pour cet utilisateur
   SELECT EXISTS(
@@ -47,13 +47,13 @@ BEGIN
 
     SELECT id INTO school_id_value FROM schools WHERE director_user_id = principal_user.id LIMIT 1;
 
-    -- Mettre à jour current_school_id si nécessaire
-    IF principal_user.current_school_id IS NULL OR principal_user.current_school_id != school_id_value THEN
+    -- Mettre à jour school_id si nécessaire
+    IF principal_user.school_id IS NULL OR principal_user.school_id != school_id_value THEN
       UPDATE users
-      SET current_school_id = school_id_value
+      SET school_id = school_id_value
       WHERE id = principal_user.id;
 
-      RAISE NOTICE '✅ current_school_id mis à jour: %', school_id_value;
+      RAISE NOTICE '✅ school_id mis à jour: %', school_id_value;
     ELSE
       RAISE NOTICE 'ℹ️ current_school_id déjà correct';
     END IF;
