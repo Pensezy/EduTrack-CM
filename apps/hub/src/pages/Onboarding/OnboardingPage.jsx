@@ -298,10 +298,18 @@ export default function OnboardingPage() {
               Notre équipe est là pour vous accompagner dans la prise en main de la plateforme
             </p>
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
-              <a href="#" className="px-6 py-2 bg-white text-primary-600 rounded-lg font-medium hover:bg-gray-100 transition-colors">
+              <a
+                href="https://docs.edutrack.cm"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-6 py-2 bg-white text-primary-600 rounded-lg font-medium hover:bg-gray-100 transition-colors"
+              >
                 Voir le Guide
               </a>
-              <a href="#" className="px-6 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors">
+              <a
+                href="mailto:support@edutrack.cm?subject=Besoin d'aide - Nouveau compte"
+                className="px-6 py-2 bg-primary-500 text-white rounded-lg font-medium hover:bg-primary-600 transition-colors"
+              >
                 Contacter le Support
               </a>
             </div>

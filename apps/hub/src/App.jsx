@@ -8,6 +8,7 @@ import LandingPage from './pages/Landing/LandingPage';
 import SignupPage from './pages/Signup/SignupPage';
 import LoginPage from './pages/Login/LoginPage';
 import OnboardingPage from './pages/Onboarding/OnboardingPage';
+import AuthConfirm from './pages/AuthConfirm/AuthConfirm';
 
 export default function App() {
   return (
@@ -17,6 +18,7 @@ export default function App() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/signup" element={<SignupPage />} />
         <Route path="/login" element={<LoginPage />} />
+        <Route path="/auth/confirm" element={<AuthConfirm />} />
 
         {/* Routes protégées */}
         <Route path="/onboarding" element={<OnboardingPage />} />
