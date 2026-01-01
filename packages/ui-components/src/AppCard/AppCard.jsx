@@ -4,7 +4,7 @@
  * Carte d'affichage d'une application dans le store
  */
 
-import { Check, Clock, Sparkles } from 'lucide-react';
+import { Check, Clock, Sparkles, Construction, AlertTriangle } from 'lucide-react';
 import { cn } from '../utils/cn';
 
 export function AppCard({
@@ -21,7 +21,30 @@ export function AppCard({
   const isActive = subscription?.is_active;
   const daysRemaining = subscription?.days_remaining || 0;
 
-  // Détermine le badge de statut
+  // Badge statut développement (affiché en haut à droite)
+  const getDevelopmentBadge = () => {
+    if (app.development_status === 'in_development') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-orange-100 text-orange-800 border border-orange-300">
+          <Construction className="h-3 w-3" />
+          En Développement
+        </span>
+      );
+    }
+
+    if (app.development_status === 'beta') {
+      return (
+        <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-purple-100 text-purple-800 border border-purple-300">
+          <AlertTriangle className="h-3 w-3" />
+          Version Beta
+        </span>
+      );
+    }
+
+    return null;
+  };
+
+  // Détermine le badge de statut d'activation
   const getStatusBadge = () => {
     if (isCore) {
       return (
@@ -59,6 +82,20 @@ export function AppCard({
       return null; // Pas d'action pour les apps core
     }
 
+    // Si app en développement, afficher un message explicatif
+    if (app.development_status === 'in_development') {
+      return (
+        <div className="bg-orange-50 border border-orange-200 rounded-lg p-3 text-center">
+          <p className="text-xs text-orange-700 font-medium">
+            Cette application est en cours de développement
+          </p>
+          <p className="text-xs text-orange-600 mt-1">
+            Disponible bientôt
+          </p>
+        </div>
+      );
+    }
+
     if (hasSubscription) {
       return (
         <button
@@ -75,13 +112,15 @@ export function AppCard({
         <button
           onClick={() => onStartTrial?.(app)}
           className="w-full px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors text-sm font-medium inline-flex items-center justify-center gap-2"
+          disabled={app.development_status === 'beta'}
         >
           <Sparkles className="h-4 w-4" />
-          Essai Gratuit 30j
+          {app.development_status === 'beta' ? 'Beta - Essai Limité' : 'Essai Gratuit 30j'}
         </button>
         <button
           onClick={() => onSubscribe?.(app)}
           className="w-full px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium"
+          disabled={app.development_status === 'beta'}
         >
           Souscrire
         </button>
@@ -107,6 +146,13 @@ export function AppCard({
     )}>
       {/* Header avec icône et badge */}
       <div className={`bg-gradient-to-br ${gradientClass} p-6 text-white relative`}>
+        {/* Badge développement en haut à droite */}
+        {getDevelopmentBadge() && (
+          <div className="absolute top-3 right-3">
+            {getDevelopmentBadge()}
+          </div>
+        )}
+
         <div className="flex items-start justify-between">
           <div className="flex items-center gap-3">
             <div className="text-4xl">{app.icon || '📦'}</div>
