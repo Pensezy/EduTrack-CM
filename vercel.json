@@ -1,8 +1,8 @@
 {
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist",
-  "devCommand": "npm start",
-  "installCommand": "npm install",
+  "buildCommand": "pnpm install && pnpm --filter hub build",
+  "outputDirectory": "apps/hub/dist",
+  "devCommand": "pnpm --filter hub dev",
+  "installCommand": "pnpm install",
   "framework": null,
   "headers": [
     {
