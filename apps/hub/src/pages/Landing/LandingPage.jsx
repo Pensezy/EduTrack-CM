@@ -122,18 +122,8 @@ export default function LandingPage() {
     }
   };
 
-  // Afficher un loader pendant le chargement
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <div className="text-center">
-          <Loader className="h-12 w-12 text-primary-600 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Chargement des applications...</p>
-        </div>
-      </div>
-    );
-  }
-
+  // Ne PAS bloquer l'affichage pendant le chargement
+  // Afficher le hero immédiatement, charger apps/bundles en arrière-plan
   return (
     <div className="min-h-screen bg-white">
       {/* Hero Section - Version Dynamique */}
@@ -333,7 +323,18 @@ export default function LandingPage() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {apps.map((app, idx) => (
+            {loading ? (
+              // Skeleton loader pendant chargement
+              Array.from({ length: 8 }).map((_, idx) => (
+                <div key={idx} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden animate-pulse">
+                  <div className="bg-gray-300 h-40"></div>
+                  <div className="p-6 space-y-3">
+                    <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                    <div className="h-4 bg-gray-300 rounded w-1/2"></div>
+                  </div>
+                </div>
+              ))
+            ) : apps.map((app, idx) => (
               <div
                 key={app.id}
                 className="group bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2"
