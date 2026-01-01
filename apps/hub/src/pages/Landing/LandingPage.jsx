@@ -23,127 +23,116 @@ import {
   Zap,
   Globe,
   Star,
-  ChevronRight
+  ChevronRight,
+  Loader
 } from 'lucide-react';
+import { supabase } from '../../lib/supabase';
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const [isVisible, setIsVisible] = useState(false);
+  const [apps, setApps] = useState([]);
+  const [bundles, setBundles] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // Mapping des icônes par ID d'app
+  const appIcons = {
+    core: <School className="h-8 w-8" />,
+    academic: <BookOpen className="h-8 w-8" />,
+    schedule: <Calendar className="h-8 w-8" />,
+    financial: <DollarSign className="h-8 w-8" />,
+    discipline: <FileText className="h-8 w-8" />,
+    hr: <Users className="h-8 w-8" />,
+    communication: <MessageSquare className="h-8 w-8" />,
+    reporting: <BarChart3 className="h-8 w-8" />
+  };
+
+  // Mapping des couleurs par catégorie
+  const categoryColors = {
+    pedagogy: 'from-blue-500 to-blue-600',
+    administration: 'from-yellow-500 to-yellow-600',
+    analytics: 'from-orange-500 to-orange-600',
+    communication: 'from-green-500 to-green-600',
+    core: 'from-primary-500 to-primary-600'
+  };
 
   useEffect(() => {
     setIsVisible(true);
+    loadAppsAndBundles();
   }, []);
 
-  // Les 8 applications modulaires
-  const apps = [
-    {
-      id: 'core',
-      name: 'Core',
-      icon: <School className="h-8 w-8" />,
-      description: 'Gestion de base : élèves, classes, enseignants',
-      category: 'Gratuit',
-      color: 'from-green-500 to-green-600',
-      features: ['Gestion élèves', 'Gestion classes', 'Tableau de bord'],
-      isFree: true
-    },
-    {
-      id: 'pedagogy',
-      name: 'Pédagogie',
-      icon: <BookOpen className="h-8 w-8" />,
-      description: 'Emplois du temps, matières, devoirs',
-      price: 30000,
-      color: 'from-blue-500 to-blue-600',
-      features: ['Emplois du temps', 'Gestion matières', 'Devoirs']
-    },
-    {
-      id: 'grades',
-      name: 'Notes',
-      icon: <FileText className="h-8 w-8" />,
-      description: 'Notes, bulletins, moyennes automatiques',
-      price: 35000,
-      color: 'from-purple-500 to-purple-600',
-      features: ['Saisie notes', 'Bulletins auto', 'Moyennes']
-    },
-    {
-      id: 'finance',
-      name: 'Finance',
-      icon: <DollarSign className="h-8 w-8" />,
-      description: 'Scolarité, paiements, reçus automatiques',
-      price: 40000,
-      color: 'from-yellow-500 to-yellow-600',
-      features: ['Gestion scolarité', 'Paiements', 'Reçus']
-    },
-    {
-      id: 'communication',
-      name: 'Communication',
-      icon: <MessageSquare className="h-8 w-8" />,
-      description: 'SMS, emails, notifications parents',
-      price: 33000,
-      color: 'from-green-500 to-green-600',
-      features: ['SMS groupés', 'Emails', 'Notifications']
-    },
-    {
-      id: 'attendance',
-      name: 'Présence',
-      icon: <Calendar className="h-8 w-8" />,
-      description: 'Absences, retards, justificatifs',
-      price: 27000,
-      color: 'from-red-500 to-red-600',
-      features: ['Pointage', 'Absences', 'Statistiques']
-    },
-    {
-      id: 'analytics',
-      name: 'Analytics',
-      icon: <BarChart3 className="h-8 w-8" />,
-      description: 'Statistiques avancées, rapports détaillés',
-      price: 37000,
-      color: 'from-orange-500 to-orange-600',
-      features: ['Tableaux de bord', 'Rapports', 'Export']
-    },
-    {
-      id: 'hr',
-      name: 'RH',
-      icon: <Users className="h-8 w-8" />,
-      description: 'Gestion personnel, paie, congés',
-      price: 33000,
-      color: 'from-indigo-500 to-indigo-600',
-      features: ['Gestion paie', 'Congés', 'Contrats']
-    }
-  ];
+  const loadAppsAndBundles = async () => {
+    try {
+      // Charger les applications depuis la vue v_apps_catalog
+      const { data: appsData, error: appsError } = await supabase
+        .from('v_apps_catalog')
+        .select('*')
+        .eq('status', 'active')
+        .order('sort_order');
 
-  // Les 3 bundles
-  const bundles = [
-    {
-      id: 'basic',
-      name: 'Pack Basic',
-      description: 'Pour les petits établissements',
-      price: 55000,
-      savings: 10000,
-      apps: ['core', 'pedagogy', 'grades'],
-      features: ['Support email', '500 SMS/mois'],
-      popular: false
-    },
-    {
-      id: 'standard',
-      name: 'Pack Standard',
-      description: 'Le plus populaire',
-      price: 120000,
-      savings: 18000,
-      apps: ['core', 'pedagogy', 'grades', 'finance', 'communication'],
-      features: ['Support prioritaire', '2000 SMS/mois', 'Formation vidéo'],
-      popular: true
-    },
-    {
-      id: 'premium',
-      name: 'Pack Premium',
-      description: 'Solution complète',
-      price: 200000,
-      savings: 35000,
-      apps: ['core', 'pedagogy', 'grades', 'finance', 'communication', 'attendance', 'analytics', 'hr'],
-      features: ['Support téléphonique', '5000 SMS/mois', 'Formation sur site', 'Assistance dédiée'],
-      popular: false
+      if (appsError) throw appsError;
+
+      // Charger les bundles depuis la vue v_bundles_catalog
+      const { data: bundlesData, error: bundlesError } = await supabase
+        .from('v_bundles_catalog')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (bundlesError) throw bundlesError;
+
+      // Formater les apps pour l'affichage
+      const formattedApps = appsData.map(app => ({
+        id: app.id,
+        name: app.name,
+        icon: appIcons[app.id] || <School className="h-8 w-8" />,
+        description: app.description,
+        category: app.is_core ? 'Gratuit' : app.category,
+        color: categoryColors[app.category] || 'from-gray-500 to-gray-600',
+        features: app.features || [],
+        isFree: app.is_core,
+        price: app.price_yearly,
+        priceFormatted: app.price_yearly_formatted
+      }));
+
+      // Formater les bundles pour l'affichage
+      const formattedBundles = bundlesData.map(bundle => ({
+        id: bundle.id,
+        name: bundle.name,
+        description: bundle.description,
+        price: bundle.price_yearly,
+        priceFormatted: bundle.price_formatted,
+        savings: bundle.savings,
+        savingsFormatted: bundle.savings_formatted,
+        apps: bundle.app_ids || [],
+        appNames: bundle.app_names || [],
+        features: Object.values(bundle.features_extra || {}),
+        popular: bundle.id === 'standard' // Le pack standard est marqué comme populaire
+      }));
+
+      setApps(formattedApps);
+      setBundles(formattedBundles);
+    } catch (error) {
+      console.error('❌ Erreur chargement apps/bundles:', error);
+      // En cas d'erreur, utiliser des données par défaut vides
+      setApps([]);
+      setBundles([]);
+    } finally {
+      setLoading(false);
     }
-  ];
+  };
+
+  // Afficher un loader pendant le chargement
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="text-center">
+          <Loader className="h-12 w-12 text-primary-600 animate-spin mx-auto mb-4" />
+          <p className="text-gray-600">Chargement des applications...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white">
