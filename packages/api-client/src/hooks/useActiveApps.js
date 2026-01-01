@@ -44,7 +44,13 @@ export function useActiveApps(options = {}) {
   });
 
   const fetchApps = async () => {
+    console.log('🔍 [useActiveApps] fetchApps appelé');
+    console.log('  - user:', user);
+    console.log('  - user.school_id:', user?.school_id);
+    console.log('  - includeCatalog:', includeCatalog);
+
     if (!user?.school_id) {
+      console.warn('⚠️ [useActiveApps] Pas de school_id, apps = []');
       setState({
         apps: [],
         activeApps: [],
