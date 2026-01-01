@@ -246,6 +246,8 @@ export default function SignupPage() {
       const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
       const schoolCode = `${prefix}-${year}-${random}`;
 
+      console.log('📝 Début de l\'inscription...');
+
       // Créer l'utilisateur avec Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: formData.email,
@@ -255,30 +257,70 @@ export default function SignupPage() {
           data: {
             role: 'principal',
             full_name: formData.directorName,
-            phone: formData.phone,
-            school: {
-              name: formData.schoolName,
-              code: schoolCode,
-              type: formData.schoolType,
-              phone: formData.phone,
-              address: formData.address,
-              city: formData.city,
-              country: formData.country,
-              available_classes: selectedClasses
-            }
+            phone: formData.phone
           }
         }
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        console.error('❌ Erreur signUp:', authError);
+        throw authError;
+      }
 
       if (!authData.user) {
         throw new Error('Erreur lors de la création de l\'utilisateur');
       }
 
-      // Déconnecter immédiatement l'utilisateur (il doit confirmer son email d'abord)
+      console.log('✅ User créé:', authData.user.id);
+
+      // ✅ NOUVEAU : Créer l'école immédiatement (pas besoin d'attendre confirmation email)
+      console.log('🏫 Création de l\'école dans la base...');
+
+      const { data: schoolRecord, error: schoolError } = await supabase
+        .from('schools')
+        .insert({
+          name: formData.schoolName,
+          code: schoolCode,
+          type: formData.schoolType,
+          phone: formData.phone,
+          address: formData.address,
+          city: formData.city,
+          country: formData.country,
+          principal_id: authData.user.id,
+          available_classes: selectedClasses
+        })
+        .select()
+        .single();
+
+      if (schoolError) {
+        console.error('❌ Erreur création école:', schoolError);
+        throw new Error(`Erreur création école: ${schoolError.message}`);
+      }
+
+      console.log('✅ École créée:', schoolRecord.id);
+
+      // Mettre à jour le user_metadata avec l'ID de l'école
+      const { error: updateError } = await supabase.auth.updateUser({
+        data: {
+          school_id: schoolRecord.id,
+          role: 'principal',
+          full_name: formData.directorName,
+          phone: formData.phone
+        }
+      });
+
+      if (updateError) {
+        console.error('⚠️ Erreur mise à jour metadata:', updateError);
+        // On continue quand même, ce n'est pas bloquant
+      } else {
+        console.log('✅ Metadata mis à jour');
+      }
+
+      // Déconnecter l'utilisateur (il doit confirmer son email d'abord)
       // Cela évite l'erreur "Invalid Refresh Token" car l'utilisateur n'est pas encore confirmé
       await supabase.auth.signOut();
+
+      console.log('✅ Inscription complète - Redirection vers vérification email');
 
       // Rediriger vers la page de vérification email
       navigate('/email-verification', { state: { email: formData.email } });
@@ -703,9 +745,6 @@ export default function SignupPage() {
           </form>
         </div>
       </div>
-
-      {/* Composant de debug - À RETIRER EN PRODUCTION */}
-      <SupabaseDebug />
     </div>
   );
 }
