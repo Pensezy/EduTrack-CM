@@ -3,10 +3,10 @@
 
 <head>
   <meta charset="utf-8" />
-  <title>EduTrack CM - Système de gestion éducative</title>
+  <title>EduTrack - Système de Gestion Scolaire Modulaire</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#3b82f6" />
-  <meta name="description" content="Système de gestion scolaire moderne pour le Cameroun - Gestion des élèves, notes, bulletins et plus" />
+  <meta name="theme-color" content="#2563eb" />
+  <meta name="description" content="Solution modulaire de gestion scolaire pour le Cameroun - Démarrez gratuitement avec l'App Core" />
   <link rel="icon" href="/EduTrack-CM.ico" />
 
   <!-- PWA Icons -->
@@ -16,14 +16,80 @@
   <link rel="preconnect" href="https://edutrack.supabase.co" crossorigin />
   <link rel="dns-prefetch" href="https://edutrack.supabase.co" />
 
-  <!-- Preload critical assets -->
-  <link rel="modulepreload" href="/src/index.jsx" />
+  <!-- Redirect to Hub app (public landing page) -->
+  <script>
+    // Redirection automatique vers l'app Hub (point d'entrée public)
+    // En développement: http://localhost:5173
+    // En production: configuré via reverse proxy (nginx/vercel)
+
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+
+    if (isDev) {
+      // En dev, rediriger vers le port du Hub
+      const hubPort = '5173';
+      const currentPort = window.location.port;
+
+      // Si on n'est pas déjà sur le port du Hub, rediriger
+      if (currentPort !== hubPort) {
+        window.location.href = `http://localhost:${hubPort}`;
+      }
+    } else {
+      // En production, l'index.html ne devrait pas être accessible
+      // Le reverse proxy devrait diriger / vers l'app Hub
+      console.warn('Production: reverse proxy should handle routing');
+    }
+  </script>
+
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-center;
+      min-height: 100vh;
+    }
+    .loader {
+      text-align: center;
+    }
+    .spinner {
+      width: 50px;
+      height: 50px;
+      border: 4px solid rgba(255,255,255,0.3);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
 </head>
 
 <body>
-  <noscript>You need to enable JavaScript to run this app.</noscript>
-  <div class="dhiwise-code" id="root"></div>
-  <script type="module" src="/src/index.jsx"></script>
+  <div class="loader">
+    <div class="spinner"></div>
+    <h2>Redirection vers EduTrack...</h2>
+    <p>Si vous n'êtes pas redirigé automatiquement :</p>
+    <p><a href="http://localhost:5173" style="color: white; text-decoration: underline;">Cliquez ici pour accéder à EduTrack Hub</a></p>
+  </div>
+
+  <noscript>
+    <style>
+      .loader { display: none; }
+    </style>
+    <div style="text-align: center; padding: 40px;">
+      <h1>JavaScript requis</h1>
+      <p>EduTrack nécessite JavaScript pour fonctionner.</p>
+      <p>Veuillez activer JavaScript dans votre navigateur.</p>
+      <br>
+      <p><a href="http://localhost:5173" style="color: white;">Accéder directement à EduTrack Hub</a></p>
+    </div>
+  </noscript>
 </body>
 
 </html>

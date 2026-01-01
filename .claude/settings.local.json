@@ -28,7 +28,8 @@
       "Bash(pnpm --filter admin dev:*)",
       "Bash(pnpm --filter admin build:*)",
       "Bash(git push:*)",
-      "Bash(pnpm build:*)"
+      "Bash(pnpm build:*)",
+      "Bash(pnpm dev:*)"
     ]
   }
 }
