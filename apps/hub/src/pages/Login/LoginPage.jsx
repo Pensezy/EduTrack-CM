@@ -54,10 +54,14 @@ export default function LoginPage() {
       // Rediriger vers le dashboard approprié selon le rôle
       const role = data.user?.user_metadata?.role || 'principal';
 
+      // Déterminer l'URL de l'app Admin selon l'environnement
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const adminUrl = isDev ? 'http://localhost:5174' : 'https://admin.edutrack.cm';
+
       if (role === 'principal') {
-        window.location.href = '/admin'; // Rediriger vers l'app admin
+        window.location.href = adminUrl; // Rediriger vers l'app admin
       } else {
-        window.location.href = '/admin'; // Pour l'instant tout le monde va vers admin
+        window.location.href = adminUrl; // Pour l'instant tout le monde va vers admin
       }
 
     } catch (error) {

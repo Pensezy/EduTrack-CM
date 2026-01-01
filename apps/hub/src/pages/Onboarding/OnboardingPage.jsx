@@ -318,12 +318,16 @@ export default function OnboardingPage() {
       setCurrentStep(currentStep + 1);
     } else {
       // Dernière étape : rediriger vers le dashboard admin
-      window.location.href = '/admin';
+      const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      const adminUrl = isDev ? 'http://localhost:5174' : 'https://admin.edutrack.cm';
+      window.location.href = adminUrl;
     }
   };
 
   const handleSkip = () => {
-    window.location.href = '/admin';
+    const isDev = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+    const adminUrl = isDev ? 'http://localhost:5174' : 'https://admin.edutrack.cm';
+    window.location.href = adminUrl;
   };
 
   return (
