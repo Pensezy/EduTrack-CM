@@ -19,12 +19,49 @@ export default function AuthConfirm() {
       }
 
       try {
-        const { error } = await supabase.auth.verifyOtp({
+        const { data: { user }, error } = await supabase.auth.verifyOtp({
           token_hash: tokenHash,
           type: 'signup'
         });
 
         if (error) throw error;
+
+        // Créer les données de l'école dans la base après confirmation
+        if (user?.user_metadata?.school) {
+          const schoolData = user.user_metadata.school;
+
+          // Insérer l'école dans la table schools
+          const { data: schoolRecord, error: schoolError } = await supabase
+            .from('schools')
+            .insert({
+              name: schoolData.name,
+              code: schoolData.code,
+              type: schoolData.type,
+              phone: schoolData.phone,
+              address: schoolData.address,
+              city: schoolData.city,
+              country: schoolData.country,
+              principal_id: user.id,
+              available_classes: schoolData.available_classes || []
+            })
+            .select()
+            .single();
+
+          if (schoolError) {
+            console.error('❌ Erreur création école:', schoolError);
+            throw new Error('Erreur lors de la création de l\'établissement');
+          }
+
+          // Mettre à jour le user_metadata avec l'ID de l'école
+          await supabase.auth.updateUser({
+            data: {
+              school_id: schoolRecord.id,
+              role: 'principal',
+              full_name: user.user_metadata.full_name,
+              phone: user.user_metadata.phone
+            }
+          });
+        }
 
         setStatus('success');
 
