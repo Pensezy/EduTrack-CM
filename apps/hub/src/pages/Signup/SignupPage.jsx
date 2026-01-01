@@ -275,6 +275,10 @@ export default function SignupPage() {
         throw new Error('Erreur lors de la création de l\'utilisateur');
       }
 
+      // Déconnecter immédiatement l'utilisateur (il doit confirmer son email d'abord)
+      // Cela évite l'erreur "Invalid Refresh Token" car l'utilisateur n'est pas encore confirmé
+      await supabase.auth.signOut();
+
       // Rediriger vers la page de vérification email
       navigate('/email-verification', { state: { email: formData.email } });
 
