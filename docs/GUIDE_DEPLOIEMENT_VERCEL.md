@@ -179,16 +179,34 @@ pnpm preview
 
 ## 🐛 Troubleshooting Vercel
 
-### Erreur : "Command not found: pnpm"
+### Erreur : "Unsupported URL Type workspace:*" ou "Command not found: pnpm"
 
-**Solution** : Ajouter dans **Settings** → **General** :
-```
-Package Manager: pnpm
+**Cause** : Vercel utilise npm au lieu de pnpm pour installer les dépendances.
+
+**Solution** : Vercel détecte automatiquement pnpm si :
+1. **package.json racine contient** : `"packageManager": "pnpm@10.27.0"`
+2. **pnpm-lock.yaml existe** à la racine
+3. **vercel.json ne définit PAS** `installCommand`
+
+Si le problème persiste :
+- Supprimer `installCommand` du vercel.json
+- Laisser seulement `buildCommand`
+- Vercel installera automatiquement avec pnpm
+
+**vercel.json correct** :
+```json
+{
+  "buildCommand": "pnpm --filter hub build",
+  "outputDirectory": "apps/hub/dist",
+  "framework": null
+}
 ```
 
-Ou modifier le build command :
-```bash
-npm install -g pnpm && pnpm install && pnpm --filter hub build
+**PAS besoin de** :
+```json
+{
+  "installCommand": "pnpm install"  ❌ NE PAS METTRE
+}
 ```
 
 ---
