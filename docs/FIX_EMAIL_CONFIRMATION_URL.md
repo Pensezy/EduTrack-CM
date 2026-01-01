@@ -70,7 +70,31 @@ Confirmez votre email : https://edutrack.cm/auth/confirm?token=...
 
 ---
 
-### 3️⃣ Créer la Route de Confirmation dans le Hub
+### 3️⃣ Configurer emailRedirectTo dans le Code
+
+**IMPORTANT** : Il faut explicitement indiquer l'URL de redirection dans `signUp()`.
+
+**Fichier** : `apps/hub/src/pages/Signup/SignupPage.jsx`
+
+```jsx
+const { data: authData, error: authError } = await supabase.auth.signUp({
+  email: formData.email,
+  password: formData.password,
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/confirm`, // ✅ CRITIQUE
+    data: {
+      role: 'principal',
+      // ... autres données
+    }
+  }
+});
+```
+
+Sans `emailRedirectTo`, Supabase utilise l'URL par défaut du dashboard (souvent incorrecte).
+
+---
+
+### 4️⃣ Créer la Route de Confirmation dans le Hub
 
 Le lien pointe vers `/auth/confirm`, il faut créer cette route :
 
@@ -181,7 +205,7 @@ import AuthConfirm from './pages/AuthConfirm/AuthConfirm';
 
 ---
 
-### 4️⃣ Alternative : Désactiver la Confirmation Email (Dev seulement)
+### 5️⃣ Alternative : Désactiver la Confirmation Email (Dev seulement)
 
 Pour le développement, vous pouvez désactiver la confirmation :
 
