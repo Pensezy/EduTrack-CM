@@ -39,7 +39,7 @@ WHERE id = 'standard';
 UPDATE bundles
 SET price_yearly = 200000,
     savings = 35000
-WHERE id = 'premium';
+WHERE id = 'premium'; 
 
 -- =====================================================
 -- VÉRIFICATION DES NOUVEAUX PRIX
