@@ -29,7 +29,8 @@
       "Bash(pnpm --filter admin build:*)",
       "Bash(git push:*)",
       "Bash(pnpm build:*)",
-      "Bash(pnpm dev:*)"
+      "Bash(pnpm dev:*)",
+      "Bash(node scripts/check-env-vars.js:*)"
     ]
   }
 }
