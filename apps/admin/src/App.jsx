@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from '@edutrack/api';
+import { AuthProvider, AppsProvider, useAuth } from '@edutrack/api';
 import AdminLayout from './components/Layout/AdminLayout';
 import Login from './pages/Auth/Login';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
@@ -9,6 +9,8 @@ import ClassesPage from './pages/Classes/ClassesPage';
 import EnrollmentPage from './pages/Enrollment/EnrollmentPage';
 import PersonnelPage from './pages/Personnel/PersonnelPage';
 import SettingsPage from './pages/Settings/SettingsPage';
+import AppStorePage from './pages/AppStore/AppStorePage';
+import MyAppsPage from './pages/MyApps/MyAppsPage';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -96,6 +98,8 @@ function AppRoutes() {
         <Route path="classes" element={<ClassesPage />} />
         <Route path="enrollment" element={<EnrollmentPage />} />
         <Route path="personnel" element={<PersonnelPage />} />
+        <Route path="app-store" element={<AppStorePage />} />
+        <Route path="my-apps" element={<MyAppsPage />} />
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 
@@ -108,9 +112,11 @@ function AppRoutes() {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <AppRoutes />
-      </BrowserRouter>
+      <AppsProvider includeCatalog={true}>
+        <BrowserRouter>
+          <AppRoutes />
+        </BrowserRouter>
+      </AppsProvider>
     </AuthProvider>
   );
 }

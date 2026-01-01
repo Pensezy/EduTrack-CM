@@ -9,7 +9,9 @@ import {
   UserCog,
   Settings,
   LogOut,
-  X
+  X,
+  Store,
+  Package
 } from 'lucide-react';
 
 const navigation = [
@@ -19,6 +21,8 @@ const navigation = [
   { name: 'Classes', href: '/classes', icon: GraduationCap },
   { name: 'Demandes', href: '/enrollment', icon: FileText },
   { name: 'Personnel', href: '/personnel', icon: UserCog },
+  { name: 'App Store', href: '/app-store', icon: Store, badge: 'new' },
+  { name: 'Mes Apps', href: '/my-apps', icon: Package },
   { name: 'Paramètres', href: '/settings', icon: Settings },
 ];
 
@@ -77,7 +81,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
               to={item.href}
               onClick={handleLinkClick}
               className={`
-                group flex items-center px-3 py-2 text-sm font-medium rounded-md
+                group flex items-center justify-between px-3 py-2 text-sm font-medium rounded-md
                 transition-colors duration-150
                 ${active
                   ? 'bg-primary-800 text-white'
@@ -85,13 +89,20 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
                 }
               `}
             >
-              <Icon
-                className={`
-                  mr-3 h-5 w-5 flex-shrink-0
-                  ${active ? 'text-white' : 'text-primary-300 group-hover:text-white'}
-                `}
-              />
-              {item.name}
+              <div className="flex items-center">
+                <Icon
+                  className={`
+                    mr-3 h-5 w-5 flex-shrink-0
+                    ${active ? 'text-white' : 'text-primary-300 group-hover:text-white'}
+                  `}
+                />
+                {item.name}
+              </div>
+              {item.badge === 'new' && (
+                <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold bg-green-400 text-white">
+                  NEW
+                </span>
+              )}
             </Link>
           );
         })}
