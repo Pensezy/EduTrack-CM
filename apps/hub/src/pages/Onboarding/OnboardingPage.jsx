@@ -97,43 +97,43 @@ export default function OnboardingPage() {
               {
                 name: 'Pédagogie',
                 icon: <BookOpen className="h-6 w-6" />,
-                price: '25 000 FCFA/an',
+                price: '30 000 FCFA/an',
                 color: 'from-blue-500 to-blue-600'
               },
               {
                 name: 'Notes',
                 icon: <FileText className="h-6 w-6" />,
-                price: '30 000 FCFA/an',
+                price: '35 000 FCFA/an',
                 color: 'from-purple-500 to-purple-600'
               },
               {
                 name: 'Finance',
                 icon: <DollarSign className="h-6 w-6" />,
-                price: '35 000 FCFA/an',
+                price: '40 000 FCFA/an',
                 color: 'from-yellow-500 to-yellow-600'
               },
               {
                 name: 'Communication',
                 icon: <MessageSquare className="h-6 w-6" />,
-                price: '28 000 FCFA/an',
+                price: '33 000 FCFA/an',
                 color: 'from-green-500 to-green-600'
               },
               {
                 name: 'Présence',
                 icon: <Calendar className="h-6 w-6" />,
-                price: '22 000 FCFA/an',
+                price: '27 000 FCFA/an',
                 color: 'from-red-500 to-red-600'
               },
               {
                 name: 'Analytics',
                 icon: <BarChart3 className="h-6 w-6" />,
-                price: '32 000 FCFA/an',
+                price: '37 000 FCFA/an',
                 color: 'from-orange-500 to-orange-600'
               },
               {
                 name: 'RH',
                 icon: <Users className="h-6 w-6" />,
-                price: '28 000 FCFA/an',
+                price: '33 000 FCFA/an',
                 color: 'from-indigo-500 to-indigo-600'
               }
             ].map((app, idx) => (
@@ -167,7 +167,7 @@ export default function OnboardingPage() {
     },
     {
       title: 'Packs Économiques',
-      description: 'Économisez jusqu\'à 20 000 FCFA avec nos bundles',
+      description: 'Économisez jusqu\'à 35 000 FCFA avec nos bundles',
       icon: <Package className="h-12 w-12" />,
       color: 'from-purple-500 to-purple-600',
       content: (
@@ -180,8 +180,8 @@ export default function OnboardingPage() {
             {[
               {
                 name: 'Pack Basic',
-                price: '60 000',
-                savings: '15 000',
+                price: '55 000',
+                savings: '10 000',
                 apps: ['Core', 'Pédagogie', 'Notes'],
                 popular: false
               },
@@ -194,8 +194,8 @@ export default function OnboardingPage() {
               },
               {
                 name: 'Pack Premium',
-                price: '180 000',
-                savings: '20 000',
+                price: '200 000',
+                savings: '35 000',
                 apps: ['Toutes les apps'],
                 popular: false
               }

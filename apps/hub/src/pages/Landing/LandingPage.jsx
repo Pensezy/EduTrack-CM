@@ -51,7 +51,7 @@ export default function LandingPage() {
       name: 'Pédagogie',
       icon: <BookOpen className="h-8 w-8" />,
       description: 'Emplois du temps, matières, devoirs',
-      price: 25000,
+      price: 30000,
       color: 'from-blue-500 to-blue-600',
       features: ['Emplois du temps', 'Gestion matières', 'Devoirs']
     },
@@ -60,7 +60,7 @@ export default function LandingPage() {
       name: 'Notes',
       icon: <FileText className="h-8 w-8" />,
       description: 'Notes, bulletins, moyennes automatiques',
-      price: 30000,
+      price: 35000,
       color: 'from-purple-500 to-purple-600',
       features: ['Saisie notes', 'Bulletins auto', 'Moyennes']
     },
@@ -69,7 +69,7 @@ export default function LandingPage() {
       name: 'Finance',
       icon: <DollarSign className="h-8 w-8" />,
       description: 'Scolarité, paiements, reçus automatiques',
-      price: 35000,
+      price: 40000,
       color: 'from-yellow-500 to-yellow-600',
       features: ['Gestion scolarité', 'Paiements', 'Reçus']
     },
@@ -78,7 +78,7 @@ export default function LandingPage() {
       name: 'Communication',
       icon: <MessageSquare className="h-8 w-8" />,
       description: 'SMS, emails, notifications parents',
-      price: 28000,
+      price: 33000,
       color: 'from-green-500 to-green-600',
       features: ['SMS groupés', 'Emails', 'Notifications']
     },
@@ -87,7 +87,7 @@ export default function LandingPage() {
       name: 'Présence',
       icon: <Calendar className="h-8 w-8" />,
       description: 'Absences, retards, justificatifs',
-      price: 22000,
+      price: 27000,
       color: 'from-red-500 to-red-600',
       features: ['Pointage', 'Absences', 'Statistiques']
     },
@@ -96,7 +96,7 @@ export default function LandingPage() {
       name: 'Analytics',
       icon: <BarChart3 className="h-8 w-8" />,
       description: 'Statistiques avancées, rapports détaillés',
-      price: 32000,
+      price: 37000,
       color: 'from-orange-500 to-orange-600',
       features: ['Tableaux de bord', 'Rapports', 'Export']
     },
@@ -105,7 +105,7 @@ export default function LandingPage() {
       name: 'RH',
       icon: <Users className="h-8 w-8" />,
       description: 'Gestion personnel, paie, congés',
-      price: 28000,
+      price: 33000,
       color: 'from-indigo-500 to-indigo-600',
       features: ['Gestion paie', 'Congés', 'Contrats']
     }
@@ -117,8 +117,8 @@ export default function LandingPage() {
       id: 'basic',
       name: 'Pack Basic',
       description: 'Pour les petits établissements',
-      price: 60000,
-      savings: 15000,
+      price: 55000,
+      savings: 10000,
       apps: ['core', 'pedagogy', 'grades'],
       features: ['Support email', '500 SMS/mois'],
       popular: false
@@ -137,8 +137,8 @@ export default function LandingPage() {
       id: 'premium',
       name: 'Pack Premium',
       description: 'Solution complète',
-      price: 180000,
-      savings: 20000,
+      price: 200000,
+      savings: 35000,
       apps: ['core', 'pedagogy', 'grades', 'finance', 'communication', 'attendance', 'analytics', 'hr'],
       features: ['Support téléphonique', '5000 SMS/mois', 'Formation sur site', 'Assistance dédiée'],
       popular: false
