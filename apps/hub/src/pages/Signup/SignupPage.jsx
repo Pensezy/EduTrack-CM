@@ -6,6 +6,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '../../lib/supabase';
+import SupabaseDebug from '../../components/SupabaseDebug';
 import {
   GraduationCap,
   School,
@@ -702,6 +703,9 @@ export default function SignupPage() {
           </form>
         </div>
       </div>
+
+      {/* Composant de debug - À RETIRER EN PRODUCTION */}
+      <SupabaseDebug />
     </div>
   );
 }
