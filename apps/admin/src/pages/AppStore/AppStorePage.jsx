@@ -2,8 +2,8 @@
  * App Store Page - Catalogue des applications
  */
 
-import { useState } from 'react';
-import { useApps } from '@edutrack/api';
+import { useState, useEffect } from 'react';
+import { useApps, getSupabaseClient } from '@edutrack/api';
 import { AppCard, BundleCard } from '@edutrack/ui';
 import {
   Store,
@@ -23,7 +23,7 @@ export default function AppStorePage() {
     availableApps,
     subscriptions,
     startTrial,
-    loading,
+    loading: appsLoading,
     error
   } = useApps();
 
@@ -31,6 +31,41 @@ export default function AppStorePage() {
   const [tab, setTab] = useState('apps'); // 'apps' | 'bundles'
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCategory, setFilterCategory] = useState('all');
+  const [bundles, setBundles] = useState([]);
+  const [bundlesLoading, setBundlesLoading] = useState(true);
+
+  // Charger les bundles depuis Supabase
+  useEffect(() => {
+    loadBundles();
+  }, []);
+
+  const loadBundles = async () => {
+    try {
+      setBundlesLoading(true);
+      const supabase = getSupabaseClient();
+
+      const { data, error: bundlesError } = await supabase
+        .from('v_bundles_catalog')
+        .select('*')
+        .eq('is_active', true)
+        .order('sort_order');
+
+      if (bundlesError) {
+        console.error('❌ Erreur chargement bundles:', bundlesError);
+        throw bundlesError;
+      }
+
+      console.log('✅ Bundles chargés:', data);
+      setBundles(data || []);
+    } catch (err) {
+      console.error('❌ Erreur chargement bundles:', err);
+      setBundles([]);
+    } finally {
+      setBundlesLoading(false);
+    }
+  };
+
+  const loading = appsLoading || bundlesLoading;
 
   // Filtrer les apps
   const filteredApps = apps.filter(app => {
@@ -51,9 +86,6 @@ export default function AppStorePage() {
   const availableAppsFiltered = filteredApps.filter(app =>
     !activeApps.some(active => active.id === app.id)
   );
-
-  // Récupérer les bundles depuis Supabase (à implémenter)
-  const bundles = []; // TODO: Charger depuis get_school_active_apps ou nouvelle query
 
   const handleStartTrial = async (app) => {
     try {
