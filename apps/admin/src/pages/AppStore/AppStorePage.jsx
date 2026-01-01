@@ -180,7 +180,7 @@ export default function AppStorePage() {
             <Package className="h-5 w-5" />
             Packs
             <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-              Économisez jusqu'à 18k
+              Économisez jusqu'à 85k
             </span>
           </button>
         </nav>
@@ -313,18 +313,18 @@ export default function AppStorePage() {
               Packs Prédéfinis
             </h2>
             <p className="text-sm text-gray-600">
-              Économisez jusqu'à 18 000 FCFA avec nos packs tout inclus
+              Économisez jusqu'à 85 000 FCFA avec nos packs tout inclus
             </p>
           </div>
 
           {bundles.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-              {bundles.map((bundle, idx) => (
+              {bundles.map((bundle) => (
                 <BundleCard
                   key={bundle.id}
                   bundle={bundle}
                   apps={[]} // TODO: Charger les apps du bundle
-                  recommended={idx === 1} // Bundle Standard recommandé
+                  recommended={bundle.is_recommended || false} // Pack Gestion recommandé
                   onSubscribe={handleSubscribeBundle}
                 />
               ))}

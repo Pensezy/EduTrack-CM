@@ -1,363 +1,397 @@
-# 📚 Catalogue Détaillé des Applications et Packs - EduTrack CM
+# 📚 Catalogue Détaillé des Applications et Packs - EduTrack CM 2026
 
 ## 🎯 Vue d'Ensemble
 
-EduTrack CM propose un écosystème modulaire d'applications pour la gestion scolaire au Cameroun. Chaque application peut être souscrite individuellement ou via des packs avantageux.
+EduTrack CM propose un écosystème modulaire d'applications pour la gestion scolaire et universitaire au Cameroun. Chaque application peut être souscrite individuellement ou via des packs avantageux.
+
+**Nouveauté 2026:** Compatibilité double **Scolaire** (Primaire, Collège, Lycée) et **LMD** (Enseignement Supérieur).
 
 ---
 
 ## 📱 Applications Individuelles
 
 ### 1. 🏫 App Core (Gratuit)
-**Prix:** Gratuite
+**Prix:** Gratuite à vie
 **Statut:** ✅ Prête
 
 #### Description
-L'application de base d'EduTrack CM, offerte gratuitement à toutes les écoles. Elle inclut les fonctionnalités essentielles pour démarrer la digitalisation de votre établissement.
+Le socle indispensable de votre digitalisation. Centralise vos données et structure votre établissement.
 
 #### Fonctionnalités Principales
-- ✅ **Gestion des classes** - Créer et organiser vos classes par niveau
-- ✅ **Gestion des élèves** - Inscriptions, profils et suivi basique des élèves
-- ✅ **Gestion du personnel** - Registre des enseignants et du personnel administratif
-- ✅ **Dashboard de base** - Vue d'ensemble de votre établissement
-- ✅ **Calendrier scolaire** - Planification de l'année académique
+- ✅ **Gestion des profils** - Élèves, enseignants, personnel
+- ✅ **Architecture pédagogique** - Classes et filières
+- ✅ **Générateur de cartes** - Cartes scolaires avec QR Code personnalisable
+- ✅ **Import de données** - Via Excel pour migration rapide
+- ✅ **Dashboard direction** - Vue d'ensemble en temps réel
 
 #### Pourquoi cette app?
 - **Point d'entrée gratuit** pour découvrir EduTrack CM
 - **Indispensable** pour utiliser les autres applications
+- **Générateur de cartes inclus** - Économisez sur l'impression externe
 - **Aucun engagement** financier requis
 - **Support inclus** pour la prise en main
 
 ---
 
-### 2. 📊 App Notes & Évaluations
-**Prix:** 75 000 FCFA/an
-**Statut:** 🚧 En développement
+### 2. 📊 App Académique
+**Prix:** 75 000 FCFA/an (7 500 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Digitalisez complètement la gestion des notes et bulletins de votre établissement. Fini les calculs manuels et les bulletins papier!
+Moteur de calcul adaptatif pour système **Trimestriel** (Scolaire) et **LMD** (Universitaire). Gérez notes, résultats et bulletins avec double compatibilité.
 
 #### Fonctionnalités Principales
-- ✅ **Saisie des notes** - Interface rapide et intuitive pour les enseignants
-- ✅ **Calcul automatique des moyennes** - Par matière, trimestre et année
-- ✅ **Génération de bulletins** - Bulletins professionnels au format PDF
-- ✅ **Relevés de notes** - Historique complet des performances
-- ✅ **Classements automatiques** - Par classe et par niveau
-- ✅ **Pondérations personnalisables** - Coefficients, contrôles, examens
-- ✅ **Conseils de classe digitaux** - Appréciations et décisions
+
+**Mode Scolaire:**
+- ✅ **Séquences et Trimestres** - Système classique camerounais
+- ✅ **Coefficients** - Pondération par matière
+- ✅ **Calcul moyennes** - Automatique par trimestre et année
+- ✅ **Bulletins trimestriels** - Format professionnel PDF
+
+**Mode LMD (Universitaire):**
+- ✅ **Semestres** - Organisation par semestres S1-S8
+- ✅ **UV (Unités de Valeur)** - Gestion complète des crédits
+- ✅ **Système GPA** - Calcul automatique Grade Point Average
+- ✅ **Relevés de notes** - Conformes aux standards LMD
+
+**Fonctionnalités Communes:**
+- ✅ **Saisie décentralisée** - Enseignants saisissent leurs notes
+- ✅ **Calculateur automatique** - Moyennes, rangs, mentions
+- ✅ **PV de délibération** - Procès-verbaux automatiques
+- ✅ **Archivage pluriannuel** - Historique complet
 
 #### Pourquoi cette app?
-- **Gain de temps massif** - Plus de calculs manuels
+- **Double système** - Scolaire ET LMD dans une seule app
 - **Zéro erreur de calcul** - Algorithmes fiables et testés
+- **Gain de temps massif** - Plus de calculs manuels
 - **Bulletins professionnels** - Image de marque améliorée
-- **Archivage automatique** - 5 ans d'historique accessible
-- **Réduction papier** - Écologique et économique
-
-#### ROI (Retour sur Investissement)
-Pour une école de 300 élèves:
-- Temps économisé: ~120h/an (secrétariat + enseignants)
-- Coût papier évité: ~30 000 FCFA/an
-- Réduction erreurs: Inestimable
-- **Rentabilisé en 3 mois**
+- **Archivage automatique** - Historique accessible
 
 ---
 
-### 3. 💰 App Comptabilité
-**Prix:** 120 000 FCFA/an
-**Statut:** 🚧 En développement
+### 3. 💰 App Trésorerie & Comptabilité
+**Prix:** 120 000 FCFA/an (12 000 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Gérez toutes les finances de votre école en temps réel: frais scolaires, salaires, dépenses, et rapports financiers détaillés.
+Gestion financière stricte adaptée aux réalités locales: paiements échelonnés, espèces, Mobile Money.
 
 #### Fonctionnalités Principales
-- ✅ **Gestion des frais de scolarité** - Tranches, échéanciers, paiements
-- ✅ **Suivi des paiements** - État par élève, par classe, par période
-- ✅ **Gestion des créances** - Alertes pour les retards de paiement
-- ✅ **Caisse & Banque** - Mouvements de trésorerie en temps réel
-- ✅ **Gestion des salaires** - Paie du personnel, cotisations
-- ✅ **Budget & Prévisions** - Planification financière annuelle
-- ✅ **Rapports comptables** - Bilan, journal, grand livre
-- ✅ **Factures & Reçus** - Génération automatique PDF
+- ✅ **Suivi scolarités** - Tranches, délais, échéanciers personnalisés
+- ✅ **Caisse & dépenses** - Traçabilité complète des mouvements
+- ✅ **Reçus automatiques** - Format PDF ou ticket thermique
+- ✅ **Liste des insolvables** - Suivi des impayés avec relances
+- ✅ **Gestion de la paie** - Permanents et vacataires
+- ✅ **Multi-devises** - FCFA, Euro (pour écoles internationales)
+- ✅ **Mobile Money** - Intégration MTN, Orange Money
+- ✅ **Rapports financiers** - Bilan, journal, grand livre
 
 #### Pourquoi cette app?
+- **Adapté au contexte local** - Paiements échelonnés, espèces
+- **Réduction des impayés** - Relances automatiques ciblées
 - **Transparence totale** - Chaque centime tracé
-- **Réduction des impayés** - Relances automatiques
 - **Conformité OHADA** - Standards comptables respectés
-- **Audit facilité** - Historique complet et exportable
 - **Multi-utilisateurs** - Directeur, économe, secrétaire
 
 #### ROI (Retour sur Investissement)
 Pour une école de 300 élèves:
 - Réduction des impayés: ~5% soit ~750 000 FCFA/an
 - Temps économisé: ~180h/an
-- Erreurs de caisse évitées: ~200 000 FCFA/an
 - **Rentabilisé dès le 1er mois**
 
 ---
 
-### 4. 💬 App Communication
-**Prix:** 45 000 FCFA/an
-**Statut:** 🚧 En développement
+### 4. 💬 App Communication & Alertes
+**Prix:** 45 000 FCFA/an (4 500 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Communiquez efficacement avec les parents, le personnel et les élèves via SMS, emails et notifications in-app.
+Lien direct avec les familles et étudiants. Notifications, SMS, emails pour une communication fluide.
 
 #### Fonctionnalités Principales
-- ✅ **SMS groupés** - Envoi à tous les parents en 1 clic
-- ✅ **Emails personnalisés** - Bulletins, convocations, annonces
-- ✅ **Notifications push** - Alertes temps réel sur mobile
-- ✅ **Messagerie interne** - Chat enseignants-parents
-- ✅ **Calendrier partagé** - Événements et réunions
-- ✅ **Circulaires digitales** - Fini les photocopies
-- ✅ **Accusés de réception** - Qui a lu quoi et quand
-- ✅ **Templates prédéfinis** - Gain de temps pour messages courants
+- ✅ **Campagnes SMS** - Rappels, convocations, alertes absences
+- ✅ **Notifications app** - Gratuites et illimitées
+- ✅ **Emailing** - Bulletins, circulaires, annonces
+- ✅ **Ciblage précis** - Par classe, niveau, débiteurs
+- ✅ **Templates** - Messages prédéfinis personnalisables
+- ✅ **Accusés de lecture** - Qui a lu quoi et quand
+
+**Note:** SMS facturés via **Packs Crédits** séparés (au coût réel opérateur).
 
 #### Pourquoi cette app?
 - **Parents toujours informés** - Satisfaction accrue
-- **Réactivité améliorée** - Communication instantanée
-- **Réduction papier** - Écologique et économique
-- **Archivage automatique** - Historique des communications
-- **Image moderne** - École digitale et connectée
+- **Notifications gratuites** - Économie sur SMS
+- **Ciblage intelligent** - Messages pertinents seulement
+- **Image moderne** - École connectée
 
 #### ROI (Retour sur Investissement)
 Pour une école de 300 élèves:
-- Coût SMS classiques évité: ~240 000 FCFA/an
 - Coût photocopies évité: ~150 000 FCFA/an
 - Temps économisé: ~100h/an
-- **Rentabilisé en 2 semaines**
+- **Rentabilisé en 4 mois**
 
 ---
 
-### 5. 📅 App Emplois du Temps
-**Prix:** 60 000 FCFA/an
-**Statut:** 🚧 En développement
+### 5. 📅 App Planning & Temps
+**Prix:** 60 000 FCFA/an (6 000 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Créez et gérez les emplois du temps de toute votre école avec détection automatique des conflits.
+Gestion intelligente des ressources temporelles et matérielles: emplois du temps, salles, pointage.
 
 #### Fonctionnalités Principales
-- ✅ **Création assistée** - Algorithme d'optimisation
-- ✅ **Détection de conflits** - Professeur, salle, classe
-- ✅ **Gestion des salles** - Affectation et disponibilité
-- ✅ **Absences professeurs** - Remplacement automatique
-- ✅ **Export PDF** - Par classe, par professeur
-- ✅ **Planning hebdomadaire** - Vue d'ensemble
-- ✅ **Historique** - Modifications et versions
-- ✅ **Contraintes personnalisées** - Jours, créneaux, durées
+- ✅ **Emplois du temps** - Par classe/amphi ET par enseignant
+- ✅ **Gestion des salles** - Affectation et détection conflits
+- ✅ **Pointage enseignants** - Présence et heures supplémentaires
+- ✅ **Calcul vacations** - Automatique selon heures prestées
+- ✅ **Remplacement** - Gestion des absences professeurs
+- ✅ **Export PDF** - Diffusion facile
 
 #### Pourquoi cette app?
-- **Optimisation automatique** - Emplois du temps équilibrés
-- **Zéro conflit** - Algorithme fiable
-- **Gain de temps énorme** - 90% plus rapide
-- **Flexibilité** - Modifications en temps réel
-- **Communication facilitée** - Tout le monde informé
-
-#### ROI (Retour sur Investissement)
-Pour une école de 20 classes:
-- Temps économisé: ~40h à la création + 20h/an en modifications
-- Réduction erreurs: ~10h/an de corrections
-- Optimisation salles: Meilleure utilisation des espaces
-- **Rentabilisé en 1 mois**
+- **Zéro conflit** - Algorithme de détection intelligent
+- **Optimisation salles** - Meilleure utilisation des espaces
+- **Paie enseignants** - Calcul automatique vacations
+- **Gain de temps énorme** - 90% plus rapide qu'à la main
 
 ---
 
-### 6. 👨‍🏫 App Absences & Discipline
-**Prix:** 50 000 FCFA/an
-**Statut:** 🚧 En développement
+### 6. 👨‍🏫 App Discipline & Assiduité
+**Prix:** 50 000 FCFA/an (5 000 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Suivez les absences, retards et incidents disciplinaires avec alertes automatiques aux parents.
+Digitalisation de la vie scolaire: pointage, discipline et suivi comportemental.
 
 #### Fonctionnalités Principales
-- ✅ **Pointage digital** - Présence par cours ou journée
-- ✅ **Alertes parents automatiques** - SMS/Email instantanés
-- ✅ **Statistiques d'assiduité** - Par élève, classe, période
-- ✅ **Gestion des retards** - Comptabilisation et sanctions
-- ✅ **Incidents disciplinaires** - Rapports et suivi
-- ✅ **Sanctions** - Historique et notifications
-- ✅ **Justificatifs** - Validation et archivage
-- ✅ **Rapports pour conseils** - Vue d'ensemble comportement
+- ✅ **Appel numérique** - Par cours ou journée complète
+- ✅ **Suivi disciplinaire** - Blâmes, avertissements, exclusions
+- ✅ **Conseil de discipline** - Rapports automatiques
+- ✅ **Billet entrée/sortie** - Numérisé et tracé
+- ✅ **Alertes parents** - SMS/Email automatiques en cas d'absence
+- ✅ **Statistiques** - Assiduité par élève, classe, période
 
 #### Pourquoi cette app?
 - **Parents informés immédiatement** - Sécurité renforcée
-- **Réduction de l'absentéisme** - Suivi rigoureux
+- **Réduction absentéisme** - Suivi rigoureux
 - **Traçabilité complète** - Défense en cas de litige
-- **Discipline améliorée** - Historique accessible
 - **Conseil de classe facilité** - Données objectives
-
-#### ROI (Retour sur Investissement)
-Pour une école de 300 élèves:
-- Réduction absentéisme: ~3% soit +9 élèves réguliers
-- Temps économisé: ~80h/an
-- Sécurité et image: Inestimable
-- **Rentabilisé en 2 mois**
 
 ---
 
-### 7. 📚 App Bibliothèque
-**Prix:** 40 000 FCFA/an
-**Statut:** 🚧 En développement (Version Bêta)
+### 7. 📚 App Bibliothèque 2.0
+**Prix:** 40 000 FCFA/an (4 000 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Gérez votre bibliothèque scolaire: catalogage, prêts, retours et statistiques d'utilisation.
+Gestion simplifiée du fonds documentaire physique: catalogage, prêts et statistiques.
 
 #### Fonctionnalités Principales
-- ✅ **Catalogue digital** - Tous vos livres numérisés
-- ✅ **Recherche avancée** - Titre, auteur, ISBN, catégorie
-- ✅ **Gestion des prêts** - Sortie et retour en 1 clic
-- ✅ **Alertes de retard** - Relances automatiques
+- ✅ **Catalogue digital** - Tous vos ouvrages numérisés
+- ✅ **Prêts & retours** - Recherche ou scan code-barres
 - ✅ **Statistiques** - Livres populaires, taux de rotation
+- ✅ **Pénalités** - Amendes de retard automatiques
 - ✅ **Réservations** - File d'attente pour livres empruntés
-- ✅ **Inventaire** - Stock et état des ouvrages
-- ✅ **Code-barres** - Scan rapide (optionnel)
+- ✅ **Inventaire** - État du stock en temps réel
 
 #### Pourquoi cette app?
 - **Bibliothèque moderne** - Image valorisée
 - **Perte de livres réduite** - Traçabilité parfaite
-- **Encouragement à la lecture** - Stats motivantes
-- **Gain de temps** - Plus de registres manuels
-- **Optimisation achats** - Basé sur données réelles
-
-#### ROI (Retour sur Investissement)
-Pour une bibliothèque de 1000 livres:
-- Livres perdus évités: ~15 livres/an soit ~75 000 FCFA
-- Temps économisé: ~60h/an
-- **Rentabilisé en 6 mois**
+- **Encouragement à la lecture** - Statistiques motivantes
 
 ---
 
-### 8. 📈 App Statistiques & Rapports
-**Prix:** 55 000 FCFA/an
-**Statut:** 🚧 En développement
+### 8. 📈 App Décisionnel
+**Prix:** 55 000 FCFA/an (5 500 FCFA/mois)
+**Statut:** 🚧 Bêta
 
 #### Description
-Tableaux de bord avancés et rapports personnalisables pour piloter votre école avec des données.
+Tableaux de bord avancés pour analyser la performance pédagogique, effectifs et santé financière.
 
 #### Fonctionnalités Principales
-- ✅ **Dashboards interactifs** - KPIs en temps réel
-- ✅ **Analyses prédictives** - Tendances et prévisions
-- ✅ **Rapports personnalisables** - Créez vos propres rapports
+- ✅ **Dashboards direction** - KPIs en temps réel
+- ✅ **Analyses pédagogiques** - Taux de réussite, moyennes
+- ✅ **Évolution effectifs** - Tendances et prévisions
+- ✅ **Santé financière** - Trésorerie, impayés, budget
+- ✅ **Rapports personnalisables** - Créez vos propres vues
 - ✅ **Export Excel/PDF** - Partage facilité
-- ✅ **Comparaisons** - Classes, années, périodes
-- ✅ **Graphiques avancés** - Visualisations claires
-- ✅ **Rapports automatiques** - Envoi programmé
-- ✅ **Indicateurs clés** - Taux de réussite, effectifs, finances
 
 #### Pourquoi cette app?
 - **Pilotage data-driven** - Décisions basées sur les données
 - **Anticipation** - Détectez les problèmes tôt
 - **Rapports pro** - Présentation aux autorités
-- **Benchmark** - Comparez vos performances
-- **Direction informée** - Vue 360° de l'école
-
-#### ROI (Retour sur Investissement)
-- Amélioration prise de décision: Inestimable
-- Temps économisé rapports: ~50h/an
-- Optimisation ressources: ~200 000 FCFA/an
-- **Rentabilisé en 3 mois**
 
 ---
 
-## 📦 Packs Prédéfinis
+### 9. 🎓 App E-Learning & Ressources
+**Prix:** 85 000 FCFA/an (8 500 FCFA/mois)
+**Statut:** 🚧 Bêta
 
-### 🥉 Pack Essentiel
-**Prix:** 180 000 FCFA/an
-**Économie:** 30 000 FCFA (14%)
+#### Description
+Étendez l'apprentissage au-delà de la salle de classe. Plateforme moderne pour le partage de savoir.
+
+#### Fonctionnalités Principales
+- ✅ **Banque d'épreuves** - Archivage et recherche de sujets
+- ✅ **Dépôt de cours** - PDF, Word, Audio, Vidéo
+- ✅ **Cahier de texte numérique** - Suivi du programme
+- ✅ **Travaux dirigés en ligne** - Soumission et correction
+- ✅ **Suivi avancement** - Progression du programme par classe
+
+#### Pourquoi cette app?
+- **Apprentissage étendu** - 24/7 accès aux ressources
+- **Mutualisation** - Base de sujets partagée
+- **Transparence** - Parents voient le programme
+- **Continuité pédagogique** - En cas d'absence professeur
+
+---
+
+## 📦 Packs Prédéfinis 2026
+
+### 🥉 Pack Start
+**Prix:** 100 000 FCFA/an
+**Économie:** 25 000 FCFA (20%)
 
 #### Contenu
-1. App Core (Gratuit)
-2. App Notes & Évaluations (75 000 FCFA)
-3. App Communication (45 000 FCFA)
-4. App Absences & Discipline (50 000 FCFA)
+1. **App Core** (Gratuit)
+2. **App Académique** (75 000 FCFA)
+3. **App Discipline & Assiduité** (50 000 FCFA)
 
-**Prix unitaire total:** 210 000 FCFA
-**Prix pack:** 180 000 FCFA
-**Vous économisez:** 30 000 FCFA
+**Prix unitaire total:** 125 000 FCFA
+**Prix pack:** 100 000 FCFA
+**Vous économisez:** 25 000 FCFA
 
 #### Pour Qui?
-- ✅ **Petites écoles** (100-200 élèves)
 - ✅ **Écoles primaires**
+- ✅ **Petites écoles** (< 200 élèves)
 - ✅ **Établissements débutant la digitalisation**
-- ✅ **Budget limité** mais besoin de fonctionnalités clés
+- ✅ **Budget limité** mais besoin de l'essentiel
 
 #### Bénéfices
-- Communication parents optimale
-- Bulletins digitaux professionnels
-- Suivi disciplinaire rigoureux
+- Gestion des notes et bulletins professionnels
+- Suivi disciplinaire et assiduité
+- Générateur de cartes scolaires inclus
 - Base solide pour croissance future
 
 ---
 
-### 🥈 Pack Standard
-**Prix:** 320 000 FCFA/an
-**Économie:** 85 000 FCFA (21%)
+### 🥈 Pack Gestion ⭐ RECOMMANDÉ
+**Prix:** 200 000 FCFA/an
+**Économie:** 40 000 FCFA (17%)
 
 #### Contenu
-1. App Core (Gratuit)
-2. App Notes & Évaluations (75 000 FCFA)
-3. App Comptabilité (120 000 FCFA)
-4. App Communication (45 000 FCFA)
-5. App Emplois du Temps (60 000 FCFA)
-6. App Absences & Discipline (50 000 FCFA)
+1. **App Core** (Gratuit)
+2. **App Académique** (75 000 FCFA)
+3. **App Trésorerie & Comptabilité** (120 000 FCFA)
+4. **App Communication & Alertes** (45 000 FCFA)
 
-**Prix unitaire total:** 405 000 FCFA
-**Prix pack:** 320 000 FCFA
-**Vous économisez:** 85 000 FCFA
+**Prix unitaire total:** 240 000 FCFA
+**Prix pack:** 200 000 FCFA
+**Vous économisez:** 40 000 FCFA
 
 #### Pour Qui?
-- ✅ **Écoles moyennes** (200-500 élèves)
 - ✅ **Collèges**
+- ✅ **Lycées**
+- ✅ **Écoles moyennes** (200-500 élèves)
 - ✅ **Établissements visant l'excellence opérationnelle**
-- ✅ **Écoles avec plusieurs niveaux**
 
 #### Bénéfices
-- Gestion financière complète
-- Organisation optimale
-- Communication multi-canal
-- Automatisation poussée
+- Gestion académique complète (notes + bulletins)
+- Sécurisation des revenus (trésorerie)
+- Communication fluide avec familles
+- Pilotage financier en temps réel
 
-**⭐ PACK RECOMMANDÉ** pour la plupart des établissements
+**⭐ PACK RECOMMANDÉ** pour collèges et lycées
 
 ---
 
-### 🥇 Pack Premium
-**Prix:** 420 000 FCFA/an
-**Économie:** 120 000 FCFA (22%)
+### 🥇 Pack Excellence
+**Prix:** 350 000 FCFA/an
+**Économie:** 85 000 FCFA (20%)
 
 #### Contenu
-Toutes les 8 applications:
-1. App Core (Gratuit)
-2. App Notes & Évaluations (75 000 FCFA)
-3. App Comptabilité (120 000 FCFA)
-4. App Communication (45 000 FCFA)
-5. App Emplois du Temps (60 000 FCFA)
-6. App Absences & Discipline (50 000 FCFA)
-7. App Bibliothèque (40 000 FCFA)
-8. App Statistiques & Rapports (55 000 FCFA)
+1. **App Core** (Gratuit)
+2. **App Académique** (75 000 FCFA)
+3. **App Trésorerie & Comptabilité** (120 000 FCFA)
+4. **App Communication & Alertes** (45 000 FCFA)
+5. **App Planning & Temps** (60 000 FCFA)
+6. **App Discipline & Assiduité** (50 000 FCFA)
+7. **App E-Learning & Ressources** (85 000 FCFA)
 
-**Prix unitaire total:** 540 000 FCFA
-**Prix pack:** 420 000 FCFA
-**Vous économisez:** 120 000 FCFA
+**Prix unitaire total:** 435 000 FCFA
+**Prix pack:** 350 000 FCFA
+**Vous économisez:** 85 000 FCFA
 
 #### Pour Qui?
+- ✅ **Lycées Bilingues**
+- ✅ **Complexes Scolaires**
 - ✅ **Grandes écoles** (500+ élèves)
-- ✅ **Lycées et complexes scolaires**
-- ✅ **Établissements d'élite**
-- ✅ **Écoles visant le 100% digital**
+- ✅ **Établissements visant une gestion à 360° sans compromis**
 
 #### Bénéfices
-- Écosystème complet
-- Intégration totale
-- Data analytics avancés
-- Bibliothèque moderne
-- Support prioritaire
+- Gestion complète académique, financière et RH
+- E-Learning intégré pour continuité pédagogique
+- Emplois du temps optimisés
+- Communication multi-canal
+- Discipline et assiduité digitales
 
-#### Bonus Premium
-- ✅ **Formation complète** du personnel (2 jours)
-- ✅ **Support prioritaire** - Réponse sous 2h
-- ✅ **Personnalisations** - Logo, couleurs, rapports
-- ✅ **Accompagnement** - 6 mois de suivi
-- ✅ **Mises à jour anticipées** - Nouvelles fonctionnalités en avant-première
+---
+
+### 🎓 Pack Campus
+**Prix:** **Sur Devis**
+**Public:** Universités, Grandes Écoles
+
+#### Contenu
+**Toutes les 9 applications** avec configuration spéciale LMD:
+
+1. **App Core** (Gratuit)
+2. **App Académique - Mode LMD** (Semestres, UV, GPA, Crédits)
+3. **App Trésorerie & Comptabilité** (Bourses, Inscription)
+4. **App Communication & Alertes**
+5. **App Planning & Temps** (Amphi, TD, TP)
+6. **App Discipline & Assiduité**
+7. **App Bibliothèque 2.0** (Ouvrages universitaires)
+8. **App Décisionnel** (Analytics avancés)
+9. **App E-Learning & Ressources** (Cours en ligne)
+
+#### Spécificités LMD
+- **Système de Crédits** - Gestion complète ECTS/LMD
+- **Calcul GPA** - Automatique par semestre et cumulatif
+- **Gestion UV** - Unités de Valeur et prérequis
+- **Délibérations** - Jury et validation par semestre
+- **Filières complexes** - Licences, Masters, Doctorats
+
+#### Pour Qui?
+- ✅ **Universités publiques et privées**
+- ✅ **Grandes Écoles** (Polytechnique, ESSEC, etc.)
+- ✅ **Instituts universitaires**
+- ✅ **Établissements supérieurs LMD**
+
+#### Tarification
+Contactez notre équipe commerciale pour un **devis personnalisé** selon:
+- Nombre d'étudiants
+- Nombre de facultés/départements
+- Besoins spécifiques d'intégration
+- Volume de données
+
+---
+
+## 📊 Tableau Comparatif Rapide
+
+| Fonctionnalité | Start | Gestion ⭐ | Excellence | Campus |
+|----------------|-------|-----------|------------|---------|
+| **Prix/an** | 100k | 200k | 350k | Sur devis |
+| **Économie** | 25k (20%) | 40k (17%) | 85k (20%) | Variable |
+| **Apps incluses** | 3 | 4 | 7 | 9 |
+| Gestion de base (Core) | ✅ | ✅ | ✅ | ✅ |
+| Notes & Bulletins | ✅ | ✅ | ✅ | ✅ LMD |
+| Discipline & Assiduité | ✅ | ❌ | ✅ | ✅ |
+| Comptabilité | ❌ | ✅ | ✅ | ✅ |
+| Communication | ❌ | ✅ | ✅ | ✅ |
+| Planning & Temps | ❌ | ❌ | ✅ | ✅ |
+| E-Learning | ❌ | ❌ | ✅ | ✅ |
+| Bibliothèque | ❌ | ❌ | ❌ | ✅ |
+| Décisionnel | ❌ | ❌ | ❌ | ✅ |
+| **Public cible** | Primaire | Collège/Lycée | Complexes | Universités |
+| **Essai gratuit** | 30 jours | 30 jours | 30 jours | 30 jours |
 
 ---
 
@@ -365,79 +399,91 @@ Toutes les 8 applications:
 
 ### Choisir son Pack
 
-#### Critères à Considérer
+#### Par Type d'Établissement
 
-1. **Taille de l'établissement**
-   - Petit (< 200 élèves) → Pack Essentiel
-   - Moyen (200-500 élèves) → Pack Standard
-   - Grand (500+ élèves) → Pack Premium
+**Écoles Primaires:**
+→ **Pack Start** (100k FCFA)
+- Focus sur notes et discipline
+- Budget maîtrisé
+- Fonctionnalités essentielles
 
-2. **Budget disponible**
-   - Serré → Pack Essentiel
-   - Modéré → Pack Standard
-   - Confortable → Pack Premium
+**Collèges:**
+→ **Pack Gestion** (200k FCFA) ⭐ RECOMMANDÉ
+- Ajout comptabilité et communication
+- Sécurisation des revenus
+- Lien fort avec les familles
 
-3. **Niveau de digitalisation**
-   - Débutant → Pack Essentiel
-   - Intermédiaire → Pack Standard
-   - Avancé → Pack Premium
+**Lycées et Complexes:**
+→ **Pack Excellence** (350k FCFA)
+- Gestion complète à 360°
+- E-Learning pour préparation examens
+- Emplois du temps complexes
 
-4. **Besoins spécifiques**
-   - Priorité communication parents → Pack Essentiel
-   - Gestion financière importante → Pack Standard minimum
-   - Bibliothèque active → Pack Premium
-   - Data-driven → Pack Premium
+**Universités et Grandes Écoles:**
+→ **Pack Campus** (Sur devis)
+- Mode LMD complet
+- Gestion crédits et GPA
+- Infrastructure évolutive
+
+#### Par Budget Annuel
+
+- **< 150k FCFA** → Pack Start
+- **150k - 300k FCFA** → Pack Gestion
+- **300k - 400k FCFA** → Pack Excellence
+- **> 400k FCFA** → Pack Campus (sur devis)
+
+#### Par Priorité Métier
+
+**Priorité Notes et Pédagogie:**
+- Pack Start minimum (App Académique incluse)
+
+**Priorité Finances:**
+- Pack Gestion minimum (App Trésorerie incluse)
+
+**Priorité Communication Parents:**
+- Pack Gestion minimum (App Communication incluse)
+
+**Priorité E-Learning:**
+- Pack Excellence (App E-Learning incluse)
+
+---
+
+## 🎁 Offre de Lancement 2026
+
+### Essai Gratuit 30 Jours
+**Tous les packs** bénéficient de **30 jours d'essai gratuit** pour chaque application.
+
+### Formation Offerte
+- ✅ **2 heures de formation de base** (tous les packs)
+- ✅ **Support email** pendant la période d'essai
+- ✅ **Documentation complète** en français
+
+### Pack Campus - Avantages Exclusifs
+- ✅ **Formation sur site** (2 jours)
+- ✅ **Support prioritaire** (réponse < 2h)
+- ✅ **Personnalisation** (logo, couleurs, rapports)
+- ✅ **Accompagnement** (6 mois de suivi)
 
 ---
 
 ## 💳 Options de Paiement
 
 ### Modes de Paiement Acceptés
-- ✅ Virement bancaire
-- ✅ Mobile Money (MTN, Orange)
-- ✅ Chèque
-- ✅ Espèces (sur rendez-vous)
+- ✅ **Virement bancaire**
+- ✅ **Mobile Money** (MTN, Orange)
+- ✅ **Chèque**
+- ✅ **Espèces** (sur rendez-vous)
 
 ### Facilités de Paiement
-- **Paiement annuel:** Prix normal
+- **Paiement annuel:** Prix normal (recommandé)
 - **Paiement semestriel:** +5% soit 2 × 52.5% du prix annuel
 - **Paiement trimestriel:** +10% soit 4 × 27.5% du prix annuel
 
----
-
-## 🎓 Support et Formation
-
-### Inclus dans Tous les Packs
-- ✅ **Installation et configuration** - Prise en main complète
-- ✅ **Formation de base** (2h) - Utilisation quotidienne
-- ✅ **Documentation** - Guides et tutoriels vidéo
-- ✅ **Mises à jour** - Automatiques et gratuites
-- ✅ **Support par email** - Réponse sous 24h
-
-### Bonus Pack Premium
-- ✅ **Formation avancée** (2 jours sur site)
-- ✅ **Support prioritaire** - Réponse sous 2h
-- ✅ **Appels vidéo** - Assistance personnalisée
-- ✅ **Accompagnement** - 6 mois de suivi
-
----
-
-## 📊 Tableau Comparatif Rapide
-
-| Fonctionnalité | Essentiel | Standard | Premium |
-|----------------|-----------|----------|---------|
-| **Prix/an** | 180k | 320k | 420k |
-| **Économie** | 30k (14%) | 85k (21%) | 120k (22%) |
-| Gestion de base | ✅ | ✅ | ✅ |
-| Notes & Bulletins | ✅ | ✅ | ✅ |
-| Communication | ✅ | ✅ | ✅ |
-| Absences | ✅ | ✅ | ✅ |
-| Comptabilité | ❌ | ✅ | ✅ |
-| Emplois du temps | ❌ | ✅ | ✅ |
-| Bibliothèque | ❌ | ❌ | ✅ |
-| Statistiques | ❌ | ❌ | ✅ |
-| Support | Standard | Standard | Prioritaire |
-| Formation | 2h | 2h | 2 jours |
+### Facturation SMS
+Les SMS sont facturés **au coût réel** via **Packs Crédits**:
+- Pack 1000 SMS: 15 000 FCFA
+- Pack 5000 SMS: 65 000 FCFA (économie 13%)
+- Pack 10000 SMS: 120 000 FCFA (économie 20%)
 
 ---
 
@@ -446,50 +492,65 @@ Toutes les 8 applications:
 ### Étape 1: Choisir Votre Pack
 Utilisez le guide ci-dessus pour identifier le pack adapté à vos besoins.
 
-### Étape 2: Nous Contacter
-- 📧 Email: contact@edutrack-cm.com
-- 📱 Téléphone: +237 6XX XX XX XX
-- 🌐 Site web: www.edutrack-cm.com
+### Étape 2: Créer un Compte Gratuit
+- 🌐 Allez sur www.edutrack-cm.com
+- 📝 Inscrivez-vous en 2 minutes
+- ✅ Activez votre compte
 
-### Étape 3: Démonstration Gratuite
-Nous organisons une démo personnalisée de 30 minutes pour vous.
+### Étape 3: Essai Gratuit 30 Jours
+- ✅ **App Core** gratuite à vie
+- ✅ Testez les autres apps pendant 30 jours
+- ✅ Sans carte bancaire
 
 ### Étape 4: Souscription
-Signature du contrat et paiement selon vos préférences.
+- 📋 Choisissez votre pack
+- 💳 Paiement sécurisé
+- 📧 Confirmation immédiate
 
-### Étape 5: Installation
-Notre équipe installe et configure tout pour vous sous 48h.
+### Étape 5: Formation et Support
+- 🎓 Formation de base (2h)
+- 📚 Documentation et tutoriels
+- 💬 Support email réactif
 
-### Étape 6: Formation
-Formation de votre équipe pour une adoption réussie.
-
-### Étape 7: Go Live! 🎉
-Vous êtes prêt à digitaliser votre école!
+### Étape 6: Go Live! 🎉
+Vous êtes prêt à digitaliser votre établissement!
 
 ---
 
 ## ❓ Questions Fréquentes
 
 ### Puis-je changer de pack en cours d'année?
-Oui! Vous pouvez upgrader à tout moment. Le prorata sera calculé.
+Oui! Vous pouvez upgrader à tout moment. Le prorata sera calculé sur la période restante.
 
 ### Que se passe-t-il si je ne renouvelle pas?
-Vos données sont conservées 6 mois. Accès en lecture seule.
+Vos données sont conservées **6 mois** en lecture seule. Vous pouvez les exporter à tout moment.
 
 ### Y a-t-il des coûts cachés?
-Non. Le prix annoncé inclut tout sauf SMS (facturation au coût réel).
+Non. Le prix annoncé inclut tout **sauf les SMS** (facturation au coût réel via Packs Crédits).
 
 ### Combien de temps pour l'installation?
-Maximum 48h après signature du contrat.
+**Immédiat** après inscription. Vous créez votre compte et commencez directement.
 
 ### Mes données sont-elles sécurisées?
-Oui. Hébergement sécurisé, sauvegardes quotidiennes, RGPD compliant.
+Oui. Hébergement **Supabase** sécurisé, **sauvegardes quotidiennes**, infrastructure cloud fiable.
 
 ### Puis-je acheter des apps individuellement?
-Oui, mais les packs offrent une meilleure économie.
+Oui, mais les **packs offrent une meilleure économie** (jusqu'à 85 000 FCFA d'économie).
 
 ### Support technique disponible quand?
-Lundi-Vendredi 8h-18h. Premium: aussi samedi 9h-13h.
+- **Tous les packs:** Lundi-Vendredi 8h-18h (email)
+- **Pack Campus:** + Samedi 9h-13h + support prioritaire < 2h
+
+### La compatibilité LMD est-elle vraiment complète?
+Oui. L'**App Académique** gère nativement:
+- Semestres S1-S8
+- Unités de Valeur (UV)
+- Système de Crédits ECTS/LMD
+- Calcul GPA automatique
+- Relevés conformes standards LMD
+
+### Puis-je migrer mes données actuelles?
+Oui. L'**App Core** inclut un **outil d'import Excel** pour migrer vos données existantes facilement.
 
 ---
 
@@ -508,5 +569,31 @@ Samedi: 9h00 - 13h00
 
 ---
 
+## 🎯 Résumé des Avantages EduTrack CM
+
+### ✅ Modularité
+N'achetez que ce dont vous avez besoin. Évoluez à votre rythme.
+
+### ✅ Gratuit pour Démarrer
+**App Core** gratuite à vie. Testez avant d'acheter.
+
+### ✅ Double Compatibilité
+**Scolaire** (Primaire, Collège, Lycée) ET **LMD** (Enseignement Supérieur).
+
+### ✅ Adapté au Cameroun
+- Paiements échelonnés
+- Mobile Money intégré
+- Multi-devises (FCFA, Euro)
+- Système Trimestriel ET LMD
+
+### ✅ Économies Garanties
+Jusqu'à **85 000 FCFA d'économie** avec les packs.
+
+### ✅ Support en Français
+Documentation, formation et support en français.
+
+---
+
 *Document généré le 01/01/2026*
-*Version 1.0*
+*Version 2.0 - Catalogue 2026*
+*Compatible Scolaire (Trimestriel) et LMD (Universitaire)*

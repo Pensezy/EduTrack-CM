@@ -35,16 +35,17 @@ export default function LandingPage() {
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mapping des icônes par ID d'app
+  // Mapping des icônes par slug d'app (basé sur nouveau catalogue 2026)
   const appIcons = {
-    core: <School className="h-8 w-8" />,
-    academic: <BookOpen className="h-8 w-8" />,
-    schedule: <Calendar className="h-8 w-8" />,
-    financial: <DollarSign className="h-8 w-8" />,
-    discipline: <FileText className="h-8 w-8" />,
-    hr: <Users className="h-8 w-8" />,
-    communication: <MessageSquare className="h-8 w-8" />,
-    reporting: <BarChart3 className="h-8 w-8" />
+    'core': <School className="h-8 w-8" />,
+    'notes-evaluations': <BookOpen className="h-8 w-8" />,
+    'comptabilite': <DollarSign className="h-8 w-8" />,
+    'communication': <MessageSquare className="h-8 w-8" />,
+    'emplois-du-temps': <Calendar className="h-8 w-8" />,
+    'absences-discipline': <FileText className="h-8 w-8" />,
+    'bibliotheque': <BookOpen className="h-8 w-8" />,
+    'statistiques-rapports': <BarChart3 className="h-8 w-8" />,
+    'e-learning': <BookOpen className="h-8 w-8" />
   };
 
   // Mapping des couleurs par catégorie
@@ -84,15 +85,17 @@ export default function LandingPage() {
       // Formater les apps pour l'affichage
       const formattedApps = appsData.map(app => ({
         id: app.id,
+        slug: app.slug,
         name: app.name,
-        icon: appIcons[app.id] || <School className="h-8 w-8" />,
+        icon: appIcons[app.slug] || <School className="h-8 w-8" />,
         description: app.description,
         category: app.is_core ? 'Gratuit' : app.category,
         color: categoryColors[app.category] || 'from-gray-500 to-gray-600',
         features: app.features || [],
         isFree: app.is_core,
         price: app.price_yearly,
-        priceFormatted: app.price_yearly_formatted
+        priceFormatted: app.price_yearly_formatted,
+        developmentStatus: app.development_status
       }));
 
       // Formater les bundles pour l'affichage
@@ -107,7 +110,7 @@ export default function LandingPage() {
         apps: bundle.app_ids || [],
         appNames: bundle.app_names || [],
         features: Object.values(bundle.features_extra || {}),
-        popular: bundle.id === 'standard' // Le pack standard est marqué comme populaire
+        popular: bundle.is_recommended || false // Le pack recommandé est marqué comme populaire
       }));
 
       setApps(formattedApps);
@@ -163,7 +166,7 @@ export default function LandingPage() {
 
             <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-full text-sm font-medium mb-8 border border-white/20 hover:bg-white/20 transition-all">
               <Sparkles className="h-4 w-4 text-yellow-300 animate-pulse" />
-              <span>Solution Modulaire de Gestion Scolaire</span>
+              <span>Gestion Unifiée pour Écoles, Collèges, Lycées et Enseignement Supérieur</span>
               <Star className="h-4 w-4 text-yellow-300" />
             </div>
 
@@ -205,7 +208,7 @@ export default function LandingPage() {
               {[
                 { value: '100%', label: 'Gratuit pour démarrer', icon: <Zap className="h-5 w-5" /> },
                 { value: '30j', label: 'Essai gratuit par app', icon: <Shield className="h-5 w-5" /> },
-                { value: '8', label: 'Applications modulaires', icon: <Package className="h-5 w-5" /> }
+                { value: '9', label: 'Applications modulaires', icon: <Package className="h-5 w-5" /> }
               ].map((stat, idx) => (
                 <div key={idx} className="group relative bg-white/5 backdrop-blur-sm rounded-xl p-4 hover:bg-white/10 transition-all border border-white/10 hover:border-white/30">
                   <div className="flex items-center justify-center gap-2 mb-2 text-yellow-300">
@@ -258,7 +261,7 @@ export default function LandingPage() {
               {
                 icon: <Zap className="h-8 w-8" />,
                 title: 'Gratuit pour Démarrer',
-                description: 'App Core gratuite à vie avec gestion élèves, classes et enseignants',
+                description: 'App Core gratuite à vie avec gestion élèves, classes, personnel et générateur de cartes',
                 color: 'from-green-500 to-green-600',
                 delay: '0'
               },
@@ -311,7 +314,7 @@ export default function LandingPage() {
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-white rounded-full text-sm font-semibold mb-4 shadow-md">
               <Package className="h-4 w-4 text-primary-600" />
               <span className="bg-gradient-to-r from-primary-600 to-purple-600 bg-clip-text text-transparent">
-                8 Applications Modulaires
+                9 Applications Modulaires
               </span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
@@ -325,7 +328,7 @@ export default function LandingPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             {loading ? (
               // Skeleton loader pendant chargement
-              Array.from({ length: 8 }).map((_, idx) => (
+              Array.from({ length: 9 }).map((_, idx) => (
                 <div key={idx} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden animate-pulse">
                   <div className="bg-gray-300 h-40"></div>
                   <div className="p-6 space-y-3">
@@ -395,7 +398,7 @@ export default function LandingPage() {
           <div className="text-center mb-16">
             <div className="inline-flex items-center gap-2 px-4 py-2 bg-green-50 text-green-700 rounded-full text-sm font-semibold mb-4">
               <TrendingDown className="h-4 w-4" />
-              Économisez jusqu'à 35 000 FCFA
+              Économisez jusqu'à 85 000 FCFA
             </div>
             <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
               Packs Tout Inclus
