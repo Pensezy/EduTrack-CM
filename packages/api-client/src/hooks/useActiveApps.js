@@ -154,6 +154,13 @@ export function useActiveApps(options = {}) {
       const activeAppIds = activeApps.map(app => app.id);
       const availableApps = catalogApps.filter(app => !activeAppIds.includes(app.id));
 
+      console.log('📊 [useActiveApps] Résumé:');
+      console.log('  - catalogApps:', catalogApps.length);
+      console.log('  - activeApps:', activeApps.length);
+      console.log('  - availableApps:', availableApps.length);
+      console.log('  - includeCatalog:', includeCatalog);
+      console.log('  - apps retournés:', includeCatalog ? catalogApps.length : activeApps.length);
+
       setState({
         apps: includeCatalog ? catalogApps : activeApps,
         activeApps,

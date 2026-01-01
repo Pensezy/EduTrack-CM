@@ -28,6 +28,12 @@ export default function MyAppsPage() {
 
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'trial' | 'active'
 
+  // Debug logs
+  console.log('🔍 [MyAppsPage] État:');
+  console.log('  - activeApps:', activeApps.length, activeApps);
+  console.log('  - subscriptions:', subscriptions.length, subscriptions);
+  console.log('  - activeSubscriptions:', activeSubscriptions.length, activeSubscriptions);
+
   // Filtrer les abonnements
   const filteredSubscriptions = activeSubscriptions.filter(sub => {
     if (filterStatus === 'all') return true;

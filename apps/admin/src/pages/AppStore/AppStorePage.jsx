@@ -27,6 +27,12 @@ export default function AppStorePage() {
     error
   } = useApps();
 
+  // Debug logs
+  console.log('🏪 [AppStorePage] État:');
+  console.log('  - apps (catalogue complet):', apps.length, apps);
+  console.log('  - activeApps:', activeApps.length, activeApps);
+  console.log('  - availableApps:', availableApps.length, availableApps);
+
   const [view, setView] = useState('grid'); // 'grid' | 'list'
   const [tab, setTab] = useState('apps'); // 'apps' | 'bundles'
   const [searchQuery, setSearchQuery] = useState('');
