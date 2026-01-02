@@ -28,8 +28,6 @@ const getNavigationForRole = (role) => {
     { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['admin'] },
     { name: 'Demandes', href: '/enrollment', icon: FileText, roles: ['admin'] },
     { name: 'Personnel', href: '/personnel', icon: UserCog, roles: ['admin'] },
-    { name: 'App Store', href: '/app-store', icon: Store, badge: 'new', roles: ['admin'] },
-    { name: 'Mes Apps', href: '/my-apps', icon: Package, roles: ['admin'] },
   ];
 
   // Menus spécifiques directeur
@@ -40,6 +38,12 @@ const getNavigationForRole = (role) => {
     { name: 'Élèves & Parents', href: '/personnel', icon: UserCog, roles: ['principal'] },
   ];
 
+  // Menus communs admin ET directeur
+  const appsMenus = [
+    { name: 'App Store', href: '/app-store', icon: Store, badge: 'new', roles: ['admin', 'principal'] },
+    { name: 'Mes Apps', href: '/my-apps', icon: Package, roles: ['admin', 'principal'] },
+  ];
+
   // Menu commun
   const commonMenus = [
     { name: 'Paramètres', href: '/settings', icon: Settings, roles: ['admin', 'principal'] },
@@ -47,9 +51,9 @@ const getNavigationForRole = (role) => {
 
   // Construire le menu selon le rôle
   if (role === 'admin') {
-    return [...baseNavigation, ...adminOnlyMenus, ...commonMenus];
+    return [...baseNavigation, ...adminOnlyMenus, ...appsMenus, ...commonMenus];
   } else if (role === 'principal') {
-    return [...baseNavigation, ...principalOnlyMenus, ...commonMenus];
+    return [...baseNavigation, ...principalOnlyMenus, ...appsMenus, ...commonMenus];
   }
 
   return baseNavigation;
