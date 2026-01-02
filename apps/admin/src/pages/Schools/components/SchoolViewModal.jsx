@@ -115,16 +115,16 @@ export default function SchoolViewModal({ isOpen, onClose, school, onEdit }) {
         </div>
 
         {/* Directeur */}
-        {(school.director_name || school.director_email || school.director_phone) && (
+        {(school.director_name || school.director) && (
           <div>
             <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2 mb-3">
               <User className="h-4 w-4" />
               Directeur
             </h3>
             <div className="space-y-1 divide-y divide-gray-100">
-              <InfoRow icon={User} label="Nom" value={school.director_name} />
-              <InfoRow icon={Mail} label="Email" value={school.director_email} />
-              <InfoRow icon={Phone} label="Téléphone" value={school.director_phone} />
+              <InfoRow icon={User} label="Nom" value={school.director_name || school.director?.full_name} />
+              <InfoRow icon={Mail} label="Email" value={school.director?.email} />
+              <InfoRow icon={Phone} label="Téléphone" value={school.director?.phone} />
             </div>
           </div>
         )}

@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@edutrack/ui';
 import { X, School as SchoolIcon, MapPin, Phone, Mail, User, Building2, Hash } from 'lucide-react';
-import { getSupabaseClient } from '@edutrack/api';
+import { getSupabaseClient, useAuth } from '@edutrack/api';
 
 /**
  * Modal pour créer ou éditer une école
  */
 export default function SchoolFormModal({ isOpen, onClose, school, onSuccess }) {
+  const { user } = useAuth();
   const isEditing = !!school;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -36,9 +37,9 @@ export default function SchoolFormModal({ isOpen, onClose, school, onSuccess }) 
         city: school.city || '',
         phone: school.phone || '',
         email: school.email || '',
-        director_name: school.director_name || '',
-        director_email: school.director_email || '',
-        director_phone: school.director_phone || '',
+        director_name: school.director_name || school.director?.full_name || '',
+        director_email: school.director?.email || '',
+        director_phone: school.director?.phone || '',
         status: school.status || 'active',
       });
     } else {
@@ -81,50 +82,160 @@ export default function SchoolFormModal({ isOpen, onClose, school, onSuccess }) 
         throw new Error('Le code de l\'école est requis');
       }
 
+      // Gérer le compte utilisateur du directeur si les informations sont fournies
+      let directorUserId = isEditing ? school.director_user_id : null;
+
+      if (formData.director_email?.trim()) {
+        // Vérifier si un utilisateur avec cet email existe déjà
+        const { data: existingUser, error: checkError } = await supabase
+          .from('users')
+          .select('id, role, full_name, current_school_id')
+          .eq('email', formData.director_email.trim())
+          .maybeSingle();
+
+        if (checkError) throw checkError;
+
+        if (existingUser) {
+          // Email existe déjà
+          directorUserId = existingUser.id;
+
+          // En mode édition : vérifier que c'est bien le directeur actuel de l'école
+          if (isEditing && school.director_user_id && existingUser.id !== school.director_user_id) {
+            throw new Error(
+              `Cet email (${formData.director_email}) est déjà utilisé par un autre compte (${existingUser.full_name}). ` +
+              'Veuillez utiliser un autre email ou lier ce compte existant.'
+            );
+          }
+
+          // En mode création : vérifier que l'utilisateur n'est pas déjà directeur d'une autre école
+          if (!isEditing && existingUser.role === 'principal' && existingUser.current_school_id) {
+            throw new Error(
+              `Cet email (${formData.director_email}) appartient déjà à un directeur d'une autre école (${existingUser.full_name}). ` +
+              'Un directeur ne peut pas gérer plusieurs écoles simultanément.'
+            );
+          }
+
+          // Mettre à jour les informations de l'utilisateur existant
+          const { error: updateUserError } = await supabase
+            .from('users')
+            .update({
+              full_name: formData.director_name?.trim() || existingUser.full_name,
+              phone: formData.director_phone?.trim() || existingUser.phone,
+              role: existingUser.role === 'admin' ? 'admin' : 'principal', // Ne pas changer admin en principal
+            })
+            .eq('id', existingUser.id);
+
+          if (updateUserError) throw updateUserError;
+        } else {
+          // Créer un nouveau compte utilisateur pour le directeur
+          // Note: Création uniquement dans public.users (pas dans auth.users)
+          // Le directeur devra se créer un compte via l'application
+          const { data: newUser, error: createUserError } = await supabase
+            .from('users')
+            .insert([{
+              email: formData.director_email.trim(),
+              full_name: formData.director_name?.trim() || 'Directeur',
+              phone: formData.director_phone?.trim() || null,
+              role: 'principal',
+              current_school_id: null, // Sera défini après la création de l'école
+            }])
+            .select('id')
+            .single();
+
+          if (createUserError) {
+            // Si l'erreur est un conflit d'email unique, afficher un message clair
+            if (createUserError.code === '23505' && createUserError.message.includes('email')) {
+              throw new Error(
+                `Cet email (${formData.director_email}) est déjà utilisé dans le système. ` +
+                'Veuillez utiliser un autre email ou contacter l\'administrateur.'
+              );
+            }
+            throw createUserError;
+          }
+          directorUserId = newUser.id;
+        }
+      }
+
       if (isEditing) {
-        // Mise à jour
+        // Mise à jour - Filtrer les champs qui n'existent pas dans la table
+        const { director_email, director_phone, ...schoolData } = formData;
+
+        const updateData = {
+          ...schoolData,
+          director_user_id: directorUserId,
+        };
+
         const { error: updateError } = await supabase
           .from('schools')
-          .update(formData)
+          .update(updateData)
           .eq('id', school.id);
 
         if (updateError) throw updateError;
+
+        // Mettre à jour current_school_id du directeur si nécessaire
+        if (directorUserId) {
+          await supabase
+            .from('users')
+            .update({ current_school_id: school.id })
+            .eq('id', directorUserId);
+        }
       } else {
-        // Création - Vérifier la limitation en mode gratuit
+        // Création - Vérifier la limitation en mode gratuit (sauf pour les admins)
 
-        // 1. Compter le nombre d'écoles existantes
-        const { count: schoolCount, error: countError } = await supabase
-          .from('schools')
-          .select('*', { count: 'exact', head: true });
+        // Les admins peuvent créer autant d'écoles qu'ils veulent
+        if (user?.role !== 'admin') {
+          // 1. Compter le nombre d'écoles existantes (total système)
+          const { count: schoolCount, error: countError } = await supabase
+            .from('schools')
+            .select('*', { count: 'exact', head: true });
 
-        if (countError) throw countError;
+          if (countError) throw countError;
 
-        // 2. Vérifier s'il existe un abonnement payant actif
-        const { data: paidSubscriptions, error: subsError } = await supabase
-          .from('school_subscriptions')
-          .select('id')
-          .in('status', ['trial', 'active'])
-          .neq('app_id', '00000000-0000-0000-0000-000000000001') // Exclure app core gratuite
-          .limit(1);
+          // 2. Vérifier s'il existe un abonnement payant actif
+          const { data: paidSubscriptions, error: subsError } = await supabase
+            .from('school_subscriptions')
+            .select('id')
+            .in('status', ['trial', 'active'])
+            .neq('app_id', 'core') // Exclure app core gratuite
+            .limit(1);
 
-        if (subsError) throw subsError;
+          if (subsError) throw subsError;
 
-        const hasPaidSubscription = paidSubscriptions && paidSubscriptions.length > 0;
+          const hasPaidSubscription = paidSubscriptions && paidSubscriptions.length > 0;
 
-        // 3. Appliquer la limitation: 1 école max sans abonnement payant
-        if (schoolCount >= 1 && !hasPaidSubscription) {
-          throw new Error(
-            'Limitation gratuite atteinte : Vous ne pouvez créer qu\'une seule école en mode gratuit. ' +
-            'Pour ajouter d\'autres écoles, veuillez souscrire à un pack payant depuis l\'App Store.'
-          );
+          // 3. Appliquer la limitation: 1 école max sans abonnement payant
+          if (schoolCount >= 1 && !hasPaidSubscription) {
+            throw new Error(
+              'Limitation gratuite atteinte : Vous ne pouvez créer qu\'une seule école en mode gratuit. ' +
+              'Pour ajouter d\'autres écoles, veuillez souscrire à un pack payant depuis l\'App Store.'
+            );
+          }
         }
 
         // Si les vérifications passent, créer l'école
-        const { error: insertError } = await supabase
+        // Filtrer les champs qui n'existent pas dans la table
+        const { director_email, director_phone, ...schoolData } = formData;
+
+        const insertData = {
+          ...schoolData,
+          director_user_id: directorUserId,
+        };
+
+        const { data: newSchool, error: insertError } = await supabase
           .from('schools')
-          .insert([formData]);
+          .insert([insertData])
+          .select('id')
+          .single();
 
         if (insertError) throw insertError;
+
+        // Mettre à jour current_school_id du directeur
+        if (directorUserId && newSchool) {
+          await supabase
+            .from('users')
+            .update({ current_school_id: newSchool.id })
+            .eq('id', directorUserId);
+        }
       }
 
       onSuccess();

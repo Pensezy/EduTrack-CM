@@ -1,12 +1,13 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@edutrack/ui';
 import { X, User as UserIcon, Mail, Shield, School, Phone, Hash } from 'lucide-react';
-import { getSupabaseClient } from '@edutrack/api';
+import { getSupabaseClient, useAuth } from '@edutrack/api';
 
 /**
  * Modal pour créer ou éditer un utilisateur
  */
 export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
+  const { user: currentUser } = useAuth();
   const isEditing = !!user;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -31,11 +32,18 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
   const loadSchools = async () => {
     try {
       const supabase = getSupabaseClient();
-      const { data, error: schoolsError } = await supabase
+      let query = supabase
         .from('schools')
         .select('id, name, code')
         .eq('status', 'active')
         .order('name');
+
+      // 🔒 SÉCURITÉ: Les directeurs ne voient que leur école
+      if (currentUser?.role === 'principal' && currentUser?.current_school_id) {
+        query = query.eq('id', currentUser.current_school_id);
+      }
+
+      const { data, error: schoolsError } = await query;
 
       if (schoolsError) throw schoolsError;
       setSchools(data || []);
@@ -57,17 +65,20 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
       });
     } else {
       // Reset form pour création
+      // Les directeurs créent par défaut des utilisateurs de leur école
+      const defaultSchoolId = currentUser?.role === 'principal' ? currentUser.current_school_id : '';
+
       setFormData({
         full_name: '',
         email: '',
         phone: '',
         role: 'student',
-        current_school_id: '',
+        current_school_id: defaultSchoolId,
         is_active: true,
       });
     }
     setError('');
-  }, [user, isOpen]);
+  }, [user, isOpen, currentUser]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -96,6 +107,32 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
         throw new Error('L\'école est requise');
       }
 
+      // 🔒 SÉCURITÉ: Les directeurs ne peuvent créer que du personnel, des parents et des élèves
+      if (currentUser?.role === 'principal') {
+        const allowedRoles = ['teacher', 'secretary', 'student', 'parent'];
+        if (!allowedRoles.includes(formData.role)) {
+          throw new Error('Vous n\'êtes pas autorisé à créer ce type d\'utilisateur');
+        }
+
+        // Vérifier que l'école correspond bien à celle du directeur
+        if (formData.current_school_id !== currentUser.current_school_id) {
+          throw new Error('Vous ne pouvez créer des utilisateurs que pour votre propre école');
+        }
+      }
+
+      // Vérifier l'unicité de l'email
+      const { data: existingEmail, error: checkError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', formData.email.trim())
+        .maybeSingle();
+
+      if (checkError) throw checkError;
+
+      if (existingEmail && (!isEditing || existingEmail.id !== user.id)) {
+        throw new Error(`Cet email (${formData.email}) est déjà utilisé par un autre compte`);
+      }
+
       if (isEditing) {
         // Mise à jour
         const { error: updateError } = await supabase
@@ -110,7 +147,13 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
           .from('users')
           .insert([formData]);
 
-        if (insertError) throw insertError;
+        if (insertError) {
+          // Gestion des erreurs de contraintes uniques
+          if (insertError.code === '23505' && insertError.message.includes('email')) {
+            throw new Error(`Cet email (${formData.email}) est déjà utilisé dans le système`);
+          }
+          throw insertError;
+        }
       }
 
       onSuccess();
@@ -238,12 +281,18 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                 >
-                  <option value="admin">Administrateur</option>
-                  <option value="principal">Directeur</option>
+                  {/* Les admins peuvent créer tous les types */}
+                  {currentUser?.role === 'admin' && (
+                    <>
+                      <option value="admin">Administrateur</option>
+                      <option value="principal">Directeur</option>
+                    </>
+                  )}
+                  {/* Rôles que les directeurs peuvent créer */}
                   <option value="teacher">Enseignant</option>
+                  <option value="secretary">Secrétaire</option>
                   <option value="student">Élève</option>
                   <option value="parent">Parent</option>
-                  <option value="secretary">Secrétaire</option>
                 </select>
               </div>
 
@@ -259,7 +308,8 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                     value={formData.current_school_id}
                     onChange={handleChange}
                     required
-                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                    disabled={currentUser?.role === 'principal'}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
                     <option value="">Sélectionner une école</option>
                     {schools.map(school => (
@@ -269,6 +319,11 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                     ))}
                   </select>
                 </div>
+                {currentUser?.role === 'principal' && (
+                  <p className="mt-1 text-xs text-gray-500">
+                    En tant que directeur, vous ne pouvez créer que des utilisateurs de votre école
+                  </p>
+                )}
               </div>
 
               <div className="md:col-span-2">

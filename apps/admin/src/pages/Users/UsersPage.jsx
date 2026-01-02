@@ -18,7 +18,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react';
-import { UserFormModal, UserViewModal } from './components';
+import { UserFormModal, UserViewModal, TeacherFormModal, ParentFormModal, StudentFormModal } from './components';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -28,10 +28,14 @@ export default function UsersPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filterRole, setFilterRole] = useState('all');
   const [filterStatus, setFilterStatus] = useState('all');
+  const [showCreateMenu, setShowCreateMenu] = useState(false);
 
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, user: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
+  const [teacherModal, setTeacherModal] = useState({ isOpen: false, user: null });
+  const [parentModal, setParentModal] = useState({ isOpen: false, user: null });
+  const [studentModal, setStudentModal] = useState({ isOpen: false, user: null });
 
   useEffect(() => {
     fetchUsers();
@@ -50,7 +54,10 @@ export default function UsersPage() {
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que les utilisateurs de leur école
       if (user?.role === 'principal' && user?.current_school_id) {
-        query = query.eq('current_school_id', user.current_school_id);
+        query = query
+          .eq('current_school_id', user.current_school_id)
+          // Les directeurs ne voient QUE : personnel, parents et élèves
+          .in('role', ['teacher', 'secretary', 'student', 'parent']);
       }
       // Les admins voient tous les utilisateurs (pas de filtre)
 
@@ -189,8 +196,30 @@ export default function UsersPage() {
     setFormModal({ isOpen: true, user: null });
   };
 
+  const handleCreateTeacher = () => {
+    setTeacherModal({ isOpen: true, user: null });
+  };
+
+  const handleCreateParent = () => {
+    setParentModal({ isOpen: true, user: null });
+  };
+
+  const handleCreateStudent = () => {
+    setStudentModal({ isOpen: true, user: null });
+  };
+
   const handleEditUser = (userData) => {
-    setFormModal({ isOpen: true, user: userData });
+    // Route to specialized modal based on role
+    if (userData.role === 'teacher') {
+      setTeacherModal({ isOpen: true, user: userData });
+    } else if (userData.role === 'parent') {
+      setParentModal({ isOpen: true, user: userData });
+    } else if (userData.role === 'student') {
+      setStudentModal({ isOpen: true, user: userData });
+    } else {
+      // For admin, principal, secretary - use generic modal
+      setFormModal({ isOpen: true, user: userData });
+    }
   };
 
   const handleViewUser = (userData) => {
@@ -219,14 +248,38 @@ export default function UsersPage() {
             {formatNumber(users.length)} utilisateur{users.length > 1 ? 's' : ''} enregistré{users.length > 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          onClick={handleCreateUser}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-        >
-          <Plus className="h-5 w-5" />
-          <span className="hidden sm:inline">Nouvel Utilisateur</span>
-          <span className="sm:hidden">Nouveau</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          {/* Quick create buttons for common user types */}
+          <button
+            onClick={handleCreateTeacher}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Enseignant</span>
+          </button>
+          <button
+            onClick={handleCreateParent}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors shadow-sm text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Parent</span>
+          </button>
+          <button
+            onClick={handleCreateStudent}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors shadow-sm text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Élève</span>
+          </button>
+          {/* Generic button for admin/principal/secretary */}
+          <button
+            onClick={handleCreateUser}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-sm text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Autre</span>
+          </button>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -269,8 +322,14 @@ export default function UsersPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
               >
                 <option value="all">Tous les rôles</option>
-                <option value="admin">Administrateur</option>
-                <option value="principal">Directeur</option>
+                {/* Les admins peuvent voir tous les rôles */}
+                {user?.role === 'admin' && (
+                  <>
+                    <option value="admin">Administrateur</option>
+                    <option value="principal">Directeur</option>
+                  </>
+                )}
+                {/* Rôles visibles par les directeurs */}
                 <option value="teacher">Enseignant</option>
                 <option value="secretary">Secrétaire</option>
                 <option value="student">Élève</option>
@@ -397,6 +456,27 @@ export default function UsersPage() {
         onClose={() => setViewModal({ isOpen: false, user: null })}
         user={viewModal.user}
         onEdit={handleEditUser}
+      />
+
+      <TeacherFormModal
+        isOpen={teacherModal.isOpen}
+        onClose={() => setTeacherModal({ isOpen: false, user: null })}
+        user={teacherModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <ParentFormModal
+        isOpen={parentModal.isOpen}
+        onClose={() => setParentModal({ isOpen: false, user: null })}
+        user={parentModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <StudentFormModal
+        isOpen={studentModal.isOpen}
+        onClose={() => setStudentModal({ isOpen: false, user: null })}
+        user={studentModal.user}
+        onSuccess={handleModalSuccess}
       />
     </div>
   );

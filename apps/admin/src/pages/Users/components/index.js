@@ -1,2 +1,5 @@
 export { default as UserFormModal } from './UserFormModal.jsx';
 export { default as UserViewModal } from './UserViewModal.jsx';
+export { default as TeacherFormModal } from './TeacherFormModal.jsx';
+export { default as ParentFormModal } from './ParentFormModal.jsx';
+export { default as StudentFormModal } from './StudentFormModal.jsx';

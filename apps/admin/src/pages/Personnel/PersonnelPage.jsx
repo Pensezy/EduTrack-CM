@@ -19,6 +19,7 @@ import {
   Calendar
 } from 'lucide-react';
 import { UserFormModal, UserViewModal } from '../Users/components';
+import TeacherFormModal from '../Users/components/TeacherFormModal';
 
 export default function PersonnelPage() {
   const { user } = useAuth();
@@ -31,6 +32,7 @@ export default function PersonnelPage() {
 
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, user: null });
+  const [teacherModal, setTeacherModal] = useState({ isOpen: false, user: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
 
   useEffect(() => {
@@ -166,8 +168,17 @@ export default function PersonnelPage() {
     setFormModal({ isOpen: true, user: null });
   };
 
+  const handleCreateTeacher = () => {
+    setTeacherModal({ isOpen: true, user: null });
+  };
+
   const handleEditPersonnel = (person) => {
-    setFormModal({ isOpen: true, user: person });
+    // Utiliser le modal spécialisé pour les enseignants
+    if (person.role === 'teacher') {
+      setTeacherModal({ isOpen: true, user: person });
+    } else {
+      setFormModal({ isOpen: true, user: person });
+    }
   };
 
   const handleViewPersonnel = (person) => {
@@ -196,14 +207,24 @@ export default function PersonnelPage() {
             {formatNumber(personnel.length)} membre{personnel.length > 1 ? 's' : ''} du personnel
           </p>
         </div>
-        <button
-          onClick={handleCreatePersonnel}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-        >
-          <Plus className="h-5 w-5" />
-          <span className="hidden sm:inline">Nouveau Personnel</span>
-          <span className="sm:hidden">Nouveau</span>
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCreateTeacher}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="hidden sm:inline">Nouvel Enseignant</span>
+            <span className="sm:hidden">Enseignant</span>
+          </button>
+          <button
+            onClick={handleCreatePersonnel}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors shadow-sm"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="hidden sm:inline">Secrétaire</span>
+            <span className="sm:hidden">Secrétaire</span>
+          </button>
+        </div>
       </div>
 
       {/* Error Message */}
@@ -364,6 +385,13 @@ export default function PersonnelPage() {
       )}
 
       {/* Modals */}
+      <TeacherFormModal
+        isOpen={teacherModal.isOpen}
+        onClose={() => setTeacherModal({ isOpen: false, user: null })}
+        user={teacherModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
       <UserFormModal
         isOpen={formModal.isOpen}
         onClose={() => setFormModal({ isOpen: false, user: null })}

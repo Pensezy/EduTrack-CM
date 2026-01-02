@@ -31,6 +31,7 @@ export default function SchoolsPage() {
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, school: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, school: null });
+  const [adminModal, setAdminModal] = useState({ isOpen: false, school: null });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, school: null });
 
   useEffect(() => {
@@ -45,7 +46,15 @@ export default function SchoolsPage() {
       const supabase = getSupabaseClient();
       let query = supabase
         .from('schools')
-        .select('*')
+        .select(`
+          *,
+          director:director_user_id(
+            id,
+            email,
+            full_name,
+            phone
+          )
+        `)
         .order('created_at', { ascending: false });
 
       // 🔒 SÉCURITÉ: Les directeurs ne voient que leur école
@@ -147,7 +156,12 @@ export default function SchoolsPage() {
   };
 
   const handleViewSchool = (school) => {
-    setViewModal({ isOpen: true, school });
+    // Si admin, ouvrir le modal admin, sinon le modal view simple
+    if (user?.role === 'admin') {
+      setAdminModal({ isOpen: true, school });
+    } else {
+      setViewModal({ isOpen: true, school });
+    }
   };
 
   const handleDeleteSchool = (school) => {
@@ -304,8 +318,17 @@ export default function SchoolsPage() {
                     onClick={() => handleViewSchool(school)}
                     className="flex-1 inline-flex items-center justify-center gap-2 px-3 py-2 bg-primary-50 text-primary-600 rounded-lg hover:bg-primary-100 transition-colors text-sm font-medium"
                   >
-                    <Eye className="h-4 w-4" />
-                    <span className="hidden sm:inline">Voir</span>
+                    {user?.role === 'admin' ? (
+                      <>
+                        <Settings className="h-4 w-4" />
+                        <span className="hidden sm:inline">Gérer</span>
+                      </>
+                    ) : (
+                      <>
+                        <Eye className="h-4 w-4" />
+                        <span className="hidden sm:inline">Voir</span>
+                      </>
+                    )}
                   </button>
                   <button
                     onClick={() => handleEditSchool(school)}
@@ -340,6 +363,13 @@ export default function SchoolsPage() {
         onClose={() => setViewModal({ isOpen: false, school: null })}
         school={viewModal.school}
         onEdit={handleEditSchool}
+      />
+
+      <SchoolAdminModal
+        isOpen={adminModal.isOpen}
+        onClose={() => setAdminModal({ isOpen: false, school: null })}
+        school={adminModal.school}
+        onSuccess={handleModalSuccess}
       />
 
       <SchoolDeleteModal
