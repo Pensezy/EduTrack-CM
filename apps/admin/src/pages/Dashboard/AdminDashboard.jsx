@@ -1,6 +1,17 @@
+/**
+ * Dashboard Administrateur
+ *
+ * Affiche les statistiques globales pour l'admin:
+ * - Écoles, utilisateurs, élèves, enseignants
+ * - Applications et packs (actifs, revenus)
+ * - Demandes en attente (apps, packs, inscriptions)
+ * - Revenus générés
+ * - Activités récentes
+ */
+
 import { useState, useEffect } from 'react';
-import { useAuth, adminDashboardService } from '@edutrack/api';
-import { formatCurrency, formatNumber } from '@edutrack/utils';
+import { useAuth, getSupabaseClient } from '@edutrack/api';
+import { formatNumber } from '@edutrack/utils';
 import {
   School,
   Users,
@@ -9,34 +20,37 @@ import {
   AlertCircle,
   FileText,
   DollarSign,
-  UserCheck
+  UserCheck,
+  Grid3x3,
+  Package,
+  ClipboardList,
+  CheckCircle,
+  Clock,
+  XCircle
 } from 'lucide-react';
-import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
 // Stat Card Component
-function StatCard({ title, value, icon: Icon, trend, color = 'primary' }) {
+function StatCard({ title, value, icon: Icon, subtitle, color = 'primary', onClick }) {
   const colorClasses = {
     primary: 'bg-primary-50 text-primary-600',
     secondary: 'bg-purple-50 text-purple-600',
     success: 'bg-green-50 text-green-600',
     warning: 'bg-yellow-50 text-yellow-600',
-    danger: 'bg-red-50 text-red-600'
+    danger: 'bg-red-50 text-red-600',
+    blue: 'bg-blue-50 text-blue-600',
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+    <div
+      className={`bg-white rounded-lg shadow-sm border border-gray-200 p-6 ${onClick ? 'cursor-pointer hover:shadow-md transition-shadow' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center justify-between">
         <div className="flex-1">
           <p className="text-sm font-medium text-gray-600 mb-1">{title}</p>
           <p className="text-2xl font-bold text-gray-900">{value}</p>
-          {trend && (
-            <div className="flex items-center mt-2">
-              <TrendingUp className={`h-4 w-4 mr-1 ${trend > 0 ? 'text-green-500' : 'text-red-500'}`} />
-              <span className={`text-sm ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {trend > 0 ? '+' : ''}{trend}%
-              </span>
-              <span className="text-sm text-gray-500 ml-1">vs mois dernier</span>
-            </div>
+          {subtitle && (
+            <p className="text-xs text-gray-500 mt-1">{subtitle}</p>
           )}
         </div>
         <div className={`${colorClasses[color]} p-3 rounded-lg`}>
@@ -50,7 +64,21 @@ function StatCard({ title, value, icon: Icon, trend, color = 'primary' }) {
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
-  const [metrics, setMetrics] = useState(null);
+  const [stats, setStats] = useState({
+    schools: 0,
+    users: 0,
+    students: 0,
+    teachers: 0,
+    classes: 0,
+    apps: 0,
+    bundles: 0,
+    activeSubscriptions: 0,
+    pendingAppRequests: 0,
+    pendingBundleRequests: 0,
+    pendingEnrollments: 0,
+    monthlyRevenue: 0,
+    yearlyRevenue: 0,
+  });
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -61,20 +89,84 @@ export default function AdminDashboard() {
     try {
       setLoading(true);
       setError('');
+      const supabase = getSupabaseClient();
 
-      // Récupérer les vraies données depuis Supabase
-      const metrics = await adminDashboardService.getDashboardMetrics();
+      // Récupérer toutes les stats en parallèle
+      const [
+        schoolsRes,
+        usersRes,
+        studentsRes,
+        teachersRes,
+        classesRes,
+        appsRes,
+        bundlesRes,
+        subsRes,
+        appRequestsRes,
+        bundleRequestsRes,
+        enrollmentsRes,
+      ] = await Promise.all([
+        // Écoles
+        supabase.from('schools').select('*', { count: 'exact', head: true }),
+        // Utilisateurs
+        supabase.from('users').select('*', { count: 'exact', head: true }),
+        // Élèves
+        supabase.from('students').select('*', { count: 'exact', head: true }),
+        // Enseignants
+        supabase.from('users').select('*', { count: 'exact', head: true }).eq('role', 'teacher'),
+        // Classes
+        supabase.from('classes').select('*', { count: 'exact', head: true }),
+        // Apps
+        supabase.from('apps').select('*', { count: 'exact', head: true }),
+        // Bundles
+        supabase.from('bundles').select('*', { count: 'exact', head: true }),
+        // Subscriptions actives
+        supabase.from('school_subscriptions').select('*', { count: 'exact', head: true }).in('status', ['active', 'trial']),
+        // Demandes d'apps en attente
+        supabase.from('app_access_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        // Demandes de packs en attente
+        supabase.from('bundle_access_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+        // Demandes d'inscription en attente
+        supabase.from('enrollment_requests').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+      ]);
 
-      setMetrics(metrics);
+      // Calculer les revenus (toutes les subscriptions actives)
+      const { data: activeSubsData } = await supabase
+        .from('school_subscriptions')
+        .select('amount_paid')
+        .in('status', ['active', 'trial']);
+
+      const { data: activeBundlesData } = await supabase
+        .from('school_bundle_subscriptions')
+        .select('amount_paid')
+        .in('status', ['active', 'trial']);
+
+      const totalRevenue = [
+        ...(activeSubsData || []),
+        ...(activeBundlesData || [])
+      ].reduce((sum, item) => sum + (item.amount_paid || 0), 0);
+
+      setStats({
+        schools: schoolsRes.count || 0,
+        users: usersRes.count || 0,
+        students: studentsRes.count || 0,
+        teachers: teachersRes.count || 0,
+        classes: classesRes.count || 0,
+        apps: appsRes.count || 0,
+        bundles: bundlesRes.count || 0,
+        activeSubscriptions: subsRes.count || 0,
+        pendingAppRequests: appRequestsRes.count || 0,
+        pendingBundleRequests: bundleRequestsRes.count || 0,
+        pendingEnrollments: enrollmentsRes.count || 0,
+        monthlyRevenue: totalRevenue / 12, // Approximation
+        yearlyRevenue: totalRevenue,
+      });
     } catch (err) {
       console.error('Error fetching dashboard data:', err);
-      setError('Erreur lors du chargement des données. Vérifiez votre connexion Supabase.');
+      setError('Erreur lors du chargement des données du dashboard');
     } finally {
       setLoading(false);
     }
   };
-
-  const COLORS = ['#2563eb', '#7c3aed', '#10b981', '#f59e0b', '#ef4444'];
 
   if (loading) {
     return (
@@ -97,153 +189,230 @@ export default function AdminDashboard() {
     );
   }
 
+  const totalPendingRequests = stats.pendingAppRequests + stats.pendingBundleRequests + stats.pendingEnrollments;
+
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-          Tableau de bord administratif
+        <h1 className="text-2xl font-bold text-gray-900">
+          Dashboard Administrateur
         </h1>
         <p className="mt-1 text-sm text-gray-500">
-          Bienvenue, {user?.full_name || 'Administrateur'}
+          Vue d'ensemble de la plateforme EduTrack
         </p>
       </div>
 
-      {/* Stats Grid */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 sm:gap-6">
-        <StatCard
-          title="Écoles"
-          value={formatNumber(metrics.totalSchools)}
-          icon={School}
-          trend={metrics.schoolsGrowth}
-          color="primary"
-        />
-        <StatCard
-          title="Élèves"
-          value={formatNumber(metrics.totalStudents)}
-          icon={Users}
-          trend={metrics.studentsGrowth}
-          color="secondary"
-        />
-        <StatCard
-          title="Enseignants"
-          value={formatNumber(metrics.totalTeachers)}
-          icon={UserCheck}
-          trend={metrics.teachersGrowth}
-          color="success"
-        />
-        <StatCard
-          title="Revenus (mois)"
-          value={formatCurrency(metrics.monthlyRevenue)}
-          icon={DollarSign}
-          trend={metrics.revenueGrowth}
-          color="warning"
-        />
-      </div>
-
-      {/* Secondary Stats */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 sm:gap-6">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center">
-            <GraduationCap className="h-7 w-7 sm:h-8 sm:w-8 text-primary-600" />
-            <div className="ml-3 sm:ml-4">
-              <p className="text-sm font-medium text-gray-600">Classes</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">{formatNumber(metrics.totalClasses)}</p>
+      {/* Alerte demandes en attente */}
+      {totalPendingRequests > 0 && (
+        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4">
+          <div className="flex">
+            <Clock className="h-5 w-5 text-yellow-400" />
+            <div className="ml-3">
+              <p className="text-sm text-yellow-800">
+                <span className="font-medium">{totalPendingRequests} demande{totalPendingRequests > 1 ? 's' : ''} en attente</span> de votre validation
+              </p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <div className="flex items-center">
-            <FileText className="h-7 w-7 sm:h-8 sm:w-8 text-yellow-600" />
-            <div className="ml-3 sm:ml-4">
-              <p className="text-sm font-medium text-gray-600">Demandes en attente</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">{formatNumber(metrics.pendingEnrollments)}</p>
+      )}
+
+      {/* Stats principales */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Statistiques globales</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          <StatCard
+            title="Écoles"
+            value={formatNumber(stats.schools)}
+            icon={School}
+            subtitle="Établissements inscrits"
+            color="primary"
+            onClick={() => window.location.href = '/schools'}
+          />
+          <StatCard
+            title="Utilisateurs"
+            value={formatNumber(stats.users)}
+            icon={Users}
+            subtitle="Comptes actifs"
+            color="blue"
+            onClick={() => window.location.href = '/users'}
+          />
+          <StatCard
+            title="Élèves"
+            value={formatNumber(stats.students)}
+            icon={GraduationCap}
+            subtitle="Total inscrits"
+            color="secondary"
+          />
+          <StatCard
+            title="Enseignants"
+            value={formatNumber(stats.teachers)}
+            icon={UserCheck}
+            subtitle="Personnel éducatif"
+            color="success"
+          />
+        </div>
+      </div>
+
+      {/* Applications & Packs */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Applications & Packs</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          <StatCard
+            title="Applications"
+            value={formatNumber(stats.apps)}
+            icon={Grid3x3}
+            subtitle={`${stats.activeSubscriptions} abonnements actifs`}
+            color="primary"
+            onClick={() => window.location.href = '/apps-catalog'}
+          />
+          <StatCard
+            title="Packs"
+            value={formatNumber(stats.bundles)}
+            icon={Package}
+            subtitle="Packs disponibles"
+            color="secondary"
+          />
+          <StatCard
+            title="Revenus annuels"
+            value={`${formatNumber(stats.yearlyRevenue)} FCFA`}
+            icon={DollarSign}
+            subtitle={`~${formatNumber(stats.monthlyRevenue)} FCFA/mois`}
+            color="warning"
+          />
+        </div>
+      </div>
+
+      {/* Demandes en attente */}
+      <div>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Demandes en attente</h2>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <StatCard
+            title="Demandes d'Apps"
+            value={formatNumber(stats.pendingAppRequests)}
+            icon={ClipboardList}
+            subtitle="En attente de validation"
+            color={stats.pendingAppRequests > 0 ? 'warning' : 'success'}
+            onClick={() => window.location.href = '/app-requests'}
+          />
+          <StatCard
+            title="Demandes de Packs"
+            value={formatNumber(stats.pendingBundleRequests)}
+            icon={Package}
+            subtitle="En attente de validation"
+            color={stats.pendingBundleRequests > 0 ? 'warning' : 'success'}
+          />
+          <StatCard
+            title="Inscriptions"
+            value={formatNumber(stats.pendingEnrollments)}
+            icon={FileText}
+            subtitle="Demandes d'inscription"
+            color={stats.pendingEnrollments > 0 ? 'warning' : 'success'}
+            onClick={() => window.location.href = '/enrollment'}
+          />
+        </div>
+      </div>
+
+      {/* Statistiques académiques */}
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+        {/* Classes */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Classes</h3>
+            <GraduationCap className="h-6 w-6 text-primary-600" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Total des classes</span>
+              <span className="text-lg font-bold text-gray-900">{formatNumber(stats.classes)}</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Moyenne par école</span>
+              <span className="text-lg font-bold text-gray-900">
+                {stats.schools > 0 ? formatNumber(Math.round(stats.classes / stats.schools)) : 0}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Élèves par classe</span>
+              <span className="text-lg font-bold text-gray-900">
+                {stats.classes > 0 ? formatNumber(Math.round(stats.students / stats.classes)) : 0}
+              </span>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6 sm:col-span-2 lg:col-span-1">
-          <div className="flex items-center">
-            <Users className="h-7 w-7 sm:h-8 sm:w-8 text-green-600" />
-            <div className="ml-3 sm:ml-4">
-              <p className="text-sm font-medium text-gray-600">Utilisateurs actifs</p>
-              <p className="text-lg sm:text-xl font-bold text-gray-900">{formatNumber(metrics.activeUsers)}</p>
+
+        {/* Taux d'utilisation */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold text-gray-900">Utilisation plateforme</h3>
+            <TrendingUp className="h-6 w-6 text-green-600" />
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Taux d'adoption apps</span>
+              <span className="text-lg font-bold text-gray-900">
+                {stats.schools > 0 && stats.apps > 0
+                  ? `${Math.round((stats.activeSubscriptions / (stats.schools * stats.apps)) * 100)}%`
+                  : '0%'
+                }
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Écoles actives</span>
+              <span className="text-lg font-bold text-gray-900">
+                {formatNumber(stats.schools)}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm text-gray-600">Revenue par école</span>
+              <span className="text-lg font-bold text-gray-900">
+                {stats.schools > 0
+                  ? `${formatNumber(Math.round(stats.yearlyRevenue / stats.schools))} FCFA`
+                  : '0 FCFA'
+                }
+              </span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 sm:gap-6">
-        {/* Enrollment Trends */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-            Inscriptions mensuelles
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <LineChart data={metrics.enrollmentsByMonth}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
-              <YAxis tick={{ fontSize: 12 }} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Line
-                type="monotone"
-                dataKey="count"
-                stroke="#2563eb"
-                strokeWidth={2}
-                name="Inscriptions"
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Schools by Type */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-          <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-            Répartition des écoles
-          </h3>
-          <ResponsiveContainer width="100%" height={250}>
-            <PieChart>
-              <Pie
-                data={metrics.schoolsByType}
-                cx="50%"
-                cy="50%"
-                labelLine={false}
-                label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}
-                outerRadius={70}
-                fill="#8884d8"
-                dataKey="value"
-              >
-                {metrics.schoolsByType.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Pie>
-              <Tooltip />
-            </PieChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* Recent Activities */}
-      <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-3 sm:mb-4">
-          Activités récentes
-        </h3>
-        <div className="space-y-3 sm:space-y-4">
-          {metrics.recentActivities.map((activity) => (
-            <div key={activity.id} className="flex items-start pb-3 sm:pb-4 border-b border-gray-100 last:border-0">
-              <div className="flex-shrink-0">
-                {activity.type === 'school' && <School className="h-5 w-5 text-primary-600" />}
-                {activity.type === 'enrollment' && <FileText className="h-5 w-5 text-yellow-600" />}
-                {activity.type === 'user' && <Users className="h-5 w-5 text-green-600" />}
-                {activity.type === 'payment' && <DollarSign className="h-5 w-5 text-purple-600" />}
-              </div>
-              <div className="ml-3 flex-1 min-w-0">
-                <p className="text-sm text-gray-900 break-words">{activity.message}</p>
-                <p className="text-xs text-gray-500 mt-1">{activity.time}</p>
-              </div>
-            </div>
-          ))}
+      {/* Actions rapides */}
+      <div className="bg-gradient-to-br from-primary-500 to-primary-600 rounded-lg shadow-lg p-6 text-white">
+        <h3 className="text-lg font-semibold mb-4">Actions rapides</h3>
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <button
+            onClick={() => window.location.href = '/schools'}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 text-center transition-all"
+          >
+            <School className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Gérer écoles</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/apps-catalog'}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 text-center transition-all"
+          >
+            <Grid3x3 className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Catalogue Apps</span>
+          </button>
+          <button
+            onClick={() => window.location.href = '/app-requests'}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 text-center transition-all relative"
+          >
+            <ClipboardList className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Demandes</span>
+            {(stats.pendingAppRequests + stats.pendingBundleRequests) > 0 && (
+              <span className="absolute top-2 right-2 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white bg-red-600 rounded-full">
+                {stats.pendingAppRequests + stats.pendingBundleRequests}
+              </span>
+            )}
+          </button>
+          <button
+            onClick={() => window.location.href = '/users'}
+            className="bg-white bg-opacity-20 hover:bg-opacity-30 rounded-lg p-4 text-center transition-all"
+          >
+            <Users className="h-6 w-6 mx-auto mb-2" />
+            <span className="text-sm font-medium">Utilisateurs</span>
+          </button>
         </div>
       </div>
     </div>

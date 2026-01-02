@@ -14,7 +14,7 @@
 DO $$
 BEGIN
   RAISE NOTICE '🔧 Nettoyage des anciennes politiques RLS...';
-END $$;
+END $$; 
 
 -- ============================================================================
 -- TABLE: apps - NETTOYAGE COMPLET

@@ -4,19 +4,22 @@ import { X, AlertTriangle, CheckCircle, Info, DollarSign, Calendar, Zap } from '
 import { getSupabaseClient } from '@edutrack/api';
 
 /**
- * Modal de confirmation pour souscrire à une application
+ * Modal de demande d'accès à une application
  *
  * Affiche:
  * - Les détails de l'application
- * - Le prix et la période d'essai
+ * - Le prix
  * - Les fonctionnalités incluses
- * - Avertissement si l'app est en développement
- * - Confirmation avant souscription
+ * - Avertissement si l'app est en développement (bloque la demande)
+ * - Formulaire de demande avec message optionnel
+ *
+ * Workflow:
+ * - Directeur fait une demande → Admin approuve → Abonnement créé
  */
 export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
-  const [subscriptionType, setSubscriptionType] = useState('trial'); // trial ou direct
+  const [requestMessage, setRequestMessage] = useState('');
 
   if (!app) return null;
 
@@ -24,7 +27,7 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
   const isBeta = app.development_status === 'beta';
   const isFree = app.is_core || app.price_yearly === 0;
 
-  const handleSubscribe = async () => {
+  const handleRequestAccess = async () => {
     setLoading(true);
     setError('');
 
@@ -38,7 +41,7 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
       // Récupérer les infos utilisateur pour avoir le school_id
       const { data: userData, error: userError } = await supabase
         .from('users')
-        .select('current_school_id')
+        .select('current_school_id, id')
         .eq('id', user.id)
         .single();
 
@@ -47,51 +50,52 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
         throw new Error('Aucune école associée à votre compte');
       }
 
+      // Vérifier si une demande existe déjà
+      const { data: existingRequest } = await supabase
+        .from('app_access_requests')
+        .select('id, status')
+        .eq('school_id', userData.current_school_id)
+        .eq('app_id', app.id)
+        .eq('status', 'pending')
+        .single();
+
+      if (existingRequest) {
+        throw new Error('Vous avez déjà une demande en attente pour cette application');
+      }
+
       // Vérifier si l'abonnement existe déjà
-      const { data: existing, error: existingError } = await supabase
+      const { data: existingSub } = await supabase
         .from('school_subscriptions')
         .select('id, status')
         .eq('school_id', userData.current_school_id)
         .eq('app_id', app.id)
+        .in('status', ['active', 'trial'])
         .single();
 
-      if (!existingError && existing) {
+      if (existingSub) {
         throw new Error('Vous êtes déjà abonné à cette application');
       }
 
-      // Créer l'abonnement
-      const now = new Date();
-      const subscriptionData = {
-        school_id: userData.current_school_id,
-        app_id: app.id,
-        status: subscriptionType,
-        activated_at: now.toISOString(),
-      };
-
-      if (subscriptionType === 'trial') {
-        // Période d'essai de 30 jours
-        const trialEnds = new Date(now);
-        trialEnds.setDate(trialEnds.getDate() + 30);
-        subscriptionData.trial_ends_at = trialEnds.toISOString();
-      } else {
-        // Abonnement direct pour 1 an
-        const expires = new Date(now);
-        expires.setFullYear(expires.getFullYear() + 1);
-        subscriptionData.expires_at = expires.toISOString();
-        subscriptionData.amount_paid = app.price_yearly;
-      }
-
+      // Créer la demande d'accès
       const { error: insertError } = await supabase
-        .from('school_subscriptions')
-        .insert([subscriptionData]);
+        .from('app_access_requests')
+        .insert([{
+          school_id: userData.current_school_id,
+          app_id: app.id,
+          requested_by: userData.id,
+          request_message: requestMessage.trim() || null,
+          status: 'pending'
+        }]);
 
       if (insertError) throw insertError;
 
+      alert('✅ Demande envoyée avec succès !\n\nVotre demande d\'accès a été envoyée à l\'administrateur. Vous serez notifié une fois qu\'elle sera traitée.');
       onSuccess?.();
       onClose();
+      setRequestMessage('');
     } catch (err) {
-      console.error('Error subscribing to app:', err);
-      setError(err.message || 'Erreur lors de la souscription');
+      console.error('Error requesting app access:', err);
+      setError(err.message || 'Erreur lors de l\'envoi de la demande');
     } finally {
       setLoading(false);
     }
@@ -105,8 +109,8 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
             <span className="text-2xl">{app.icon}</span>
           </div>
           <div>
-            <h2 className="text-lg font-semibold text-gray-900">Souscrire à {app.name}</h2>
-            <p className="text-sm text-gray-500">Confirmez votre abonnement</p>
+            <h2 className="text-lg font-semibold text-gray-900">Demander l'accès à {app.name}</h2>
+            <p className="text-sm text-gray-500">Envoyez votre demande à l'administrateur</p>
           </div>
         </div>
         <button
@@ -124,34 +128,34 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
           </div>
         )}
 
-        {/* Avertissement si app en développement */}
+        {/* Avertissement si app en développement (BLOQUÉ) */}
         {isInDevelopment && (
-          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="p-4 bg-red-50 border-2 border-red-200 rounded-lg">
             <div className="flex gap-3">
-              <AlertTriangle className="h-5 w-5 text-orange-600 flex-shrink-0 mt-0.5" />
+              <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-orange-900">
-                  Application en développement
+                <p className="text-sm font-medium text-red-900">
+                  Application non disponible
                 </p>
-                <p className="text-sm text-orange-800 mt-1">
-                  Cette application est encore en cours de développement. Certaines fonctionnalités peuvent ne pas être disponibles ou fonctionner partiellement.
+                <p className="text-sm text-red-800 mt-1">
+                  Cette application est encore en cours de développement et n'est pas encore disponible pour une demande d'accès. Veuillez réessayer lorsqu'elle sera en version Beta ou Prête.
                 </p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Avertissement si beta */}
-        {isBeta && (
-          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+        {/* Info si beta */}
+        {isBeta && !isInDevelopment && (
+          <div className="p-4 bg-purple-50 border border-purple-200 rounded-lg">
             <div className="flex gap-3">
-              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <Info className="h-5 w-5 text-purple-600 flex-shrink-0 mt-0.5" />
               <div className="flex-1">
-                <p className="text-sm font-medium text-blue-900">
+                <p className="text-sm font-medium text-purple-900">
                   Version Beta
                 </p>
-                <p className="text-sm text-blue-800 mt-1">
-                  Cette application est en version beta. Vous pourriez rencontrer des bugs ou des fonctionnalités incomplètes.
+                <p className="text-sm text-purple-800 mt-1">
+                  Cette application est en phase de test. Vous pourriez rencontrer des bugs ou des fonctionnalités incomplètes. Votre demande sera examinée par l'administrateur.
                 </p>
               </div>
             </div>
@@ -179,55 +183,38 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
           </div>
         )}
 
-        {/* Prix et options d'abonnement */}
-        {!isFree && (
-          <div className="space-y-3">
-            <h3 className="text-sm font-medium text-gray-900">Type d'abonnement</h3>
+        {/* Prix (pour information) */}
+        {!isFree && !isInDevelopment && (
+          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+            <div className="flex items-center gap-2 text-sm">
+              <DollarSign className="h-4 w-4 text-gray-600" />
+              <span className="font-medium text-gray-900">Prix annuel:</span>
+              <span className="text-gray-700">{app.price_yearly?.toLocaleString()} FCFA/an</span>
+            </div>
+            <p className="text-xs text-gray-600 mt-2">
+              Le paiement sera effectué uniquement après approbation de l'administrateur
+            </p>
+          </div>
+        )}
 
-            {/* Option: Période d'essai */}
-            <label className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-500 transition-colors">
-              <input
-                type="radio"
-                name="subscriptionType"
-                value="trial"
-                checked={subscriptionType === 'trial'}
-                onChange={(e) => setSubscriptionType(e.target.value)}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-yellow-600" />
-                  <span className="font-medium text-gray-900">Essai gratuit</span>
-                  <span className="px-2 py-0.5 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
-                    Recommandé
-                  </span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  Testez gratuitement pendant 30 jours, puis {app.price_yearly?.toLocaleString()} FCFA/an
-                </p>
-              </div>
+        {/* Formulaire de demande */}
+        {!isInDevelopment && (
+          <div className="space-y-2">
+            <label htmlFor="request-message" className="block text-sm font-medium text-gray-900">
+              Message (optionnel)
             </label>
-
-            {/* Option: Abonnement direct */}
-            <label className="flex items-start gap-3 p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:border-primary-500 transition-colors">
-              <input
-                type="radio"
-                name="subscriptionType"
-                value="active"
-                checked={subscriptionType === 'active'}
-                onChange={(e) => setSubscriptionType(e.target.value)}
-                className="mt-1"
-              />
-              <div className="flex-1">
-                <div className="flex items-center gap-2">
-                  <DollarSign className="h-4 w-4 text-green-600" />
-                  <span className="font-medium text-gray-900">Abonnement annuel</span>
-                </div>
-                <p className="text-sm text-gray-600 mt-1">
-                  {app.price_yearly?.toLocaleString()} FCFA/an - Accès immédiat et complet
-                </p>
-              </div>
-            </label>
+            <textarea
+              id="request-message"
+              value={requestMessage}
+              onChange={(e) => setRequestMessage(e.target.value)}
+              placeholder="Expliquez pourquoi cette application est nécessaire pour votre établissement..."
+              rows={4}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 text-sm"
+              disabled={loading}
+            />
+            <p className="text-xs text-gray-500">
+              Ce message sera envoyé à l'administrateur avec votre demande
+            </p>
           </div>
         )}
 
@@ -248,23 +235,21 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
           </div>
         )}
 
-        {/* Détails de validité */}
-        {!isFree && (
-          <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg space-y-2">
-            <div className="flex items-center gap-2 text-sm text-gray-700">
-              <Calendar className="h-4 w-4" />
-              <span>
-                {subscriptionType === 'trial'
-                  ? 'Période d\'essai de 30 jours'
-                  : 'Abonnement valable 1 an'
-                }
-              </span>
+        {/* Info workflow */}
+        {!isInDevelopment && (
+          <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <div className="flex gap-3">
+              <Info className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+              <div className="flex-1">
+                <p className="text-sm font-medium text-blue-900">Processus de demande</p>
+                <ul className="text-sm text-blue-800 mt-2 space-y-1 ml-4 list-disc">
+                  <li>Votre demande sera envoyée à l'administrateur</li>
+                  <li>L'administrateur examinera et approuvera/rejettera</li>
+                  <li>Vous serez notifié du résultat par email</li>
+                  <li>Si approuvée, l'application sera activée automatiquement</li>
+                </ul>
+              </div>
             </div>
-            {subscriptionType === 'trial' && (
-              <p className="text-xs text-gray-600 ml-6">
-                Vous pourrez annuler à tout moment pendant la période d'essai
-              </p>
-            )}
           </div>
         )}
       </div>
@@ -280,11 +265,11 @@ export default function AppSubscriptionModal({ isOpen, onClose, app, onSuccess }
         </button>
         <button
           type="button"
-          onClick={handleSubscribe}
+          onClick={handleRequestAccess}
           disabled={loading || isInDevelopment}
           className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {loading ? 'Souscription...' : isFree ? 'Activer gratuitement' : subscriptionType === 'trial' ? 'Démarrer l\'essai gratuit' : 'Souscrire maintenant'}
+          {loading ? 'Envoi en cours...' : 'Envoyer la demande'}
         </button>
       </div>
     </Modal>

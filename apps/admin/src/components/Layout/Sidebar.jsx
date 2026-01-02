@@ -12,7 +12,8 @@ import {
   X,
   Store,
   Package,
-  Grid3x3
+  Grid3x3,
+  ClipboardList
 } from 'lucide-react';
 
 // Configuration de navigation par rôle
@@ -27,9 +28,10 @@ const getNavigationForRole = (role) => {
     { name: 'Écoles', href: '/schools', icon: School, roles: ['admin'] },
     { name: 'Utilisateurs', href: '/users', icon: Users, roles: ['admin'] },
     { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['admin'] },
-    { name: 'Demandes', href: '/enrollment', icon: FileText, roles: ['admin'] },
+    { name: 'Demandes Inscription', href: '/enrollment', icon: FileText, roles: ['admin'] },
     { name: 'Personnel', href: '/personnel', icon: UserCog, roles: ['admin'] },
-    { name: 'Catalogue Apps', href: '/apps-catalog', icon: Grid3x3, badge: 'new', roles: ['admin'] },
+    { name: 'Catalogue Apps', href: '/apps-catalog', icon: Grid3x3, roles: ['admin'] },
+    { name: 'Demandes d\'Accès', href: '/app-requests', icon: ClipboardList, badge: 'new', roles: ['admin'] },
   ];
 
   // Menus spécifiques directeur
