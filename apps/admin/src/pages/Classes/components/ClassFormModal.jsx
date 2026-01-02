@@ -12,6 +12,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [schools, setSchools] = useState([]);
+  const [selectedSchoolType, setSelectedSchoolType] = useState('');
 
   const [formData, setFormData] = useState({
     name: '',
@@ -34,7 +35,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
       const supabase = getSupabaseClient();
       let query = supabase
         .from('schools')
-        .select('id, name, code')
+        .select('id, name, code, type')
         .eq('status', 'active')
         .order('name');
 
@@ -48,9 +49,13 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
       if (schoolsError) throw schoolsError;
       setSchools(data || []);
 
-      // Si directeur, pré-sélectionner son école
+      // Si directeur, pré-sélectionner son école et charger son type
       if (user?.role === 'principal' && user?.current_school_id && !isEditing) {
         setFormData(prev => ({ ...prev, school_id: user.current_school_id }));
+        const school = data?.find(s => s.id === user.current_school_id);
+        if (school) {
+          setSelectedSchoolType(school.type);
+        }
       }
     } catch (err) {
       console.error('Error loading schools:', err);
@@ -68,6 +73,14 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
         school_id: classData.school_id || '',
         max_students: classData.max_students || 40,
       });
+
+      // Charger le type d'école en mode édition
+      if (classData.school_id && schools.length > 0) {
+        const school = schools.find(s => s.id === classData.school_id);
+        if (school) {
+          setSelectedSchoolType(school.type);
+        }
+      }
     } else {
       // Reset form pour création
       const currentYear = new Date().getFullYear();
@@ -81,11 +94,41 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
       });
     }
     setError('');
-  }, [classData, isOpen, user]);
+  }, [classData, isOpen, user, schools]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+
+    // Si changement d'école, mettre à jour le type d'école sélectionné
+    if (name === 'school_id') {
+      const school = schools.find(s => s.id === value);
+      setSelectedSchoolType(school?.type || '');
+      // Réinitialiser le niveau si on change d'école
+      setFormData(prev => ({ ...prev, grade_level: '' }));
+    }
+  };
+
+  // Fonction pour obtenir les niveaux disponibles selon le type d'école
+  const getAvailableLevels = () => {
+    if (!selectedSchoolType) {
+      // Si pas d'école sélectionnée, afficher tous les niveaux
+      return {
+        maternelle: true,
+        primaire: true,
+        college: true,
+        lycee: true,
+      };
+    }
+
+    // Filtrer selon le type d'école
+    const type = selectedSchoolType.toLowerCase();
+    return {
+      maternelle: type === 'maternelle' || type === 'primaire',
+      primaire: type === 'primaire' || type === 'maternelle',
+      college: type === 'college' || type === 'college_lycee',
+      lycee: type === 'lycee' || type === 'college_lycee',
+    };
   };
 
   const handleSubmit = async (e) => {
@@ -200,42 +243,63 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
                   value={formData.grade_level}
                   onChange={handleChange}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
+                  disabled={!formData.school_id}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-50 disabled:text-gray-500"
                 >
-                  <option value="">Sélectionner un niveau</option>
+                  <option value="">
+                    {formData.school_id ? 'Sélectionner un niveau' : 'Sélectionner d\'abord une école'}
+                  </option>
 
-                  {/* Maternelle */}
-                  <optgroup label="Maternelle">
-                    <option value="PS">Petite Section (PS)</option>
-                    <option value="MS">Moyenne Section (MS)</option>
-                    <option value="GS">Grande Section (GS)</option>
-                  </optgroup>
+                  {/* Maternelle - Affiché uniquement pour écoles Maternelle/Primaire */}
+                  {getAvailableLevels().maternelle && (
+                    <optgroup label="Maternelle">
+                      <option value="PS">Petite Section (PS)</option>
+                      <option value="MS">Moyenne Section (MS)</option>
+                      <option value="GS">Grande Section (GS)</option>
+                    </optgroup>
+                  )}
 
-                  {/* Primaire */}
-                  <optgroup label="Primaire">
-                    <option value="SIL">SIL</option>
-                    <option value="CP">CP</option>
-                    <option value="CE1">CE1</option>
-                    <option value="CE2">CE2</option>
-                    <option value="CM1">CM1</option>
-                    <option value="CM2">CM2</option>
-                  </optgroup>
+                  {/* Primaire - Affiché uniquement pour écoles Maternelle/Primaire */}
+                  {getAvailableLevels().primaire && (
+                    <optgroup label="Primaire">
+                      <option value="SIL">SIL</option>
+                      <option value="CP">CP</option>
+                      <option value="CE1">CE1</option>
+                      <option value="CE2">CE2</option>
+                      <option value="CM1">CM1</option>
+                      <option value="CM2">CM2</option>
+                    </optgroup>
+                  )}
 
-                  {/* Collège */}
-                  <optgroup label="Collège">
-                    <option value="6eme">6ème</option>
-                    <option value="5eme">5ème</option>
-                    <option value="4eme">4ème</option>
-                    <option value="3eme">3ème</option>
-                  </optgroup>
+                  {/* Collège - Affiché uniquement pour écoles Collège/Collège-Lycée */}
+                  {getAvailableLevels().college && (
+                    <optgroup label="Collège">
+                      <option value="6eme">6ème</option>
+                      <option value="5eme">5ème</option>
+                      <option value="4eme">4ème</option>
+                      <option value="3eme">3ème</option>
+                    </optgroup>
+                  )}
 
-                  {/* Lycée */}
-                  <optgroup label="Lycée">
-                    <option value="seconde">Seconde</option>
-                    <option value="premiere">Première</option>
-                    <option value="terminale">Terminale</option>
-                  </optgroup>
+                  {/* Lycée - Affiché uniquement pour écoles Lycée/Collège-Lycée */}
+                  {getAvailableLevels().lycee && (
+                    <optgroup label="Lycée">
+                      <option value="seconde">Seconde</option>
+                      <option value="premiere">Première</option>
+                      <option value="terminale">Terminale</option>
+                    </optgroup>
+                  )}
                 </select>
+                {!formData.school_id && (
+                  <p className="mt-1 text-xs text-amber-600">
+                    💡 Sélectionnez d'abord une école pour voir les niveaux disponibles
+                  </p>
+                )}
+                {formData.school_id && selectedSchoolType && (
+                  <p className="mt-1 text-xs text-blue-600">
+                    ℹ️ Niveaux disponibles pour : {selectedSchoolType === 'maternelle' ? 'Maternelle' : selectedSchoolType === 'primaire' ? 'Primaire' : selectedSchoolType === 'college' ? 'Collège' : selectedSchoolType === 'lycee' ? 'Lycée' : 'Collège et Lycée'}
+                  </p>
+                )}
               </div>
 
               <div>

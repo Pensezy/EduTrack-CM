@@ -31,7 +31,8 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm dev:*)",
       "Bash(node scripts/check-env-vars.js:*)",
-      "Bash(pnpm --filter hub build:*)"
+      "Bash(pnpm --filter hub build:*)",
+      "Bash(node scripts/create-admin-user.js:*)"
     ]
   }
 }

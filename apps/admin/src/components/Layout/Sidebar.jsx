@@ -14,21 +14,53 @@ import {
   Package
 } from 'lucide-react';
 
-const navigation = [
-  { name: 'Dashboard', href: '/', icon: LayoutDashboard },
-  { name: 'Écoles', href: '/schools', icon: School },
-  { name: 'Utilisateurs', href: '/users', icon: Users },
-  { name: 'Classes', href: '/classes', icon: GraduationCap },
-  { name: 'Demandes', href: '/enrollment', icon: FileText },
-  { name: 'Personnel', href: '/personnel', icon: UserCog },
-  { name: 'App Store', href: '/app-store', icon: Store, badge: 'new' },
-  { name: 'Mes Apps', href: '/my-apps', icon: Package },
-  { name: 'Paramètres', href: '/settings', icon: Settings },
-];
+// Configuration de navigation par rôle
+const getNavigationForRole = (role) => {
+  // Menu de base pour tous
+  const baseNavigation = [
+    { name: 'Dashboard', href: '/', icon: LayoutDashboard, roles: ['admin', 'principal'] },
+  ];
+
+  // Menus spécifiques admin
+  const adminOnlyMenus = [
+    { name: 'Écoles', href: '/schools', icon: School, roles: ['admin'] },
+    { name: 'Utilisateurs', href: '/users', icon: Users, roles: ['admin'] },
+    { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['admin'] },
+    { name: 'Demandes', href: '/enrollment', icon: FileText, roles: ['admin'] },
+    { name: 'Personnel', href: '/personnel', icon: UserCog, roles: ['admin'] },
+    { name: 'App Store', href: '/app-store', icon: Store, badge: 'new', roles: ['admin'] },
+    { name: 'Mes Apps', href: '/my-apps', icon: Package, roles: ['admin'] },
+  ];
+
+  // Menus spécifiques directeur
+  const principalOnlyMenus = [
+    { name: 'Mon École', href: '/schools', icon: School, roles: ['principal'] },
+    { name: 'Personnel', href: '/users', icon: Users, roles: ['principal'] },
+    { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['principal'] },
+    { name: 'Élèves & Parents', href: '/personnel', icon: UserCog, roles: ['principal'] },
+  ];
+
+  // Menu commun
+  const commonMenus = [
+    { name: 'Paramètres', href: '/settings', icon: Settings, roles: ['admin', 'principal'] },
+  ];
+
+  // Construire le menu selon le rôle
+  if (role === 'admin') {
+    return [...baseNavigation, ...adminOnlyMenus, ...commonMenus];
+  } else if (role === 'principal') {
+    return [...baseNavigation, ...principalOnlyMenus, ...commonMenus];
+  }
+
+  return baseNavigation;
+};
 
 export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
   const location = useLocation();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+
+  // Obtenir le menu de navigation selon le rôle de l'utilisateur
+  const navigation = getNavigationForRole(user?.role);
 
   const isActive = (href) => {
     if (href === '/') return location.pathname === '/';
@@ -57,7 +89,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
             className="h-8 w-8 object-contain"
           />
           <span className="ml-3 text-xl font-heading font-bold text-white">
-            EduTrack Admin
+            {user?.role === 'admin' ? 'EduTrack Admin' : 'EduTrack Directeur'}
           </span>
         </div>
         {/* Close button for mobile */}

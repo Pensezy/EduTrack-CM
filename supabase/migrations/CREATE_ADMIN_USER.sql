@@ -12,7 +12,7 @@ DO $$
 DECLARE
   -- 🔐 VARIABLES À PERSONNALISER
   v_email TEXT := 'admin@edutrack.cm';              -- Email de l'admin
-  v_password TEXT := 'AdminEduTrack!';          -- Mot de passe (min 8 caractères)
+  v_password TEXT := 'AdminEduTrack!2026';          -- Mot de passe (min 8 caractères)
   v_full_name TEXT := 'Super Admin';                -- Nom complet
   v_phone TEXT := '+237600000000';                   -- Téléphone
 

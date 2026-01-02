@@ -103,8 +103,11 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
       if (!formData.email.trim()) {
         throw new Error('L\'email est requis');
       }
-      if (!formData.current_school_id) {
-        throw new Error('L\'école est requise');
+
+      // L'école est requise SAUF pour les admins et principals (qui n'ont pas d'école spécifique)
+      const rolesWithoutSchool = ['admin', 'principal'];
+      if (!rolesWithoutSchool.includes(formData.role) && !formData.current_school_id) {
+        throw new Error('L\'école est requise pour ce type d\'utilisateur');
       }
 
       // 🔒 SÉCURITÉ: Les directeurs ne peuvent créer que du personnel, des parents et des élèves
@@ -118,6 +121,11 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
         if (formData.current_school_id !== currentUser.current_school_id) {
           throw new Error('Vous ne pouvez créer des utilisateurs que pour votre propre école');
         }
+      }
+
+      // Si on crée un admin ou principal, retirer l'école (doit être NULL)
+      if (rolesWithoutSchool.includes(formData.role)) {
+        formData.current_school_id = null;
       }
 
       // Vérifier l'unicité de l'email
@@ -298,7 +306,7 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
 
               <div>
                 <label htmlFor="current_school_id" className="block text-sm font-medium text-gray-700 mb-1">
-                  École *
+                  École {!['admin', 'principal'].includes(formData.role) && '*'}
                 </label>
                 <div className="relative">
                   <School className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -307,11 +315,18 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                     name="current_school_id"
                     value={formData.current_school_id}
                     onChange={handleChange}
-                    required
-                    disabled={currentUser?.role === 'principal'}
+                    required={!['admin', 'principal'].includes(formData.role)}
+                    disabled={
+                      currentUser?.role === 'principal' ||
+                      ['admin', 'principal'].includes(formData.role)
+                    }
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
                   >
-                    <option value="">Sélectionner une école</option>
+                    <option value="">
+                      {['admin', 'principal'].includes(formData.role)
+                        ? 'Aucune école (accès global)'
+                        : 'Sélectionner une école'}
+                    </option>
                     {schools.map(school => (
                       <option key={school.id} value={school.id}>
                         {school.name} ({school.code})
@@ -322,6 +337,11 @@ export default function UserFormModal({ isOpen, onClose, user, onSuccess }) {
                 {currentUser?.role === 'principal' && (
                   <p className="mt-1 text-xs text-gray-500">
                     En tant que directeur, vous ne pouvez créer que des utilisateurs de votre école
+                  </p>
+                )}
+                {['admin', 'principal'].includes(formData.role) && (
+                  <p className="mt-1 text-xs text-blue-600">
+                    ℹ️ Les {formData.role === 'admin' ? 'administrateurs' : 'directeurs'} ont accès à toutes les écoles
                   </p>
                 )}
               </div>
