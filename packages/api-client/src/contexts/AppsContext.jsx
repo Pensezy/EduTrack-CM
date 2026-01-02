@@ -41,14 +41,15 @@ export function AppsProvider({
   const { user } = useAuth();
 
   // Hooks pour les apps et abonnements
+  // IMPORTANT: Admin (current_school_id = null) doit aussi pouvoir charger les apps
   const appsData = useActiveApps({
-    enabled: !!user?.current_school_id,
+    enabled: !!user, // Activé si utilisateur connecté (admin ou autre)
     includeCatalog,
     refetchInterval,
   });
 
   const subscriptionsData = useSchoolSubscriptions({
-    enabled: !!user?.current_school_id,
+    enabled: !!user, // Activé si utilisateur connecté (admin ou autre)
     includeExpired: false,
   });
 
