@@ -11,7 +11,8 @@ import {
   LogOut,
   X,
   Store,
-  Package
+  Package,
+  Grid3x3
 } from 'lucide-react';
 
 // Configuration de navigation par rôle
@@ -28,6 +29,7 @@ const getNavigationForRole = (role) => {
     { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['admin'] },
     { name: 'Demandes', href: '/enrollment', icon: FileText, roles: ['admin'] },
     { name: 'Personnel', href: '/personnel', icon: UserCog, roles: ['admin'] },
+    { name: 'Catalogue Apps', href: '/apps-catalog', icon: Grid3x3, badge: 'new', roles: ['admin'] },
   ];
 
   // Menus spécifiques directeur
@@ -36,12 +38,8 @@ const getNavigationForRole = (role) => {
     { name: 'Personnel', href: '/users', icon: Users, roles: ['principal'] },
     { name: 'Classes', href: '/classes', icon: GraduationCap, roles: ['principal'] },
     { name: 'Élèves & Parents', href: '/personnel', icon: UserCog, roles: ['principal'] },
-  ];
-
-  // Menus communs admin ET directeur
-  const appsMenus = [
-    { name: 'App Store', href: '/app-store', icon: Store, badge: 'new', roles: ['admin', 'principal'] },
-    { name: 'Mes Apps', href: '/my-apps', icon: Package, roles: ['admin', 'principal'] },
+    { name: 'App Store', href: '/app-store', icon: Store, roles: ['principal'] },
+    { name: 'Mes Apps', href: '/my-apps', icon: Package, roles: ['principal'] },
   ];
 
   // Menu commun
@@ -51,9 +49,9 @@ const getNavigationForRole = (role) => {
 
   // Construire le menu selon le rôle
   if (role === 'admin') {
-    return [...baseNavigation, ...adminOnlyMenus, ...appsMenus, ...commonMenus];
+    return [...baseNavigation, ...adminOnlyMenus, ...commonMenus];
   } else if (role === 'principal') {
-    return [...baseNavigation, ...principalOnlyMenus, ...appsMenus, ...commonMenus];
+    return [...baseNavigation, ...principalOnlyMenus, ...commonMenus];
   }
 
   return baseNavigation;

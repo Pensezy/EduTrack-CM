@@ -11,6 +11,7 @@ import PersonnelPage from './pages/Personnel/PersonnelPage';
 import SettingsPage from './pages/Settings/SettingsPage';
 import AppStorePage from './pages/AppStore/AppStorePage';
 import MyAppsPage from './pages/MyApps/MyAppsPage';
+import AppsCatalogPage from './pages/AppsCatalog/AppsCatalogPage';
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -98,6 +99,7 @@ function AppRoutes() {
         <Route path="classes" element={<ClassesPage />} />
         <Route path="enrollment" element={<EnrollmentPage />} />
         <Route path="personnel" element={<PersonnelPage />} />
+        <Route path="apps-catalog" element={<AppsCatalogPage />} />
         <Route path="app-store" element={<AppStorePage />} />
         <Route path="my-apps" element={<MyAppsPage />} />
         <Route path="settings" element={<SettingsPage />} />
