@@ -3,6 +3,7 @@ import { AuthProvider, AppsProvider, useAuth } from '@edutrack/api';
 import AdminLayout from './components/Layout/AdminLayout';
 import Login from './pages/Auth/Login';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
+import PrincipalDashboard from './pages/Dashboard/PrincipalDashboard';
 import SchoolsPage from './pages/Schools/SchoolsPage';
 import UsersPage from './pages/Users/UsersPage';
 import ClassesPage from './pages/Classes/ClassesPage';
@@ -13,6 +14,23 @@ import AppStorePage from './pages/AppStore/AppStorePage';
 import MyAppsPage from './pages/MyApps/MyAppsPage';
 import AppsCatalogPage from './pages/AppsCatalog/AppsCatalogPage';
 import AppAccessRequestsPage from './pages/AppAccessRequests/AppAccessRequestsPage';
+import BundlesCatalogPage from './pages/Bundles/BundlesCatalogPage';
+import BundleRequestsPage from './pages/Bundles/BundleRequestsPage';
+
+// Dashboard Router - Render correct dashboard based on role
+function DashboardRouter() {
+  const { user } = useAuth();
+
+  // Admin sees global dashboard, Principal sees school-specific dashboard
+  if (user?.role === 'admin') {
+    return <AdminDashboard />;
+  } else if (user?.role === 'principal') {
+    return <PrincipalDashboard />;
+  }
+
+  // Fallback (should not happen due to ProtectedRoute)
+  return <Navigate to="/login" replace />;
+}
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -94,7 +112,7 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
-        <Route index element={<AdminDashboard />} />
+        <Route index element={<DashboardRouter />} />
         <Route path="schools" element={<SchoolsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="classes" element={<ClassesPage />} />
@@ -102,6 +120,8 @@ function AppRoutes() {
         <Route path="personnel" element={<PersonnelPage />} />
         <Route path="apps-catalog" element={<AppsCatalogPage />} />
         <Route path="app-requests" element={<AppAccessRequestsPage />} />
+        <Route path="bundles-catalog" element={<BundlesCatalogPage />} />
+        <Route path="bundle-requests" element={<BundleRequestsPage />} />
         <Route path="app-store" element={<AppStorePage />} />
         <Route path="my-apps" element={<MyAppsPage />} />
         <Route path="settings" element={<SettingsPage />} />

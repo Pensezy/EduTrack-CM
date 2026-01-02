@@ -31,7 +31,9 @@ const getNavigationForRole = (role) => {
     { name: 'Demandes Inscription', href: '/enrollment', icon: FileText, roles: ['admin'] },
     { name: 'Personnel', href: '/personnel', icon: UserCog, roles: ['admin'] },
     { name: 'Catalogue Apps', href: '/apps-catalog', icon: Grid3x3, roles: ['admin'] },
-    { name: 'Demandes d\'Accès', href: '/app-requests', icon: ClipboardList, badge: 'new', roles: ['admin'] },
+    { name: 'Demandes Apps', href: '/app-requests', icon: ClipboardList, roles: ['admin'] },
+    { name: 'Catalogue Packs', href: '/bundles-catalog', icon: Package, roles: ['admin'] },
+    { name: 'Demandes Packs', href: '/bundle-requests', icon: ClipboardList, badge: 'new', roles: ['admin'] },
   ];
 
   // Menus spécifiques directeur

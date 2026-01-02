@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react';
 import { useApps, getSupabaseClient } from '@edutrack/api';
 import { AppCard, BundleCard } from '@edutrack/ui';
 import AppSubscriptionModal from '../../components/AppSubscriptionModal.jsx';
+import BundleRequestModal from '../../components/BundleRequestModal.jsx';
 import {
   Store,
   Package,
@@ -42,6 +43,7 @@ export default function AppStorePage() {
   const [bundles, setBundles] = useState([]);
   const [bundlesLoading, setBundlesLoading] = useState(true);
   const [subscriptionModal, setSubscriptionModal] = useState({ isOpen: false, app: null });
+  const [bundleRequestModal, setBundleRequestModal] = useState({ isOpen: false, bundle: null });
 
   // Charger les bundles depuis Supabase
   useEffect(() => {
@@ -112,8 +114,13 @@ export default function AppStorePage() {
   };
 
   const handleSubscribeBundle = (bundle) => {
-    // Ouvrir modal de paiement bundle
-    alert(`Souscrire au ${bundle.name} - À implémenter`);
+    // Ouvrir modal de demande de pack
+    setBundleRequestModal({ isOpen: true, bundle });
+  };
+
+  const handleBundleRequestSuccess = () => {
+    // Rafraîchir la liste des bundles après demande
+    loadBundles();
   };
 
   if (loading) {
@@ -356,6 +363,15 @@ export default function AppStorePage() {
         onClose={() => setSubscriptionModal({ isOpen: false, app: null })}
         app={subscriptionModal.app}
         onSuccess={handleSubscriptionSuccess}
+      />
+
+      {/* Modal de demande de pack */}
+      <BundleRequestModal
+        isOpen={bundleRequestModal.isOpen}
+        onClose={() => setBundleRequestModal({ isOpen: false, bundle: null })}
+        bundle={bundleRequestModal.bundle}
+        apps={apps}
+        onSuccess={handleBundleRequestSuccess}
       />
     </div>
   );
