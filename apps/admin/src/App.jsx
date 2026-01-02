@@ -16,6 +16,7 @@ import AppsCatalogPage from './pages/AppsCatalog/AppsCatalogPage';
 import AppAccessRequestsPage from './pages/AppAccessRequests/AppAccessRequestsPage';
 import BundlesCatalogPage from './pages/Bundles/BundlesCatalogPage';
 import BundleRequestsPage from './pages/Bundles/BundleRequestsPage';
+import ManageBundlesPage from './pages/Bundles/ManageBundlesPage';
 
 // Dashboard Router - Render correct dashboard based on role
 function DashboardRouter() {
@@ -122,6 +123,7 @@ function AppRoutes() {
         <Route path="app-requests" element={<AppAccessRequestsPage />} />
         <Route path="bundles-catalog" element={<BundlesCatalogPage />} />
         <Route path="bundle-requests" element={<BundleRequestsPage />} />
+        <Route path="manage-bundles" element={<ManageBundlesPage />} />
         <Route path="app-store" element={<AppStorePage />} />
         <Route path="my-apps" element={<MyAppsPage />} />
         <Route path="settings" element={<SettingsPage />} />

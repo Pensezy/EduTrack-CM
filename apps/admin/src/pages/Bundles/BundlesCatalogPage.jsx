@@ -12,6 +12,7 @@
 import { useState, useEffect } from 'react';
 import { getSupabaseClient } from '@edutrack/api';
 import { formatNumber } from '@edutrack/utils';
+import AssignBundleModal from '../../components/AssignBundleModal.jsx';
 import {
   Package,
   Eye,
@@ -35,6 +36,7 @@ export default function BundlesCatalogPage() {
   const [error, setError] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [filterStatus, setFilterStatus] = useState('all'); // 'all' | 'active' | 'inactive'
+  const [assignModal, setAssignModal] = useState({ isOpen: false, bundle: null });
 
   useEffect(() => {
     loadBundles();
@@ -108,8 +110,12 @@ export default function BundlesCatalogPage() {
   };
 
   const handleAssignBundle = (bundle) => {
-    // TODO: Ouvrir modal pour sélectionner école et assigner
-    alert(`Assigner "${bundle.name}" à une école - À implémenter`);
+    setAssignModal({ isOpen: true, bundle });
+  };
+
+  const handleAssignSuccess = () => {
+    // Rafraîchir la liste après assignation
+    loadBundles();
   };
 
   // Filtrer les bundles
@@ -369,6 +375,14 @@ export default function BundlesCatalogPage() {
           </p>
         </div>
       )}
+
+      {/* Modal d'assignation */}
+      <AssignBundleModal
+        isOpen={assignModal.isOpen}
+        onClose={() => setAssignModal({ isOpen: false, bundle: null })}
+        bundle={assignModal.bundle}
+        onSuccess={handleAssignSuccess}
+      />
     </div>
   );
 }

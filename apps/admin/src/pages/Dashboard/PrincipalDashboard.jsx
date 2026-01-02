@@ -235,7 +235,7 @@ export default function PrincipalDashboard() {
       {/* Applications & Packs */}
       <div>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Vos applications</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className={`grid grid-cols-1 gap-4 ${totalPendingRequests > 0 ? 'sm:grid-cols-3' : 'sm:grid-cols-2'}`}>
           <StatCard
             title="Apps actives"
             value={formatNumber(stats.activeApps)}
@@ -251,13 +251,15 @@ export default function PrincipalDashboard() {
             subtitle="Packs souscrits"
             color="secondary"
           />
-          <StatCard
-            title="Demandes en cours"
-            value={formatNumber(totalPendingRequests)}
-            icon={Clock}
-            subtitle="En attente de validation"
-            color={totalPendingRequests > 0 ? 'warning' : 'success'}
-          />
+          {totalPendingRequests > 0 && (
+            <StatCard
+              title="Demandes en cours"
+              value={formatNumber(totalPendingRequests)}
+              icon={Clock}
+              subtitle="En attente de validation"
+              color="warning"
+            />
+          )}
         </div>
       </div>
 

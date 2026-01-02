@@ -283,35 +283,44 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Demandes en attente */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Demandes en attente</h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <StatCard
-            title="Demandes d'Apps"
-            value={formatNumber(stats.pendingAppRequests)}
-            icon={ClipboardList}
-            subtitle="En attente de validation"
-            color={stats.pendingAppRequests > 0 ? 'warning' : 'success'}
-            onClick={() => window.location.href = '/app-requests'}
-          />
-          <StatCard
-            title="Demandes de Packs"
-            value={formatNumber(stats.pendingBundleRequests)}
-            icon={Package}
-            subtitle="En attente de validation"
-            color={stats.pendingBundleRequests > 0 ? 'warning' : 'success'}
-          />
-          <StatCard
-            title="Inscriptions"
-            value={formatNumber(stats.pendingEnrollments)}
-            icon={FileText}
-            subtitle="Demandes d'inscription"
-            color={stats.pendingEnrollments > 0 ? 'warning' : 'success'}
-            onClick={() => window.location.href = '/enrollment'}
-          />
+      {/* Demandes en attente - Afficher uniquement s'il y a des demandes */}
+      {totalPendingRequests > 0 && (
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-4">Demandes en attente</h2>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            {stats.pendingAppRequests > 0 && (
+              <StatCard
+                title="Demandes d'Apps"
+                value={formatNumber(stats.pendingAppRequests)}
+                icon={ClipboardList}
+                subtitle="En attente de validation"
+                color="warning"
+                onClick={() => window.location.href = '/app-requests'}
+              />
+            )}
+            {stats.pendingBundleRequests > 0 && (
+              <StatCard
+                title="Demandes de Packs"
+                value={formatNumber(stats.pendingBundleRequests)}
+                icon={Package}
+                subtitle="En attente de validation"
+                color="warning"
+                onClick={() => window.location.href = '/bundle-requests'}
+              />
+            )}
+            {stats.pendingEnrollments > 0 && (
+              <StatCard
+                title="Inscriptions"
+                value={formatNumber(stats.pendingEnrollments)}
+                icon={FileText}
+                subtitle="Demandes d'inscription"
+                color="warning"
+                onClick={() => window.location.href = '/enrollment'}
+              />
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Statistiques académiques */}
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

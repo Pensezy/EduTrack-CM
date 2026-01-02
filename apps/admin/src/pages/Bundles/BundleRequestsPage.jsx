@@ -55,8 +55,8 @@ export default function BundleRequestsPage() {
         .select(`
           *,
           school:schools(id, name),
-          requester:users!bundle_access_requests_requested_by_fkey(id, first_name, last_name, email),
-          reviewer:users!bundle_access_requests_reviewed_by_fkey(id, first_name, last_name),
+          requester:users!bundle_access_requests_requested_by_fkey(id, full_name, email),
+          reviewer:users!bundle_access_requests_reviewed_by_fkey(id, full_name),
           bundle:bundles(id, name, icon, price_yearly, app_ids)
         `)
         .order('created_at', { ascending: false });
@@ -143,8 +143,7 @@ export default function BundleRequestsPage() {
     const matchesSearch = searchQuery === '' ||
       req.school?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       req.bundle?.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      req.requester?.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      req.requester?.last_name?.toLowerCase().includes(searchQuery.toLowerCase());
+      req.requester?.full_name?.toLowerCase().includes(searchQuery.toLowerCase());
 
     const matchesStatus =
       filterStatus === 'all' || req.status === filterStatus;
@@ -321,7 +320,7 @@ export default function BundleRequestsPage() {
                           </span>
                           <span className="flex items-center gap-1">
                             <User className="h-4 w-4" />
-                            {request.requester ? `${request.requester.first_name} ${request.requester.last_name}` : 'Inconnu'}
+                            {request.requester?.full_name || 'Inconnu'}
                           </span>
                           <span className="flex items-center gap-1">
                             <Calendar className="h-4 w-4" />
@@ -346,7 +345,7 @@ export default function BundleRequestsPage() {
                       <div className={`rounded-lg p-3 ${isApproved ? 'bg-green-50' : 'bg-red-50'}`}>
                         <p className="text-sm">
                           <strong className={isApproved ? 'text-green-700' : 'text-red-700'}>
-                            Réponse admin ({request.reviewer ? `${request.reviewer.first_name} ${request.reviewer.last_name}` : 'Inconnu'}):
+                            Réponse admin ({request.reviewer?.full_name || 'Inconnu'}):
                           </strong>
                           <span className={isApproved ? 'text-green-700' : 'text-red-700'}>
                             {' '}{request.review_message}

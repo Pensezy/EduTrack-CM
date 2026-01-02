@@ -13,7 +13,8 @@ import {
   Store,
   Package,
   Grid3x3,
-  ClipboardList
+  ClipboardList,
+  Edit3
 } from 'lucide-react';
 
 // Configuration de navigation par rôle
@@ -32,8 +33,9 @@ const getNavigationForRole = (role) => {
     { name: 'Personnel', href: '/personnel', icon: UserCog, roles: ['admin'] },
     { name: 'Catalogue Apps', href: '/apps-catalog', icon: Grid3x3, roles: ['admin'] },
     { name: 'Demandes Apps', href: '/app-requests', icon: ClipboardList, roles: ['admin'] },
+    { name: 'Gérer Packs', href: '/manage-bundles', icon: Edit3, roles: ['admin'] },
     { name: 'Catalogue Packs', href: '/bundles-catalog', icon: Package, roles: ['admin'] },
-    { name: 'Demandes Packs', href: '/bundle-requests', icon: ClipboardList, badge: 'new', roles: ['admin'] },
+    { name: 'Demandes Packs', href: '/bundle-requests', icon: ClipboardList, roles: ['admin'] },
   ];
 
   // Menus spécifiques directeur
