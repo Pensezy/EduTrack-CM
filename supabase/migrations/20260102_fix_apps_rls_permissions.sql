@@ -69,35 +69,6 @@ CREATE POLICY "Only admins can modify bundles"
   );
 
 -- ============================================================================
--- TABLE: bundle_apps (table de liaison)
--- ============================================================================
-
--- Supprimer les anciennes politiques
-DROP POLICY IF EXISTS "Bundle apps readable by all" ON bundle_apps;
-
--- Politique de LECTURE : Tous les utilisateurs authentifiés
-CREATE POLICY "Authenticated users can read bundle_apps"
-  ON bundle_apps FOR SELECT
-  TO authenticated
-  USING (true);
-
--- Politique de MODIFICATION : Seuls les admins
-DROP POLICY IF EXISTS "Only admins can modify bundle_apps" ON bundle_apps;
-CREATE POLICY "Only admins can modify bundle_apps"
-  ON bundle_apps FOR ALL
-  TO authenticated
-  USING (
-    auth.uid() IN (
-      SELECT id FROM users WHERE role = 'admin'
-    )
-  )
-  WITH CHECK (
-    auth.uid() IN (
-      SELECT id FROM users WHERE role = 'admin'
-    )
-  );
-
--- ============================================================================
 -- TABLE: school_subscriptions
 -- ============================================================================
 
@@ -156,7 +127,6 @@ BEGIN
   RAISE NOTICE '📋 Tables mises à jour :';
   RAISE NOTICE '   - apps (lecture : tous, modification : admins)';
   RAISE NOTICE '   - bundles (lecture : tous, modification : admins)';
-  RAISE NOTICE '   - bundle_apps (lecture : tous, modification : admins)';
   RAISE NOTICE '   - school_subscriptions (lecture selon rôle, modification : admins)';
   RAISE NOTICE '';
   RAISE NOTICE '✅ Permissions :';
