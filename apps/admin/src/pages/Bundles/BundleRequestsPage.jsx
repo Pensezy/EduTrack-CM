@@ -10,8 +10,7 @@
  */
 
 import { useState, useEffect } from 'react';
-import { getSupabaseClient } from '@edutrack/api';
-import { useAuth } from '@edutrack/contexts';
+import { getSupabaseClient, useAuth } from '@edutrack/api';
 import { formatDate, formatNumber } from '@edutrack/utils';
 import {
   Package,
