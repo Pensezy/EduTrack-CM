@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase } from '@edutrack/api';
-import { useAuth } from '@edutrack/api';
+import { getSupabaseClient, useAuth } from '@edutrack/api';
 
 /**
  * Hook personnalisé pour gérer les notifications
@@ -26,6 +25,7 @@ export function useNotifications() {
       setLoading(true);
       setError(null);
 
+      const supabase = getSupabaseClient();
       const { data, error: fetchError } = await supabase
         .from('notifications')
         .select('*')
@@ -48,6 +48,7 @@ export function useNotifications() {
   // Marquer une notification comme lue
   const markAsRead = async (notificationId) => {
     try {
+      const supabase = getSupabaseClient();
       const { error: updateError } = await supabase
         .from('notifications')
         .update({
@@ -76,6 +77,7 @@ export function useNotifications() {
     if (!user?.id) return;
 
     try {
+      const supabase = getSupabaseClient();
       const { error: updateError } = await supabase
         .from('notifications')
         .update({
@@ -105,6 +107,7 @@ export function useNotifications() {
     fetchNotifications();
 
     // S'abonner aux nouvelles notifications en temps réel
+    const supabase = getSupabaseClient();
     const channel = supabase
       .channel('notifications')
       .on(

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Modal } from '@edutrack/ui';
 import { X, User as UserIcon, Mail, Phone, Home, Briefcase, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
+import { createUserAccount, updateUserFields } from '../../../services/createUserAccount';
 
 /**
  * Modal spécialisé pour créer ou éditer un parent
@@ -217,37 +218,23 @@ export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
         // Mode création - générer mot de passe et créer compte
         const generatedPassword = generateSecurePassword();
 
-        // Créer le compte utilisateur via Supabase Auth
-        const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+        // Créer le compte via Edge Function
+        const result = await createUserAccount({
           email: connectionEmail,
           password: generatedPassword,
-          email_confirm: true, // Auto-confirmer l'email
-          user_metadata: {
-            full_name: userData.full_name,
-            role: 'parent',
-            school_id: userData.current_school_id,
-          }
+          fullName: userData.full_name,
+          phone: userData.phone,
+          role: 'parent',
+          schoolId: userData.current_school_id,
+          createdByUserId: currentUser?.id
         });
 
-        if (authError) {
-          if (authError.message.includes('already registered')) {
-            throw new Error(`Cet email (${connectionEmail}) est déjà utilisé dans le système`);
-          }
-          throw authError;
-        }
-
-        // Créer l'entrée dans la table users
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([{
-            ...userData,
-            id: authData.user.id, // Utiliser l'ID de Supabase Auth
-          }]);
-
-        if (insertError) {
-          // En cas d'erreur, supprimer le compte Auth créé
-          await supabase.auth.admin.deleteUser(authData.user.id);
-          throw insertError;
+        // Mettre à jour avec profession et address
+        if (userData.profession || userData.address) {
+          await updateUserFields(result.userId, {
+            profession: userData.profession || null,
+            address: userData.address || null,
+          });
         }
 
         // Afficher les identifiants générés
