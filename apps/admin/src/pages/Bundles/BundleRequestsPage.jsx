@@ -57,9 +57,9 @@ export default function BundleRequestsPage() {
           school:schools(id, name),
           requester:users!bundle_access_requests_requested_by_fkey(id, full_name, email),
           reviewer:users!bundle_access_requests_reviewed_by_fkey(id, full_name),
-          bundle:bundles(id, name, icon, price_yearly, app_ids)
+          bundle:bundles(id, name, price_yearly, app_ids)
         `)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false});
 
       if (requestsError) throw requestsError;
 

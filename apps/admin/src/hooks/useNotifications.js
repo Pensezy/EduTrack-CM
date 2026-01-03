@@ -27,7 +27,7 @@ export function useNotifications() {
 
       const supabase = getSupabaseClient();
       const { data, error: fetchError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
@@ -50,7 +50,7 @@ export function useNotifications() {
     try {
       const supabase = getSupabaseClient();
       const { error: updateError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .update({
           is_read: true,
           read_at: new Date().toISOString()
@@ -79,7 +79,7 @@ export function useNotifications() {
     try {
       const supabase = getSupabaseClient();
       const { error: updateError } = await supabase
-        .from('notifications')
+        .from('user_notifications')
         .update({
           is_read: true,
           read_at: new Date().toISOString()
@@ -109,13 +109,13 @@ export function useNotifications() {
     // S'abonner aux nouvelles notifications en temps réel
     const supabase = getSupabaseClient();
     const channel = supabase
-      .channel('notifications')
+      .channel('user_notifications')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'notifications',
+          table: 'user_notifications',
           filter: `user_id=eq.${user?.id}`
         },
         (payload) => {
