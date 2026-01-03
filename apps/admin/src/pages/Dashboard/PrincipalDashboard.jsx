@@ -23,8 +23,17 @@ import {
   TrendingUp,
   Clock,
   CheckCircle,
-  Calendar
+  Calendar,
+  ArrowRight
 } from 'lucide-react';
+import UpgradeBanner, { BlockingUpgradeBanner } from '../../components/UpgradeBanner';
+
+// Hook simple pour vérifier l'accès à une app
+const useAppAccess = (appId) => {
+  // TODO: Implémenter la vraie logique de vérification avec Supabase
+  // Pour l'instant, retourne false pour tester la bannière upgrade
+  return { hasAccess: false };
+};
 
 // Stat Card Component
 function StatCard({ title, value, icon: Icon, subtitle, color = 'primary', onClick }) {
@@ -60,6 +69,7 @@ function StatCard({ title, value, icon: Icon, subtitle, color = 'primary', onCli
 
 export default function PrincipalDashboard() {
   const { user } = useAuth();
+  const { hasAccess: hasAcademicApp } = useAppAccess('academic');
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     schoolName: '',
@@ -74,6 +84,11 @@ export default function PrincipalDashboard() {
     recentEnrollments: 0,
   });
   const [error, setError] = useState('');
+
+  // Constantes de limite pour App Core gratuite
+  const CORE_STUDENT_LIMIT = 20;
+  const CORE_CLASS_LIMIT = 1;
+  const CORE_TEACHER_LIMIT = 3;
 
   useEffect(() => {
     if (user?.current_school_id) {
@@ -171,16 +186,49 @@ export default function PrincipalDashboard() {
 
   const totalPendingRequests = stats.pendingAppRequests + stats.pendingBundleRequests;
 
+  // Calculer le pourcentage d'utilisation des limites
+  const studentUsagePercent = (stats.students / CORE_STUDENT_LIMIT) * 100;
+  const teacherUsagePercent = (stats.teachers / CORE_TEACHER_LIMIT) * 100;
+  const isNearStudentLimit = !hasAcademicApp && studentUsagePercent >= 80;
+  const isAtStudentLimit = !hasAcademicApp && stats.students >= CORE_STUDENT_LIMIT;
+  const isNearTeacherLimit = !hasAcademicApp && teacherUsagePercent >= 80;
+  const isAtTeacherLimit = !hasAcademicApp && stats.teachers >= CORE_TEACHER_LIMIT;
+
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          Tableau de bord - {stats.schoolName}
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          Bienvenue, {user?.full_name || 'Directeur'}
-        </p>
+      {/* Header avec indicateur de limite */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Tableau de bord - {stats.schoolName}
+          </h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Bienvenue, {user?.full_name || 'Directeur'}
+          </p>
+        </div>
+
+        {/* Indicateur de limite App Core */}
+        {!hasAcademicApp && (
+          <div className="flex items-center gap-3 bg-gray-50 rounded-lg px-4 py-2 border border-gray-200">
+            <div className="text-right">
+              <p className="text-xs text-gray-500 font-medium">App Core Gratuite</p>
+              <div className="flex items-center gap-3">
+                <p className="text-sm font-bold text-gray-700">
+                  Élèves: {stats.students}/{CORE_STUDENT_LIMIT}
+                </p>
+                <span className="text-gray-400">•</span>
+                <p className="text-sm font-bold text-gray-700">
+                  Enseignants: {stats.teachers}/{CORE_TEACHER_LIMIT}
+                </p>
+              </div>
+            </div>
+            {(isNearStudentLimit || isNearTeacherLimit) && (
+              <span className="px-2 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded">
+                ⚠️ Limite proche
+              </span>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Alerte demandes en attente */}
@@ -195,6 +243,38 @@ export default function PrincipalDashboard() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Bannière de blocage si limite élèves atteinte */}
+      {isAtStudentLimit && (
+        <BlockingUpgradeBanner
+          title="⛔ Limite de 20 élèves atteinte"
+          description="Vous ne pouvez plus ajouter d'élèves avec l'App Core gratuite. Passez à App Académique pour débloquer jusqu'à 500 élèves, des bulletins professionnels personnalisés et des statistiques avancées."
+          targetApp="App Académique"
+          price="75 000"
+        />
+      )}
+
+      {/* Bannière de blocage si limite enseignants atteinte */}
+      {isAtTeacherLimit && !isAtStudentLimit && (
+        <BlockingUpgradeBanner
+          title="⛔ Limite de 3 enseignants atteinte"
+          description="Vous ne pouvez plus ajouter d'enseignants avec l'App Core gratuite. Passez à App Académique pour créer des comptes enseignants illimités et débloquer l'accès secrétaire."
+          targetApp="App Académique"
+          price="75 000"
+        />
+      )}
+
+      {/* Bannière d'avertissement si proche de la limite */}
+      {(isNearStudentLimit || isNearTeacherLimit) && !isAtStudentLimit && !isAtTeacherLimit && (
+        <UpgradeBanner
+          title="🎓 Votre école grandit!"
+          description={`Vous approchez des limites (Élèves: ${stats.students}/${CORE_STUDENT_LIMIT}, Enseignants: ${stats.teachers}/${CORE_TEACHER_LIMIT}). Débloquez jusqu'à 500 élèves, enseignants illimités et bulletins professionnels avec App Académique.`}
+          targetApp="App Académique"
+          price="75 000"
+          variant="warning"
+          icon="crown"
+        />
       )}
 
       {/* Stats principales - Effectifs */}

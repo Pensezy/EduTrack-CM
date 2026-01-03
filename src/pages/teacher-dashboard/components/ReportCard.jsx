@@ -11,6 +11,16 @@ import {
   detectSchoolLevel
 } from '../../../utils/grading';
 import { getSubjectCoefficient } from '../../../utils/subjectCoefficients';
+import { useAuth } from '../../../contexts/AuthContext';
+import { generateBasicBulletin } from '../../../services/basicBulletinGenerator';
+import UpgradeBanner from '../../../components/UpgradeBanner';
+
+// Hook simple pour vérifier l'accès à une app
+const useAppAccess = (appId) => {
+  // TODO: Implémenter la vraie logique de vérification avec Supabase
+  // Pour l'instant, retourne false pour tester la bannière upgrade
+  return { hasAccess: false };
+};
 
 /**
  * Composant de génération de bulletin scolaire
@@ -28,6 +38,8 @@ const ReportCard = ({
 }) => {
   const reportRef = useRef(null);
   const [printing, setPrinting] = useState(false);
+  const { user } = useAuth();
+  const { hasAccess: hasAcademicApp } = useAppAccess('academic');
 
   const schoolType = classData?.school_type || 'secondaire';
   const series = classData?.series || null;
@@ -71,7 +83,33 @@ const ReportCard = ({
   const conductAverage = conduct?.average || 0;
   const conductMention = getMention(conductAverage, schoolType);
 
-  // Imprimer le bulletin
+  // Générer PDF basique (pour App Core gratuite)
+  const handleDownloadBasicPDF = () => {
+    const period = `${trimesterLabel} - Séquence ${sequence}`;
+
+    // Préparer les données pour le générateur PDF basique
+    const formattedGrades = subjectsData.map(subj => ({
+      subject_name: subj.name,
+      grade: subj.average,
+      coefficient: subj.coefficient
+    }));
+
+    const formattedStudent = {
+      full_name: student?.name,
+      class_name: classData?.name,
+      matricule: student?.matricule,
+      rank: rankInfo.rank
+    };
+
+    const formattedSchool = {
+      name: classData?.school || 'Établissement'
+    };
+
+    const doc = generateBasicBulletin(formattedStudent, formattedGrades, formattedSchool, period);
+    doc.save(`Bulletin_${student?.name?.replace(/\s+/g, '_')}_${period.replace(/\s+/g, '_')}.pdf`);
+  };
+
+  // Imprimer le bulletin (version professionnelle)
   const handlePrint = () => {
     setPrinting(true);
     const printContent = reportRef.current;
@@ -141,19 +179,43 @@ const ReportCard = ({
             📄 Bulletin de Notes — {student?.name}
           </h2>
           <div className="flex items-center gap-3">
-            <button
-              onClick={handlePrint}
-              disabled={printing}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
-            >
-              {printing ? <Icon name="Loader2" className="animate-spin" size={16} /> : <Icon name="Printer" size={16} />}
-              Imprimer / PDF
-            </button>
+            {/* Bouton conditionnel basé sur l'accès à l'App Académique */}
+            {hasAcademicApp ? (
+              <button
+                onClick={handlePrint}
+                disabled={printing}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 flex items-center gap-2"
+              >
+                {printing ? <Icon name="Loader2" className="animate-spin" size={16} /> : <Icon name="Printer" size={16} />}
+                Imprimer Bulletin Pro
+              </button>
+            ) : (
+              <button
+                onClick={handleDownloadBasicPDF}
+                className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 flex items-center gap-2"
+              >
+                <Icon name="Download" size={16} />
+                Télécharger PDF Basique
+              </button>
+            )}
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-lg">
               <Icon name="X" size={20} />
             </button>
           </div>
         </div>
+
+        {/* Bannière Upgrade si pas d'App Académique */}
+        {!hasAcademicApp && (
+          <div className="p-4 pb-0">
+            <UpgradeBanner
+              title="🎨 Bulletins Professionnels Personnalisés"
+              description="Avec App Académique: logo de votre école, couleurs personnalisées, design professionnel, statistiques avancées par matière, exports Excel illimités."
+              targetApp="App Académique"
+              price="75 000"
+              variant="premium"
+            />
+          </div>
+        )}
 
         {/* Contenu du bulletin */}
         <div ref={reportRef} className="p-8">
