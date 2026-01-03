@@ -13,6 +13,8 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
   const [error, setError] = useState('');
   const [schools, setSchools] = useState([]);
   const [selectedSchoolType, setSelectedSchoolType] = useState('');
+  const [schoolInfo, setSchoolInfo] = useState(null);
+  const [classCount, setClassCount] = useState(0);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -27,8 +29,13 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
   useEffect(() => {
     if (isOpen) {
       loadSchools();
+
+      // Pour les directeurs, charger immédiatement les infos de leur école
+      if (user?.role === 'principal' && user?.current_school_id && !isEditing) {
+        loadSchoolInfo(user.current_school_id);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, user, isEditing]);
 
   const loadSchools = async () => {
     try {
@@ -96,16 +103,119 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
     setError('');
   }, [classData, isOpen, user, schools]);
 
-  const handleChange = (e) => {
+  const handleChange = async (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
 
-    // Si changement d'école, mettre à jour le type d'école sélectionné
+    // Si changement d'école, mettre à jour le type d'école sélectionné et charger les infos
     if (name === 'school_id') {
       const school = schools.find(s => s.id === value);
       setSelectedSchoolType(school?.type || '');
       // Réinitialiser le niveau si on change d'école
       setFormData(prev => ({ ...prev, grade_level: '' }));
+
+      // Charger les infos de l'école et compter les classes
+      if (value) {
+        await loadSchoolInfo(value);
+      } else {
+        setSchoolInfo(null);
+        setClassCount(0);
+      }
+    }
+  };
+
+  // Charger les informations de l'école et compter les classes existantes
+  const loadSchoolInfo = async (schoolId) => {
+    try {
+      const supabase = getSupabaseClient();
+
+      // Récupérer les infos de l'école avec ses subscriptions
+      const { data: school, error: schoolError } = await supabase
+        .from('schools')
+        .select(`
+          *,
+          school_subscriptions!inner(
+            app_id,
+            status,
+            expires_at
+          )
+        `)
+        .eq('id', schoolId)
+        .single();
+
+      if (schoolError) throw schoolError;
+      setSchoolInfo(school);
+
+      // Compter les classes existantes
+      const { count, error: countError } = await supabase
+        .from('classes')
+        .select('*', { count: 'exact', head: true })
+        .eq('school_id', schoolId);
+
+      if (countError) throw countError;
+      setClassCount(count || 0);
+    } catch (err) {
+      console.error('Error loading school info:', err);
+      // En cas d'erreur, on récupère au moins les infos de base de l'école
+      try {
+        const supabase = getSupabaseClient();
+        const { data: school } = await supabase
+          .from('schools')
+          .select('*')
+          .eq('id', schoolId)
+          .single();
+        setSchoolInfo(school);
+      } catch (innerErr) {
+        console.error('Error loading basic school info:', innerErr);
+      }
+    }
+  };
+
+  // Vérifier si l'école a accès à l'App Académique (classes illimitées)
+  const hasAcademicApp = () => {
+    if (!schoolInfo?.school_subscriptions) return false;
+
+    const academicSub = schoolInfo.school_subscriptions.find(
+      sub => sub.app_id === 'academic' &&
+             ['trial', 'active'].includes(sub.status) &&
+             (!sub.expires_at || new Date(sub.expires_at) > new Date())
+    );
+
+    return !!academicSub;
+  };
+
+  // Obtenir la limite de classes et le message d'avertissement
+  const getClassLimitInfo = () => {
+    if (!schoolInfo) return null;
+
+    const hasAcademic = hasAcademicApp();
+
+    if (hasAcademic) {
+      return {
+        limit: null, // Illimité
+        current: classCount,
+        canCreate: true,
+        message: 'Classes illimitées (App Académique)',
+        type: 'success',
+        maxStudentsPerClass: null, // Pas de limite
+      };
+    } else {
+      // App Core gratuite: 1 classe maximum, 20 élèves max au total
+      const maxClasses = 1;
+      const maxStudentsTotal = 20;
+      const canCreate = classCount < maxClasses;
+
+      return {
+        limit: maxClasses,
+        current: classCount,
+        canCreate: canCreate,
+        message: canCreate
+          ? `${classCount}/${maxClasses} classe utilisée (App Core Gratuite)`
+          : `Limite atteinte: ${classCount}/${maxClasses} classe (App Core Gratuite)`,
+        type: canCreate ? 'warning' : 'error',
+        maxStudentsPerClass: maxStudentsTotal, // 20 élèves max au total
+        maxStudentsTotal: maxStudentsTotal,
+      };
     }
   };
 
@@ -139,7 +249,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
     try {
       const supabase = getSupabaseClient();
 
-      // Validation
+      // Validation de base
       if (!formData.name.trim()) {
         throw new Error('Le nom de la classe est requis');
       }
@@ -148,6 +258,26 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
       }
       if (!formData.school_id) {
         throw new Error('L\'école est requise');
+      }
+
+      // Vérification des limites pour la création seulement
+      if (!isEditing) {
+        const limitInfo = getClassLimitInfo();
+
+        if (limitInfo && !limitInfo.canCreate) {
+          throw new Error(
+            'Vous avez atteint la limite de classes pour le pack gratuit (1 classe maximum). ' +
+            'Souscrivez à l\'App Académique pour créer des classes illimitées.'
+          );
+        }
+
+        // Vérifier la limite d'élèves par classe pour App Core
+        if (limitInfo && limitInfo.maxStudentsPerClass && formData.max_students > limitInfo.maxStudentsPerClass) {
+          throw new Error(
+            `Avec l'App Core gratuite, vous ne pouvez pas créer une classe de plus de ${limitInfo.maxStudentsPerClass} élèves (limite totale de ${limitInfo.maxStudentsTotal} élèves). ` +
+            'Souscrivez à l\'App Académique pour débloquer jusqu\'à 500 élèves.'
+          );
+        }
       }
 
       if (isEditing) {
@@ -350,6 +480,18 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
                     className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
                   />
                 </div>
+                {!isEditing && formData.school_id && schoolInfo && (() => {
+                  const limitInfo = getClassLimitInfo();
+                  if (!limitInfo || !limitInfo.maxStudentsPerClass) return null;
+
+                  const exceeds = formData.max_students > limitInfo.maxStudentsPerClass;
+
+                  return (
+                    <p className={`mt-1 text-xs ${exceeds ? 'text-red-600' : 'text-amber-600'}`}>
+                      {exceeds ? '🚫' : '⚠️'} App Core gratuite: Maximum {limitInfo.maxStudentsPerClass} élèves au total
+                    </p>
+                  );
+                })()}
               </div>
 
               <div className="md:col-span-2">
@@ -380,6 +522,43 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
                     Votre école est automatiquement sélectionnée
                   </p>
                 )}
+
+                {/* Affichage des limites de classes */}
+                {!isEditing && formData.school_id && schoolInfo && (() => {
+                  const limitInfo = getClassLimitInfo();
+                  if (!limitInfo) return null;
+
+                  const bgColor = limitInfo.type === 'success'
+                    ? 'bg-green-50 border-green-200'
+                    : limitInfo.type === 'warning'
+                    ? 'bg-amber-50 border-amber-200'
+                    : 'bg-red-50 border-red-200';
+
+                  const textColor = limitInfo.type === 'success'
+                    ? 'text-green-700'
+                    : limitInfo.type === 'warning'
+                    ? 'text-amber-700'
+                    : 'text-red-700';
+
+                  const icon = limitInfo.type === 'success'
+                    ? '✅'
+                    : limitInfo.type === 'warning'
+                    ? '⚠️'
+                    : '🚫';
+
+                  return (
+                    <div className={`mt-2 p-3 rounded-lg border ${bgColor}`}>
+                      <p className={`text-xs font-medium ${textColor}`}>
+                        {icon} {limitInfo.message}
+                      </p>
+                      {!limitInfo.canCreate && (
+                        <p className="mt-1 text-xs text-red-600">
+                          💡 Souscrivez à l'App Académique (75 000 FCFA/an) pour débloquer des classes illimitées.
+                        </p>
+                      )}
+                    </div>
+                  );
+                })()}
               </div>
             </div>
           </div>
@@ -396,7 +575,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
           </button>
           <button
             type="submit"
-            disabled={loading}
+            disabled={loading || (!isEditing && formData.school_id && schoolInfo && !getClassLimitInfo()?.canCreate)}
             className="px-4 py-2 text-sm font-medium text-white bg-primary-600 rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? 'Enregistrement...' : isEditing ? 'Mettre à jour' : 'Créer la classe'}

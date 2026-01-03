@@ -18,7 +18,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react';
-import { UserFormModal, UserViewModal, TeacherFormModal, SecretaryFormModal, ParentFormModal, StudentFormModal } from './components';
+import { UserFormModal, UserViewModal, AdminFormModal, PrincipalFormModal, TeacherFormModal, SecretaryFormModal, ParentFormModal, StudentFormModal } from './components';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -33,6 +33,8 @@ export default function UsersPage() {
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, user: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
+  const [adminModal, setAdminModal] = useState({ isOpen: false, user: null });
+  const [principalModal, setPrincipalModal] = useState({ isOpen: false, user: null });
   const [teacherModal, setTeacherModal] = useState({ isOpen: false, user: null });
   const [secretaryModal, setSecretaryModal] = useState({ isOpen: false, user: null });
   const [parentModal, setParentModal] = useState({ isOpen: false, user: null });
@@ -213,9 +215,21 @@ export default function UsersPage() {
     setSecretaryModal({ isOpen: true, user: null });
   };
 
+  const handleCreateAdmin = () => {
+    setAdminModal({ isOpen: true, user: null });
+  };
+
+  const handleCreatePrincipal = () => {
+    setPrincipalModal({ isOpen: true, user: null });
+  };
+
   const handleEditUser = (userData) => {
     // Route to specialized modal based on role
-    if (userData.role === 'teacher') {
+    if (userData.role === 'admin') {
+      setAdminModal({ isOpen: true, user: userData });
+    } else if (userData.role === 'principal') {
+      setPrincipalModal({ isOpen: true, user: userData });
+    } else if (userData.role === 'teacher') {
       setTeacherModal({ isOpen: true, user: userData });
     } else if (userData.role === 'secretary') {
       setSecretaryModal({ isOpen: true, user: userData });
@@ -224,7 +238,7 @@ export default function UsersPage() {
     } else if (userData.role === 'student') {
       setStudentModal({ isOpen: true, user: userData });
     } else {
-      // For admin, principal - use generic modal
+      // Fallback
       setFormModal({ isOpen: true, user: userData });
     }
   };
@@ -256,7 +270,27 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          {/* Quick create buttons for common user types */}
+          {/* Boutons pour Admin uniquement */}
+          {user?.role === 'admin' && (
+            <>
+              <button
+                onClick={handleCreateAdmin}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors shadow-sm text-sm"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Administrateur</span>
+              </button>
+              <button
+                onClick={handleCreatePrincipal}
+                className="inline-flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm text-sm"
+              >
+                <Plus className="h-4 w-4" />
+                <span className="hidden sm:inline">Directeur</span>
+              </button>
+            </>
+          )}
+
+          {/* Boutons communs */}
           <button
             onClick={handleCreateTeacher}
             className="inline-flex items-center gap-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm text-sm"
@@ -462,6 +496,20 @@ export default function UsersPage() {
         onClose={() => setViewModal({ isOpen: false, user: null })}
         user={viewModal.user}
         onEdit={handleEditUser}
+      />
+
+      <AdminFormModal
+        isOpen={adminModal.isOpen}
+        onClose={() => setAdminModal({ isOpen: false, user: null })}
+        user={adminModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <PrincipalFormModal
+        isOpen={principalModal.isOpen}
+        onClose={() => setPrincipalModal({ isOpen: false, user: null })}
+        user={principalModal.user}
+        onSuccess={handleModalSuccess}
       />
 
       <TeacherFormModal
