@@ -34,7 +34,8 @@
       "Bash(pnpm --filter hub build:*)",
       "Bash(node scripts/create-admin-user.js:*)",
       "Bash(npm run dev:*)",
-      "Bash(npx supabase:*)"
+      "Bash(npx supabase:*)",
+      "Bash(node scripts/apply-parent-fields-migration.js:*)"
     ]
   }
 }
