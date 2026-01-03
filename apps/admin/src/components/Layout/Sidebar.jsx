@@ -81,9 +81,17 @@ const getNavigationForRole = (role) => {
           defaultOpen: true,
           items: [
             { name: 'Informations', href: '/schools', icon: School },
-            { name: 'Personnel', href: '/users', icon: Users },
             { name: 'Classes', href: '/classes', icon: GraduationCap },
-            { name: 'Élèves & Parents', href: '/personnel', icon: UserCog },
+          ]
+        },
+        {
+          id: 'users-management',
+          label: 'Gestion des Utilisateurs',
+          icon: Users,
+          defaultOpen: true,
+          items: [
+            { name: 'Personnel', href: '/personnel', icon: UserCog },
+            { name: 'Élèves & Parents', href: '/users', icon: Users },
           ]
         },
         {

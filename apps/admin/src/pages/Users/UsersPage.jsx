@@ -18,7 +18,7 @@ import {
   UserCheck,
   UserX
 } from 'lucide-react';
-import { UserFormModal, UserViewModal, TeacherFormModal, ParentFormModal, StudentFormModal } from './components';
+import { UserFormModal, UserViewModal, TeacherFormModal, SecretaryFormModal, ParentFormModal, StudentFormModal } from './components';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -34,6 +34,7 @@ export default function UsersPage() {
   const [formModal, setFormModal] = useState({ isOpen: false, user: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
   const [teacherModal, setTeacherModal] = useState({ isOpen: false, user: null });
+  const [secretaryModal, setSecretaryModal] = useState({ isOpen: false, user: null });
   const [parentModal, setParentModal] = useState({ isOpen: false, user: null });
   const [studentModal, setStudentModal] = useState({ isOpen: false, user: null });
 
@@ -208,16 +209,22 @@ export default function UsersPage() {
     setStudentModal({ isOpen: true, user: null });
   };
 
+  const handleCreateSecretary = () => {
+    setSecretaryModal({ isOpen: true, user: null });
+  };
+
   const handleEditUser = (userData) => {
     // Route to specialized modal based on role
     if (userData.role === 'teacher') {
       setTeacherModal({ isOpen: true, user: userData });
+    } else if (userData.role === 'secretary') {
+      setSecretaryModal({ isOpen: true, user: userData });
     } else if (userData.role === 'parent') {
       setParentModal({ isOpen: true, user: userData });
     } else if (userData.role === 'student') {
       setStudentModal({ isOpen: true, user: userData });
     } else {
-      // For admin, principal, secretary - use generic modal
+      // For admin, principal - use generic modal
       setFormModal({ isOpen: true, user: userData });
     }
   };
@@ -258,6 +265,13 @@ export default function UsersPage() {
             <span className="hidden sm:inline">Enseignant</span>
           </button>
           <button
+            onClick={handleCreateSecretary}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors shadow-sm text-sm"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Secrétaire</span>
+          </button>
+          <button
             onClick={handleCreateParent}
             className="inline-flex items-center gap-2 px-3 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 transition-colors shadow-sm text-sm"
           >
@@ -270,14 +284,6 @@ export default function UsersPage() {
           >
             <Plus className="h-4 w-4" />
             <span className="hidden sm:inline">Élève</span>
-          </button>
-          {/* Generic button for admin/principal/secretary */}
-          <button
-            onClick={handleCreateUser}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors shadow-sm text-sm"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Autre</span>
           </button>
         </div>
       </div>
@@ -462,6 +468,13 @@ export default function UsersPage() {
         isOpen={teacherModal.isOpen}
         onClose={() => setTeacherModal({ isOpen: false, user: null })}
         user={teacherModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <SecretaryFormModal
+        isOpen={secretaryModal.isOpen}
+        onClose={() => setSecretaryModal({ isOpen: false, user: null })}
+        user={secretaryModal.user}
         onSuccess={handleModalSuccess}
       />
 

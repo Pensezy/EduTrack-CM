@@ -10,6 +10,7 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
   const { user: currentUser } = useAuth();
   const isEditing = !!user;
   const [loading, setLoading] = useState(false);
+  const [loadingSchoolDetails, setLoadingSchoolDetails] = useState(false);
   const [error, setError] = useState('');
   const [schools, setSchools] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
@@ -29,15 +30,19 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
   useEffect(() => {
     if (isOpen) {
       loadSchools();
+      // Si l'utilisateur est un directeur, pré-charger les matières de son école
+      if (currentUser?.role === 'principal' && currentUser?.current_school_id) {
+        loadSchoolDetails(currentUser.current_school_id);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, currentUser]);
 
   // Charger les matières et classes quand une école est sélectionnée
   useEffect(() => {
-    if (formData.current_school_id) {
+    if (formData.current_school_id && isOpen) {
       loadSchoolDetails(formData.current_school_id);
     }
-  }, [formData.current_school_id]);
+  }, [formData.current_school_id, isOpen]);
 
   const loadSchools = async () => {
     try {
@@ -63,6 +68,7 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
 
   const loadSchoolDetails = async (schoolId) => {
     try {
+      setLoadingSchoolDetails(true);
       const supabase = getSupabaseClient();
       const { data: schoolData, error } = await supabase
         .from('schools')
@@ -81,6 +87,11 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
       setAvailableSubjects(subjects);
     } catch (err) {
       console.error('Error loading school details:', err);
+      // En cas d'erreur, utiliser les valeurs par défaut
+      setAvailableSubjects(getDefaultSubjects());
+      setAvailableClasses([]);
+    } finally {
+      setLoadingSchoolDetails(false);
     }
   };
 
@@ -343,12 +354,17 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
           </div>
 
           {/* Matières enseignées */}
-          {availableSubjects.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
-                <BookOpen className="h-4 w-4" />
-                Matières enseignées *
-              </h3>
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              Matières enseignées *
+            </h3>
+            {loadingSchoolDetails ? (
+              <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-2"></div>
+                Chargement des matières...
+              </div>
+            ) : availableSubjects.length > 0 ? (
               <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                 {availableSubjects.map(subject => (
                   <label
@@ -365,13 +381,22 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
                   </label>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg text-sm text-yellow-800">
+                Veuillez d'abord sélectionner une école pour afficher les matières disponibles.
+              </div>
+            )}
+          </div>
 
           {/* Classes assignées */}
-          {availableClasses.length > 0 && (
-            <div className="space-y-4">
-              <h3 className="text-sm font-medium text-gray-900">Classes assignées *</h3>
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-900">Classes assignées (optionnel)</h3>
+            {loadingSchoolDetails ? (
+              <div className="flex items-center justify-center py-8 text-sm text-gray-500">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-2"></div>
+                Chargement des classes...
+              </div>
+            ) : availableClasses.length > 0 ? (
               <div className="grid grid-cols-3 md:grid-cols-4 gap-2">
                 {availableClasses.map(className => (
                   <label
@@ -388,8 +413,12 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
                   </label>
                 ))}
               </div>
-            </div>
-          )}
+            ) : (
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-600">
+                Aucune classe disponible pour cette école.
+              </div>
+            )}
+          </div>
 
           {/* Statut */}
           <div className="md:col-span-2">
