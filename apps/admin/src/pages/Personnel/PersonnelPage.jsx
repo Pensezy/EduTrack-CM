@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { UserFormModal, UserViewModal } from '../Users/components';
 import TeacherFormModal from '../Users/components/TeacherFormModal';
+import SecretaryFormModal from '../Users/components/SecretaryFormModal';
 
 export default function PersonnelPage() {
   const { user } = useAuth();
@@ -33,6 +34,7 @@ export default function PersonnelPage() {
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, user: null });
   const [teacherModal, setTeacherModal] = useState({ isOpen: false, user: null });
+  const [secretaryModal, setSecretaryModal] = useState({ isOpen: false, user: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
 
   useEffect(() => {
@@ -164,18 +166,20 @@ export default function PersonnelPage() {
   };
 
   // Modal handlers
-  const handleCreatePersonnel = () => {
-    setFormModal({ isOpen: true, user: null });
-  };
-
   const handleCreateTeacher = () => {
     setTeacherModal({ isOpen: true, user: null });
   };
 
+  const handleCreateSecretary = () => {
+    setSecretaryModal({ isOpen: true, user: null });
+  };
+
   const handleEditPersonnel = (person) => {
-    // Utiliser le modal spécialisé pour les enseignants
+    // Utiliser le modal spécialisé selon le rôle
     if (person.role === 'teacher') {
       setTeacherModal({ isOpen: true, user: person });
+    } else if (person.role === 'secretary') {
+      setSecretaryModal({ isOpen: true, user: person });
     } else {
       setFormModal({ isOpen: true, user: person });
     }
@@ -217,7 +221,7 @@ export default function PersonnelPage() {
             <span className="sm:hidden">Enseignant</span>
           </button>
           <button
-            onClick={handleCreatePersonnel}
+            onClick={handleCreateSecretary}
             className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors shadow-sm"
           >
             <Plus className="h-5 w-5" />
@@ -389,6 +393,13 @@ export default function PersonnelPage() {
         isOpen={teacherModal.isOpen}
         onClose={() => setTeacherModal({ isOpen: false, user: null })}
         user={teacherModal.user}
+        onSuccess={handleModalSuccess}
+      />
+
+      <SecretaryFormModal
+        isOpen={secretaryModal.isOpen}
+        onClose={() => setSecretaryModal({ isOpen: false, user: null })}
+        user={secretaryModal.user}
         onSuccess={handleModalSuccess}
       />
 

@@ -280,19 +280,63 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
         }
       }
 
+      // Récupérer ou créer l'année académique
+      let academicYearId = null;
+
+      if (!isEditing) {
+        // Chercher si l'année académique existe déjà
+        const { data: existingYear } = await supabase
+          .from('academic_years')
+          .select('id')
+          .eq('year', formData.school_year)
+          .eq('school_id', formData.school_id)
+          .maybeSingle();
+
+        if (existingYear) {
+          academicYearId = existingYear.id;
+        } else {
+          // Créer une nouvelle année académique
+          const { data: newYear, error: yearError } = await supabase
+            .from('academic_years')
+            .insert([{
+              school_id: formData.school_id,
+              year: formData.school_year,
+              start_date: formData.school_year.split('-')[0] + '-09-01',
+              end_date: formData.school_year.split('-')[1] + '-07-31',
+              is_current: true
+            }])
+            .select('id')
+            .single();
+
+          if (yearError) throw yearError;
+          academicYearId = newYear.id;
+        }
+      }
+
+      // Préparer les données pour l'insertion/mise à jour
+      const classDataToSave = {
+        name: formData.name,
+        level: formData.grade_level, // Mapper grade_level → level
+        school_id: formData.school_id,
+        capacity: formData.max_students, // Mapper max_students → capacity
+        ...(formData.section && { section: formData.section }),
+      };
+
       if (isEditing) {
         // Mise à jour
         const { error: updateError } = await supabase
           .from('classes')
-          .update(formData)
+          .update(classDataToSave)
           .eq('id', classData.id);
 
         if (updateError) throw updateError;
       } else {
-        // Création
+        // Création - ajouter academic_year_id
+        classDataToSave.academic_year_id = academicYearId;
+
         const { error: insertError } = await supabase
           .from('classes')
-          .insert([formData]);
+          .insert([classDataToSave]);
 
         if (insertError) throw insertError;
       }

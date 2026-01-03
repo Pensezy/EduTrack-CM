@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@edutrack/ui';
-import { X, User as UserIcon, Mail, Phone, BookOpen, GraduationCap } from 'lucide-react';
+import { X, User as UserIcon, Mail, Phone, BookOpen, GraduationCap, Plus } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
 
 /**
@@ -15,6 +15,7 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
   const [schools, setSchools] = useState([]);
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [availableClasses, setAvailableClasses] = useState([]);
+  const [customSubject, setCustomSubject] = useState('');
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -26,16 +27,12 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
     is_active: true,
   });
 
-  // Charger les écoles et les données associées
+  // Charger les écoles au montage
   useEffect(() => {
     if (isOpen) {
       loadSchools();
-      // Si l'utilisateur est un directeur, pré-charger les matières de son école
-      if (currentUser?.role === 'principal' && currentUser?.current_school_id) {
-        loadSchoolDetails(currentUser.current_school_id);
-      }
     }
-  }, [isOpen, currentUser]);
+  }, [isOpen]);
 
   // Charger les matières et classes quand une école est sélectionnée
   useEffect(() => {
@@ -78,17 +75,35 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
 
       if (error) throw error;
 
-      // Charger les classes
+      // Charger les classes depuis available_classes ou utiliser les classes par défaut
       const classes = schoolData.available_classes || getDefaultClassesByType(schoolData.type);
       setAvailableClasses(classes);
 
-      // Charger les matières
-      const subjects = schoolData.custom_subjects || getDefaultSubjects();
-      setAvailableSubjects(subjects);
+      // Charger les matières - TOUJOURS utiliser la liste complète par défaut
+      // car custom_subjects dans schools est souvent vide
+      const allSubjects = [
+        'Français', 'Mathématiques', 'Physique-Chimie', 'SVT', 'Sciences',
+        'Histoire-Géographie', 'Philosophie', 'Anglais', 'Espagnol', 'Allemand',
+        'EPS', 'Arts Plastiques', 'Musique', 'Informatique', 'Technologie',
+        'Économie', 'Comptabilité', 'Éducation Civique et Morale', 'Arabe',
+        'Instruction Civique', 'Éducation à la Santé'
+      ];
+
+      // Fusionner les matières personnalisées avec les matières par défaut
+      const customSubjects = schoolData.custom_subjects || [];
+      const mergedSubjects = [...new Set([...allSubjects, ...customSubjects])].sort();
+
+      setAvailableSubjects(mergedSubjects);
     } catch (err) {
       console.error('Error loading school details:', err);
       // En cas d'erreur, utiliser les valeurs par défaut
-      setAvailableSubjects(getDefaultSubjects());
+      setAvailableSubjects([
+        'Français', 'Mathématiques', 'Physique-Chimie', 'SVT', 'Sciences',
+        'Histoire-Géographie', 'Philosophie', 'Anglais', 'Espagnol', 'Allemand',
+        'EPS', 'Arts Plastiques', 'Musique', 'Informatique', 'Technologie',
+        'Économie', 'Comptabilité', 'Éducation Civique et Morale', 'Arabe',
+        'Instruction Civique', 'Éducation à la Santé'
+      ]);
       setAvailableClasses([]);
     } finally {
       setLoadingSchoolDetails(false);
@@ -159,6 +174,21 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
     });
   };
 
+  const handleAddCustomSubject = () => {
+    const trimmedSubject = customSubject.trim();
+    if (trimmedSubject && !availableSubjects.includes(trimmedSubject)) {
+      // Ajouter la matière à la liste
+      setAvailableSubjects(prev => [...prev, trimmedSubject].sort());
+      // Sélectionner automatiquement la matière ajoutée
+      setFormData(prev => ({
+        ...prev,
+        subjects: [...prev.subjects, trimmedSubject]
+      }));
+      // Réinitialiser le champ
+      setCustomSubject('');
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -180,9 +210,7 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
       if (formData.subjects.length === 0) {
         throw new Error('Veuillez sélectionner au moins une matière');
       }
-      if (formData.classes.length === 0) {
-        throw new Error('Veuillez sélectionner au moins une classe');
-      }
+      // Les classes sont optionnelles - pas de validation obligatoire
 
       // Vérification sécurité directeur
       if (currentUser?.role === 'principal') {
@@ -359,6 +387,35 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
               <BookOpen className="h-4 w-4" />
               Matières enseignées *
             </h3>
+
+            {/* Champ pour ajouter une matière personnalisée */}
+            {!loadingSchoolDetails && availableSubjects.length > 0 && (
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customSubject}
+                  onChange={(e) => setCustomSubject(e.target.value)}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleAddCustomSubject();
+                    }
+                  }}
+                  placeholder="Ajouter une matière personnalisée..."
+                  className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddCustomSubject}
+                  disabled={!customSubject.trim()}
+                  className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1"
+                >
+                  <Plus className="h-4 w-4" />
+                  <span className="text-sm">Ajouter</span>
+                </button>
+              </div>
+            )}
+
             {loadingSchoolDetails ? (
               <div className="flex items-center justify-center py-8 text-sm text-gray-500">
                 <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-green-600 mr-2"></div>
