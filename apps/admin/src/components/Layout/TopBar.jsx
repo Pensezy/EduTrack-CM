@@ -1,7 +1,30 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '@edutrack/api';
-import { Bell, Search, Menu, User, Settings, LogOut, ChevronDown, X } from 'lucide-react';
+import {
+  Bell,
+  Search,
+  Menu,
+  User,
+  Settings,
+  LogOut,
+  ChevronDown,
+  X,
+  FileText,
+  Grid3x3,
+  Package,
+  School,
+  Users,
+  BarChart3,
+  DollarSign,
+  Loader2
+} from 'lucide-react';
+import { useNotifications } from '../../hooks/useNotifications';
+import {
+  formatNotificationTime,
+  getNotificationAction,
+  getPriorityBadgeColor
+} from '../../utils/notificationHelpers';
 
 export default function TopBar({ user, onMenuClick }) {
   const navigate = useNavigate();
@@ -14,14 +37,14 @@ export default function TopBar({ user, onMenuClick }) {
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
 
-  // Mock notifications (à remplacer par vraies données plus tard)
-  const notifications = [
-    { id: 1, message: 'Nouvelle demande d\'inscription', time: 'Il y a 5 min', unread: true },
-    { id: 2, message: 'Rapport mensuel disponible', time: 'Il y a 2h', unread: true },
-    { id: 3, message: 'Mise à jour système réussie', time: 'Il y a 1 jour', unread: false }
-  ];
-
-  const unreadCount = notifications.filter(n => n.unread).length;
+  // Utiliser le hook de notifications réelles
+  const {
+    notifications,
+    unreadCount,
+    markAsRead,
+    markAllAsRead,
+    loading: notificationsLoading
+  } = useNotifications();
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -126,27 +149,104 @@ export default function TopBar({ user, onMenuClick }) {
             {/* Notifications Dropdown */}
             {notificationsOpen && (
               <div className="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden animate-fadeIn">
-                <div className="p-4 border-b border-gray-200">
-                  <h3 className="text-sm font-semibold text-gray-900">Notifications</h3>
-                </div>
-                <div className="max-h-96 overflow-y-auto">
-                  {notifications.map((notification) => (
-                    <div
-                      key={notification.id}
-                      className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${
-                        notification.unread ? 'bg-blue-50' : ''
-                      }`}
+                {/* Header */}
+                <div className="p-4 border-b border-gray-200 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-900">
+                    Notifications
+                    {unreadCount > 0 && (
+                      <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-700">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </h3>
+                  {unreadCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-xs text-primary-600 hover:text-primary-700 font-medium"
                     >
-                      <p className="text-sm text-gray-900">{notification.message}</p>
-                      <p className="text-xs text-gray-500 mt-1">{notification.time}</p>
+                      Tout marquer lu
+                    </button>
+                  )}
+                </div>
+
+                {/* Liste des notifications */}
+                <div className="max-h-96 overflow-y-auto">
+                  {notificationsLoading ? (
+                    <div className="flex items-center justify-center py-8">
+                      <Loader2 className="h-6 w-6 animate-spin text-primary-600" />
+                      <span className="ml-2 text-sm text-gray-500">Chargement...</span>
                     </div>
-                  ))}
+                  ) : notifications.length === 0 ? (
+                    <div className="py-8 text-center">
+                      <Bell className="h-12 w-12 text-gray-300 mx-auto mb-2" />
+                      <p className="text-sm text-gray-500">Aucune notification</p>
+                    </div>
+                  ) : (
+                    notifications.map((notification) => {
+                      const handleClick = () => {
+                        // Marquer comme lue
+                        if (!notification.is_read) {
+                          markAsRead(notification.id);
+                        }
+                        // Exécuter l'action de navigation
+                        const action = getNotificationAction(notification, navigate);
+                        action();
+                        // Fermer le dropdown
+                        setNotificationsOpen(false);
+                      };
+
+                      return (
+                        <div
+                          key={notification.id}
+                          onClick={handleClick}
+                          className={`px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 transition-colors ${
+                            !notification.is_read ? 'bg-blue-50' : ''
+                          }`}
+                        >
+                          <div className="flex items-start gap-3">
+                            {/* Indicateur non lu */}
+                            {!notification.is_read && (
+                              <div className="flex-shrink-0 w-2 h-2 bg-blue-600 rounded-full mt-1.5"></div>
+                            )}
+
+                            {/* Contenu */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 mb-1">
+                                {notification.title}
+                              </p>
+                              <p className="text-sm text-gray-600 mb-1">
+                                {notification.message}
+                              </p>
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs text-gray-500">
+                                  {formatNotificationTime(notification.created_at)}
+                                </p>
+                                {notification.priority !== 'medium' && (
+                                  <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-xs font-medium border ${getPriorityBadgeColor(notification.priority)}`}>
+                                    {notification.priority === 'high' ? 'Urgent' : 'Info'}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
                 </div>
-                <div className="p-2 border-t border-gray-200 text-center">
-                  <button className="text-sm text-primary-600 hover:text-primary-700 font-medium">
-                    Voir toutes les notifications
-                  </button>
-                </div>
+
+                {/* Footer */}
+                {notifications.length > 0 && (
+                  <div className="p-2 border-t border-gray-200 text-center">
+                    <Link
+                      to="/notifications"
+                      onClick={() => setNotificationsOpen(false)}
+                      className="text-sm text-primary-600 hover:text-primary-700 font-medium"
+                    >
+                      Voir toutes les notifications
+                    </Link>
+                  </div>
+                )}
               </div>
             )}
           </div>
