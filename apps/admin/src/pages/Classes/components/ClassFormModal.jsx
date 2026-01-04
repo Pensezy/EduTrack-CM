@@ -22,7 +22,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
     section: '',
     school_year: new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
     school_id: '',
-    max_students: 40,
+    max_students: 20,
   });
 
   // Charger les écoles pour le select
@@ -78,7 +78,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
         section: classData.section || '',
         school_year: classData.school_year || new Date().getFullYear() + '-' + (new Date().getFullYear() + 1),
         school_id: classData.school_id || '',
-        max_students: classData.max_students || 40,
+        max_students: classData.max_students || 20,
       });
 
       // Charger le type d'école en mode édition
@@ -97,7 +97,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
         section: '',
         school_year: currentYear + '-' + (currentYear + 1),
         school_id: user?.role === 'principal' && user?.current_school_id ? user.current_school_id : '',
-        max_students: 40,
+        max_students: 20,
       });
     }
     setError('');
@@ -288,7 +288,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
         const { data: existingYear } = await supabase
           .from('academic_years')
           .select('id')
-          .eq('year', formData.school_year)
+          .eq('name', formData.school_year)  // Utiliser 'name' au lieu de 'year'
           .eq('school_id', formData.school_id)
           .maybeSingle();
 
@@ -300,7 +300,7 @@ export default function ClassFormModal({ isOpen, onClose, classData, onSuccess }
             .from('academic_years')
             .insert([{
               school_id: formData.school_id,
-              year: formData.school_year,
+              name: formData.school_year,  // Utiliser 'name' au lieu de 'year'
               start_date: formData.school_year.split('-')[0] + '-09-01',
               end_date: formData.school_year.split('-')[1] + '-07-31',
               is_current: true

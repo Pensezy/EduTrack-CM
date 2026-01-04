@@ -17,7 +17,8 @@ import {
   Edit3,
   Building2,
   ShoppingBag,
-  BarChart3
+  BarChart3,
+  FileCheck
 } from 'lucide-react';
 import SidebarGroup from './SidebarGroup';
 
@@ -36,6 +37,7 @@ const getNavigationForRole = (role) => {
           defaultOpen: true,
           items: [
             { name: 'Écoles', href: '/schools', icon: School },
+            { name: 'Demandes Établissements', href: '/schools/requests', icon: FileCheck },
             { name: 'Utilisateurs', href: '/users', icon: Users },
             { name: 'Classes', href: '/classes', icon: GraduationCap },
             { name: 'Personnel', href: '/personnel', icon: UserCog },

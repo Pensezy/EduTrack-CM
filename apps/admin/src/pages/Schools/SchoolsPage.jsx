@@ -18,7 +18,7 @@ import {
   CheckCircle,
   XCircle
 } from 'lucide-react';
-import { SchoolFormModal, SchoolViewModal, SchoolDeleteModal, SchoolAdminModal } from './components';
+import { SchoolFormModal, SchoolRequestModal, SchoolViewModal, SchoolDeleteModal, SchoolAdminModal } from './components';
 
 export default function SchoolsPage() {
   const { user } = useAuth();
@@ -30,6 +30,7 @@ export default function SchoolsPage() {
 
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, school: null });
+  const [requestModal, setRequestModal] = useState({ isOpen: false });
   const [viewModal, setViewModal] = useState({ isOpen: false, school: null });
   const [adminModal, setAdminModal] = useState({ isOpen: false, school: null });
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, school: null });
@@ -148,7 +149,13 @@ export default function SchoolsPage() {
 
   // Modal handlers
   const handleCreateSchool = () => {
-    setFormModal({ isOpen: true, school: null });
+    // Admins: création directe via SchoolFormModal
+    if (user?.role === 'admin') {
+      setFormModal({ isOpen: true, school: null });
+    } else {
+      // Non-admins: demande via SchoolRequestModal
+      setRequestModal({ isOpen: true });
+    }
   };
 
   const handleEditSchool = (school) => {
@@ -195,8 +202,17 @@ export default function SchoolsPage() {
           className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
         >
           <Plus className="h-5 w-5" />
-          <span className="hidden sm:inline">Nouvelle École</span>
-          <span className="sm:hidden">Nouvelle</span>
+          {user?.role === 'admin' ? (
+            <>
+              <span className="hidden sm:inline">Nouvelle École</span>
+              <span className="sm:hidden">Nouvelle</span>
+            </>
+          ) : (
+            <>
+              <span className="hidden sm:inline">Demander un Établissement</span>
+              <span className="sm:hidden">Demander</span>
+            </>
+          )}
         </button>
       </div>
 
@@ -355,6 +371,12 @@ export default function SchoolsPage() {
         isOpen={formModal.isOpen}
         onClose={() => setFormModal({ isOpen: false, school: null })}
         school={formModal.school}
+        onSuccess={handleModalSuccess}
+      />
+
+      <SchoolRequestModal
+        isOpen={requestModal.isOpen}
+        onClose={() => setRequestModal({ isOpen: false })}
         onSuccess={handleModalSuccess}
       />
 

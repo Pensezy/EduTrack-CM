@@ -5,6 +5,7 @@ import Login from './pages/Auth/Login';
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
 import PrincipalDashboard from './pages/Dashboard/PrincipalDashboard';
 import SchoolsPage from './pages/Schools/SchoolsPage';
+import SchoolRequestsPage from './pages/SchoolRequests';
 import UsersPage from './pages/Users/UsersPage';
 import ClassesPage from './pages/Classes/ClassesPage';
 import EnrollmentPage from './pages/Enrollment/EnrollmentPage';
@@ -115,6 +116,7 @@ function AppRoutes() {
       >
         <Route index element={<DashboardRouter />} />
         <Route path="schools" element={<SchoolsPage />} />
+        <Route path="schools/requests" element={<SchoolRequestsPage />} />
         <Route path="users" element={<UsersPage />} />
         <Route path="classes" element={<ClassesPage />} />
         <Route path="enrollment" element={<EnrollmentPage />} />
