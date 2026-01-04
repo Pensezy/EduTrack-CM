@@ -13,6 +13,7 @@ export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess })
   const isEditing = !!user;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [subscriptionError, setSubscriptionError] = useState(false); // Pour détecter erreur abonnement
   const [schools, setSchools] = useState([]);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
@@ -58,6 +59,7 @@ export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess })
       });
     }
     setError('');
+    setSubscriptionError(false);
     setGeneratedCredentials(null);
   }, [user, isOpen, currentUser]);
 
@@ -181,7 +183,17 @@ export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess })
       }
     } catch (err) {
       console.error('Error saving secretary:', err);
-      setError(err.message || 'Erreur lors de l\'enregistrement');
+      const errorMessage = err.message || 'Erreur lors de l\'enregistrement';
+
+      // Détecter si c'est une erreur de limitation d'abonnement
+      if (errorMessage.includes('App Core gratuite') ||
+          errorMessage.includes('App Académique') ||
+          errorMessage.includes('secrétaires ne sont pas disponibles')) {
+        setSubscriptionError(true);
+        setError(errorMessage);
+      } else {
+        setError(errorMessage);
+      }
     } finally {
       setLoading(false);
     }
@@ -337,11 +349,26 @@ export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess })
 
       <form onSubmit={handleSubmit}>
         <div className="p-6 space-y-6 max-h-[calc(100vh-300px)] overflow-y-auto">
-          {error && (
+          {/* Modal de blocage si erreur d'abonnement */}
+          {subscriptionError ? (
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg flex gap-3">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <p className="text-sm font-medium text-red-800 mb-2">Abonnement requis</p>
+                <p className="text-sm text-red-700 mb-3">{error}</p>
+                <a
+                  href="/app-store"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
+                >
+                  Voir les packs disponibles
+                </a>
+              </div>
+            </div>
+          ) : error ? (
             <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
               <p className="text-sm text-red-800">{error}</p>
             </div>
-          )}
+          ) : null}
 
           {/* Informations personnelles */}
           <div className="space-y-4">

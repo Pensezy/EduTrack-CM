@@ -75,9 +75,21 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
 
       if (error) throw error;
 
-      // Charger les classes depuis available_classes ou utiliser les classes par défaut
-      const classes = schoolData.available_classes || getDefaultClassesByType(schoolData.type);
-      setAvailableClasses(classes);
+      // Charger les classes RÉELLEMENT CRÉÉES depuis la table classes
+      const { data: realClasses, error: classesError } = await supabase
+        .from('classes')
+        .select('id, name, level, section')
+        .eq('school_id', schoolId)
+        .order('level');
+
+      if (classesError) throw classesError;
+
+      // Utiliser les noms des classes réelles, ou les classes par défaut si aucune classe créée
+      const classNames = realClasses && realClasses.length > 0
+        ? realClasses.map(c => c.section ? `${c.level} ${c.section}` : c.level)
+        : (schoolData.available_classes || getDefaultClassesByType(schoolData.type));
+
+      setAvailableClasses(classNames);
 
       // Charger les matières - TOUJOURS utiliser la liste complète par défaut
       // car custom_subjects dans schools est souvent vide

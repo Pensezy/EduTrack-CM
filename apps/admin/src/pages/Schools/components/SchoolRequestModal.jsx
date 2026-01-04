@@ -206,7 +206,7 @@ export default function SchoolRequestModal({ isOpen, onClose, onSuccess }) {
               <p className="text-sm font-medium text-red-800 mb-2">Abonnement requis</p>
               <p className="text-sm text-red-700">{error}</p>
               <a
-                href="/bundles"
+                href="/app-store"
                 className="inline-flex items-center gap-2 mt-3 px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700"
               >
                 Voir les packs disponibles

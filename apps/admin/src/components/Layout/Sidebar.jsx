@@ -93,7 +93,7 @@ const getNavigationForRole = (role) => {
           defaultOpen: true,
           items: [
             { name: 'Personnel', href: '/personnel', icon: UserCog },
-            { name: 'Élèves & Parents', href: '/users', icon: Users },
+            { name: 'Utilisateur', href: '/users', icon: Users },
           ]
         },
         {
