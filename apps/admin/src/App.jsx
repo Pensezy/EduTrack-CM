@@ -2,8 +2,14 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AppsProvider, useAuth } from '@edutrack/api';
 import AdminLayout from './components/Layout/AdminLayout';
 import Login from './pages/Auth/Login';
+// Dashboards par rôle
 import AdminDashboard from './pages/Dashboard/AdminDashboard';
 import PrincipalDashboard from './pages/Dashboard/PrincipalDashboard';
+import SecretaryDashboard from './pages/Dashboard/SecretaryDashboard';
+import TeacherDashboard from './pages/Dashboard/TeacherDashboard';
+import ParentDashboard from './pages/Dashboard/ParentDashboard';
+import StudentDashboard from './pages/Dashboard/StudentDashboard';
+// Pages Admin/Principal
 import SchoolsPage from './pages/Schools/SchoolsPage';
 import SchoolRequestsPage from './pages/SchoolRequests';
 import UsersPage from './pages/Users/UsersPage';
@@ -18,21 +24,47 @@ import AppAccessRequestsPage from './pages/AppAccessRequests/AppAccessRequestsPa
 import BundlesCatalogPage from './pages/Bundles/BundlesCatalogPage';
 import BundleRequestsPage from './pages/Bundles/BundleRequestsPage';
 import ManageBundlesPage from './pages/Bundles/ManageBundlesPage';
+// Pages Secrétaire
+import SecretaryStudentsPage from './pages/Secretary/StudentsPage';
+import SecretaryEnrollmentPage from './pages/Secretary/EnrollmentPage';
+import SecretaryPaymentsPage from './pages/Secretary/PaymentsPage';
+// Pages Enseignant
+import TeacherClassesPage from './pages/Teacher/ClassesPage';
+import TeacherAttendancePage from './pages/Teacher/AttendancePage';
+import TeacherStudentsPage from './pages/Teacher/StudentsPage';
+// Pages Parent
+import ParentChildrenPage from './pages/Parent/ChildrenPage';
+import ParentAttendancePage from './pages/Parent/AttendancePage';
+import ParentPaymentsPage from './pages/Parent/PaymentsPage';
+// Pages Élève
+import StudentSchedulePage from './pages/Student/SchedulePage';
+import StudentAttendancePage from './pages/Student/AttendancePage';
+import StudentProfilePage from './pages/Student/ProfilePage';
 
 // Dashboard Router - Render correct dashboard based on role
 function DashboardRouter() {
   const { user } = useAuth();
 
-  // Admin sees global dashboard, Principal sees school-specific dashboard
-  if (user?.role === 'admin') {
-    return <AdminDashboard />;
-  } else if (user?.role === 'principal') {
-    return <PrincipalDashboard />;
+  switch (user?.role) {
+    case 'admin':
+      return <AdminDashboard />;
+    case 'principal':
+      return <PrincipalDashboard />;
+    case 'secretary':
+      return <SecretaryDashboard />;
+    case 'teacher':
+      return <TeacherDashboard />;
+    case 'parent':
+      return <ParentDashboard />;
+    case 'student':
+      return <StudentDashboard />;
+    default:
+      return <Navigate to="/login" replace />;
   }
-
-  // Fallback (should not happen due to ProtectedRoute)
-  return <Navigate to="/login" replace />;
 }
+
+// Rôles autorisés pour accéder à l'application
+const ALLOWED_ROLES = ['admin', 'principal', 'secretary', 'teacher', 'parent', 'student'];
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -50,8 +82,8 @@ function ProtectedRoute({ children }) {
     return <Navigate to="/login" replace />;
   }
 
-  // Check if user has admin or principal role
-  if (user.role !== 'admin' && user.role !== 'principal') {
+  // Vérifier si l'utilisateur a un rôle autorisé
+  if (!ALLOWED_ROLES.includes(user.role)) {
     console.error('❌ Accès refusé - Rôle actuel:', user.role, '| Email:', user.email);
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
@@ -63,16 +95,13 @@ function ProtectedRoute({ children }) {
               </svg>
             </div>
             <h1 className="text-2xl font-bold text-gray-900 mb-2">Accès Refusé</h1>
-            <p className="text-gray-600 mb-4">Cette application est réservée aux administrateurs et directeurs.</p>
+            <p className="text-gray-600 mb-4">Votre rôle ne vous permet pas d'accéder à cette application.</p>
             <div className="bg-gray-50 rounded-lg p-4 text-left mb-4">
               <p className="text-sm text-gray-700">
                 <strong>Email:</strong> {user.email}
               </p>
               <p className="text-sm text-gray-700">
                 <strong>Rôle actuel:</strong> <span className="font-mono text-red-600">{user.role || 'non défini'}</span>
-              </p>
-              <p className="text-sm text-gray-700">
-                <strong>Rôles requis:</strong> <span className="font-mono text-green-600">admin</span> ou <span className="font-mono text-green-600">principal</span>
               </p>
             </div>
             <p className="text-xs text-gray-500">
@@ -114,7 +143,10 @@ function AppRoutes() {
           </ProtectedRoute>
         }
       >
+        {/* Dashboard - Adapté selon le rôle */}
         <Route index element={<DashboardRouter />} />
+
+        {/* Routes Admin & Principal */}
         <Route path="schools" element={<SchoolsPage />} />
         <Route path="schools/requests" element={<SchoolRequestsPage />} />
         <Route path="users" element={<UsersPage />} />
@@ -128,6 +160,28 @@ function AppRoutes() {
         <Route path="manage-bundles" element={<ManageBundlesPage />} />
         <Route path="app-store" element={<AppStorePage />} />
         <Route path="my-apps" element={<MyAppsPage />} />
+
+        {/* Routes Secrétaire */}
+        <Route path="secretary/students" element={<SecretaryStudentsPage />} />
+        <Route path="secretary/enrollment" element={<SecretaryEnrollmentPage />} />
+        <Route path="secretary/payments" element={<SecretaryPaymentsPage />} />
+
+        {/* Routes Enseignant */}
+        <Route path="teacher/classes" element={<TeacherClassesPage />} />
+        <Route path="teacher/attendance" element={<TeacherAttendancePage />} />
+        <Route path="teacher/students" element={<TeacherStudentsPage />} />
+
+        {/* Routes Parent */}
+        <Route path="parent/children" element={<ParentChildrenPage />} />
+        <Route path="parent/attendance" element={<ParentAttendancePage />} />
+        <Route path="parent/payments" element={<ParentPaymentsPage />} />
+
+        {/* Routes Élève */}
+        <Route path="student/schedule" element={<StudentSchedulePage />} />
+        <Route path="student/attendance" element={<StudentAttendancePage />} />
+        <Route path="student/profile" element={<StudentProfilePage />} />
+
+        {/* Paramètres - Commun à tous */}
         <Route path="settings" element={<SettingsPage />} />
       </Route>
 

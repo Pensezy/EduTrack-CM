@@ -18,7 +18,17 @@ import {
   Building2,
   ShoppingBag,
   BarChart3,
-  FileCheck
+  FileCheck,
+  // Icônes supplémentaires pour les nouveaux rôles
+  UserPlus,
+  CreditCard,
+  Calendar,
+  ClipboardCheck,
+  BookOpen,
+  User,
+  Clock,
+  Baby,
+  Home
 } from 'lucide-react';
 import SidebarGroup from './SidebarGroup';
 
@@ -111,6 +121,122 @@ const getNavigationForRole = (role) => {
     };
   }
 
+  // Navigation pour Secrétaire
+  if (role === 'secretary') {
+    return {
+      standalone: [
+        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      ],
+      groups: [
+        {
+          id: 'gestion-eleves',
+          label: 'Gestion Élèves',
+          icon: Users,
+          defaultOpen: true,
+          items: [
+            { name: 'Liste des Élèves', href: '/secretary/students', icon: Users },
+            { name: 'Inscriptions', href: '/secretary/enrollment', icon: UserPlus },
+          ]
+        },
+        {
+          id: 'finances',
+          label: 'Finances',
+          icon: CreditCard,
+          defaultOpen: true,
+          items: [
+            { name: 'Paiements', href: '/secretary/payments', icon: CreditCard },
+          ]
+        }
+      ],
+      settings: { name: 'Paramètres', href: '/settings', icon: Settings }
+    };
+  }
+
+  // Navigation pour Enseignant
+  if (role === 'teacher') {
+    return {
+      standalone: [
+        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      ],
+      groups: [
+        {
+          id: 'mes-classes',
+          label: 'Mes Classes',
+          icon: BookOpen,
+          defaultOpen: true,
+          items: [
+            { name: 'Mes Classes', href: '/teacher/classes', icon: GraduationCap },
+            { name: 'Mes Élèves', href: '/teacher/students', icon: Users },
+          ]
+        },
+        {
+          id: 'suivi',
+          label: 'Suivi',
+          icon: ClipboardCheck,
+          defaultOpen: true,
+          items: [
+            { name: 'Présences', href: '/teacher/attendance', icon: ClipboardCheck },
+          ]
+        }
+      ],
+      settings: { name: 'Paramètres', href: '/settings', icon: Settings }
+    };
+  }
+
+  // Navigation pour Parent
+  if (role === 'parent') {
+    return {
+      standalone: [
+        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      ],
+      groups: [
+        {
+          id: 'mes-enfants',
+          label: 'Mes Enfants',
+          icon: Baby,
+          defaultOpen: true,
+          items: [
+            { name: 'Mes Enfants', href: '/parent/children', icon: Users },
+            { name: 'Présences', href: '/parent/attendance', icon: ClipboardCheck },
+          ]
+        },
+        {
+          id: 'finances',
+          label: 'Finances',
+          icon: CreditCard,
+          defaultOpen: true,
+          items: [
+            { name: 'Paiements', href: '/parent/payments', icon: CreditCard },
+          ]
+        }
+      ],
+      settings: { name: 'Paramètres', href: '/settings', icon: Settings }
+    };
+  }
+
+  // Navigation pour Élève
+  if (role === 'student') {
+    return {
+      standalone: [
+        { name: 'Dashboard', href: '/', icon: LayoutDashboard },
+      ],
+      groups: [
+        {
+          id: 'ma-scolarite',
+          label: 'Ma Scolarité',
+          icon: BookOpen,
+          defaultOpen: true,
+          items: [
+            { name: 'Emploi du temps', href: '/student/schedule', icon: Calendar },
+            { name: 'Mes Présences', href: '/student/attendance', icon: ClipboardCheck },
+            { name: 'Mon Profil', href: '/student/profile', icon: User },
+          ]
+        }
+      ],
+      settings: { name: 'Paramètres', href: '/settings', icon: Settings }
+    };
+  }
+
   // Fallback pour autres rôles
   return {
     standalone: [
@@ -155,7 +281,12 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
             className="h-8 w-8 object-contain"
           />
           <span className="ml-3 text-xl font-heading font-bold text-white">
-            {user?.role === 'admin' ? 'EduTrack Admin' : 'EduTrack Directeur'}
+            {user?.role === 'admin' ? 'EduTrack Admin' :
+             user?.role === 'principal' ? 'EduTrack Directeur' :
+             user?.role === 'secretary' ? 'EduTrack Secrétariat' :
+             user?.role === 'teacher' ? 'EduTrack Enseignant' :
+             user?.role === 'parent' ? 'EduTrack Parent' :
+             user?.role === 'student' ? 'EduTrack Élève' : 'EduTrack'}
           </span>
         </div>
         {/* Close button for mobile */}
