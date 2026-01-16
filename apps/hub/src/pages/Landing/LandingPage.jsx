@@ -1,6 +1,6 @@
 /**
  * Landing Page - Point d'entrée public de EduTrack
- * Version réorganisée : Focus sur la gestion intégrée des établissements
+ * Version finale : Focus gestion d'établissement & Visuel réel
  * Logique de base de données (apps/bundles) strictement conservée.
  */
 
@@ -21,7 +21,7 @@ export default function LandingPage() {
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // Mapping des icônes par slug d'app (Code original conservé)
+  // Mapping des icônes par slug d'app (Votre code original conservé)
   const appIcons = {
     'core': <School className="h-8 w-8" />,
     'notes-evaluations': <BookOpen className="h-8 w-8" />,
@@ -49,7 +49,7 @@ export default function LandingPage() {
 
   const loadAppsAndBundles = async () => {
     try {
-      // Chargement dynamique original (v_apps_catalog et v_bundles_catalog)
+      // Récupération dynamique des applications (v_apps_catalog)
       const { data: appsData, error: appsError } = await supabase
         .from('v_apps_catalog')
         .select('*')
@@ -58,6 +58,7 @@ export default function LandingPage() {
 
       if (appsError) throw appsError;
 
+      // Récupération dynamique des packs (v_bundles_catalog)
       const { data: bundlesData, error: bundlesError } = await supabase
         .from('v_bundles_catalog')
         .select('*')
@@ -105,7 +106,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      {/* HERO SECTION - Focus Gestion d'Établissement */}
+      {/* HERO SECTION - Thème Gestion d'Établissement */}
       <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white">
         <div className="absolute inset-0 opacity-10 pointer-events-none">
           <div className="absolute inset-0" style={{ backgroundImage: `radial-gradient(circle at 25px 25px, white 2%, transparent 0%)`, backgroundSize: '100px 100px' }}></div>
@@ -118,91 +119,78 @@ export default function LandingPage() {
               <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight">Edu<span className="text-yellow-300">Track</span></h1>
             </div>
 
-            <div className="inline-flex items-center gap-2 px-5 py-2.5 bg-white/10 backdrop-blur-md rounded-full text-sm font-medium mb-8 border border-white/20">
-              <Sparkles className="h-4 w-4 text-yellow-300" />
-              <span>Optimisation complète de la gestion d'établissement</span>
-            </div>
-
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 leading-tight">
-              Tout est lié, tout est récupérable <br />
-              <span className="text-yellow-300 font-black">En un clic, sans complication.</span>
+              La Gestion d'Établissement <br />
+              <span className="text-yellow-300 font-black">Unifiée et Simplifiée.</span>
             </h2>
 
-            <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto leading-relaxed">
-              La plateforme modulaire qui unifie l'administration, la pédagogie et les finances. 
-              <strong> Payez uniquement ce que vous utilisez.</strong>
+            <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto leading-relaxed italic">
+              "Tout est lié, tout est récupérable en un clic sans complication."
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-16">
               <button onClick={() => navigate('/signup')} className="px-8 py-4 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-yellow-300 transition-all shadow-xl flex items-center gap-2">
-                <Zap className="h-5 w-5" /> Créer Mon Compte Gratuit
+                <Zap className="h-5 w-5" /> Démarrer gratuitement
               </button>
               <button className="px-8 py-4 bg-white/10 backdrop-blur-sm text-white rounded-xl font-semibold border-2 border-white/30 flex items-center gap-2">
-                <LayoutDashboard className="h-5 w-5" /> Explorer la Démo
+                <LayoutDashboard className="h-5 w-5" /> Voir la Démo
               </button>
             </div>
           </div>
         </div>
       </section>
 
-      {/* ARGUMENTS CLÉS - La gestion interconnectée */}
+      {/* SECTION VISUELLE - Intégration de votre image Dashboard.png */}
       <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
             <div className="space-y-6">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">Pourquoi choisir EduTrack pour votre établissement ?</h2>
-              <div className="space-y-4">
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary-100 rounded-lg text-primary-600"><Check /></div>
-                  <p className="text-lg"><strong>Interconnexion totale</strong> : Les notes, les paiements et les absences communiquent entre eux en temps réel.</p>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary-100 rounded-lg text-primary-600"><Check /></div>
-                  <p className="text-lg"><strong>Récupération instantanée</strong> : Retrouvez n'importe quelle information ou statistique en un clic.</p>
-                </div>
-                <div className="flex items-start gap-4">
-                  <div className="p-2 bg-primary-100 rounded-lg text-primary-600"><Check /></div>
-                  <p className="text-lg"><strong>Multi-Établissement</strong> : Gérez plusieurs écoles ou instituts depuis un seul tableau de bord.</p>
-                </div>
-              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">Pilotez votre école avec précision</h2>
+              <p className="text-lg text-gray-600">
+                Grâce à une interface pensée pour les directeurs, centralisez la pédagogie, l'administration et la finance sur un seul écran.
+              </p>
+              <ul className="space-y-4 font-medium">
+                <li className="flex items-center gap-3"><Check className="text-green-600" /> Interconnexion des données en temps réel</li>
+                <li className="flex items-center gap-3"><Check className="text-green-600" /> Exportation des rapports en un clic</li>
+                <li className="flex items-center gap-3"><Check className="text-green-600" /> Gestion multi-établissements simplifiée</li>
+              </ul>
             </div>
-            <div className="bg-gray-100 rounded-3xl p-4 border-8 border-gray-200 shadow-2xl aspect-video flex items-center justify-center italic text-gray-400">
-               [Aperçu du Dashboard de Gestion Unifiée]
+            {/* ICI : Remplacement par votre image réelle */}
+            <div className="relative group">
+              <div className="absolute inset-0 bg-primary-600 rounded-3xl blur-xl opacity-20 group-hover:opacity-30 transition-opacity"></div>
+              <img 
+                src="/assets/images/Dashboard.png" 
+                alt="Aperçu du Dashboard EduTrack" 
+                className="relative rounded-3xl shadow-2xl border-4 border-gray-100 transition-transform duration-500 hover:scale-[1.02]"
+              />
             </div>
           </div>
         </div>
       </section>
 
-      {/* CATALOGUE D'APPLICATIONS (Récupération dynamique préservée) */}
+      {/* CATALOGUE D'APPLICATIONS (Récupération dynamique originale) */}
       <section className="py-20 bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Un système modulaire à la carte</h2>
-            <p className="text-xl text-gray-600">Activez les modules dont votre établissement a besoin.</p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-12 text-gray-900">Modules de gestion à la carte</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
             {loading ? (
-              Array.from({ length: 4 }).map((_, idx) => (
-                <div key={idx} className="bg-white rounded-2xl h-64 animate-pulse"></div>
-              ))
+              Array.from({ length: 4 }).map((_, idx) => <div key={idx} className="bg-white rounded-2xl h-64 animate-pulse"></div>)
             ) : apps.map((app) => (
-              <div key={app.id} className="bg-white rounded-2xl shadow-md border border-gray-200 overflow-hidden flex flex-col">
+              <div key={app.id} className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden flex flex-col">
                 <div className={`bg-gradient-to-br ${app.color} p-6 text-white`}>
-                  <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center justify-between mb-2">
                     {app.icon}
-                    {app.isFree && <span className="px-3 py-1 bg-white/20 rounded-full text-xs font-bold">GRATUIT</span>}
+                    {app.isFree && <span className="px-2 py-1 bg-white/20 rounded text-[10px] font-bold uppercase">Gratuit</span>}
                   </div>
-                  <h3 className="text-xl font-bold mb-2">{app.name}</h3>
+                  <h3 className="font-bold text-lg">{app.name}</h3>
                 </div>
                 <div className="p-6 flex-1 flex flex-col justify-between">
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">{app.description}</p>
+                  <p className="text-gray-500 text-xs mb-4 line-clamp-2">{app.description}</p>
                   <div>
-                    <div className="text-2xl font-bold text-gray-900 mb-4">
-                      {app.isFree ? '0 FCFA' : `${app.price?.toLocaleString()} FCFA`}
-                      <span className="text-xs text-gray-500 block uppercase font-medium">/an</span>
+                    <div className="text-xl font-bold text-gray-900 mb-4 italic">
+                      {app.isFree ? '0 FCFA' : `${app.price?.toLocaleString()} FCFA`} <span className="text-[10px] text-gray-500 uppercase">/an</span>
                     </div>
-                    <button className="w-full py-2 border-2 border-primary-600 text-primary-600 rounded-lg font-bold hover:bg-primary-50 transition-colors">Activer</button>
+                    <button className="w-full py-2 bg-primary-50 text-primary-700 rounded-lg text-sm font-bold hover:bg-primary-100 transition-colors">Activer</button>
                   </div>
                 </div>
               </div>
@@ -211,25 +199,22 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* PACKS TOUT INCLUS (Récupération dynamique préservée) */}
+      {/* PACKS DE GESTION (Récupération dynamique originale) */}
       <section id="pricing" className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900">Packs Recommandés</h2>
-          </div>
-
+        <div className="max-w-7xl mx-auto px-4 text-center">
+          <h2 className="text-3xl font-bold mb-16">Packs de gestion optimisés</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {bundles.map((bundle) => (
-              <div key={bundle.id} className={`bg-white rounded-2xl p-8 border ${bundle.popular ? 'border-primary-500 ring-4 ring-primary-100 shadow-2xl scale-105' : 'border-gray-200 shadow-lg'}`}>
-                {bundle.popular && <div className="text-primary-600 font-bold text-sm mb-4 uppercase">Le plus complet</div>}
+              <div key={bundle.id} className={`rounded-2xl p-8 border ${bundle.popular ? 'border-primary-500 shadow-2xl scale-105 bg-primary-50/30' : 'border-gray-200 shadow-lg'}`}>
+                {bundle.popular && <div className="text-primary-600 font-bold text-xs uppercase mb-4 tracking-widest">Le choix des directeurs</div>}
                 <h3 className="text-2xl font-bold mb-2">{bundle.name}</h3>
-                <div className="text-4xl font-bold mb-4">{bundle.price.toLocaleString()} <span className="text-lg text-gray-500 font-normal">FCFA/an</span></div>
-                <p className="text-gray-600 mb-6 text-sm">{bundle.description}</p>
-                <div className="py-1 px-3 bg-green-50 text-green-700 rounded-full text-xs font-bold mb-8 inline-block">
+                <div className="text-4xl font-bold mb-4">{bundle.price.toLocaleString()} <span className="text-lg text-gray-500 font-normal underline decoration-primary-500">FCFA/an</span></div>
+                <p className="text-gray-600 mb-8 text-sm leading-relaxed">{bundle.description}</p>
+                <div className="py-1 px-4 bg-green-100 text-green-800 rounded-full text-xs font-bold mb-8 inline-block">
                   ÉCONOMIE : {bundle.savings.toLocaleString()} FCFA
                 </div>
-                <button className={`w-full py-4 rounded-xl font-bold transition-all ${bundle.popular ? 'bg-primary-600 text-white shadow-lg' : 'bg-gray-900 text-white'}`}>
-                  Sélectionner ce Pack
+                <button className={`w-full py-4 rounded-xl font-bold transition-all shadow-md ${bundle.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-gray-900 text-white hover:bg-black'}`}>
+                  Choisir ce Pack
                 </button>
               </div>
             ))}
@@ -237,35 +222,14 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* CONFIANCE ET SUPPORT LOCAL */}
-      <section className="py-20 bg-gray-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-12 text-center">
-          <div>
-            <ShieldCheck className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Sécurité des Données</h3>
-            <p className="text-gray-400 text-sm">Sauvegardes quotidiennes et protection renforcée pour assurer la pérennité de vos archives scolaires.</p>
-          </div>
-          <div>
-            <Headphones className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Support WhatsApp Local</h3>
-            <p className="text-gray-400 text-sm">Une équipe réactive basée au Cameroun pour vous accompagner dans le paramétrage.</p>
-          </div>
-          <div>
-            <Smartphone className="h-12 w-12 text-yellow-400 mx-auto mb-4" />
-            <h3 className="text-xl font-bold mb-2">Multi-Plateforme</h3>
-            <p className="text-gray-400 text-sm">Accédez à votre établissement depuis un PC, une tablette ou un smartphone, même en déplacement.</p>
-          </div>
-        </div>
-      </section>
-
       {/* FOOTER */}
-      <footer className="bg-white text-gray-400 py-12 border-t border-gray-100">
+      <footer className="bg-gray-50 text-gray-400 py-12 border-t border-gray-100">
         <div className="max-w-7xl mx-auto px-4 flex flex-col md:flex-row items-center justify-between">
           <div className="flex items-center gap-3 mb-4 md:mb-0">
             <img src="/assets/images/mon_logo.png" alt="EduTrack" className="h-10 w-10 object-contain" />
-            <span className="text-xl font-bold text-gray-900">EduTrack</span>
+            <span className="text-xl font-bold text-gray-900 tracking-tight">Edu<span className="text-primary-600">Track</span></span>
           </div>
-          <p className="text-sm">© 2026 EduTrack. Solution intégrée de gestion pour établissements scolaires.</p>
+          <p className="text-xs">© 2026 EduTrack. Solution modulaire de gestion d'établissements au Cameroun.</p>
         </div>
       </footer>
     </div>
