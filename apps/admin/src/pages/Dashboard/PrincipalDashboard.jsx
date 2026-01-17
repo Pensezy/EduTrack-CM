@@ -290,6 +290,7 @@ export default function PrincipalDashboard() {
             color="primary"
           />
           <StatCard
+            onClick={() => window.location.href = '/personnel'}
             title="Enseignants"
             value={formatNumber(stats.teachers)}
             icon={UserCheck}
@@ -333,6 +334,7 @@ export default function PrincipalDashboard() {
             icon={Package}
             subtitle="Packs souscrits"
             color="secondary"
+            onClick={() => window.location.href = '/app-store'}
           />
           {totalPendingRequests > 0 && (
             <StatCard
