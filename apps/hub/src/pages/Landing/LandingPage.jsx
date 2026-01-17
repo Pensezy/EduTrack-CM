@@ -1,8 +1,3 @@
-/**
- * Landing Page - EduTrack
- * Correction du crash toLocaleString + Ajout Header & Infos Gestion
- */
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -20,6 +15,7 @@ export default function LandingPage() {
   const [bundles, setBundles] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Mapping des icônes original
   const appIcons = {
     'core': <School className="h-8 w-8" />,
     'notes-evaluations': <BookOpen className="h-8 w-8" />,
@@ -47,6 +43,7 @@ export default function LandingPage() {
 
   const loadAppsAndBundles = async () => {
     try {
+      // Chargement original depuis la BDD
       const { data: appsData, error: appsError } = await supabase
         .from('v_apps_catalog')
         .select('*')
@@ -62,19 +59,31 @@ export default function LandingPage() {
 
       if (bundlesError) throw bundlesError;
 
+      // Mapping des données avec les noms de colonnes exacts de votre BDD
       const formattedApps = appsData.map(app => ({
-        ...app,
+        id: app.id,
+        slug: app.slug,
+        name: app.name,
         icon: appIcons[app.slug] || <School className="h-8 w-8" />,
+        description: app.description,
+        category: app.is_core ? 'Gratuit' : app.category,
         color: categoryColors[app.category] || 'from-gray-500 to-gray-600',
+        features: app.features || [],
         isFree: app.is_core,
-        features: app.features || []
+        price: app.price_yearly, // Récupération du prix BDD
+        priceFormatted: app.price_yearly_formatted
       }));
 
       const formattedBundles = bundlesData.map(bundle => ({
-        ...bundle,
+        id: bundle.id,
+        name: bundle.name,
+        description: bundle.description,
+        price: bundle.price_yearly, // Récupération du prix BDD
+        priceFormatted: bundle.price_formatted,
+        savings: bundle.savings, // Récupération des économies BDD
+        apps: bundle.app_ids || [],
         features: Object.values(bundle.features_extra || {}),
-        popular: bundle.is_recommended || false,
-        apps: bundle.app_ids || []
+        popular: bundle.is_recommended || false
       }));
 
       setApps(formattedApps);
@@ -87,115 +96,102 @@ export default function LandingPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white">
-      {/* 1. ZONE DE NAVIGATION SUPÉRIEURE (Login/Signup) */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100 shadow-sm">
+    <div className="min-h-screen bg-white font-sans">
+      {/* HEADER : Zone de connexion en haut */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <img src="/assets/images/mon_logo.png" alt="Logo" className="h-9 w-9" />
-            <span className="text-xl font-bold text-primary-700">EduTrack</span>
+            <span className="text-xl font-bold text-primary-700 tracking-tighter">EduTrack</span>
           </div>
-          
           <div className="flex items-center gap-4">
-            <button 
-              onClick={() => navigate('/login')} 
-              className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-primary-600 transition-colors"
-            >
+            <button onClick={() => navigate('/login')} className="flex items-center gap-2 text-sm font-semibold text-gray-700 hover:text-primary-600 transition-colors">
               <LogIn className="h-4 w-4" /> Se connecter
             </button>
-            <button 
-              onClick={() => navigate('/signup')} 
-              className="bg-primary-600 text-white px-5 py-2 rounded-xl text-sm font-bold hover:bg-primary-700 transition-all shadow-md"
-            >
+            <button onClick={() => navigate('/signup')} className="bg-primary-600 text-white px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-primary-700 transition-all shadow-md">
               Créer un compte
             </button>
           </div>
         </div>
       </header>
 
-      {/* 2. HERO SECTION - Focus Thème de Mémoire */}
-      <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-20">
-        <div className="relative max-w-7xl mx-auto px-4 text-center">
+      {/* HERO SECTION : Interconnexion et Thème de gestion */}
+      <section className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-900 text-white py-20 md:py-28 text-center">
+        <div className="relative max-w-7xl mx-auto px-4">
           <h1 className="text-4xl md:text-6xl font-extrabold mb-6 leading-tight">
-            La Gestion Intégrée <br />
-            <span className="text-yellow-300">De Votre Établissement</span>
+            La Gestion d'Établissement <br />
+            <span className="text-yellow-300 font-black tracking-tight">Unifiée et Simplifiée.</span>
           </h1>
-          <p className="text-xl text-gray-100 mb-10 max-w-3xl mx-auto italic">
+          <p className="text-xl md:text-2xl text-gray-200 mb-12 max-w-3xl mx-auto font-medium">
             "Tout est lié, tout est récupérable en un clic sans complication."
           </p>
-          <button onClick={() => navigate('/signup')} className="px-10 py-4 bg-yellow-400 text-primary-900 rounded-xl font-bold text-lg hover:scale-105 transition-transform shadow-xl">
-            Essayer gratuitement maintenant
+          <button onClick={() => navigate('/signup')} className="px-10 py-5 bg-white text-primary-700 rounded-xl font-bold text-lg hover:bg-yellow-300 transition-all shadow-2xl flex items-center gap-2 mx-auto">
+            <Zap className="h-6 w-6" /> Commencer gratuitement
           </button>
         </div>
       </section>
 
-      {/* 3. SECTION VISUELLE - Dashboard.png & Interconnexion */}
+      {/* SECTION VISUELLE : Image Dashboard.png */}
       <section className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center mb-16">
             <div className="space-y-8">
-              <h2 className="text-3xl font-bold text-gray-900">Une plateforme unique pour tout piloter</h2>
-              <p className="text-lg text-gray-600">EduTrack unifie l'administration et la pédagogie. Une action dans un module (ex: paiement) met automatiquement à jour les accès académiques.</p>
-              
+              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 leading-tight">Pilotez votre école avec précision</h2>
+              <p className="text-lg text-gray-600 leading-relaxed">EduTrack centralise chaque aspect de la vie scolaire. Une donnée saisie est immédiatement disponible partout : administration, pédagogie et finance.</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                  <Smartphone className="text-primary-600" />
-                  <span className="text-sm font-medium">Gestion Mobile & Hors-ligne</span>
+                  <Smartphone className="text-primary-600" /> <span className="text-sm font-bold">Optimisé Mobile & Offline</span>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                  <ShieldCheck className="text-primary-600" />
-                  <span className="text-sm font-medium">Sécurité par PIN & Chiffrement</span>
+                  <ShieldCheck className="text-primary-600" /> <span className="text-sm font-bold">Sécurité renforcée par PIN</span>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                  <Headphones className="text-primary-600" />
-                  <span className="text-sm font-medium">Support Local WhatsApp 7j/7</span>
+                  <Headphones className="text-primary-600" /> <span className="text-sm font-bold">Support Local 7j/7</span>
                 </div>
                 <div className="flex items-center gap-3 p-4 bg-gray-50 rounded-xl">
-                  <Globe className="text-primary-600" />
-                  <span className="text-sm font-medium">Multi-Écoles & Instituts</span>
+                  <Globe className="text-primary-600" /> <span className="text-sm font-bold">Multi-Établissement</span>
                 </div>
               </div>
             </div>
-            {/* Affichage de votre image Dashboard.png */}
             <div className="relative">
-              <div className="absolute -inset-4 bg-primary-200 rounded-[3rem] blur-2xl opacity-30"></div>
-              <img 
-                src="/assets/images/Dashboard.png" 
-                alt="Interface EduTrack" 
-                className="relative rounded-3xl shadow-2xl border-4 border-white"
-              />
+              <img src="/assets/images/Dashboard.png" alt="Aperçu du Dashboard" className="rounded-3xl shadow-2xl border border-gray-100 transition-transform hover:scale-[1.01] duration-500" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* 4. CATALOGUE DES APPLICATIONS (Sécurisé contre le crash) */}
+      {/* CATALOGUE DES APPLICATIONS (Correction prix et bouton) */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16">Modules à la carte : Payez ce que vous utilisez</h2>
+          <h2 className="text-3xl font-bold mb-12 text-center text-gray-900">Modules de Gestion</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {loading ? <div className="col-span-full text-center py-10"><Loader className="animate-spin mx-auto h-10 w-10 text-primary-600" /></div> : apps.map((app) => (
-              <div key={app.id} className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-100 flex flex-col transition-transform hover:-translate-y-2">
+            {loading ? <Loader className="mx-auto animate-spin h-10 w-10 text-primary-600" /> : apps.map((app) => (
+              <div key={app.id} className="bg-white rounded-2xl shadow-lg border border-gray-100 flex flex-col overflow-hidden">
                 <div className={`bg-gradient-to-br ${app.color} p-6 text-white`}>
-                  <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center justify-between mb-4 font-bold uppercase tracking-widest text-xs">
                     {app.icon}
-                    {app.isFree && <span className="bg-white/20 px-3 py-1 rounded-full text-xs font-bold">GRATUIT</span>}
+                    {app.isFree && <span className="bg-white/20 px-3 py-1 rounded-full">Gratuit</span>}
                   </div>
                   <h3 className="text-xl font-bold">{app.name}</h3>
                 </div>
                 <div className="p-6 flex-1 flex flex-col">
+                  <p className="text-gray-600 text-sm mb-6">{app.description}</p>
                   <ul className="space-y-2 mb-8 flex-1">
                     {app.features.map((f, i) => (
-                      <li key={i} className="flex items-start gap-2 text-sm text-gray-500">
+                      <li key={i} className="flex items-start gap-2 text-sm text-gray-500 font-medium">
                         <Check className="h-4 w-4 text-green-500 flex-shrink-0 mt-0.5" /> {f}
                       </li>
                     ))}
                   </ul>
                   <div className="pt-6 border-t border-gray-100">
                     <div className="text-2xl font-bold text-gray-900 mb-4">
-                      {app.isFree ? '0 FCFA' : `${(app.price || 0).toLocaleString()} FCFA`} <span className="text-xs text-gray-500 uppercase">/an</span>
+                      {/* Affichage sécurisé du prix */}
+                      {app.isFree ? '0 FCFA' : `${(app.price || 0).toLocaleString()} FCFA`} 
+                      <span className="text-xs text-gray-500 uppercase tracking-tighter"> / an</span>
                     </div>
-                    <button onClick={() => navigate('/signup')} className="w-full py-3 bg-primary-50 text-primary-700 rounded-xl font-bold hover:bg-primary-100 transition-colors">Activer</button>
+                    <button onClick={() => navigate('/signup')} className="w-full py-3 bg-primary-600 text-white rounded-xl font-bold hover:bg-primary-700 transition-colors">
+                      Commencer
+                    </button>
                   </div>
                 </div>
               </div>
@@ -204,30 +200,30 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* 5. PACKS DE GESTION (Sécurisé contre le crash) */}
+      {/* PACKS TOUT INCLUS (Correction prix et bouton) */}
       <section id="pricing" className="py-20 bg-white">
         <div className="max-w-7xl mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-16">Packs de Gestion Unifiée</h2>
+          <h2 className="text-3xl font-bold text-center mb-16">Packs Tout-en-un</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-10 max-w-5xl mx-auto">
             {bundles.map((bundle) => (
-              <div key={bundle.id} className={`rounded-3xl p-8 border-2 flex flex-col ${bundle.popular ? 'border-primary-500 shadow-2xl scale-105' : 'border-gray-200 shadow-lg'}`}>
+              <div key={bundle.id} className={`bg-white rounded-3xl p-8 border-2 flex flex-col ${bundle.popular ? 'border-primary-500 shadow-2xl scale-105' : 'border-gray-100 shadow-xl'}`}>
                 <h3 className="text-2xl font-bold mb-4">{bundle.name}</h3>
-                {/* Sécurisation du prix avec toLocaleString */}
+                {/* Affichage sécurisé du prix */}
                 <div className="text-4xl font-bold mb-2">{(bundle.price || 0).toLocaleString()} <span className="text-lg text-gray-400 font-normal">FCFA/an</span></div>
                 <div className="text-green-600 text-sm font-bold mb-8 italic">Économie de {(bundle.savings || 0).toLocaleString()} FCFA</div>
                 
                 <div className="mb-8 flex-1">
-                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4">Applications incluses :</h4>
+                  <h4 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 italic">Inclus dans le pack :</h4>
                   <ul className="space-y-3">
                     {bundle.apps.map((appId) => {
                       const app = apps.find(a => a.id === appId);
-                      return app ? <li key={appId} className="flex items-center gap-2 text-sm font-medium text-gray-600"><Check className="h-4 w-4 text-primary-500" /> {app.name}</li> : null;
+                      return app ? <li key={appId} className="flex items-center gap-2 text-sm font-bold text-gray-600"><Check className="h-4 w-4 text-primary-500" /> {app.name}</li> : null;
                     })}
                   </ul>
                 </div>
 
-                <button onClick={() => navigate('/signup')} className={`w-full py-4 rounded-xl font-bold shadow-md transition-all ${bundle.popular ? 'bg-primary-600 text-white hover:bg-primary-700' : 'bg-gray-900 text-white hover:bg-black'}`}>
-                  Choisir ce pack
+                <button onClick={() => navigate('/signup')} className={`w-full py-4 rounded-xl font-bold transition-all ${bundle.popular ? 'bg-primary-600 text-white hover:bg-primary-700 shadow-lg' : 'bg-gray-900 text-white'}`}>
+                  Commencer
                 </button>
               </div>
             ))}
@@ -235,14 +231,13 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* FOOTER */}
-      <footer className="bg-gray-900 text-gray-400 py-12 text-center border-t border-gray-800">
+      <footer className="bg-gray-900 text-gray-500 py-12 text-center border-t border-gray-800">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center justify-center gap-2 mb-4">
-            <img src="/assets/images/mon_logo.png" alt="Logo" className="h-10 w-10 opacity-80" />
-            <span className="text-xl font-bold text-white tracking-tighter italic">EduTrack</span>
+            <img src="/assets/images/mon_logo.png" alt="Logo" className="h-10 w-10 opacity-70" />
+            <span className="text-xl font-bold text-white tracking-tight italic">EduTrack</span>
           </div>
-          <p className="text-sm">© 2026 EduTrack. Solution de gestion d'établissements optimisée pour le Cameroun.</p>
+          <p className="text-sm">© 2026 EduTrack. Solution de gestion interconnectée pour le Cameroun.</p>
         </div>
       </footer>
     </div>
