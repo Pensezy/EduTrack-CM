@@ -16,9 +16,12 @@ import {
   CheckCircle,
   XCircle,
   UserCheck,
-  UserX
+  UserX,
+  Download,
+  Upload
 } from 'lucide-react';
 import { UserFormModal, UserViewModal, AdminFormModal, PrincipalFormModal, TeacherFormModal, SecretaryFormModal, ParentFormModal, StudentFormModal } from './components';
+import ImportExportModal from '../../components/ImportExportModal';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -39,6 +42,8 @@ export default function UsersPage() {
   const [secretaryModal, setSecretaryModal] = useState({ isOpen: false, user: null });
   const [parentModal, setParentModal] = useState({ isOpen: false, user: null });
   const [studentModal, setStudentModal] = useState({ isOpen: false, user: null });
+  const [exportModal, setExportModal] = useState(false);
+  const [importModal, setImportModal] = useState(false);
 
   useEffect(() => {
     fetchUsers();
@@ -251,6 +256,15 @@ export default function UsersPage() {
     fetchUsers(); // Refresh the users list
   };
 
+  // Import handler
+  const handleImportUsers = async (importedData, type) => {
+    // TODO: Implement bulk user creation
+    // For now, just log and refresh
+    console.log('Importing users:', importedData);
+    alert(`Import de ${importedData.length} utilisateur(s) en cours de développement`);
+    fetchUsers();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -270,6 +284,24 @@ export default function UsersPage() {
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          {/* Boutons Export/Import */}
+          <button
+            onClick={() => setExportModal(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm text-sm"
+            title="Exporter"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exporter</span>
+          </button>
+          <button
+            onClick={() => setImportModal(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm text-sm"
+            title="Importer"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Importer</span>
+          </button>
+
           {/* Boutons pour Admin uniquement */}
           {user?.role === 'admin' && (
             <>
@@ -538,6 +570,26 @@ export default function UsersPage() {
         onClose={() => setStudentModal({ isOpen: false, user: null })}
         user={studentModal.user}
         onSuccess={handleModalSuccess}
+      />
+
+      {/* Export/Import Modals */}
+      <ImportExportModal
+        isOpen={exportModal}
+        onClose={() => setExportModal(false)}
+        mode="export"
+        data={users}
+        type="users"
+        schoolName="EduTrack"
+      />
+
+      <ImportExportModal
+        isOpen={importModal}
+        onClose={() => setImportModal(false)}
+        mode="import"
+        type="users"
+        schoolName="EduTrack"
+        onImport={handleImportUsers}
+        allowedTypes={['users', 'students', 'teachers', 'parents']}
       />
     </div>
   );

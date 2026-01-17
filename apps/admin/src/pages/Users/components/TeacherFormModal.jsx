@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@edutrack/ui';
-import { X, User as UserIcon, Mail, Phone, BookOpen, GraduationCap, Plus } from 'lucide-react';
+import { X, User as UserIcon, Mail, Phone, BookOpen, GraduationCap, Plus, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
+import { createUserAccount, updateUserFields } from '../../../services/createUserAccount';
 
 /**
  * Modal spécialisé pour créer ou éditer un enseignant
@@ -16,6 +17,9 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
   const [availableSubjects, setAvailableSubjects] = useState([]);
   const [availableClasses, setAvailableClasses] = useState([]);
   const [customSubject, setCustomSubject] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [generatedCredentials, setGeneratedCredentials] = useState(null);
+  const [copiedField, setCopiedField] = useState('');
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -201,6 +205,35 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
     }
   };
 
+  /**
+   * Génère un mot de passe sécurisé
+   */
+  const generateSecurePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789@$!%*?&';
+    let password = '';
+    password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)];
+    password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)];
+    password += '0123456789'[Math.floor(Math.random() * 10)];
+    password += '@$!%*?&'[Math.floor(Math.random() * 7)];
+    for (let i = 4; i < 10; i++) {
+      password += chars[Math.floor(Math.random() * chars.length)];
+    }
+    return password.split('').sort(() => 0.5 - Math.random()).join('');
+  };
+
+  /**
+   * Copie un texte dans le presse-papier
+   */
+  const copyToClipboard = async (text, fieldName) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopiedField(fieldName);
+      setTimeout(() => setCopiedField(''), 2000);
+    } catch (err) {
+      console.error('Failed to copy:', err);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -222,7 +255,6 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
       if (formData.subjects.length === 0) {
         throw new Error('Veuillez sélectionner au moins une matière');
       }
-      // Les classes sont optionnelles - pas de validation obligatoire
 
       // Vérification sécurité directeur
       if (currentUser?.role === 'principal') {
@@ -244,33 +276,61 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
         throw new Error(`Cet email (${formData.email}) est déjà utilisé par un autre compte`);
       }
 
-      const userData = {
-        ...formData,
-        role: 'teacher'
-      };
-
       if (isEditing) {
+        // Mode édition - mise à jour uniquement
+        const userData = {
+          full_name: formData.full_name.trim(),
+          email: formData.email.trim(),
+          phone: formData.phone.trim(),
+          current_school_id: formData.current_school_id,
+          subjects: formData.subjects,
+          classes: formData.classes,
+          is_active: formData.is_active,
+        };
+
         const { error: updateError } = await supabase
           .from('users')
           .update(userData)
           .eq('id', user.id);
 
         if (updateError) throw updateError;
+
+        onSuccess();
+        onClose();
       } else {
-        const { error: insertError } = await supabase
-          .from('users')
-          .insert([userData]);
+        // Mode création - générer mot de passe et créer compte Auth
+        const generatedPassword = generateSecurePassword();
 
-        if (insertError) {
-          if (insertError.code === '23505' && insertError.message.includes('email')) {
-            throw new Error(`Cet email (${formData.email}) est déjà utilisé dans le système`);
-          }
-          throw insertError;
+        // Créer le compte via Edge Function
+        const result = await createUserAccount({
+          email: formData.email.trim(),
+          password: generatedPassword,
+          fullName: formData.full_name.trim(),
+          phone: formData.phone.trim(),
+          role: 'teacher',
+          schoolId: formData.current_school_id,
+          createdByUserId: currentUser?.id
+        });
+
+        // Mettre à jour avec subjects et classes
+        if (formData.subjects.length > 0 || formData.classes.length > 0) {
+          await updateUserFields(result.userId, {
+            subjects: formData.subjects,
+            classes: formData.classes,
+          });
         }
-      }
 
-      onSuccess();
-      onClose();
+        // Afficher les identifiants générés
+        setGeneratedCredentials({
+          email: formData.email.trim(),
+          password: generatedPassword,
+          fullName: formData.full_name,
+          phone: formData.phone,
+        });
+
+        onSuccess();
+        // Ne pas fermer - laisser l'utilisateur copier les identifiants
+      }
     } catch (err) {
       console.error('Error saving teacher:', err);
       setError(err.message || 'Erreur lors de l\'enregistrement');
@@ -278,6 +338,138 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
       setLoading(false);
     }
   };
+
+  // Affichage des identifiants générés après création
+  if (generatedCredentials) {
+    return (
+      <Modal isOpen={isOpen} onClose={onClose} size="lg">
+        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center w-10 h-10 rounded-full bg-green-100">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">
+                Compte enseignant créé avec succès !
+              </h2>
+              <p className="text-sm text-gray-500">
+                Veuillez noter ces identifiants et les communiquer à l'enseignant
+              </p>
+            </div>
+          </div>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition-colors">
+            <X className="h-6 w-6" />
+          </button>
+        </div>
+
+        <div className="p-6 space-y-6">
+          {/* Informations de l'enseignant */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-blue-900 mb-2">Informations de l'enseignant</h3>
+            <div className="space-y-1 text-sm text-blue-800">
+              <p><strong>Nom :</strong> {generatedCredentials.fullName}</p>
+              <p><strong>Téléphone :</strong> {generatedCredentials.phone || 'Non renseigné'}</p>
+              <p><strong>Rôle :</strong> Enseignant</p>
+            </div>
+          </div>
+
+          {/* Identifiants de connexion */}
+          <div className="bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-200 rounded-lg p-6">
+            <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center gap-2">
+              <Key className="h-5 w-5" />
+              Identifiants de connexion
+            </h3>
+
+            <div className="space-y-4">
+              {/* Email */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Email de connexion
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={generatedCredentials.email}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white font-mono text-sm"
+                  />
+                  <button
+                    onClick={() => copyToClipboard(generatedCredentials.email, 'email')}
+                    className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    {copiedField === 'email' ? <CheckCircle className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Mot de passe */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Mot de passe
+                </label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={generatedCredentials.password}
+                    readOnly
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-white font-mono text-sm"
+                  />
+                  <button
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                  <button
+                    onClick={() => copyToClipboard(generatedCredentials.password, 'password')}
+                    className="px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    {copiedField === 'password' ? <CheckCircle className="h-5 w-5" /> : <Copy className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Instructions */}
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+            <h4 className="text-sm font-medium text-yellow-900 mb-2">📱 Instructions à communiquer</h4>
+            <ol className="list-decimal list-inside space-y-1 text-sm text-yellow-800">
+              <li>Allez sur le site : <strong>www.edutrack.cm</strong></li>
+              <li>Cliquez sur "Connexion"</li>
+              <li>Entrez l'email : <strong>{generatedCredentials.email}</strong></li>
+              <li>Entrez le mot de passe fourni</li>
+              <li>Changez votre mot de passe après la première connexion</li>
+            </ol>
+          </div>
+
+          {/* Avertissement */}
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
+              <div className="text-sm text-red-800">
+                <p className="font-medium mb-1">⚠️ Important :</p>
+                <ul className="list-disc list-inside space-y-1">
+                  <li>Conservez ces identifiants en lieu sûr</li>
+                  <li>Communiquez-les de manière sécurisée</li>
+                  <li>L'enseignant pourra modifier son mot de passe après connexion</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-lg hover:bg-green-700"
+          >
+            J'ai noté les identifiants
+          </button>
+        </div>
+      </Modal>
+    );
+  }
 
   return (
     <Modal isOpen={isOpen} onClose={onClose} size="lg">

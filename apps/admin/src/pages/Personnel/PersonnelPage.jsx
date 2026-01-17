@@ -16,11 +16,14 @@ import {
   CheckCircle,
   XCircle,
   Briefcase,
-  Calendar
+  Calendar,
+  Download,
+  Upload
 } from 'lucide-react';
 import { UserFormModal, UserViewModal } from '../Users/components';
 import TeacherFormModal from '../Users/components/TeacherFormModal';
 import SecretaryFormModal from '../Users/components/SecretaryFormModal';
+import ImportExportModal from '../../components/ImportExportModal';
 
 export default function PersonnelPage() {
   const { user } = useAuth();
@@ -36,6 +39,8 @@ export default function PersonnelPage() {
   const [teacherModal, setTeacherModal] = useState({ isOpen: false, user: null });
   const [secretaryModal, setSecretaryModal] = useState({ isOpen: false, user: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, user: null });
+  const [exportModal, setExportModal] = useState(false);
+  const [importModal, setImportModal] = useState(false);
 
   useEffect(() => {
     fetchPersonnel();
@@ -193,6 +198,13 @@ export default function PersonnelPage() {
     fetchPersonnel(); // Refresh the personnel list
   };
 
+  // Import handler
+  const handleImportPersonnel = async (importedData, type) => {
+    console.log('Importing personnel:', importedData);
+    alert(`Import de ${importedData.length} membre(s) du personnel en cours de développement`);
+    fetchPersonnel();
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-96">
@@ -211,7 +223,25 @@ export default function PersonnelPage() {
             {formatNumber(personnel.length)} membre{personnel.length > 1 ? 's' : ''} du personnel
           </p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
+          {/* Boutons Export/Import */}
+          <button
+            onClick={() => setExportModal(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm text-sm"
+            title="Exporter"
+          >
+            <Download className="h-4 w-4" />
+            <span className="hidden sm:inline">Exporter</span>
+          </button>
+          <button
+            onClick={() => setImportModal(true)}
+            className="inline-flex items-center gap-2 px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors shadow-sm text-sm"
+            title="Importer"
+          >
+            <Upload className="h-4 w-4" />
+            <span className="hidden sm:inline">Importer</span>
+          </button>
+
           <button
             onClick={handleCreateTeacher}
             className="inline-flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-sm"
@@ -415,6 +445,26 @@ export default function PersonnelPage() {
         onClose={() => setViewModal({ isOpen: false, user: null })}
         user={viewModal.user}
         onEdit={handleEditPersonnel}
+      />
+
+      {/* Export/Import Modals */}
+      <ImportExportModal
+        isOpen={exportModal}
+        onClose={() => setExportModal(false)}
+        mode="export"
+        data={personnel}
+        type="personnel"
+        schoolName="EduTrack"
+      />
+
+      <ImportExportModal
+        isOpen={importModal}
+        onClose={() => setImportModal(false)}
+        mode="import"
+        type="personnel"
+        schoolName="EduTrack"
+        onImport={handleImportPersonnel}
+        allowedTypes={['personnel', 'teachers']}
       />
     </div>
   );
