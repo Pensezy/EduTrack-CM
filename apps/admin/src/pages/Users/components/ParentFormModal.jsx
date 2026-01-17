@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'react';
 import { Modal } from '@edutrack/ui';
-import { X, User as UserIcon, Mail, Phone, Home, Briefcase, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, User as UserIcon, Mail, Phone, Home, Briefcase, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle, RefreshCw, Lock } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
-import { createUserAccount, updateUserFields } from '../../../services/createUserAccount';
+import { createUserAccount, updateUserFields, updateUserPassword } from '../../../services/createUserAccount';
 import { useToast } from '../../../components/Toast';
 
 /**
@@ -19,6 +19,13 @@ export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
   const [showPassword, setShowPassword] = useState(false);
   const [generatedCredentials, setGeneratedCredentials] = useState(null);
   const [copiedField, setCopiedField] = useState('');
+
+  // États pour la modification de mot de passe
+  const [showPasswordSection, setShowPasswordSection] = useState(false);
+  const [newPassword, setNewPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordSuccess, setPasswordSuccess] = useState(false);
 
   const [formData, setFormData] = useState({
     full_name: '',
@@ -87,6 +94,11 @@ export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
     }
     setError('');
     setGeneratedCredentials(null);
+    // Réinitialiser les états de mot de passe
+    setShowPasswordSection(false);
+    setNewPassword('');
+    setShowNewPassword(false);
+    setPasswordSuccess(false);
   }, [user, isOpen, currentUser]);
 
   const handleChange = (e) => {
@@ -136,6 +148,45 @@ export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
       setTimeout(() => setCopiedField(''), 2000);
     } catch (err) {
       console.error('Failed to copy:', err);
+    }
+  };
+
+  /**
+   * Génère un nouveau mot de passe pour l'utilisateur
+   */
+  const handleGenerateNewPassword = () => {
+    const newPass = generateSecurePassword();
+    setNewPassword(newPass);
+    setShowNewPassword(true);
+  };
+
+  /**
+   * Met à jour le mot de passe du parent
+   */
+  const handleUpdatePassword = async () => {
+    if (!newPassword || newPassword.length < 8) {
+      toast.error('Le mot de passe doit contenir au moins 8 caractères');
+      return;
+    }
+
+    try {
+      setPasswordLoading(true);
+      await updateUserPassword(user.id, newPassword, currentUser.id);
+      setPasswordSuccess(true);
+      toast.success('Mot de passe mis à jour avec succès');
+
+      // Réinitialiser après 3 secondes
+      setTimeout(() => {
+        setPasswordSuccess(false);
+        setShowPasswordSection(false);
+        setNewPassword('');
+        setShowNewPassword(false);
+      }, 3000);
+    } catch (err) {
+      console.error('Error updating password:', err);
+      toast.error(err.message || 'Erreur lors de la mise à jour du mot de passe');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -567,6 +618,117 @@ export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
               ))}
             </select>
           </div>
+
+          {/* Section Modification de mot de passe (mode édition uniquement) */}
+          {isEditing && (currentUser?.role === 'admin' || currentUser?.role === 'principal') && (
+            <div className="space-y-4 pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-gray-900 flex items-center gap-2">
+                  <Lock className="h-4 w-4" />
+                  Mot de passe
+                </h3>
+                {!showPasswordSection && (
+                  <button
+                    type="button"
+                    onClick={() => setShowPasswordSection(true)}
+                    className="text-sm text-pink-600 hover:text-pink-700 font-medium"
+                  >
+                    Modifier le mot de passe
+                  </button>
+                )}
+              </div>
+
+              {showPasswordSection && (
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-4">
+                  {passwordSuccess ? (
+                    <div className="flex items-center gap-3 text-green-700 bg-green-50 p-3 rounded-lg">
+                      <CheckCircle className="h-5 w-5" />
+                      <span className="font-medium">Mot de passe mis à jour avec succès !</span>
+                    </div>
+                  ) : (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">
+                          Nouveau mot de passe
+                        </label>
+                        <div className="flex items-center gap-2">
+                          <div className="relative flex-1">
+                            <input
+                              type={showNewPassword ? 'text' : 'password'}
+                              value={newPassword}
+                              onChange={(e) => setNewPassword(e.target.value)}
+                              placeholder="Entrez ou générez un mot de passe"
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-pink-500 focus:border-pink-500 pr-10"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => setShowNewPassword(!showNewPassword)}
+                              className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                            >
+                              {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                            </button>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={handleGenerateNewPassword}
+                            className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors flex items-center gap-1"
+                            title="Générer un mot de passe"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </button>
+                          {newPassword && (
+                            <button
+                              type="button"
+                              onClick={() => copyToClipboard(newPassword, 'newPassword')}
+                              className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                              title="Copier"
+                            >
+                              {copiedField === 'newPassword' ? <CheckCircle className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                            </button>
+                          )}
+                        </div>
+                        <p className="mt-1 text-xs text-gray-500">
+                          Minimum 8 caractères. Le mot de passe sera envoyé au parent.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={handleUpdatePassword}
+                          disabled={passwordLoading || !newPassword || newPassword.length < 8}
+                          className="px-4 py-2 bg-pink-600 text-white rounded-lg hover:bg-pink-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                        >
+                          {passwordLoading ? (
+                            <>
+                              <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent"></div>
+                              Mise à jour...
+                            </>
+                          ) : (
+                            <>
+                              <Key className="h-4 w-4" />
+                              Mettre à jour le mot de passe
+                            </>
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowPasswordSection(false);
+                            setNewPassword('');
+                            setShowNewPassword(false);
+                          }}
+                          className="px-4 py-2 text-gray-600 hover:text-gray-800"
+                        >
+                          Annuler
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Statut */}
           <div className="md:col-span-2">

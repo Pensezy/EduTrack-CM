@@ -118,3 +118,61 @@ export async function updateUserFields(userId, updates) {
     throw new Error(`Erreur mise à jour: ${error.message}`);
   }
 }
+
+/**
+ * Met à jour le mot de passe d'un utilisateur (par un directeur ou admin)
+ *
+ * @param {string} userId - ID de l'utilisateur dont on veut modifier le mot de passe
+ * @param {string} newPassword - Nouveau mot de passe
+ * @param {string} requesterUserId - ID de l'utilisateur qui fait la demande (directeur/admin)
+ * @returns {Promise<{success: boolean, message: string}>}
+ */
+export async function updateUserPassword(userId, newPassword, requesterUserId) {
+  const supabase = getSupabaseClient();
+
+  // Récupérer la session actuelle pour l'authentification
+  const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError || !session) {
+    throw new Error('Session non valide. Veuillez vous reconnecter.');
+  }
+
+  // Validation côté client
+  if (!userId || !newPassword || !requesterUserId) {
+    throw new Error('Paramètres manquants pour la mise à jour du mot de passe');
+  }
+
+  if (newPassword.length < 8) {
+    throw new Error('Le mot de passe doit contenir au moins 8 caractères');
+  }
+
+  // Appeler la Edge Function
+  const response = await fetch(
+    `${supabase.supabaseUrl}/functions/v1/update-user-password`,
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${session.access_token}`,
+        'apikey': supabase.supabaseKey,
+      },
+      body: JSON.stringify({
+        user_id: userId,
+        new_password: newPassword,
+        requester_user_id: requesterUserId
+      })
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok || result.error) {
+    const errorMessage = result.error || `Erreur HTTP ${response.status}`;
+    throw new Error(errorMessage);
+  }
+
+  return {
+    success: result.success,
+    message: result.message
+  };
+}
