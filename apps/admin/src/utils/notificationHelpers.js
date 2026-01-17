@@ -38,7 +38,8 @@ export function formatNotificationTime(createdAt) {
  * @returns {Function} Fonction de clic
  */
 export function getNotificationAction(notification, navigate) {
-  const data = notification.data || {};
+  // La colonne s'appelle 'metadata' dans la DB, mais on supporte aussi 'data' pour compatibilité
+  const data = notification.metadata || notification.data || {};
 
   // Extraire le type depuis les données ou le titre
   const type = data.type || inferTypeFromTitle(notification.title);
@@ -183,7 +184,8 @@ export function getPriorityBadgeColor(priority) {
  * @returns {string} Nom de l'icône Lucide React
  */
 export function getNotificationIcon(notification) {
-  const data = notification.data || {};
+  // La colonne s'appelle 'metadata' dans la DB, mais on supporte aussi 'data' pour compatibilité
+  const data = notification.metadata || notification.data || {};
   const type = data.type || inferTypeFromTitle(notification.title);
 
   switch (type) {
