@@ -305,6 +305,7 @@ export default function PrincipalDashboard() {
             color="blue"
           />
           <StatCard
+            onClick={() => window.location.href = '/classes'}
             title="Classes"
             value={formatNumber(stats.classes)}
             icon={School}
