@@ -3,12 +3,14 @@ import { Modal } from '@edutrack/ui';
 import { X, User as UserIcon, Mail, Phone, BookOpen, GraduationCap, Plus, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
 import { createUserAccount, updateUserFields } from '../../../services/createUserAccount';
+import { useToast } from '../../../components/Toast';
 
 /**
  * Modal spécialisé pour créer ou éditer un enseignant
  */
 export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const isEditing = !!user;
   const [loading, setLoading] = useState(false);
   const [loadingSchoolDetails, setLoadingSchoolDetails] = useState(false);
@@ -328,12 +330,23 @@ export default function TeacherFormModal({ isOpen, onClose, user, onSuccess }) {
           phone: formData.phone,
         });
 
+        // Toast de succès
+        toast.success(`Compte enseignant créé pour ${formData.full_name.trim()}`, {
+          title: 'Succès',
+        });
+
         onSuccess();
         // Ne pas fermer - laisser l'utilisateur copier les identifiants
       }
     } catch (err) {
       console.error('Error saving teacher:', err);
-      setError(err.message || 'Erreur lors de l\'enregistrement');
+      const errorMessage = err.message || 'Erreur lors de l\'enregistrement';
+      setError(errorMessage);
+      // Afficher le toast d'erreur
+      toast.error(errorMessage, {
+        title: 'Erreur de création',
+        duration: 8000
+      });
     } finally {
       setLoading(false);
     }

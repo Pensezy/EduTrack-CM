@@ -73,12 +73,21 @@ export async function createUserAccount({
 
   const result = await response.json();
 
-  if (!response.ok) {
-    throw new Error(result.error || `Erreur HTTP ${response.status}: ${response.statusText}`);
-  }
+  if (!response.ok || result.error) {
+    const errorMessage = result.error || `Erreur HTTP ${response.status}`;
 
-  if (result.error) {
-    throw new Error(result.error);
+    // Traduire les erreurs courantes de Supabase Auth
+    if (errorMessage.includes('already been registered') || errorMessage.includes('already exists')) {
+      throw new Error(`Cet email est déjà utilisé. Veuillez en choisir un autre ou vérifier les comptes existants.`);
+    }
+    if (errorMessage.includes('Invalid email')) {
+      throw new Error(`L'adresse email n'est pas valide.`);
+    }
+    if (errorMessage.includes('Password')) {
+      throw new Error(`Le mot de passe ne respecte pas les critères de sécurité.`);
+    }
+
+    throw new Error(errorMessage);
   }
 
   return {

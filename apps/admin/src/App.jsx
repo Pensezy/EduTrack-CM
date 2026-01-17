@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, AppsProvider, useAuth } from '@edutrack/api';
+import { ToastProvider } from './components/Toast';
 import AdminLayout from './components/Layout/AdminLayout';
 import Login from './pages/Auth/Login';
 // Dashboards par rôle
@@ -195,9 +196,11 @@ export default function App() {
   return (
     <AuthProvider>
       <AppsProvider includeCatalog={true}>
-        <BrowserRouter>
-          <AppRoutes />
-        </BrowserRouter>
+        <ToastProvider>
+          <BrowserRouter>
+            <AppRoutes />
+          </BrowserRouter>
+        </ToastProvider>
       </AppsProvider>
     </AuthProvider>
   );

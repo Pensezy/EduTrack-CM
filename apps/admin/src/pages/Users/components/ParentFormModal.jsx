@@ -3,6 +3,7 @@ import { Modal } from '@edutrack/ui';
 import { X, User as UserIcon, Mail, Phone, Home, Briefcase, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
 import { createUserAccount, updateUserFields } from '../../../services/createUserAccount';
+import { useToast } from '../../../components/Toast';
 
 /**
  * Modal spécialisé pour créer ou éditer un parent
@@ -10,6 +11,7 @@ import { createUserAccount, updateUserFields } from '../../../services/createUse
  */
 export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const isEditing = !!user;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -246,12 +248,23 @@ export default function ParentFormModal({ isOpen, onClose, user, onSuccess }) {
           fullName: formData.full_name,
         });
 
+        // Toast de succès
+        toast.success(`Compte parent créé pour ${formData.full_name.trim()}`, {
+          title: 'Succès',
+        });
+
         // Ne pas fermer le modal - laisser l'utilisateur copier les identifiants
         onSuccess();
       }
     } catch (err) {
       console.error('Error saving parent:', err);
-      setError(err.message || 'Erreur lors de l\'enregistrement');
+      const errorMessage = err.message || 'Erreur lors de l\'enregistrement';
+      setError(errorMessage);
+      // Afficher le toast d'erreur
+      toast.error(errorMessage, {
+        title: 'Erreur de création',
+        duration: 8000
+      });
     } finally {
       setLoading(false);
     }

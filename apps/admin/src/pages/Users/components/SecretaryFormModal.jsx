@@ -3,6 +3,7 @@ import { Modal } from '@edutrack/ui';
 import { X, User as UserIcon, Mail, Phone, Key, Eye, EyeOff, Copy, CheckCircle, AlertCircle, Briefcase } from 'lucide-react';
 import { getSupabaseClient, useAuth } from '@edutrack/api';
 import { createUserAccount, updateUserFields } from '../../../services/createUserAccount';
+import { useToast } from '../../../components/Toast';
 
 /**
  * Modal spécialisé pour créer ou éditer une secrétaire
@@ -10,6 +11,7 @@ import { createUserAccount, updateUserFields } from '../../../services/createUse
  */
 export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess }) {
   const { user: currentUser } = useAuth();
+  const toast = useToast();
   const isEditing = !!user;
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -179,6 +181,11 @@ export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess })
           fullName: formData.full_name,
         });
 
+        // Toast de succès
+        toast.success(`Compte secrétaire créé pour ${formData.full_name.trim()}`, {
+          title: 'Succès',
+        });
+
         onSuccess();
       }
     } catch (err) {
@@ -194,6 +201,12 @@ export default function SecretaryFormModal({ isOpen, onClose, user, onSuccess })
       } else {
         setError(errorMessage);
       }
+
+      // Afficher le toast d'erreur
+      toast.error(errorMessage, {
+        title: 'Erreur de création',
+        duration: 8000
+      });
     } finally {
       setLoading(false);
     }
