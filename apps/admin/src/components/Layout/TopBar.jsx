@@ -1,6 +1,6 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '@edutrack/api';
+import { useAuth, getSupabaseClient } from '@edutrack/api';
 import {
   Bell,
   Search,
@@ -17,7 +17,9 @@ import {
   Users,
   BarChart3,
   DollarSign,
-  Loader2
+  Loader2,
+  GraduationCap,
+  UserCog
 } from 'lucide-react';
 import { useNotifications } from '../../hooks/useNotifications';
 import {
@@ -33,9 +35,14 @@ export default function TopBar({ user, onMenuClick }) {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [searchFocused, setSearchFocused] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   const profileMenuRef = useRef(null);
   const notificationsRef = useRef(null);
+  const searchRef = useRef(null);
+  const searchTimeoutRef = useRef(null);
 
   // Utiliser le hook de notifications réelles
   const {
@@ -55,11 +62,157 @@ export default function TopBar({ user, onMenuClick }) {
       if (notificationsRef.current && !notificationsRef.current.contains(event.target)) {
         setNotificationsOpen(false);
       }
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
     }
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  // Recherche globale avec debounce
+  const performSearch = useCallback(async (query) => {
+    if (!query.trim() || query.length < 2) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    setSearchLoading(true);
+    try {
+      const supabase = getSupabaseClient();
+      const results = [];
+      const searchTerm = `%${query.toLowerCase()}%`;
+
+      // Recherche dans les écoles (admin et principal)
+      if (user?.role === 'admin' || user?.role === 'principal') {
+        const { data: schools } = await supabase
+          .from('schools')
+          .select('id, name, city, code')
+          .or(`name.ilike.${searchTerm},city.ilike.${searchTerm},code.ilike.${searchTerm}`)
+          .limit(5);
+
+        if (schools) {
+          schools.forEach(school => {
+            results.push({
+              type: 'school',
+              id: school.id,
+              title: school.name,
+              subtitle: `${school.city || 'Ville non définie'} - ${school.code}`,
+              icon: School,
+              href: `/schools?highlight=${school.id}`
+            });
+          });
+        }
+      }
+
+      // Recherche dans les utilisateurs
+      if (user?.role === 'admin' || user?.role === 'principal') {
+        let usersQuery = supabase
+          .from('users')
+          .select('id, full_name, email, role')
+          .or(`full_name.ilike.${searchTerm},email.ilike.${searchTerm}`)
+          .limit(5);
+
+        // Principal ne voit que les utilisateurs de son école
+        if (user?.role === 'principal' && user?.current_school_id) {
+          usersQuery = usersQuery.eq('current_school_id', user.current_school_id);
+        }
+
+        const { data: users } = await usersQuery;
+
+        if (users) {
+          users.forEach(u => {
+            const roleLabels = {
+              admin: 'Admin',
+              principal: 'Directeur',
+              teacher: 'Enseignant',
+              secretary: 'Secrétaire',
+              parent: 'Parent',
+              student: 'Élève'
+            };
+            const roleIcons = {
+              admin: UserCog,
+              principal: User,
+              teacher: GraduationCap,
+              secretary: UserCog,
+              parent: Users,
+              student: User
+            };
+
+            results.push({
+              type: 'user',
+              id: u.id,
+              title: u.full_name,
+              subtitle: `${roleLabels[u.role] || u.role} - ${u.email}`,
+              icon: roleIcons[u.role] || User,
+              href: `/users?highlight=${u.id}`
+            });
+          });
+        }
+      }
+
+      // Recherche dans les élèves (students table)
+      if (user?.role === 'admin' || user?.role === 'principal' || user?.role === 'secretary' || user?.role === 'teacher') {
+        let studentsQuery = supabase
+          .from('students')
+          .select('id, first_name, last_name, registration_number, school_id')
+          .or(`first_name.ilike.${searchTerm},last_name.ilike.${searchTerm},registration_number.ilike.${searchTerm}`)
+          .limit(5);
+
+        // Filtrer par école si pas admin
+        if (user?.role !== 'admin' && user?.current_school_id) {
+          studentsQuery = studentsQuery.eq('school_id', user.current_school_id);
+        }
+
+        const { data: students } = await studentsQuery;
+
+        if (students) {
+          students.forEach(student => {
+            results.push({
+              type: 'student',
+              id: student.id,
+              title: `${student.first_name} ${student.last_name}`,
+              subtitle: `Matricule: ${student.registration_number || 'Non défini'}`,
+              icon: GraduationCap,
+              href: user?.role === 'secretary' ? `/secretary/students?highlight=${student.id}` : `/users?highlight=${student.id}`
+            });
+          });
+        }
+      }
+
+      setSearchResults(results);
+      setShowSearchResults(results.length > 0);
+    } catch (error) {
+      console.error('Erreur de recherche:', error);
+      setSearchResults([]);
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [user]);
+
+  // Debounce la recherche
+  useEffect(() => {
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (searchQuery.trim().length >= 2) {
+      searchTimeoutRef.current = setTimeout(() => {
+        performSearch(searchQuery);
+      }, 300);
+    } else {
+      setSearchResults([]);
+      setShowSearchResults(false);
+    }
+
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, [searchQuery, performSearch]);
 
   const handleLogout = async () => {
     await signOut();
@@ -68,10 +221,18 @@ export default function TopBar({ user, onMenuClick }) {
 
   const handleSearch = (e) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      console.log('Searching for:', searchQuery);
-      // TODO: Implémenter la recherche
+    if (searchQuery.trim() && searchResults.length > 0) {
+      // Naviguer vers le premier résultat
+      navigate(searchResults[0].href);
+      setSearchQuery('');
+      setShowSearchResults(false);
     }
+  };
+
+  const handleResultClick = (result) => {
+    navigate(result.href);
+    setSearchQuery('');
+    setShowSearchResults(false);
   };
 
   return (
@@ -86,23 +247,30 @@ export default function TopBar({ user, onMenuClick }) {
       </button>
 
       <div className="flex flex-1 justify-between px-4 sm:px-6 lg:px-8">
-        {/* Search - Modern Design */}
-        <div className="flex flex-1 max-w-2xl items-center">
+        {/* Search - Modern Design avec résultats */}
+        <div className="flex flex-1 max-w-2xl items-center relative" ref={searchRef}>
           <form onSubmit={handleSearch} className="w-full">
             <div className={`
               relative w-full transition-all duration-200
               ${searchFocused ? 'transform scale-105' : ''}
             `}>
               <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                <Search className={`h-5 w-5 transition-colors ${
-                  searchFocused ? 'text-primary-500' : 'text-gray-400'
-                }`} />
+                {searchLoading ? (
+                  <Loader2 className="h-5 w-5 text-primary-500 animate-spin" />
+                ) : (
+                  <Search className={`h-5 w-5 transition-colors ${
+                    searchFocused ? 'text-primary-500' : 'text-gray-400'
+                  }`} />
+                )}
               </div>
               <input
                 type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                onFocus={() => setSearchFocused(true)}
+                onFocus={() => {
+                  setSearchFocused(true);
+                  if (searchResults.length > 0) setShowSearchResults(true);
+                }}
                 onBlur={() => setSearchFocused(false)}
                 className={`
                   block w-full rounded-full border pl-10 pr-10 py-2 text-sm
@@ -119,7 +287,11 @@ export default function TopBar({ user, onMenuClick }) {
               {searchQuery && (
                 <button
                   type="button"
-                  onClick={() => setSearchQuery('')}
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSearchResults([]);
+                    setShowSearchResults(false);
+                  }}
                   className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-4 w-4" />
@@ -127,6 +299,71 @@ export default function TopBar({ user, onMenuClick }) {
               )}
             </div>
           </form>
+
+          {/* Résultats de recherche */}
+          {showSearchResults && searchResults.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 overflow-hidden z-50 animate-fadeIn">
+              <div className="p-2 border-b border-gray-100">
+                <p className="text-xs text-gray-500 px-2">
+                  {searchResults.length} résultat{searchResults.length > 1 ? 's' : ''} trouvé{searchResults.length > 1 ? 's' : ''}
+                </p>
+              </div>
+              <div className="max-h-80 overflow-y-auto">
+                {searchResults.map((result) => {
+                  const Icon = result.icon;
+                  return (
+                    <button
+                      key={`${result.type}-${result.id}`}
+                      onClick={() => handleResultClick(result)}
+                      className="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left border-b border-gray-50 last:border-0"
+                    >
+                      <div className={`
+                        flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center
+                        ${result.type === 'school' ? 'bg-blue-100 text-blue-600' :
+                          result.type === 'user' ? 'bg-green-100 text-green-600' :
+                          'bg-purple-100 text-purple-600'}
+                      `}>
+                        <Icon className="h-5 w-5" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-gray-900 truncate">
+                          {result.title}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate">
+                          {result.subtitle}
+                        </p>
+                      </div>
+                      <span className={`
+                        text-xs px-2 py-1 rounded-full
+                        ${result.type === 'school' ? 'bg-blue-50 text-blue-700' :
+                          result.type === 'user' ? 'bg-green-50 text-green-700' :
+                          'bg-purple-50 text-purple-700'}
+                      `}>
+                        {result.type === 'school' ? 'École' :
+                         result.type === 'user' ? 'Utilisateur' : 'Élève'}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {searchQuery.length >= 2 && (
+                <div className="p-2 border-t border-gray-100 bg-gray-50">
+                  <p className="text-xs text-gray-500 text-center">
+                    Appuyez Entrée pour voir le premier résultat
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Message si aucun résultat */}
+          {showSearchResults && searchResults.length === 0 && searchQuery.length >= 2 && !searchLoading && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-lg shadow-lg ring-1 ring-black ring-opacity-5 p-4 z-50">
+              <p className="text-sm text-gray-500 text-center">
+                Aucun résultat pour "{searchQuery}"
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Right section */}

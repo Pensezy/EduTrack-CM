@@ -272,9 +272,13 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
 
   const SidebarContent = () => (
     <div className="flex flex-col flex-grow bg-primary-700 overflow-y-auto">
-      {/* Logo */}
+      {/* Logo - Cliquable pour retourner au Dashboard */}
       <div className="flex items-center justify-between flex-shrink-0 px-4 py-5 bg-primary-800">
-        <div className="flex items-center">
+        <Link
+          to="/"
+          onClick={handleLinkClick}
+          className="flex items-center hover:opacity-90 transition-opacity"
+        >
           <img
             src="/assets/images/mon_logo.png"
             alt="EduTrack Logo"
@@ -288,7 +292,7 @@ export default function Sidebar({ mobileMenuOpen, setMobileMenuOpen }) {
              user?.role === 'parent' ? 'EduTrack Parent' :
              user?.role === 'student' ? 'EduTrack Élève' : 'EduTrack'}
           </span>
-        </div>
+        </Link>
         {/* Close button for mobile */}
         <button
           onClick={() => setMobileMenuOpen(false)}

@@ -18,10 +18,15 @@ import {
   UserCheck,
   UserX,
   Download,
-  Upload
+  Upload,
+  Lock,
+  Crown,
+  ArrowRight,
+  X
 } from 'lucide-react';
 import { UserFormModal, UserViewModal, AdminFormModal, PrincipalFormModal, TeacherFormModal, SecretaryFormModal, ParentFormModal, StudentFormModal } from './components';
 import ImportExportModal from '../../components/ImportExportModal';
+import { Link } from 'react-router-dom';
 
 export default function UsersPage() {
   const { user } = useAuth();
@@ -44,6 +49,40 @@ export default function UsersPage() {
   const [studentModal, setStudentModal] = useState({ isOpen: false, user: null });
   const [exportModal, setExportModal] = useState(false);
   const [importModal, setImportModal] = useState(false);
+  const [showSecretaryBlockModal, setShowSecretaryBlockModal] = useState(false);
+  const [hasAcademicApp, setHasAcademicApp] = useState(false);
+
+  // Vérifier si le directeur a accès à l'App Académique
+  useEffect(() => {
+    const checkAcademicAppAccess = async () => {
+      if (user?.role === 'principal' && user?.current_school_id) {
+        try {
+          const supabase = getSupabaseClient();
+          // Chercher si l'école a une souscription active à App Académique
+          const { data, error } = await supabase
+            .from('school_subscriptions')
+            .select('id, app:apps(slug)')
+            .eq('school_id', user.current_school_id)
+            .in('status', ['active', 'trial']);
+
+          if (!error && data) {
+            // Vérifier si l'app academic est dans les souscriptions
+            const hasAcademic = data.some(sub =>
+              sub.app?.slug === 'academic' || sub.app?.slug === 'app-academic'
+            );
+            setHasAcademicApp(hasAcademic);
+          }
+        } catch (err) {
+          console.error('Error checking academic app access:', err);
+        }
+      } else if (user?.role === 'admin') {
+        // Les admins ont accès à tout
+        setHasAcademicApp(true);
+      }
+    };
+
+    checkAcademicAppAccess();
+  }, [user]);
 
   useEffect(() => {
     fetchUsers();
@@ -217,6 +256,11 @@ export default function UsersPage() {
   };
 
   const handleCreateSecretary = () => {
+    // Bloquer les directeurs sans App Académique
+    if (user?.role === 'principal' && !hasAcademicApp) {
+      setShowSecretaryBlockModal(true);
+      return;
+    }
     setSecretaryModal({ isOpen: true, user: null });
   };
 
@@ -332,10 +376,22 @@ export default function UsersPage() {
           </button>
           <button
             onClick={handleCreateSecretary}
-            className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors shadow-sm text-sm"
+            className={`inline-flex items-center gap-2 px-3 py-2 rounded-lg transition-colors shadow-sm text-sm ${
+              user?.role === 'principal' && !hasAcademicApp
+                ? 'bg-gray-400 text-white cursor-not-allowed relative'
+                : 'bg-yellow-600 text-white hover:bg-yellow-700'
+            }`}
+            title={user?.role === 'principal' && !hasAcademicApp ? 'Nécessite App Académique' : 'Créer un secrétaire'}
           >
-            <Plus className="h-4 w-4" />
+            {user?.role === 'principal' && !hasAcademicApp ? (
+              <Lock className="h-4 w-4" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
             <span className="hidden sm:inline">Secrétaire</span>
+            {user?.role === 'principal' && !hasAcademicApp && (
+              <Crown className="h-3 w-3 text-yellow-300 absolute -top-1 -right-1" />
+            )}
           </button>
           <button
             onClick={handleCreateParent}
@@ -591,6 +647,82 @@ export default function UsersPage() {
         onImport={handleImportUsers}
         allowedTypes={['users', 'students', 'teachers', 'parents']}
       />
+
+      {/* Modal de blocage pour création de secrétaire (App Core) */}
+      {showSecretaryBlockModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
+            {/* Header avec gradient rouge */}
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <Lock className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white">Fonctionnalité Premium</h3>
+                </div>
+                <button
+                  onClick={() => setShowSecretaryBlockModal(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                  <Crown className="h-8 w-8 text-red-600" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-900 mb-2">
+                  Compte Secrétaire non disponible
+                </h4>
+                <p className="text-gray-600 text-sm">
+                  Avec l'<strong>App Core gratuite</strong>, la création de comptes secrétaires n'est pas disponible.
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  Débloquez avec App Académique
+                </h5>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>✓ Création de comptes secrétaires illimitée</li>
+                  <li>✓ Gestion avancée des inscriptions</li>
+                  <li>✓ Bulletins professionnels personnalisés</li>
+                  <li>✓ Jusqu'à 500 élèves</li>
+                </ul>
+              </div>
+
+              {/* Boutons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowSecretaryBlockModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Annuler
+                </button>
+                <Link
+                  to="/app-store"
+                  onClick={() => setShowSecretaryBlockModal(false)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all font-medium"
+                >
+                  <Crown className="h-4 w-4" />
+                  Découvrir App Académique
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <p className="text-center text-xs text-gray-500 mt-4">
+                75 000 FCFA/an • Support prioritaire inclus
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

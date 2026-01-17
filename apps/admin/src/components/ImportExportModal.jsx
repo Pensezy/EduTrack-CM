@@ -2,9 +2,12 @@
  * Modal d'Import/Export pour les utilisateurs
  *
  * Permet d'exporter en Excel/PDF et d'importer depuis un fichier Excel
+ * Gère les restrictions selon l'application (Core vs Académique)
  */
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
+import { Link } from 'react-router-dom';
+import { useAuth, getSupabaseClient } from '@edutrack/api';
 import {
   X,
   Download,
@@ -14,7 +17,10 @@ import {
   AlertCircle,
   Check,
   Loader2,
-  Info
+  Info,
+  Lock,
+  Crown,
+  ArrowRight
 } from 'lucide-react';
 import {
   exportToExcel,
@@ -33,13 +39,21 @@ const ROLE_OPTIONS = [
   { value: 'student', label: 'Élèves' }
 ];
 
+// Options complètes pour l'import (selon le contexte)
 const TYPE_OPTIONS = [
-  { value: 'users', label: 'Utilisateurs' },
-  { value: 'personnel', label: 'Personnel' },
+  { value: 'users', label: 'Utilisateurs (tous types)' },
   { value: 'students', label: 'Élèves' },
   { value: 'teachers', label: 'Enseignants' },
-  { value: 'parents', label: 'Parents' }
+  { value: 'secretary', label: 'Secrétaires' },
+  { value: 'parents', label: 'Parents' },
+  { value: 'personnel', label: 'Personnel (enseignants + secrétaires)' }
 ];
+
+// Limites de l'App Core gratuite
+const CORE_LIMITS = {
+  teachers: 3,
+  secretary: 0 // Pas de secrétaire avec App Core
+};
 
 export default function ImportExportModal({
   isOpen,
@@ -49,8 +63,10 @@ export default function ImportExportModal({
   type = 'users',
   schoolName = 'EduTrack',
   onImport = null, // Callback pour l'import: (parsedData) => Promise
-  allowedTypes = null // Types autorisés pour l'import, null = tous
+  allowedTypes = null, // Types autorisés pour l'import, null = tous
+  context = 'users' // Contexte: 'users', 'personnel', 'students' pour adapter la liste déroulante
 }) {
+  const { user } = useAuth();
   const [selectedRole, setSelectedRole] = useState('');
   const [selectedType, setSelectedType] = useState(type);
   const [exportFormat, setExportFormat] = useState('excel');
@@ -59,7 +75,103 @@ export default function ImportExportModal({
   const [importPreview, setImportPreview] = useState(null);
   const [importErrors, setImportErrors] = useState([]);
   const [success, setSuccess] = useState(false);
+  const [hasAcademicApp, setHasAcademicApp] = useState(false);
+  const [currentTeacherCount, setCurrentTeacherCount] = useState(0);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [upgradeMessage, setUpgradeMessage] = useState('');
   const fileInputRef = useRef(null);
+
+  // Vérifier l'accès à App Académique et compter les enseignants
+  useEffect(() => {
+    const checkAccess = async () => {
+      if (user?.role === 'principal' && user?.current_school_id) {
+        try {
+          const supabase = getSupabaseClient();
+
+          // Vérifier App Académique
+          const { data: subs } = await supabase
+            .from('school_subscriptions')
+            .select('id, app:apps(slug)')
+            .eq('school_id', user.current_school_id)
+            .in('status', ['active', 'trial']);
+
+          if (subs) {
+            const hasAcademic = subs.some(sub =>
+              sub.app?.slug === 'academic' || sub.app?.slug === 'app-academic'
+            );
+            setHasAcademicApp(hasAcademic);
+          }
+
+          // Compter les enseignants actuels
+          const { count } = await supabase
+            .from('users')
+            .select('*', { count: 'exact', head: true })
+            .eq('current_school_id', user.current_school_id)
+            .eq('role', 'teacher');
+
+          setCurrentTeacherCount(count || 0);
+        } catch (err) {
+          console.error('Error checking access:', err);
+        }
+      } else if (user?.role === 'admin') {
+        setHasAcademicApp(true);
+      }
+    };
+
+    if (isOpen) {
+      checkAccess();
+    }
+  }, [isOpen, user]);
+
+  // Obtenir les types disponibles selon le contexte et le rôle
+  const getAvailableTypes = () => {
+    // Pour les admins, tout est disponible
+    if (user?.role === 'admin') {
+      return TYPE_OPTIONS;
+    }
+
+    // Pour les directeurs
+    if (user?.role === 'principal') {
+      let types = [];
+
+      // Toujours disponible
+      types.push({ value: 'students', label: 'Élèves' });
+      types.push({ value: 'parents', label: 'Parents' });
+
+      // Enseignants avec indication de limite si App Core
+      if (hasAcademicApp) {
+        types.push({ value: 'teachers', label: 'Enseignants' });
+      } else {
+        const remaining = CORE_LIMITS.teachers - currentTeacherCount;
+        types.push({
+          value: 'teachers',
+          label: `Enseignants (${remaining > 0 ? remaining : 0} restant${remaining > 1 ? 's' : ''})`,
+          restricted: true,
+          limit: CORE_LIMITS.teachers,
+          current: currentTeacherCount
+        });
+      }
+
+      // Secrétaires seulement avec App Académique
+      if (hasAcademicApp) {
+        types.push({ value: 'secretary', label: 'Secrétaires' });
+        types.push({ value: 'personnel', label: 'Personnel (enseignants + secrétaires)' });
+      } else {
+        types.push({
+          value: 'secretary',
+          label: 'Secrétaires 🔒',
+          blocked: true
+        });
+      }
+
+      return types;
+    }
+
+    // Par défaut, retourner les types autorisés ou tous
+    return allowedTypes
+      ? TYPE_OPTIONS.filter(t => allowedTypes.includes(t.value))
+      : TYPE_OPTIONS;
+  };
 
   if (!isOpen) return null;
 
@@ -131,6 +243,54 @@ export default function ImportExportModal({
 
   const handleImport = async () => {
     if (!importPreview || importPreview.length === 0 || !onImport) return;
+
+    // Vérifications pour les directeurs sans App Académique
+    if (user?.role === 'principal' && !hasAcademicApp) {
+      // Blocage complet pour les secrétaires
+      if (selectedType === 'secretary') {
+        setUpgradeMessage('L\'import de secrétaires nécessite l\'App Académique.');
+        setShowUpgradeModal(true);
+        return;
+      }
+
+      // Vérification de la limite d'enseignants
+      if (selectedType === 'teachers') {
+        const remaining = CORE_LIMITS.teachers - currentTeacherCount;
+        if (importPreview.length > remaining) {
+          if (remaining <= 0) {
+            setUpgradeMessage(`Vous avez atteint la limite de ${CORE_LIMITS.teachers} enseignants avec l'App Core gratuite. Passez à l'App Académique pour ajouter des enseignants illimités.`);
+          } else {
+            setUpgradeMessage(`Vous ne pouvez importer que ${remaining} enseignant(s) de plus (limite de ${CORE_LIMITS.teachers} avec l'App Core). Vous essayez d'en importer ${importPreview.length}.`);
+          }
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+
+      // Vérification pour le personnel (peut contenir des secrétaires)
+      if (selectedType === 'personnel') {
+        // Vérifier si les données contiennent des secrétaires
+        const hasSecretaries = importPreview.some(row =>
+          row.role?.toLowerCase() === 'secretary' || row.role?.toLowerCase() === 'secrétaire'
+        );
+        if (hasSecretaries) {
+          setUpgradeMessage('Votre fichier contient des secrétaires. L\'import de secrétaires nécessite l\'App Académique.');
+          setShowUpgradeModal(true);
+          return;
+        }
+
+        // Vérifier la limite d'enseignants dans le personnel
+        const teachersInFile = importPreview.filter(row =>
+          row.role?.toLowerCase() === 'teacher' || row.role?.toLowerCase() === 'enseignant'
+        ).length;
+        const remaining = CORE_LIMITS.teachers - currentTeacherCount;
+        if (teachersInFile > remaining) {
+          setUpgradeMessage(`Votre fichier contient ${teachersInFile} enseignant(s), mais vous ne pouvez en importer que ${remaining > 0 ? remaining : 0} de plus (limite de ${CORE_LIMITS.teachers} avec l'App Core).`);
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+    }
 
     setLoading(true);
     try {
@@ -309,6 +469,21 @@ export default function ImportExportModal({
             ) : (
               /* Import Mode */
               <div className="space-y-4">
+                {/* Avertissement App Core */}
+                {user?.role === 'principal' && !hasAcademicApp && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <Info className="h-5 w-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                      <div className="text-sm text-yellow-800">
+                        <p className="font-medium">Limites App Core</p>
+                        <p className="mt-1">
+                          Max {CORE_LIMITS.teachers} enseignants ({currentTeacherCount} actuellement) • Pas de secrétaire
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Type de données */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -317,22 +492,36 @@ export default function ImportExportModal({
                   <select
                     value={selectedType}
                     onChange={(e) => {
+                      const selectedOpt = getAvailableTypes().find(t => t.value === e.target.value);
+                      // Empêcher la sélection d'un type bloqué
+                      if (selectedOpt?.blocked) {
+                        setUpgradeMessage('L\'import de secrétaires nécessite l\'App Académique.');
+                        setShowUpgradeModal(true);
+                        return;
+                      }
                       setSelectedType(e.target.value);
                       resetImport();
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
                   >
-                    {(allowedTypes || TYPE_OPTIONS).map(option => {
-                      const opt = typeof option === 'string'
-                        ? TYPE_OPTIONS.find(t => t.value === option) || { value: option, label: option }
-                        : option;
-                      return (
-                        <option key={opt.value} value={opt.value}>
-                          {opt.label}
-                        </option>
-                      );
-                    })}
+                    {getAvailableTypes().map(option => (
+                      <option
+                        key={option.value}
+                        value={option.value}
+                        disabled={option.blocked}
+                        className={option.blocked ? 'text-gray-400' : ''}
+                      >
+                        {option.label}
+                      </option>
+                    ))}
                   </select>
+
+                  {/* Indication visuelle pour les restrictions */}
+                  {user?.role === 'principal' && !hasAcademicApp && selectedType === 'teachers' && (
+                    <p className="mt-1 text-xs text-orange-600">
+                      ⚠️ Limite: {CORE_LIMITS.teachers - currentTeacherCount > 0 ? CORE_LIMITS.teachers - currentTeacherCount : 0} enseignant(s) restant(s)
+                    </p>
+                  )}
                 </div>
 
                 {/* Télécharger le modèle */}
@@ -489,6 +678,86 @@ export default function ImportExportModal({
           </div>
         </div>
       </div>
+
+      {/* Modal d'upgrade pour les restrictions */}
+      {showUpgradeModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl max-w-md w-full overflow-hidden animate-fade-in">
+            {/* Header */}
+            <div className="bg-gradient-to-r from-red-500 to-orange-500 px-6 py-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center">
+                    <Lock className="h-5 w-5 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold text-white">Limite atteinte</h3>
+                </div>
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="text-white/80 hover:text-white transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+              </div>
+            </div>
+
+            {/* Contenu */}
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-red-100 flex items-center justify-center">
+                  <Crown className="h-8 w-8 text-red-600" />
+                </div>
+                <h4 className="text-xl font-bold text-gray-900 mb-2">
+                  Upgrade requis
+                </h4>
+                <p className="text-gray-600 text-sm">
+                  {upgradeMessage}
+                </p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <h5 className="font-semibold text-gray-900 mb-2 flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  Avantages App Académique
+                </h5>
+                <ul className="text-sm text-gray-600 space-y-1">
+                  <li>✓ Enseignants illimités</li>
+                  <li>✓ Comptes secrétaires illimités</li>
+                  <li>✓ Import en masse sans restrictions</li>
+                  <li>✓ Jusqu'à 500 élèves</li>
+                  <li>✓ Bulletins professionnels</li>
+                </ul>
+              </div>
+
+              {/* Boutons */}
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={() => setShowUpgradeModal(false)}
+                  className="flex-1 px-4 py-2.5 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-medium"
+                >
+                  Annuler
+                </button>
+                <Link
+                  to="/app-store"
+                  onClick={() => {
+                    setShowUpgradeModal(false);
+                    onClose();
+                  }}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700 text-white rounded-lg shadow-md hover:shadow-lg transition-all font-medium"
+                >
+                  <Crown className="h-4 w-4" />
+                  Découvrir App Académique
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+
+              <p className="text-center text-xs text-gray-500 mt-4">
+                75 000 FCFA/an • Support prioritaire inclus
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -5,30 +5,34 @@
  */
 
 import * as XLSX from 'xlsx';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
+import { jsPDF } from 'jspdf';
+import autoTable from 'jspdf-autotable';
 
 // Configuration des colonnes par type
 const COLUMNS_CONFIG = {
   users: {
-    headers: ['Nom complet', 'Email', 'Rôle', 'École', 'Statut', 'Date création'],
-    keys: ['full_name', 'email', 'role', 'school_name', 'status', 'created_at']
+    headers: ['Nom complet', 'Email', 'Rôle', 'Téléphone', 'Statut', 'Date création'],
+    keys: ['full_name', 'email', 'role', 'phone', 'is_active', 'created_at']
   },
   personnel: {
     headers: ['Nom complet', 'Email', 'Rôle', 'Téléphone', 'Statut', 'Date création'],
-    keys: ['full_name', 'email', 'role', 'phone', 'status', 'created_at']
+    keys: ['full_name', 'email', 'role', 'phone', 'is_active', 'created_at']
   },
   students: {
-    headers: ['Matricule', 'Nom complet', 'Classe', 'Genre', 'Date naissance', 'Statut'],
-    keys: ['matricule', 'full_name', 'class_name', 'gender', 'date_of_birth', 'status']
+    headers: ['Matricule', 'Prénom', 'Nom', 'Genre', 'Date naissance', 'Classe'],
+    keys: ['registration_number', 'first_name', 'last_name', 'gender', 'birth_date', 'class_name']
   },
   teachers: {
-    headers: ['Nom complet', 'Email', 'Téléphone', 'Classes assignées', 'Statut'],
-    keys: ['full_name', 'email', 'phone', 'classes_count', 'status']
+    headers: ['Nom complet', 'Email', 'Téléphone', 'Statut', 'Date création'],
+    keys: ['full_name', 'email', 'phone', 'is_active', 'created_at']
   },
   parents: {
-    headers: ['Nom complet', 'Email', 'Téléphone', 'Enfants', 'Statut'],
-    keys: ['full_name', 'email', 'phone', 'children_count', 'status']
+    headers: ['Nom complet', 'Email', 'Téléphone', 'Statut', 'Date création'],
+    keys: ['full_name', 'email', 'phone', 'is_active', 'created_at']
+  },
+  secretary: {
+    headers: ['Nom complet', 'Email', 'Téléphone', 'Statut', 'Date création'],
+    keys: ['full_name', 'email', 'phone', 'is_active', 'created_at']
   }
 };
 
@@ -58,8 +62,9 @@ const formatValue = (value, key) => {
 
   if (key === 'role') return ROLE_LABELS[value] || value;
   if (key === 'status') return STATUS_LABELS[value] || value;
+  if (key === 'is_active') return value === true ? 'Actif' : value === false ? 'Inactif' : '-';
   if (key === 'gender') return value === 'M' ? 'Masculin' : value === 'F' ? 'Féminin' : value;
-  if (key === 'created_at' || key === 'date_of_birth') {
+  if (key === 'created_at' || key === 'date_of_birth' || key === 'birth_date') {
     try {
       return new Date(value).toLocaleDateString('fr-FR');
     } catch {
@@ -72,14 +77,42 @@ const formatValue = (value, key) => {
 
 /**
  * Prépare les données pour l'export
+ * @param {Array} data - Données brutes
+ * @param {string} type - Type de données
+ * @returns {Array} Données formatées pour export
  */
 const prepareData = (data, type) => {
   const config = COLUMNS_CONFIG[type] || COLUMNS_CONFIG.users;
 
+  // Debug: log la structure des données
+  if (data.length > 0) {
+    console.log('[Export] Keys disponibles:', Object.keys(data[0]));
+    console.log('[Export] Type:', type);
+    console.log('[Export] Config keys:', config.keys);
+  }
+
   return data.map(item => {
     const row = {};
     config.keys.forEach((key, index) => {
-      row[config.headers[index]] = formatValue(item[key], key);
+      // Gérer les clés imbriquées (ex: school.name)
+      let value = item[key];
+
+      // Si la clé n'existe pas directement, essayer des alternatives
+      if (value === undefined || value === null) {
+        // Alternatives courantes
+        if (key === 'is_active' && item.status !== undefined) {
+          value = item.status === 'active';
+        } else if (key === 'full_name' && !item.full_name) {
+          // Combiner first_name et last_name si full_name n'existe pas
+          if (item.first_name || item.last_name) {
+            value = `${item.first_name || ''} ${item.last_name || ''}`.trim();
+          }
+        } else if (key === 'registration_number' && item.matricule) {
+          value = item.matricule;
+        }
+      }
+
+      row[config.headers[index]] = formatValue(value, key);
     });
     return row;
   });
@@ -95,23 +128,39 @@ const prepareData = (data, type) => {
 export const exportToExcel = (data, type, filename, options = {}) => {
   const { schoolName = 'EduTrack', filterRole = null } = options;
 
+  console.log('[ExportExcel] Données reçues:', data?.length, 'éléments');
+  console.log('[ExportExcel] Type:', type);
+  console.log('[ExportExcel] FilterRole:', filterRole);
+
+  if (!data || data.length === 0) {
+    console.error('[ExportExcel] Aucune donnée à exporter');
+    throw new Error('Aucune donnée à exporter');
+  }
+
   // Filtrer par rôle si spécifié
   let filteredData = data;
   if (filterRole) {
     filteredData = data.filter(item => item.role === filterRole);
+    console.log('[ExportExcel] Après filtrage:', filteredData.length, 'éléments');
   }
 
   // Préparer les données
   const preparedData = prepareData(filteredData, type);
+  console.log('[ExportExcel] Données préparées:', preparedData.length, 'lignes');
+
+  if (preparedData.length > 0) {
+    console.log('[ExportExcel] Premier enregistrement:', preparedData[0]);
+  }
 
   // Créer le workbook
   const wb = XLSX.utils.book_new();
 
   // Créer la feuille avec les données
-  const ws = XLSX.utils.json_to_sheet(preparedData);
+  // S'assurer que toutes les colonnes sont présentes même si vides
+  const config = COLUMNS_CONFIG[type] || COLUMNS_CONFIG.users;
+  const ws = XLSX.utils.json_to_sheet(preparedData, { header: config.headers });
 
   // Ajuster la largeur des colonnes
-  const config = COLUMNS_CONFIG[type] || COLUMNS_CONFIG.users;
   const colWidths = config.headers.map(header => ({
     wch: Math.max(header.length, 15)
   }));
@@ -170,8 +219,8 @@ export const exportToPDF = (data, type, filename, options = {}) => {
     config.keys.map(key => formatValue(item[key], key))
   );
 
-  // Créer le tableau
-  doc.autoTable({
+  // Créer le tableau avec autoTable
+  autoTable(doc, {
     head: [config.headers],
     body: tableData,
     startY: 40,
@@ -191,12 +240,12 @@ export const exportToPDF = (data, type, filename, options = {}) => {
     columnStyles: {
       0: { cellWidth: 'auto' },
     },
-    didDrawPage: (data) => {
+    didDrawPage: (pageData) => {
       // Pied de page
       const pageCount = doc.internal.getNumberOfPages();
       doc.setFontSize(8);
       doc.text(
-        `Page ${data.pageNumber} sur ${pageCount}`,
+        `Page ${pageData.pageNumber} sur ${pageCount}`,
         doc.internal.pageSize.width / 2,
         doc.internal.pageSize.height - 10,
         { align: 'center' }
@@ -261,6 +310,15 @@ export const generateImportTemplate = (type, filename) => {
         'Les champs marqués * sont obligatoires',
         'Format téléphone: 6XXXXXXXX (9 chiffres)',
         'Les enfants seront liés via leur matricule après import'
+      ]
+    },
+    secretary: {
+      headers: ['Nom complet*', 'Email*', 'Téléphone', 'Adresse'],
+      example: ['Sophie Nguema', 'sophie.nguema@example.com', '691234567', 'Yaoundé, Cameroun'],
+      instructions: [
+        'Les champs marqués * sont obligatoires',
+        'Format téléphone: 6XXXXXXXX (9 chiffres)',
+        'Le rôle secrétaire sera automatiquement attribué'
       ]
     }
   };
