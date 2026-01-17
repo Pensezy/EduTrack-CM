@@ -282,6 +282,7 @@ export default function PrincipalDashboard() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Effectifs de votre école</h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatCard
+            onClick={() => window.location.href = '/users'}
             title="Élèves"
             value={formatNumber(stats.students)}
             icon={GraduationCap}
@@ -296,7 +297,7 @@ export default function PrincipalDashboard() {
             color="success"
           />
           <StatCard
-            onClick={() => window.location.href = '/users'}
+            onClick={() => window.location.href = '/personnel'}
             title="Personnel"
             value={formatNumber(stats.staff)}
             icon={Users}
