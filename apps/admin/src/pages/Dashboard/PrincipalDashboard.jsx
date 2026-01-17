@@ -296,6 +296,7 @@ export default function PrincipalDashboard() {
             color="success"
           />
           <StatCard
+            onClick={() => window.location.href = '/users'}
             title="Personnel"
             value={formatNumber(stats.staff)}
             icon={Users}

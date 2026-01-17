@@ -295,14 +295,15 @@ export default function PrincipalDashboard() {
             subtitle="Personnel enseignant"
             color="success"
           />
-          <StatCard
-            onClick={() => window.location.href = '/users'}
-            title="Personnel"
-            value={formatNumber(stats.staff)}
-            icon={Users}
-            subtitle="Total collaborateurs"
-            color="blue"
-          />
+          <button onClick={() => window.location.href = '/users'}>
+            <StatCard
+              title="Personnel"
+              value={formatNumber(stats.staff)}
+              icon={Users}
+              subtitle="Total collaborateurs"
+              color="blue"
+            />
+          </button>
           <StatCard
             title="Classes"
             value={formatNumber(stats.classes)}
