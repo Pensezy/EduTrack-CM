@@ -16,7 +16,11 @@ import {
   Settings,
   AlertCircle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Lock,
+  Crown,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { SchoolFormModal, SchoolRequestModal, SchoolViewModal, SchoolDeleteModal, SchoolAdminModal } from './components';
 
@@ -197,32 +201,52 @@ export default function SchoolsPage() {
             {formatNumber(schools.length)} école{schools.length > 1 ? 's' : ''} enregistrée{schools.length > 1 ? 's' : ''}
           </p>
         </div>
-        <button
-          onClick={handleCreateSchool}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
-        >
-          <Plus className="h-5 w-5" />
-          {user?.role === 'admin' ? (
-            <>
-              <span className="hidden sm:inline">Nouvelle École</span>
-              <span className="sm:hidden">Nouvelle</span>
-            </>
-          ) : (
-            <>
-              <span className="hidden sm:inline">Demander un Établissement</span>
-              <span className="sm:hidden">Demander</span>
-            </>
-          )}
-        </button>
+        {user?.role === 'admin' ? (
+          <button
+            onClick={handleCreateSchool}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          >
+            <Plus className="h-5 w-5" />
+            <span className="hidden sm:inline">Nouvelle École</span>
+            <span className="sm:hidden">Nouvelle</span>
+          </button>
+        ) : (
+          <button
+            onClick={handleCreateSchool}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-gray-400 text-white rounded-lg cursor-pointer hover:bg-gray-500 transition-colors shadow-sm relative"
+            title="Faire une demande d'établissement"
+          >
+            <Lock className="h-5 w-5" />
+            <span className="hidden sm:inline">Demander un Établissement</span>
+            <span className="sm:hidden">Demander</span>
+            <Crown className="h-3 w-3 text-yellow-300 absolute -top-1 -right-1" />
+          </button>
+        )}
       </div>
 
-      {/* Error Message */}
+      {/* Error Message - Amélioration esthétique */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 animate-shake">
-          <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <WifiOff className="h-6 w-6 text-red-500" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-red-800 mb-1">
+                Problème de connexion
+              </h3>
+              <p className="text-sm text-red-700 mb-3">
+                {error}
+              </p>
+              <button
+                onClick={fetchSchools}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Réessayer
+              </button>
             </div>
           </div>
         </div>

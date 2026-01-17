@@ -22,7 +22,9 @@ import {
   Lock,
   Crown,
   ArrowRight,
-  X
+  X,
+  WifiOff,
+  RefreshCw
 } from 'lucide-react';
 import { UserFormModal, UserViewModal, AdminFormModal, PrincipalFormModal, TeacherFormModal, SecretaryFormModal, ParentFormModal, StudentFormModal } from './components';
 import ImportExportModal from '../../components/ImportExportModal';
@@ -410,13 +412,29 @@ export default function UsersPage() {
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error Message - Amélioration esthétique */}
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-lg p-4 animate-shake">
-          <div className="flex">
-            <AlertCircle className="h-5 w-5 text-red-400" />
-            <div className="ml-3">
-              <p className="text-sm text-red-800">{error}</p>
+        <div className="bg-gradient-to-r from-red-50 to-orange-50 border border-red-200 rounded-xl p-5 shadow-sm">
+          <div className="flex items-start gap-4">
+            <div className="flex-shrink-0">
+              <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center">
+                <WifiOff className="h-6 w-6 text-red-500" />
+              </div>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h3 className="text-base font-semibold text-red-800 mb-1">
+                Problème de connexion
+              </h3>
+              <p className="text-sm text-red-700 mb-3">
+                {error}
+              </p>
+              <button
+                onClick={fetchUsers}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm font-medium rounded-lg transition-colors shadow-sm"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Réessayer
+              </button>
             </div>
           </div>
         </div>

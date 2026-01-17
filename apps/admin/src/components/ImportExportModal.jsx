@@ -52,7 +52,8 @@ const TYPE_OPTIONS = [
 // Limites de l'App Core gratuite
 const CORE_LIMITS = {
   teachers: 3,
-  secretary: 0 // Pas de secrétaire avec App Core
+  secretary: 0, // Pas de secrétaire avec App Core
+  students: 20  // Maximum 20 élèves avec App Core
 };
 
 export default function ImportExportModal({
@@ -77,6 +78,7 @@ export default function ImportExportModal({
   const [success, setSuccess] = useState(false);
   const [hasAcademicApp, setHasAcademicApp] = useState(false);
   const [currentTeacherCount, setCurrentTeacherCount] = useState(0);
+  const [currentStudentCount, setCurrentStudentCount] = useState(0);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [upgradeMessage, setUpgradeMessage] = useState('');
   const fileInputRef = useRef(null);
@@ -103,13 +105,21 @@ export default function ImportExportModal({
           }
 
           // Compter les enseignants actuels
-          const { count } = await supabase
+          const { count: teacherCount } = await supabase
             .from('users')
             .select('*', { count: 'exact', head: true })
             .eq('current_school_id', user.current_school_id)
             .eq('role', 'teacher');
 
-          setCurrentTeacherCount(count || 0);
+          setCurrentTeacherCount(teacherCount || 0);
+
+          // Compter les élèves actuels
+          const { count: studentCount } = await supabase
+            .from('students')
+            .select('*', { count: 'exact', head: true })
+            .eq('school_id', user.current_school_id);
+
+          setCurrentStudentCount(studentCount || 0);
         } catch (err) {
           console.error('Error checking access:', err);
         }
@@ -134,8 +144,21 @@ export default function ImportExportModal({
     if (user?.role === 'principal') {
       let types = [];
 
-      // Toujours disponible
-      types.push({ value: 'students', label: 'Élèves' });
+      // Élèves avec indication de limite si App Core
+      if (hasAcademicApp) {
+        types.push({ value: 'students', label: 'Élèves' });
+      } else {
+        const remainingStudents = CORE_LIMITS.students - currentStudentCount;
+        types.push({
+          value: 'students',
+          label: `Élèves (${remainingStudents > 0 ? remainingStudents : 0} restant${remainingStudents > 1 ? 's' : ''})`,
+          restricted: true,
+          limit: CORE_LIMITS.students,
+          current: currentStudentCount
+        });
+      }
+
+      // Parents toujours disponible
       types.push({ value: 'parents', label: 'Parents' });
 
       // Enseignants avec indication de limite si App Core
@@ -261,6 +284,20 @@ export default function ImportExportModal({
             setUpgradeMessage(`Vous avez atteint la limite de ${CORE_LIMITS.teachers} enseignants avec l'App Core gratuite. Passez à l'App Académique pour ajouter des enseignants illimités.`);
           } else {
             setUpgradeMessage(`Vous ne pouvez importer que ${remaining} enseignant(s) de plus (limite de ${CORE_LIMITS.teachers} avec l'App Core). Vous essayez d'en importer ${importPreview.length}.`);
+          }
+          setShowUpgradeModal(true);
+          return;
+        }
+      }
+
+      // Vérification de la limite d'élèves (20 max avec App Core)
+      if (selectedType === 'students') {
+        const remainingStudents = CORE_LIMITS.students - currentStudentCount;
+        if (importPreview.length > remainingStudents) {
+          if (remainingStudents <= 0) {
+            setUpgradeMessage(`Vous avez atteint la limite de ${CORE_LIMITS.students} élèves avec l'App Core gratuite. Passez à l'App Académique pour gérer jusqu'à 500 élèves.`);
+          } else {
+            setUpgradeMessage(`Vous ne pouvez importer que ${remainingStudents} élève(s) de plus (limite de ${CORE_LIMITS.students} avec l'App Core). Vous essayez d'en importer ${importPreview.length}.`);
           }
           setShowUpgradeModal(true);
           return;
@@ -477,7 +514,7 @@ export default function ImportExportModal({
                       <div className="text-sm text-yellow-800">
                         <p className="font-medium">Limites App Core</p>
                         <p className="mt-1">
-                          Max {CORE_LIMITS.teachers} enseignants ({currentTeacherCount} actuellement) • Pas de secrétaire
+                          Max {CORE_LIMITS.students} élèves ({currentStudentCount} actuellement) • Max {CORE_LIMITS.teachers} enseignants ({currentTeacherCount} actuellement) • Pas de secrétaire
                         </p>
                       </div>
                     </div>
@@ -517,6 +554,11 @@ export default function ImportExportModal({
                   </select>
 
                   {/* Indication visuelle pour les restrictions */}
+                  {user?.role === 'principal' && !hasAcademicApp && selectedType === 'students' && (
+                    <p className="mt-1 text-xs text-orange-600">
+                      ⚠️ Limite: {CORE_LIMITS.students - currentStudentCount > 0 ? CORE_LIMITS.students - currentStudentCount : 0} élève(s) restant(s)
+                    </p>
+                  )}
                   {user?.role === 'principal' && !hasAcademicApp && selectedType === 'teachers' && (
                     <p className="mt-1 text-xs text-orange-600">
                       ⚠️ Limite: {CORE_LIMITS.teachers - currentTeacherCount > 0 ? CORE_LIMITS.teachers - currentTeacherCount : 0} enseignant(s) restant(s)
