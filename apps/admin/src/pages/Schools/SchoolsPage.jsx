@@ -348,7 +348,7 @@ export default function SchoolsPage() {
                   <div className="flex items-center gap-2 text-sm">
                     <Users className="h-4 w-4 text-gray-400 flex-shrink-0" />
                     <span className="text-gray-600">Directeur:</span>
-                    <span className="font-medium text-gray-900 truncate">{school.director_name}</span>
+                    <span className="font-medium text-gray-900 truncate">{school.director?.full_name || school.director_name || 'Non assigné'}</span>
                   </div>
                 </div>
 

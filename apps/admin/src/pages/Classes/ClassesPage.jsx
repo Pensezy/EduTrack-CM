@@ -15,8 +15,13 @@ import {
   BookOpen,
   Calendar,
   WifiOff,
-  RefreshCw
+  RefreshCw,
+  Lock,
+  Crown,
+  X,
+  ArrowRight
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { ClassFormModal, ClassViewModal } from './components';
 
 export default function ClassesPage() {
@@ -30,6 +35,32 @@ export default function ClassesPage() {
   // Modal states
   const [formModal, setFormModal] = useState({ isOpen: false, classData: null });
   const [viewModal, setViewModal] = useState({ isOpen: false, classData: null });
+  const [showClassBlockModal, setShowClassBlockModal] = useState(false);
+  const [hasAcademicApp, setHasAcademicApp] = useState(false);
+
+  // Vérifier si le directeur a accès à l'App Académique
+  useEffect(() => {
+    const checkAcademicAppAccess = async () => {
+      if (user?.role === 'principal' && user?.current_school_id) {
+        try {
+          const supabase = getSupabaseClient();
+          const { data } = await supabase
+            .from('school_subscriptions')
+            .select('app_id, apps!inner(code)')
+            .eq('school_id', user.current_school_id)
+            .eq('status', 'active')
+            .eq('apps.code', 'academic');
+
+          setHasAcademicApp(data && data.length > 0);
+        } catch (err) {
+          console.error('Error checking academic app access:', err);
+          setHasAcademicApp(false);
+        }
+      }
+    };
+
+    checkAcademicAppAccess();
+  }, [user]);
 
   useEffect(() => {
     fetchClasses();
@@ -127,8 +158,16 @@ export default function ClassesPage() {
     return colors[level] || 'from-gray-500 to-gray-600';
   };
 
+  // Vérifier si la création de classe est bloquée (App Core = 1 classe max)
+  const isClassCreationBlocked = user?.role === 'principal' && !hasAcademicApp && classes.length >= 1;
+
   // Modal handlers
   const handleCreateClass = () => {
+    // Bloquer les directeurs sans App Académique s'ils ont déjà une classe
+    if (isClassCreationBlocked) {
+      setShowClassBlockModal(true);
+      return;
+    }
     setFormModal({ isOpen: true, classData: null });
   };
 
@@ -164,11 +203,23 @@ export default function ClassesPage() {
         </div>
         <button
           onClick={handleCreateClass}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors shadow-sm"
+          className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg transition-colors shadow-sm ${
+            isClassCreationBlocked
+              ? 'bg-gray-400 text-white cursor-pointer relative'
+              : 'bg-primary-600 text-white hover:bg-primary-700'
+          }`}
+          title={isClassCreationBlocked ? 'Limite atteinte - Nécessite App Académique' : 'Créer une nouvelle classe'}
         >
-          <Plus className="h-5 w-5" />
+          {isClassCreationBlocked ? (
+            <Lock className="h-5 w-5" />
+          ) : (
+            <Plus className="h-5 w-5" />
+          )}
           <span className="hidden sm:inline">Nouvelle Classe</span>
           <span className="sm:hidden">Nouvelle</span>
+          {isClassCreationBlocked && (
+            <Crown className="h-3 w-3 text-yellow-300 absolute -top-1 -right-1" />
+          )}
         </button>
       </div>
 

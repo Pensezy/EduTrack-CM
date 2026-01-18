@@ -122,7 +122,7 @@ export default function SchoolViewModal({ isOpen, onClose, school, onEdit }) {
               Directeur
             </h3>
             <div className="space-y-1 divide-y divide-gray-100">
-              <InfoRow icon={User} label="Nom" value={school.director_name || school.director?.full_name} />
+              <InfoRow icon={User} label="Nom" value={school.director?.full_name || school.director_name} />
               <InfoRow icon={Mail} label="Email" value={school.director?.email} />
               <InfoRow icon={Phone} label="Téléphone" value={school.director?.phone} />
             </div>

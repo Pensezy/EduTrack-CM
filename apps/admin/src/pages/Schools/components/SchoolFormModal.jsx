@@ -37,7 +37,7 @@ export default function SchoolFormModal({ isOpen, onClose, school, onSuccess }) 
         city: school.city || '',
         phone: school.phone || '',
         email: school.email || '',
-        director_name: school.director_name || school.director?.full_name || '',
+        director_name: school.director?.full_name || school.director_name || '',
         director_email: school.director?.email || '',
         director_phone: school.director?.phone || '',
         status: school.status || 'active',
